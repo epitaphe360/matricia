@@ -18,7 +18,7 @@ Travaux engagés : **PHASES 01, 02 et 03 — en cours, non signées**
 
 Projet distant contrôlé : **Matricia**, état `ACTIVE_HEALTHY`, environnement applicatif `development`.
 
-Huit migrations sont présentes localement et appliquées à distance :
+Neuf migrations sont présentes localement et appliquées à distance :
 
 1. extensions et référentiels versionnés;
 2. identité, organisations, memberships et RBAC;
@@ -28,10 +28,11 @@ Huit migrations sont présentes localement et appliquées à distance :
 6. rôles et règles économiques de référence;
 7. pgTAP pour les tests de base.
 8. RPC financières et crédits atomiques, idempotentes, auditées et couplées à l’Outbox.
+9. scellement automatique et sérialisé de la chaîne d’audit par organisation.
 
 Preuves :
 
-- `supabase migration list` : versions locales/distantes `20260910000100` à `20260910000800` alignées;
+- `supabase migration list` : versions locales/distantes `20260910000100` à `20260910000900` alignées;
 - `supabase db lint --level warning` : aucune erreur de schéma;
 - `pnpm test:db` : 4 fichiers, 31 assertions vertes couvrant présence/RLS, isolation inter-tenant, immutabilité, idempotence, audit, Outbox et refus d’accès non autorisé.
 

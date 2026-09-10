@@ -28,6 +28,7 @@ dist/
 supabase/.temp/
 /outputs/
 /work/
+.worktrees/
 .DS_Store
 *.pem
 *-debug.log*

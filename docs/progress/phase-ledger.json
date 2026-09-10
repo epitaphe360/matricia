@@ -6,7 +6,7 @@
     {"id":"P00","name":"Reconnaissance et extraction","status":"IN_PROGRESS","gate":"inventory_architecture_ownership_matrices","evidence":["pnpm verify:phase00","docs/specs/registries","docs/architecture/ARCHITECTURE.md","docs/security/THREAT_MODEL.md"]},
     {"id":"P01","name":"Spécifications atomiques","status":"IN_PROGRESS","gate":"spec_validate","evidence":["docs/specs/context-index.json","docs/specs/registries"]},
     {"id":"P02","name":"Socle monorepo","status":"IN_PROGRESS","gate":"minimal_quality_build","evidence":["pnpm lint","pnpm typecheck","pnpm test","pnpm build"]},
-    {"id":"P03","name":"Base, RLS, Outbox, audit et ledgers","status":"IN_PROGRESS","gate":"db_reset_migrations_rls_constraints","evidence":["supabase/migrations/20260910000100_extensions_and_shared.sql","supabase/migrations/20260910000800_financial_command_rpcs.sql","supabase db lint","pnpm test:db (31 assertions)"]},
+    {"id":"P03","name":"Base, RLS, Outbox, audit et ledgers","status":"IN_PROGRESS","gate":"db_reset_migrations_rls_constraints","evidence":["supabase/migrations/20260910000100_extensions_and_shared.sql","supabase/migrations/20260910000900_audit_chain_sealing.sql","supabase db lint public/private","pnpm test:db (31 assertions)"]},
     {"id":"P04","name":"Auth et organisation multi-rôles","status":"QUEUED","gate":"identity_flows","evidence":[]},
     {"id":"P05","name":"Onboarding Client","status":"QUEUED","gate":"client_trial_flow","evidence":[]},
     {"id":"P06","name":"Catalogue et Question Engine","status":"QUEUED","gate":"publishable_library","evidence":[]},
