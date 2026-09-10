@@ -1,0 +1,17 @@
+version: 1
+notifications:
+  - notification_id: NOTIF-MEMBER-INVITED-001
+    event: OrganizationMemberInvitedV1
+    recipients: invited user
+    channel: email
+    subject_fr: Invitation à rejoindre Matricia
+    subject_ar: دعوة للانضمام إلى ماتريسيا
+    body_fr: Votre organisation vous invite à rejoindre son espace sécurisé.
+    body_ar: تدعوك مؤسستك للانضمام إلى مساحتها الآمنة.
+    cta: Ouvrir l’invitation
+    variables: [organization_display_name, invitation_expiry]
+    delivery: mandatory
+    deduplication_window: 24 hours
+    user_preference: not suppressible security message
+    test: INT-NOTIF-MEMBER-INVITE
+    capture: docs/evidence/notifications/member-invite

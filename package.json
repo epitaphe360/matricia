@@ -1,0 +1,33 @@
+{
+  "name": "matricia",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.17.1",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @matricia/web dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "test:integration": "vitest run --passWithNoTests tests/integration",
+    "test:db": "node scripts/run-db-tests.mjs",
+    "test:rls": "node scripts/run-db-tests.mjs",
+    "catalog:validate": "node --experimental-strip-types scripts/validate-catalog.ts",
+    "spec:validate": "node --experimental-strip-types scripts/validate-spec.ts",
+    "traceability:validate": "node --experimental-strip-types scripts/validate-traceability.ts",
+    "no-placeholders": "node --experimental-strip-types scripts/validate-no-placeholders.ts",
+    "release:validate": "node --experimental-strip-types scripts/validate-release.ts",
+    "verify:phase00": "pnpm catalog:validate && pnpm spec:validate && pnpm traceability:validate"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.19",
+    "postgres": "3.4.7",
+    "supabase": "2.117.0",
+    "typescript": "5.9.3",
+    "vitest": "5.0.0"
+  }
+}

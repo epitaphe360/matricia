@@ -1,0 +1,321 @@
+{
+  "code": "OPS",
+  "name_fr": "Opérations, productivité et transformation",
+  "description_fr": "Excellence opérationnelle, organisation, processus, productivité, digitalisation et pilotage de la transformation.",
+  "categories": [
+    [
+      "OPS-STRAT",
+      "Stratégie opérationnelle"
+    ],
+    [
+      "OPS-PROC",
+      "Processus et organisation"
+    ],
+    [
+      "OPS-LEAN",
+      "Lean et amélioration continue"
+    ],
+    [
+      "OPS-PMO",
+      "Gestion de projets et PMO"
+    ],
+    [
+      "OPS-PROD",
+      "Production et planification"
+    ],
+    [
+      "OPS-SERVICE",
+      "Opérations de services"
+    ],
+    [
+      "OPS-DIGI",
+      "Digitalisation des opérations"
+    ],
+    [
+      "OPS-CHANGE",
+      "Conduite du changement"
+    ]
+  ],
+  "services": [
+    [
+      "OPS-STRAT",
+      "OPS-AUDIT",
+      "Diagnostic de performance opérationnelle",
+      "AUDIT",
+      "processus, sites et équipes",
+      [
+        "objectifs",
+        "processus",
+        "coûts",
+        "délais",
+        "goulots"
+      ]
+    ],
+    [
+      "OPS-STRAT",
+      "OPS-OPERATING-MODEL",
+      "Conception du modèle opérationnel cible",
+      "ADVISORY",
+      "fonctions et sites",
+      [
+        "organisation",
+        "rôles",
+        "gouvernance",
+        "processus",
+        "indicateurs"
+      ]
+    ],
+    [
+      "OPS-PROC",
+      "OPS-PROCESS-MAP",
+      "Cartographie et refonte des processus",
+      "ADVISORY",
+      "processus et activités",
+      [
+        "périmètre",
+        "acteurs",
+        "entrées/sorties",
+        "irritants",
+        "contrôles"
+      ]
+    ],
+    [
+      "OPS-PROC",
+      "OPS-SOP",
+      "Création de procédures et modes opératoires",
+      "CONTENT_PROJECT",
+      "procédures et postes",
+      [
+        "processus",
+        "niveau de détail",
+        "supports",
+        "validation",
+        "formation"
+      ]
+    ],
+    [
+      "OPS-PROC",
+      "OPS-ORG-DESIGN",
+      "Organisation, rôles et responsabilités",
+      "ADVISORY",
+      "postes et équipes",
+      [
+        "organigramme",
+        "charges",
+        "responsabilités",
+        "interfaces",
+        "dimensionnement"
+      ]
+    ],
+    [
+      "OPS-LEAN",
+      "OPS-LEAN",
+      "Programme Lean et réduction des gaspillages",
+      "TRANSFORMATION",
+      "lignes et processus",
+      [
+        "flux",
+        "gaspillages",
+        "temps",
+        "qualité",
+        "équipes"
+      ]
+    ],
+    [
+      "OPS-LEAN",
+      "OPS-SIX-SIGMA",
+      "Projet Six Sigma et réduction de variabilité",
+      "TRANSFORMATION",
+      "processus et défauts",
+      [
+        "CTQ",
+        "données",
+        "défauts",
+        "capabilité",
+        "objectifs"
+      ]
+    ],
+    [
+      "OPS-LEAN",
+      "OPS-5S",
+      "Déploiement 5S et management visuel",
+      "IMPLEMENTATION",
+      "zones et équipes",
+      [
+        "zones",
+        "standards",
+        "audits",
+        "matériel",
+        "animation"
+      ]
+    ],
+    [
+      "OPS-PMO",
+      "OPS-PMO",
+      "Mise en place d’un PMO",
+      "IMPLEMENTATION",
+      "projets et chefs de projet",
+      [
+        "portefeuille",
+        "méthodologie",
+        "gouvernance",
+        "outils",
+        "reporting"
+      ]
+    ],
+    [
+      "OPS-PMO",
+      "OPS-PROJECT-RECOVERY",
+      "Redressement de projet en difficulté",
+      "PROJECT_MANAGEMENT",
+      "projets et lots",
+      [
+        "situation",
+        "retards",
+        "budget",
+        "risques",
+        "décisions"
+      ]
+    ],
+    [
+      "OPS-PROD",
+      "OPS-PRODUCTION-PLAN",
+      "Planification et ordonnancement de production",
+      "ADVISORY",
+      "références et lignes",
+      [
+        "capacités",
+        "demandes",
+        "gammes",
+        "stocks",
+        "contraintes"
+      ]
+    ],
+    [
+      "OPS-PROD",
+      "OPS-OEE",
+      "Amélioration du rendement et TRS/OEE",
+      "TRANSFORMATION",
+      "machines et lignes",
+      [
+        "disponibilité",
+        "performance",
+        "qualité",
+        "arrêts",
+        "données"
+      ]
+    ],
+    [
+      "OPS-PROD",
+      "OPS-MAINT-EXCELLENCE",
+      "Excellence maintenance et fiabilité",
+      "TRANSFORMATION",
+      "équipements et sites",
+      [
+        "criticité",
+        "pannes",
+        "préventif",
+        "pièces",
+        "GMAO"
+      ]
+    ],
+    [
+      "OPS-SERVICE",
+      "OPS-SERVICE-DESIGN",
+      "Conception et optimisation d’opérations de services",
+      "ADVISORY",
+      "dossiers et équipes",
+      [
+        "parcours",
+        "volumes",
+        "SLA",
+        "ressources",
+        "qualité"
+      ]
+    ],
+    [
+      "OPS-SERVICE",
+      "OPS-BACKOFFICE",
+      "Optimisation du back-office",
+      "TRANSFORMATION",
+      "transactions et équipes",
+      [
+        "types de dossiers",
+        "volumes",
+        "délais",
+        "erreurs",
+        "automatisation"
+      ]
+    ],
+    [
+      "OPS-DIGI",
+      "OPS-RPA",
+      "Automatisation RPA des processus",
+      "AUTOMATION",
+      "processus et robots",
+      [
+        "tâches",
+        "volumes",
+        "applications",
+        "exceptions",
+        "ROI"
+      ]
+    ],
+    [
+      "OPS-DIGI",
+      "OPS-BPM",
+      "Déploiement BPM et workflows",
+      "IMPLEMENTATION",
+      "processus et utilisateurs",
+      [
+        "workflows",
+        "règles",
+        "formulaires",
+        "intégrations",
+        "SLA"
+      ]
+    ],
+    [
+      "OPS-DIGI",
+      "OPS-KPI",
+      "Tableau de bord opérationnel et KPI",
+      "DATA_PROJECT",
+      "indicateurs et sources",
+      [
+        "KPI",
+        "sources",
+        "fréquence",
+        "alertes",
+        "utilisateurs"
+      ]
+    ],
+    [
+      "OPS-CHANGE",
+      "OPS-CHANGE",
+      "Conduite du changement",
+      "CHANGE_MANAGEMENT",
+      "populations et sites",
+      [
+        "transformation",
+        "impacts",
+        "parties prenantes",
+        "communication",
+        "adoption"
+      ]
+    ],
+    [
+      "OPS-CHANGE",
+      "OPS-TRAIN-COACH",
+      "Formation et coaching des équipes opérationnelles",
+      "TRAINING",
+      "participants et sessions",
+      [
+        "compétences",
+        "niveau",
+        "format",
+        "mise en pratique",
+        "évaluation"
+      ]
+    ]
+  ]
+}

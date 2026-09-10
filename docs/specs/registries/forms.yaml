@@ -1,0 +1,33 @@
+version: 1
+forms:
+  - form_id: FORM-ORG-001
+    screen_id: SCR-ORG-001
+    purpose: Maintenir les noms juridique et public de l’organisation unique.
+    actors: [CLIENT_OWNER, CLIENT_ADMIN, PROVIDER_OWNER, FRANCHISE_OWNER]
+    autosave: false
+    versioned: true
+    submit_command: UpdateOrganizationProfile
+    fields:
+      - key: legal_name
+        label_fr: Raison sociale
+        label_ar: الاسم القانوني
+        help_fr: Nom figurant sur les documents légaux.
+        help_ar: الاسم الوارد في الوثائق القانونية.
+        type: text
+        required_when: always
+        visible_when: authorized_reader
+        editable_when: authorized_editor
+        default_source: organizations.legal_name
+        data_binding: organizations.legal_name
+        validation: trimmed length 2..200
+        normalization: Unicode NFC and trim
+        sensitive_classification: business_identity
+        accepted_files: []
+        max_size: 200 characters
+        error_codes: [LEGAL_NAME_REQUIRED, LEGAL_NAME_INVALID]
+        audit_behavior: previous and new hashes only
+        test_id: organization-legal-name
+    form_level_rules: [optimistic_row_version_required, tenant_guard_required]
+    success_behavior: Rafraîchir le passeport et annoncer le succès.
+    error_behavior: Conserver la saisie et cibler le premier champ invalide.
+    tests: [UNIT-ORG-SCHEMA, INT-ORG-UPDATE, RLS-ORG-UPDATE]

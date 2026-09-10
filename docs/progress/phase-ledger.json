@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "authority": "Matricia_GOLD_MASTER_PROMPT_UNIQUE_CODEX_V4_FINAL_2026-09-10.md",
+  "updated_at": "2026-09-10T17:35:00Z",
+  "phases": [
+    {"id":"P00","name":"Reconnaissance et extraction","status":"IN_PROGRESS","gate":"inventory_architecture_ownership_matrices","evidence":["pnpm verify:phase00","docs/specs/registries","docs/architecture/ARCHITECTURE.md","docs/security/THREAT_MODEL.md"]},
+    {"id":"P01","name":"Spécifications atomiques","status":"IN_PROGRESS","gate":"spec_validate","evidence":["docs/specs/context-index.json","docs/specs/registries"]},
+    {"id":"P02","name":"Socle monorepo","status":"IN_PROGRESS","gate":"minimal_quality_build","evidence":["pnpm lint","pnpm typecheck","pnpm test","pnpm build"]},
+    {"id":"P03","name":"Base, RLS, Outbox, audit et ledgers","status":"IN_PROGRESS","gate":"db_reset_migrations_rls_constraints","evidence":["supabase/migrations/20260910000100_extensions_and_shared.sql","supabase/migrations/20260910000800_financial_command_rpcs.sql","supabase db lint","pnpm test:db (31 assertions)"]},
+    {"id":"P04","name":"Auth et organisation multi-rôles","status":"QUEUED","gate":"identity_flows","evidence":[]},
+    {"id":"P05","name":"Onboarding Client","status":"QUEUED","gate":"client_trial_flow","evidence":[]},
+    {"id":"P06","name":"Catalogue et Question Engine","status":"QUEUED","gate":"publishable_library","evidence":[]},
+    {"id":"P07","name":"Diagnostics et opportunités","status":"QUEUED","gate":"diagnostic_to_opportunity","evidence":[]},
+    {"id":"P08","name":"Plans, paiements, Boxes et crédits","status":"QUEUED","gate":"trial_to_credit_consumption","evidence":[]},
+    {"id":"P09","name":"Sous-traitants","status":"QUEUED","gate":"provider_qualification","evidence":[]},
+    {"id":"P10","name":"Franchises et gouvernance","status":"QUEUED","gate":"franchise_economics_governance","evidence":[]},
+    {"id":"P11","name":"RFQ, matching et devis","status":"QUEUED","gate":"eligible_isolated_quote_selection","evidence":[]},
+    {"id":"P12","name":"Contrats et missions","status":"QUEUED","gate":"mission_delivery_acceptance","evidence":[]},
+    {"id":"P13","name":"Litiges et réaffectation","status":"QUEUED","gate":"dispute_idempotency","evidence":[]},
+    {"id":"P14","name":"Fiscalité et facturation Provider","status":"QUEUED","gate":"automated_versioned_billing","evidence":[]},
+    {"id":"P15","name":"Finance franchise et P&L","status":"QUEUED","gate":"balanced_allocations","evidence":[]},
+    {"id":"P16","name":"Achats groupés","status":"QUEUED","gate":"volume_pool_lifecycle","evidence":[]},
+    {"id":"P17","name":"Administration et automatisations","status":"QUEUED","gate":"operational_command_center","evidence":[]},
+    {"id":"P18","name":"Contenu, seeds et Marketing Autopilot","status":"QUEUED","gate":"catalog_marketing_i18n_no_placeholders","evidence":[]},
+    {"id":"P19","name":"Hardening et release staging","status":"QUEUED","gate":"final_definition_of_done","evidence":[]}
+  ],
+  "production_authorized": false
+}

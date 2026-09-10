@@ -1,0 +1,11 @@
+﻿code,name_fr,description_fr,order,status,version,franchisee_can_edit,central_approval_for_sensitive_changes
+IT,"Informatique, cybersécurité et data","Stratégie numérique, infrastructures, logiciels, cybersécurité, données, automatisation et support.",1,ACTIVE,1,True,True
+COM,"Communication, marketing et création","Stratégie de marque, contenus, acquisition, communication digitale, audiovisuel et événements.",2,ACTIVE,1,True,True
+ACC,"Comptabilité, fiscalité et finance","Tenue comptable, fiscalité, pilotage financier, trésorerie, financement et transformation de la fonction finance.",3,ACTIVE,1,True,True
+LEGAL,"Juridique, conformité et gouvernance","Droit des affaires, contrats, gouvernance, conformité, propriété intellectuelle et prévention des litiges.",4,ACTIVE,1,True,True
+HR,Ressources humaines et formation,"Organisation RH, recrutement, compétences, performance, formation, administration du personnel et climat social.",5,ACTIVE,1,True,True
+INS,Assurance et gestion des risques,"Cartographie des risques, conception des couvertures, appels d’offres assureurs et gestion des sinistres.",6,ACTIVE,1,True,True
+LOG,"Achats, logistique et supply chain","Sourcing, achats, fournisseurs, stocks, entrepôts, transport, import-export et continuité d’approvisionnement.",7,ACTIVE,1,True,True
+BTP,"BTP, immobilier et maintenance","Études, construction, rénovation, installations techniques, gestion immobilière et maintenance des actifs.",8,ACTIVE,1,True,True
+QHSE,"Qualité, HSE et certifications","Systèmes de management, audits, sécurité au travail, environnement, sécurité alimentaire et préparation aux certifications.",9,ACTIVE,1,True,True
+SALES,"Commercial, vente et expérience client","Stratégie commerciale, acquisition, CRM, canaux, performance des ventes, service client et expérience client.",10,ACTIVE,1,True,True

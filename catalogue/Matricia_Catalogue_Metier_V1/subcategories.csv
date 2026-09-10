@@ -1,0 +1,81 @@
+﻿library_code,macro_category_code,code,name_fr,description_fr,order,status,version,franchisee_can_edit,delete_policy
+IT,IT-MACRO-GOV,IT-GOV,Stratégie et gouvernance SI,"Sous-catégorie Stratégie et gouvernance SI de la bibliothèque Informatique, cybersécurité et data.",1,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+IT,IT-MACRO-INFRA,IT-INFRA,"Infrastructure, réseau et télécom","Sous-catégorie Infrastructure, réseau et télécom de la bibliothèque Informatique, cybersécurité et data.",2,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+IT,IT-MACRO-CYBER,IT-CYBER,Cybersécurité et continuité,"Sous-catégorie Cybersécurité et continuité de la bibliothèque Informatique, cybersécurité et data.",3,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+IT,IT-MACRO-INFRA,IT-CLOUD,Cloud et collaboration,"Sous-catégorie Cloud et collaboration de la bibliothèque Informatique, cybersécurité et data.",4,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+IT,IT-MACRO-DIGITAL,IT-DEV,"Développement Web, mobile et logiciels","Sous-catégorie Développement Web, mobile et logiciels de la bibliothèque Informatique, cybersécurité et data.",5,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+IT,IT-MACRO-DIGITAL,IT-DATA,"Data, BI et intelligence artificielle","Sous-catégorie Data, BI et intelligence artificielle de la bibliothèque Informatique, cybersécurité et data.",6,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+IT,IT-MACRO-DIGITAL,IT-SUPPORT,"Support, maintenance et infogérance","Sous-catégorie Support, maintenance et infogérance de la bibliothèque Informatique, cybersécurité et data.",7,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+IT,IT-MACRO-DIGITAL,IT-IOT,"IoT, vidéosurveillance et systèmes connectés","Sous-catégorie IoT, vidéosurveillance et systèmes connectés de la bibliothèque Informatique, cybersécurité et data.",8,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+COM,COM-MACRO-BRAND,COM-STRAT,Stratégie marketing et marque,"Sous-catégorie Stratégie marketing et marque de la bibliothèque Communication, marketing et création.",1,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+COM,COM-MACRO-CONTENT,COM-DESIGN,Identité visuelle et design,"Sous-catégorie Identité visuelle et design de la bibliothèque Communication, marketing et création.",2,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+COM,COM-MACRO-CONTENT,COM-CONTENT,Contenus et rédaction,"Sous-catégorie Contenus et rédaction de la bibliothèque Communication, marketing et création.",3,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+COM,COM-MACRO-ACQ,COM-DIGITAL,Marketing digital et réseaux sociaux,"Sous-catégorie Marketing digital et réseaux sociaux de la bibliothèque Communication, marketing et création.",4,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+COM,COM-MACRO-ACQ,COM-ADS,Publicité et acquisition,"Sous-catégorie Publicité et acquisition de la bibliothèque Communication, marketing et création.",5,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+COM,COM-MACRO-CONTENT,COM-AV,"Photo, vidéo et motion design","Sous-catégorie Photo, vidéo et motion design de la bibliothèque Communication, marketing et création.",6,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+COM,COM-MACRO-INFLUENCE,COM-PR,Relations publiques et influence,"Sous-catégorie Relations publiques et influence de la bibliothèque Communication, marketing et création.",7,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+COM,COM-MACRO-INFLUENCE,COM-EVENT,"Événementiel, impression et signalétique","Sous-catégorie Événementiel, impression et signalétique de la bibliothèque Communication, marketing et création.",8,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+ACC,ACC-MACRO-ACCOUNTING,ACC-BOOK,Comptabilité et clôture,"Sous-catégorie Comptabilité et clôture de la bibliothèque Comptabilité, fiscalité et finance.",1,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+ACC,ACC-MACRO-ACCOUNTING,ACC-TAX,Fiscalité et déclarations,"Sous-catégorie Fiscalité et déclarations de la bibliothèque Comptabilité, fiscalité et finance.",2,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+ACC,ACC-MACRO-PERF,ACC-CTRL,Contrôle de gestion et performance,"Sous-catégorie Contrôle de gestion et performance de la bibliothèque Comptabilité, fiscalité et finance.",3,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+ACC,ACC-MACRO-PERF,ACC-CASH,Trésorerie et recouvrement,"Sous-catégorie Trésorerie et recouvrement de la bibliothèque Comptabilité, fiscalité et finance.",4,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+ACC,ACC-MACRO-FIN,ACC-FIN,Financement et modélisation,"Sous-catégorie Financement et modélisation de la bibliothèque Comptabilité, fiscalité et finance.",5,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+ACC,ACC-MACRO-FIN,ACC-AUDIT,Audit et due diligence,"Sous-catégorie Audit et due diligence de la bibliothèque Comptabilité, fiscalité et finance.",6,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+ACC,ACC-MACRO-SYSTEMS,ACC-SYS,Systèmes et digitalisation finance,"Sous-catégorie Systèmes et digitalisation finance de la bibliothèque Comptabilité, fiscalité et finance.",7,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+ACC,ACC-MACRO-SYSTEMS,ACC-SPECIAL,Opérations comptables spécialisées,"Sous-catégorie Opérations comptables spécialisées de la bibliothèque Comptabilité, fiscalité et finance.",8,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+LEGAL,LEGAL-MACRO-CORP,LEGAL-CORP,Droit des sociétés et gouvernance,"Sous-catégorie Droit des sociétés et gouvernance de la bibliothèque Juridique, conformité et gouvernance.",1,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+LEGAL,LEGAL-MACRO-CONTRACT,LEGAL-CONTRACT,Contrats commerciaux,"Sous-catégorie Contrats commerciaux de la bibliothèque Juridique, conformité et gouvernance.",2,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+LEGAL,LEGAL-MACRO-CONTRACT,LEGAL-LABOR,Droit du travail,"Sous-catégorie Droit du travail de la bibliothèque Juridique, conformité et gouvernance.",3,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+LEGAL,LEGAL-MACRO-COMP,LEGAL-IP,Propriété intellectuelle et numérique,"Sous-catégorie Propriété intellectuelle et numérique de la bibliothèque Juridique, conformité et gouvernance.",4,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+LEGAL,LEGAL-MACRO-COMP,LEGAL-COMP,Conformité réglementaire et éthique,"Sous-catégorie Conformité réglementaire et éthique de la bibliothèque Juridique, conformité et gouvernance.",5,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+LEGAL,LEGAL-MACRO-DISPUTE,LEGAL-DISPUTE,Précontentieux et contentieux,"Sous-catégorie Précontentieux et contentieux de la bibliothèque Juridique, conformité et gouvernance.",6,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+LEGAL,LEGAL-MACRO-DISPUTE,LEGAL-REAL,Immobilier et baux,"Sous-catégorie Immobilier et baux de la bibliothèque Juridique, conformité et gouvernance.",7,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+LEGAL,LEGAL-MACRO-CORP,LEGAL-TRANS,Transactions et partenariats,"Sous-catégorie Transactions et partenariats de la bibliothèque Juridique, conformité et gouvernance.",8,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+HR,HR-MACRO-ORG,HR-STRAT,Stratégie et organisation RH,Sous-catégorie Stratégie et organisation RH de la bibliothèque Ressources humaines et formation.,1,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+HR,HR-MACRO-TALENT,HR-REC,Recrutement et intégration,Sous-catégorie Recrutement et intégration de la bibliothèque Ressources humaines et formation.,2,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+HR,HR-MACRO-TALENT,HR-PERF,"Performance, compétences et carrière","Sous-catégorie Performance, compétences et carrière de la bibliothèque Ressources humaines et formation.",3,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+HR,HR-MACRO-REWARD,HR-COMP,Rémunération et avantages,Sous-catégorie Rémunération et avantages de la bibliothèque Ressources humaines et formation.,4,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+HR,HR-MACRO-REWARD,HR-ADMIN,Administration RH et paie,Sous-catégorie Administration RH et paie de la bibliothèque Ressources humaines et formation.,5,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+HR,HR-MACRO-DEV,HR-TRAIN,Formation et développement,Sous-catégorie Formation et développement de la bibliothèque Ressources humaines et formation.,6,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+HR,HR-MACRO-DEV,HR-REL,Relations sociales et engagement,Sous-catégorie Relations sociales et engagement de la bibliothèque Ressources humaines et formation.,7,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+HR,HR-MACRO-DEV,HR-DIGI,SIRH et digitalisation RH,Sous-catégorie SIRH et digitalisation RH de la bibliothèque Ressources humaines et formation.,8,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+INS,INS-MACRO-RISK,INS-RISK,Audit et cartographie des risques,Sous-catégorie Audit et cartographie des risques de la bibliothèque Assurance et gestion des risques.,1,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+INS,INS-MACRO-RISK,INS-PROP,Biens et pertes d’exploitation,Sous-catégorie Biens et pertes d’exploitation de la bibliothèque Assurance et gestion des risques.,2,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+INS,INS-MACRO-LIAB,INS-LIAB,Responsabilités,Sous-catégorie Responsabilités de la bibliothèque Assurance et gestion des risques.,3,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+INS,INS-MACRO-LIAB,INS-PEOPLE,Protection des personnes,Sous-catégorie Protection des personnes de la bibliothèque Assurance et gestion des risques.,4,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+INS,INS-MACRO-SPECIAL,INS-SPEC,Risques spécialisés,Sous-catégorie Risques spécialisés de la bibliothèque Assurance et gestion des risques.,5,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+INS,INS-MACRO-SPECIAL,INS-FLEET,"Flotte, transport et logistique","Sous-catégorie Flotte, transport et logistique de la bibliothèque Assurance et gestion des risques.",6,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+INS,INS-MACRO-PROGRAM,INS-CLAIM,Sinistres et prévention,Sous-catégorie Sinistres et prévention de la bibliothèque Assurance et gestion des risques.,7,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+INS,INS-MACRO-PROGRAM,INS-PROGRAM,Programme d’assurance et appels d’offres,Sous-catégorie Programme d’assurance et appels d’offres de la bibliothèque Assurance et gestion des risques.,8,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+LOG,LOG-MACRO-PROC,LOG-PROC,Stratégie achats et sourcing,"Sous-catégorie Stratégie achats et sourcing de la bibliothèque Achats, logistique et supply chain.",1,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+LOG,LOG-MACRO-PROC,LOG-SUP,Gestion des fournisseurs,"Sous-catégorie Gestion des fournisseurs de la bibliothèque Achats, logistique et supply chain.",2,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+LOG,LOG-MACRO-PLAN,LOG-SPEND,Dépenses et performance achats,"Sous-catégorie Dépenses et performance achats de la bibliothèque Achats, logistique et supply chain.",3,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+LOG,LOG-MACRO-PLAN,LOG-INV,Stocks et prévisions,"Sous-catégorie Stocks et prévisions de la bibliothèque Achats, logistique et supply chain.",4,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+LOG,LOG-MACRO-OPS,LOG-WH,Entrepôts et opérations,"Sous-catégorie Entrepôts et opérations de la bibliothèque Achats, logistique et supply chain.",5,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+LOG,LOG-MACRO-OPS,LOG-TRANS,Transport et distribution,"Sous-catégorie Transport et distribution de la bibliothèque Achats, logistique et supply chain.",6,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+LOG,LOG-MACRO-TRADE,LOG-TRADE,Import-export et douane,"Sous-catégorie Import-export et douane de la bibliothèque Achats, logistique et supply chain.",7,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+LOG,LOG-MACRO-TRADE,LOG-DIGI,Digitalisation et résilience supply chain,"Sous-catégorie Digitalisation et résilience supply chain de la bibliothèque Achats, logistique et supply chain.",8,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+BTP,BTP-MACRO-DESIGN,BTP-STUDY,Études et conception,"Sous-catégorie Études et conception de la bibliothèque BTP, immobilier et maintenance.",1,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+BTP,BTP-MACRO-DESIGN,BTP-COST,Économie de la construction,"Sous-catégorie Économie de la construction de la bibliothèque BTP, immobilier et maintenance.",2,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+BTP,BTP-MACRO-WORK,BTP-WORK,Construction et rénovation,"Sous-catégorie Construction et rénovation de la bibliothèque BTP, immobilier et maintenance.",3,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+BTP,BTP-MACRO-WORK,BTP-MEP,Lots techniques,"Sous-catégorie Lots techniques de la bibliothèque BTP, immobilier et maintenance.",4,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+BTP,BTP-MACRO-SAFE,BTP-SAFE,Sécurité et systèmes spéciaux,"Sous-catégorie Sécurité et systèmes spéciaux de la bibliothèque BTP, immobilier et maintenance.",5,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+BTP,BTP-MACRO-SAFE,BTP-ENERGY,Énergie et durabilité,"Sous-catégorie Énergie et durabilité de la bibliothèque BTP, immobilier et maintenance.",6,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+BTP,BTP-MACRO-ASSET,BTP-FM,Facility management et maintenance,"Sous-catégorie Facility management et maintenance de la bibliothèque BTP, immobilier et maintenance.",7,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+BTP,BTP-MACRO-ASSET,BTP-REAL,"Immobilier, inspection et aménagement","Sous-catégorie Immobilier, inspection et aménagement de la bibliothèque BTP, immobilier et maintenance.",8,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+QHSE,QHSE-MACRO-QE,QHSE-QMS,Qualité et processus,"Sous-catégorie Qualité et processus de la bibliothèque Qualité, HSE et certifications.",1,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+QHSE,QHSE-MACRO-QE,QHSE-ENV,Environnement,"Sous-catégorie Environnement de la bibliothèque Qualité, HSE et certifications.",2,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+QHSE,QHSE-MACRO-HS,QHSE-OHS,Santé et sécurité au travail,"Sous-catégorie Santé et sécurité au travail de la bibliothèque Qualité, HSE et certifications.",3,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+QHSE,QHSE-MACRO-HS,QHSE-FOOD,Sécurité alimentaire,"Sous-catégorie Sécurité alimentaire de la bibliothèque Qualité, HSE et certifications.",4,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+QHSE,QHSE-MACRO-LAB,QHSE-LAB,Laboratoires et métrologie,"Sous-catégorie Laboratoires et métrologie de la bibliothèque Qualité, HSE et certifications.",5,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+QHSE,QHSE-MACRO-LAB,QHSE-AUDIT,Audits et amélioration,"Sous-catégorie Audits et amélioration de la bibliothèque Qualité, HSE et certifications.",6,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+QHSE,QHSE-MACRO-CERT,QHSE-DOC,Documentation et digitalisation,"Sous-catégorie Documentation et digitalisation de la bibliothèque Qualité, HSE et certifications.",7,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+QHSE,QHSE-MACRO-CERT,QHSE-CERT,Préparation aux certifications,"Sous-catégorie Préparation aux certifications de la bibliothèque Qualité, HSE et certifications.",8,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+SALES,SALES-MACRO-STRAT,SALES-STRAT,Stratégie commerciale et marché,"Sous-catégorie Stratégie commerciale et marché de la bibliothèque Commercial, vente et expérience client.",1,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+SALES,SALES-MACRO-STRAT,SALES-PROC,Processus et performance de vente,"Sous-catégorie Processus et performance de vente de la bibliothèque Commercial, vente et expérience client.",2,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+SALES,SALES-MACRO-ACQ,SALES-CRM,CRM et automatisation commerciale,"Sous-catégorie CRM et automatisation commerciale de la bibliothèque Commercial, vente et expérience client.",3,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+SALES,SALES-MACRO-ACQ,SALES-LEAD,Prospection et génération de leads,"Sous-catégorie Prospection et génération de leads de la bibliothèque Commercial, vente et expérience client.",4,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+SALES,SALES-MACRO-ORG,SALES-TEAM,Organisation et compétences commerciales,"Sous-catégorie Organisation et compétences commerciales de la bibliothèque Commercial, vente et expérience client.",5,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+SALES,SALES-MACRO-ORG,SALES-CHANNEL,"Canaux, partenaires et export","Sous-catégorie Canaux, partenaires et export de la bibliothèque Commercial, vente et expérience client.",6,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+SALES,SALES-MACRO-CX,SALES-CX,Expérience et fidélisation client,"Sous-catégorie Expérience et fidélisation client de la bibliothèque Commercial, vente et expérience client.",7,ACTIVE,1,True,ARCHIVE_IF_REFERENCED
+SALES,SALES-MACRO-CX,SALES-SERVICE,Service client et centres de contact,"Sous-catégorie Service client et centres de contact de la bibliothèque Commercial, vente et expérience client.",8,ACTIVE,1,True,ARCHIVE_IF_REFERENCED

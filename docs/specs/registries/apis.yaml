@@ -1,0 +1,34 @@
+version: 1
+operations:
+  - api_id: API-HEALTH-001
+    domain: platform
+    operation: GetHealth
+    transport: GET /api/health
+    input_schema: Empty
+    output_schema: HealthResponseV1
+    authorization: public liveness only
+    preconditions: []
+    transactional: false
+    idempotency: naturally idempotent
+    state_transition: none
+    audit_event: none
+    outbox_events: []
+    errors: [SERVICE_UNAVAILABLE]
+    rate_limit: edge standard
+    tests: [INT-HEALTH-200]
+  - api_id: CMD-ORG-UPDATE-001
+    domain: identity
+    operation: UpdateOrganizationProfile
+    transport: server action
+    input_schema: UpdateOrganizationProfileV1
+    output_schema: OrganizationProfileV1
+    authorization: scoped owner or admin in target organization
+    preconditions: [active membership, matching row version]
+    transactional: true
+    idempotency: required command key
+    state_transition: organization profile version increments
+    audit_event: organization.profile.updated
+    outbox_events: [OrganizationUpdatedV1]
+    errors: [FORBIDDEN, VERSION_CONFLICT, VALIDATION_FAILED]
+    rate_limit: 30 per minute per actor
+    tests: [UNIT-ORG-SCHEMA, INT-ORG-UPDATE, RLS-ORG-CROSS-TENANT]

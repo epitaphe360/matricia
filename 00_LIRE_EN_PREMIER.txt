@@ -1,0 +1,11 @@
+MATRICIA CODEX V1 — PACK FINAL
+
+1. Ouvrir CE DOSSIER COMPLET dans Codex.
+2. Le Gold Master faisant autorité est :
+   Matricia_GOLD_MASTER_PROMPT_UNIQUE_CODEX_V4_FINAL_2026-09-10.md
+3. Ne pas copier le Gold Master dans le chat Codex : demander à Codex de le lire depuis le dépôt.
+4. Les catalogues métier / 6000 questions sont sous data/matricia-catalogue/.
+5. Avant Git, créer .env.local avec les secrets temporaires et vérifier qu'il est ignoré par .gitignore.
+6. Démarrer Codex avec le texte contenu dans 01_PROMPT_DE_LANCEMENT_CODEX.txt.
+
+IMPORTANT DESIGN : Version A — Moderne & Professionnelle est la direction visuelle validée.

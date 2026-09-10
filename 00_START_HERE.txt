@@ -1,0 +1,22 @@
+MATRICIA CODEX — PACK FINAL READY
+
+1. Extract this ZIP into C:\Projects\Matricia
+2. Fill .env.local with TEMPORARY DEV/STAGING credentials only.
+3. Do NOT commit .env.local. It is ignored by .gitignore.
+4. Open the entire C:\Projects\Matricia folder in Codex.
+5. Initialize Git if needed:
+   git init
+   git add .
+   git commit -m "Initial Matricia V1 Gold Master"
+6. Open 01_PROMPT_DE_LANCEMENT_CODEX.txt and paste its content into Codex.
+7. Codex must start at PHASE 00 and follow the V4 FINAL Gold Master.
+8. At final release, revoke all temporary credentials and create fresh production credentials.
+
+AUTHORITATIVE SPEC:
+Matricia_GOLD_MASTER_PROMPT_UNIQUE_CODEX_V4_FINAL_2026-09-10.md
+
+IMPORTANT:
+- Ignore older Gold Master versions if present.
+- Version A is the official design authority.
+- IT franchise: Hatim Ahmitech, no entry fee, 50/50 distributable IT profit with Jalil/NEOXA.
+- Never expose or commit credentials.

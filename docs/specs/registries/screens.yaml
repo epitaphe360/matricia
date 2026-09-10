@@ -1,0 +1,48 @@
+version: 1
+screens:
+  - screen_id: SCR-HOME-001
+    route: /
+    name_fr: Tableau de bord
+    name_ar: لوحة القيادة
+    actors: [AUTHENTICATED_USER]
+    objective: Résumer le travail prioritaire de l’organisation active.
+    entry_conditions: [SESSION_VALID, ORGANIZATION_SELECTED]
+    data_sources: [organization_summary, assigned_actions]
+    header: Identité de l’organisation active et changement de rôle.
+    widgets: [priority_actions, activity_summary, quick_access]
+    tables: []
+    filters: []
+    actions: [OPEN_ORGANIZATION, OPEN_DIAGNOSTICS, OPEN_RFQS]
+    forms: []
+    states: [loading, empty, success, error, forbidden]
+    responsive_behavior: Une colonne dès 360 px; navigation repliable.
+    rtl_behavior: Ordre visuel et icônes directionnelles inversés en arabe.
+    permissions: [PERM-HOME-READ]
+    events: [DashboardViewedV1]
+    audit: Consultation sensible non auditée; changement de rôle audité.
+    analytics: dashboard_viewed sans donnée personnelle.
+    test_cases: [E2E-HOME-FR, E2E-HOME-AR-RTL, A11Y-HOME]
+    evidence: apps/web/app/page.tsx
+  - screen_id: SCR-ORG-001
+    route: /organisation
+    name_fr: Passeport organisation
+    name_ar: جواز المؤسسة
+    actors: [CLIENT_OWNER, CLIENT_ADMIN, PROVIDER_OWNER, FRANCHISE_OWNER]
+    objective: Afficher et maintenir l’identité juridique unique et ses rôles cumulables.
+    entry_conditions: [SESSION_VALID, ACTIVE_MEMBERSHIP]
+    data_sources: [organizations, organization_identifiers, organization_memberships]
+    header: Organisation, statut de vérification et rôles actifs.
+    widgets: [identity_card, identifier_status, role_profiles]
+    tables: [memberships]
+    filters: [membership_status, role]
+    actions: [UPDATE_PROFILE, INVITE_MEMBER, ACTIVATE_ROLE]
+    forms: [FORM-ORG-001]
+    states: [loading, empty, success, error, forbidden]
+    responsive_behavior: Cartes empilées et tableau transformé en liste dès 640 px.
+    rtl_behavior: Grille, texte et progression suivent dir=rtl.
+    permissions: [PERM-ORG-READ, PERM-ORG-UPDATE, PERM-MEMBER-READ]
+    events: [OrganizationUpdatedV1, OrganizationRoleActivatedV1]
+    audit: Toute mutation produit audit et correlation_id.
+    analytics: organization_profile_viewed pseudonymisé.
+    test_cases: [E2E-ORG-OWNER, RLS-ORG-CROSS-TENANT, A11Y-ORG]
+    evidence: docs/specs/sections/identity-rbac.md

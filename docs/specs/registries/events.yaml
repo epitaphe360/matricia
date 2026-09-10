@@ -1,0 +1,18 @@
+version: 1
+events:
+  - event_type: OrganizationUpdatedV1
+    producer: identity application service
+    consumers: [audit_projection, search_projection]
+    schema: contracts/events/organization-updated.v1
+    deduplication: aggregate_id plus correlation_id plus event_version
+    retry: exponential capped at 24 hours
+    ordering: per organization aggregate
+    sensitive_data: identifiers excluded; changed field names only
+  - event_type: OrganizationRoleActivatedV1
+    producer: identity application service
+    consumers: [onboarding_orchestrator, notification_dispatcher]
+    schema: contracts/events/organization-role-activated.v1
+    deduplication: organization_id plus role plus command id
+    retry: exponential capped at 24 hours
+    ordering: per organization aggregate
+    sensitive_data: no personal data

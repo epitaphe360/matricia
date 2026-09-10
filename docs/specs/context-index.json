@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "authority": "Matricia_GOLD_MASTER_PROMPT_UNIQUE_CODEX_V4_FINAL_2026-09-10.md",
+  "v1_scope": {
+    "required_functions": "MAT-FUNC-001..MAT-FUNC-068",
+    "excluded_functions": "MAT-FUNC-069..MAT-FUNC-090",
+    "required_addendum": "MARKETING-001..MARKETING-008"
+  },
+  "indexes": {
+    "phases": "docs/specs/sections/phase-map.md",
+    "requirements": "docs/traceability/REQUIREMENTS_COVERAGE.md",
+    "architecture": "docs/architecture/ARCHITECTURE.md",
+    "plans": "PLANS.md",
+    "progress": "docs/progress/PROJECT_STATE.md",
+    "phase_ledger": "docs/progress/phase-ledger.json"
+    ,"screens": "docs/specs/registries/screens.yaml"
+    ,"forms": "docs/specs/registries/forms.yaml"
+    ,"permissions": "docs/specs/registries/permissions.csv"
+    ,"apis": "docs/specs/registries/apis.yaml"
+    ,"events": "docs/specs/registries/events.yaml"
+    ,"notifications": "docs/specs/registries/notifications.yaml"
+    ,"state_machines": "docs/specs/registries/state-machines.csv"
+  },
+  "domains": {
+    "identity": ["MAT-FUNC-001", "MAT-FUNC-028", "MAT-FUNC-051", "MAT-FUNC-052"],
+    "diagnostics": ["MAT-FUNC-002", "MAT-FUNC-003", "MAT-FUNC-004", "MAT-FUNC-005", "MAT-FUNC-009", "MAT-FUNC-045", "MAT-FUNC-046", "MAT-FUNC-047", "MAT-FUNC-057", "MAT-FUNC-058", "MAT-FUNC-060", "MAT-FUNC-062"],
+    "work_management": ["MAT-FUNC-006", "MAT-FUNC-007", "MAT-FUNC-011", "MAT-FUNC-012", "MAT-FUNC-021", "MAT-FUNC-053", "MAT-FUNC-055", "MAT-FUNC-056"],
+    "catalog_questions": ["MAT-FUNC-008", "MAT-FUNC-010", "MAT-FUNC-040", "MAT-FUNC-041", "MAT-FUNC-042", "MAT-FUNC-043", "MAT-FUNC-044"],
+    "matching_quotes": ["MAT-FUNC-013", "MAT-FUNC-014", "MAT-FUNC-015", "MAT-FUNC-016", "MAT-FUNC-017", "MAT-FUNC-018", "MAT-FUNC-019", "MAT-FUNC-020", "MAT-FUNC-048", "MAT-FUNC-049", "MAT-FUNC-067", "MAT-FUNC-068"],
+    "missions": ["MAT-FUNC-022", "MAT-FUNC-023", "MAT-FUNC-024", "MAT-FUNC-025", "MAT-FUNC-026", "MAT-FUNC-027", "MAT-FUNC-029", "MAT-FUNC-050"],
+    "finance": ["MAT-FUNC-030", "MAT-FUNC-031", "MAT-FUNC-032", "MAT-FUNC-033", "MAT-FUNC-034", "MAT-FUNC-035"],
+    "franchise": ["MAT-FUNC-036", "MAT-FUNC-037", "MAT-FUNC-038", "MAT-FUNC-064"],
+    "communications": ["MAT-FUNC-039", "MAT-FUNC-063", "MAT-FUNC-065", "MAT-FUNC-066"],
+    "experience": ["MAT-FUNC-054", "MAT-FUNC-059", "MAT-FUNC-061"],
+    "marketing": ["MARKETING-001", "MARKETING-002", "MARKETING-003", "MARKETING-004", "MARKETING-005", "MARKETING-006", "MARKETING-007", "MARKETING-008"]
+  },
+  "catalog_context_rule": "Load only the target library/service/question subset; never load all 6000 questions unless validation explicitly requires aggregate access.",
+  "evidence_roots": ["docs/evidence", "artifacts/test-results", "artifacts/screenshots"]
+}

@@ -1,0 +1,21 @@
+Lis intégralement le fichier Matricia_GOLD_MASTER_PROMPT_UNIQUE_CODEX_V4_FINAL_2026-09-10.md présent à la racine de ce dépôt. Il constitue l'unique Gold Master faisant autorité pour Matricia V1. Ignore toute ancienne version éventuelle.
+
+Lis ensuite AGENTS.md, PROJECT_STATE.md, PLANS.md, les skills locaux sous .agents/skills, ainsi que les catalogues, matrices, seeds et spécifications présents dans le dépôt.
+
+La direction visuelle officielle est VERSION A — MODERNE & PROFESSIONNELLE. Applique-la uniformément au site public et aux espaces Client, Sous-traitant, Franchisé et Administrateur via un Design System partagé, responsive, accessible et FR/AR RTL.
+
+Les credentials temporaires nécessaires au développement peuvent être présents dans l'environnement local. Ne jamais afficher, logger, documenter ou committer leurs valeurs. N'utiliser que les ressources Matricia development/staging autorisées.
+
+Commence par PHASE 00 : audit complet du dépôt, validation des sources, catalogues, 10 bibliothèques, 200 services, 6000 questions, Git, environnement, secrets sans les afficher, PROJECT_STATE, agents, worktrees et traçabilité. Ensuite exécute toutes les phases du Gold Master jusqu'à la release finale V1.
+
+Utilise les sous-agents spécialisés et parallélise uniquement les tâches réellement indépendantes. Maintiens en permanence les fonctions indépendantes d'architecture/intégration, audit qualité, sécurité/red team, tests/E2E, Supabase/RLS, finance, fiscalité Maroc, design QA, FR/AR RTL/accessibilité et traçabilité.
+
+Utilise les skills et le chargement ciblé du contexte pour minimiser la consommation de tokens. Ne charge jamais l'intégralité des 6000 questions dans le contexte d'un agent qui n'en a pas besoin.
+
+Ne t'arrête pas après la planification. Passe réellement au développement. Ne me demande aucune décision déjà définie dans le Gold Master. Si une valeur commerciale n'est pas définitivement fixée, rends-la administrable et versionnée, utilise une valeur de démonstration cohérente et continue.
+
+Aucun TODO, FIXME, placeholder, bouton inactif, écran vide, formulaire incomplet, permission indéfinie ou workflow V1 fictif ne doit rester dans la release. Si une intégration externe réelle ne peut pas encore fonctionner, termine son adaptateur, son mode demo/mock, ses tests contractuels et sa configuration, puis continue le reste du projet.
+
+Après chaque phase verte : commit Git, mise à jour PROJECT_STATE.md, traçabilité, rapport court des tests et prochaine phase. Continue jusqu'à ce que migrations, RLS, sécurité, tests, E2E, français/arabe RTL, responsive, données démo, facturation Maroc, finances, dashboards, design Version A et build production soient verts.
+
+Commence maintenant par PHASE 00.

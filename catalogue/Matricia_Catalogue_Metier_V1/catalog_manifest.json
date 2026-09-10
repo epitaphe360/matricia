@@ -1,0 +1,105 @@
+{
+  "catalog_version": "1.0.0",
+  "generated_by": "Matricia Gold Master baseline generator",
+  "counts": {
+    "libraries": 10,
+    "categories": 40,
+    "subcategories": 80,
+    "services": 200,
+    "service_subcategory_links": 212,
+    "rfq_questions": 5000,
+    "diagnostic_questions": 700,
+    "provider_questions": 300,
+    "total_questions": 6000
+  },
+  "by_library": {
+    "IT": {
+      "categories": 4,
+      "subcategories": 8,
+      "services": 20,
+      "rfq_questions": 500,
+      "diagnostic_questions": 70,
+      "provider_questions": 30
+    },
+    "COM": {
+      "categories": 4,
+      "subcategories": 8,
+      "services": 20,
+      "rfq_questions": 500,
+      "diagnostic_questions": 70,
+      "provider_questions": 30
+    },
+    "ACC": {
+      "categories": 4,
+      "subcategories": 8,
+      "services": 20,
+      "rfq_questions": 500,
+      "diagnostic_questions": 70,
+      "provider_questions": 30
+    },
+    "LEGAL": {
+      "categories": 4,
+      "subcategories": 8,
+      "services": 20,
+      "rfq_questions": 500,
+      "diagnostic_questions": 70,
+      "provider_questions": 30
+    },
+    "HR": {
+      "categories": 4,
+      "subcategories": 8,
+      "services": 20,
+      "rfq_questions": 500,
+      "diagnostic_questions": 70,
+      "provider_questions": 30
+    },
+    "INS": {
+      "categories": 4,
+      "subcategories": 8,
+      "services": 20,
+      "rfq_questions": 500,
+      "diagnostic_questions": 70,
+      "provider_questions": 30
+    },
+    "LOG": {
+      "categories": 4,
+      "subcategories": 8,
+      "services": 20,
+      "rfq_questions": 500,
+      "diagnostic_questions": 70,
+      "provider_questions": 30
+    },
+    "BTP": {
+      "categories": 4,
+      "subcategories": 8,
+      "services": 20,
+      "rfq_questions": 500,
+      "diagnostic_questions": 70,
+      "provider_questions": 30
+    },
+    "QHSE": {
+      "categories": 4,
+      "subcategories": 8,
+      "services": 20,
+      "rfq_questions": 500,
+      "diagnostic_questions": 70,
+      "provider_questions": 30
+    },
+    "SALES": {
+      "categories": 4,
+      "subcategories": 8,
+      "services": 20,
+      "rfq_questions": 500,
+      "diagnostic_questions": 70,
+      "provider_questions": 30
+    }
+  },
+  "rules": {
+    "franchisee_service_crud": true,
+    "franchisee_question_crud": true,
+    "delete_semantics": "SOFT_DELETE_ARCHIVE_IF_REFERENCED",
+    "versioning_required": true,
+    "central_approval_for_sensitive_changes": true,
+    "arabic_translation_required_before_production": true
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "@matricia/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "tsc --noEmit", "lint": "tsc --noEmit", "typecheck": "tsc --noEmit" },
+  "devDependencies": { "typescript": "5.9.3", "@types/node": "22.19.19" }
+}

@@ -1,0 +1,7 @@
+permission_id,resource,action,role,scope,decision,conditions,rls_policy,server_guard,positive_test,negative_test,status
+PERM-HOME-READ,dashboard,read,AUTHENTICATED_USER,OWN_ORGANIZATION,ALLOW,active membership,organizations_tenant_read,requireActiveMembership,E2E-HOME-FR,RLS-ORG-CROSS-TENANT,READY
+PERM-ORG-READ,organization,read,ORGANIZATION_MEMBER,OWN_ORGANIZATION,ALLOW,active membership,organizations_tenant_read,requireActiveMembership,RLS-ORG-SELF,RLS-ORG-CROSS-TENANT,READY
+PERM-ORG-UPDATE,organization,update,CLIENT_OWNER|CLIENT_ADMIN|PROVIDER_OWNER|FRANCHISE_OWNER,OWN_ORGANIZATION,ALLOW,active membership and matching row version,none_direct_write,authorizeOrganizationCommand,INT-ORG-UPDATE,INT-ORG-UPDATE-DENIED,READY
+PERM-MEMBER-READ,membership,read,ORGANIZATION_MEMBER,OWN_ORGANIZATION,ALLOW,active membership,memberships_org_read,requireActiveMembership,RLS-MEMBER-SELF,RLS-MEMBER-CROSS-TENANT,READY
+PERM-FINANCE-READ,financial_ledger,read,CLIENT_ACCOUNTING|PROVIDER_ACCOUNTING|FRANCHISE_ACCOUNTING,OWN_ORGANIZATION,ALLOW,active scoped role,financial_entries_tenant_read,requireFinanceRole,RLS-FINANCE-SELF,RLS-FINANCE-CROSS-TENANT,READY
+PERM-FINANCE-WRITE,financial_ledger,update,AUTHENTICATED_USER,OWN_ORGANIZATION,DENY,ledger is append-only,financial_entries_tenant_read,postJournalRpcOnly,INT-JOURNAL-POST,DB-LEDGER-IMMUTABLE,READY
