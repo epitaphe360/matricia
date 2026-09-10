@@ -18,7 +18,7 @@ Travaux engagés : **PHASES 01, 02 et 03 — en cours, non signées**
 
 Projet distant contrôlé : **Matricia**, état `ACTIVE_HEALTHY`, environnement applicatif `development`.
 
-Neuf migrations sont présentes localement et appliquées à distance :
+Dix migrations sont présentes localement et appliquées à distance :
 
 1. extensions et référentiels versionnés;
 2. identité, organisations, memberships et RBAC;
@@ -29,12 +29,13 @@ Neuf migrations sont présentes localement et appliquées à distance :
 7. pgTAP pour les tests de base.
 8. RPC financières et crédits atomiques, idempotentes, auditées et couplées à l’Outbox.
 9. scellement automatique et sérialisé de la chaîne d’audit par organisation.
+10. protocole Outbox avec claim `SKIP LOCKED`, retry borné, dead-letter et payload immuable.
 
 Preuves :
 
-- `supabase migration list` : versions locales/distantes `20260910000100` à `20260910000900` alignées;
+- `supabase migration list` : versions locales/distantes `20260910000100` à `20260910001000` alignées;
 - `supabase db lint --level warning` : aucune erreur de schéma;
-- `pnpm test:db` : 4 fichiers, 31 assertions vertes couvrant présence/RLS, isolation inter-tenant, immutabilité, idempotence, audit, Outbox et refus d’accès non autorisé.
+- `pnpm test:db` : 5 fichiers, 38 assertions vertes couvrant présence/RLS, isolation inter-tenant, immutabilité, idempotence, audit, Outbox, concurrence de claim et refus d’accès non autorisé.
 
 Le reset Supabase local ne peut pas être exécuté sur cet hôte tant que Docker Desktop n’est pas disponible. Les migrations et tests transactionnels ont donc été validés directement sur development/staging via le pooler IPv4. Aucun test n’a conservé de donnée de scénario.
 

@@ -10,7 +10,7 @@ function parseEnv(source) {
   }));
 }
 
-async function resolveDatabaseUrl(env) {
+async function resolveDatabaseUrl(env, root) {
   const configured = env.SUPABASE_DB_POOLER_URL || env.DIRECT_URL;
   if (!configured?.startsWith('postgres')) throw new Error('A PostgreSQL DIRECT_URL is required');
   const direct = new URL(configured);
@@ -18,6 +18,12 @@ async function resolveDatabaseUrl(env) {
 
   const projectRef = new URL(env.NEXT_PUBLIC_SUPABASE_URL).hostname.split('.')[0];
   let region = env.SUPABASE_REGION;
+  try {
+    const metadata = JSON.parse(await readFile(resolve(root, 'supabase', 'project-metadata.json'), 'utf8'));
+    if (metadata.project_ref === projectRef && metadata.environment !== 'production') region ||= metadata.region;
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+  }
   if (!region && env.SUPABASE_ACCESS_TOKEN) {
     const response = await fetch(`https://api.supabase.com/v1/projects/${projectRef}`, {
       headers: { Authorization: `Bearer ${env.SUPABASE_ACCESS_TOKEN}` },
@@ -46,7 +52,7 @@ const fileEnv = parseEnv(await readFile(resolve(root, '.env.local'), 'utf8'));
 const env = { ...fileEnv, ...process.env };
 if (!['development', 'staging'].includes(env.APP_ENV)) throw new Error('DB tests are restricted to development/staging');
 
-const databaseUrl = await resolveDatabaseUrl(env);
+const databaseUrl = await resolveDatabaseUrl(env, root);
 const sql = postgres(databaseUrl, { max: 1, prepare: false, connect_timeout: 15, idle_timeout: 2 });
 const testDirectory = resolve(root, 'supabase', 'tests');
 const files = (await readdir(testDirectory)).filter((file) => file.endsWith('.test.sql')).sort();
