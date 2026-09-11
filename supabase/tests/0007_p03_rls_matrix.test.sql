@@ -88,6 +88,7 @@ insert into observed values
 ('tenant','raw_audit',(select count(*) from public.audit_events));
 
 select set_config('request.jwt.claim.sub','70000000-0000-0000-0000-000000000003',true);
+select set_config('request.jwt.claims','{"sub":"70000000-0000-0000-0000-000000000003","role":"authenticated","aal":"aal2"}',true);
 insert into observed values
 ('platform','member_roles',(select count(*) from public.organization_member_roles)),
 ('platform','accounts',(select count(*) from public.financial_accounts where organization_id in ('71000000-0000-0000-0000-000000000001','71000000-0000-0000-0000-000000000002'))),

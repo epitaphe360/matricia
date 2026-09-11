@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { getServerEnvironment } from "@/lib/env";
 import { isLocale, type Locale } from "@/lib/i18n/locale";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -17,11 +18,13 @@ const inviterRoles = new Set([
 ]);
 const invitationRoleSchema = z.enum(invitationRoles);
 const uuidSchema = z.string().uuid();
+const emailSchema = z.string().trim().toLowerCase().email().max(320);
 const inviteSchema = z.object({
   organizationId: uuidSchema,
-  invitedUserId: uuidSchema,
+  invitedEmail: emailSchema,
   roleCodes: z.array(invitationRoleSchema).min(1).max(invitationRoles.length),
   expiryDays: z.enum(["1", "7", "14", "30"]),
+  idempotencyKey: z.string().min(8).max(200),
 });
 const decisionSchema = z.object({
   invitationId: uuidSchema,
@@ -34,7 +37,8 @@ const organizationRowSchema = z.object({ id: uuidSchema, display_name: z.string(
 const invitationRowSchema = z.object({
   id: uuidSchema,
   organization_id: uuidSchema,
-  invited_user_id: uuidSchema,
+  invited_user_id: uuidSchema.nullable(),
+  invited_email: emailSchema,
   invited_by: uuidSchema,
   status: z.enum(["PENDING", "ACCEPTED", "DECLINED", "REVOKED", "EXPIRED"]),
   expires_at: z.string(),
@@ -95,7 +99,7 @@ export async function listInvitations(): Promise<InvitationsQueryResult> {
       : Promise.resolve({ data: [], error: null }),
     supabase
       .from("organization_invitations")
-      .select("id,organization_id,invited_user_id,invited_by,status,expires_at,created_at")
+      .select("id,organization_id,invited_user_id,invited_email,invited_by,status,expires_at,created_at")
       .order("created_at", { ascending: false }),
   ]);
   if (rolesResult.error || organizationsResult.error || invitationsResult.error) {
@@ -147,7 +151,9 @@ export async function listInvitations(): Promise<InvitationsQueryResult> {
       status: effectiveStatus(invitation.status, invitation.expires_at),
       createdAt: invitation.created_at,
       expiresAt: invitation.expires_at,
-      direction: invitation.invited_user_id === user.id ? "RECEIVED" : "MANAGED",
+      direction: invitation.invited_user_id === user.id || invitation.invited_email === user.email?.toLowerCase()
+        ? "RECEIVED"
+        : "MANAGED",
     })),
   };
 }
@@ -158,9 +164,10 @@ export async function createInvitation(
 ): Promise<InvitationActionState> {
   const parsed = inviteSchema.safeParse({
     organizationId: formData.get("organizationId"),
-    invitedUserId: formData.get("invitedUserId"),
+    invitedEmail: formData.get("invitedEmail"),
     roleCodes: formData.getAll("roleCodes"),
     expiryDays: formData.get("expiryDays"),
+    idempotencyKey: formData.get("idempotencyKey"),
   });
   const locale = routeLocale(formData.get("locale"));
   if (!parsed.success) return { status: "error", reason: "VALIDATION" };
@@ -168,17 +175,28 @@ export async function createInvitation(
   const supabase = await getSupabaseServerClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) return { status: "error", reason: "UNAUTHENTICATED" };
-  if (parsed.data.invitedUserId === user.id) return { status: "error", reason: "VALIDATION" };
+  if (parsed.data.invitedEmail === user.email?.toLowerCase()) return { status: "error", reason: "VALIDATION" };
 
   const expiresAt = new Date(Date.now() + Number(parsed.data.expiryDays) * 86_400_000).toISOString();
-  const { error } = await supabase.rpc("invite_organization_member", {
+  const { error } = await supabase.rpc("invite_organization_member_by_email", {
     p_organization_id: parsed.data.organizationId,
-    p_invited_user_id: parsed.data.invitedUserId,
+    p_invited_email: parsed.data.invitedEmail,
     p_role_codes: [...new Set(parsed.data.roleCodes)],
     p_expires_at: expiresAt,
+    p_idempotency_key: parsed.data.idempotencyKey,
     p_correlation_id: randomUUID(),
   });
   if (error) return { status: "error", reason: "UNAVAILABLE" };
+
+  const environment = getServerEnvironment();
+  const { error: deliveryError } = await supabase.auth.signInWithOtp({
+    email: parsed.data.invitedEmail,
+    options: {
+      shouldCreateUser: true,
+      emailRedirectTo: `${environment.NEXT_PUBLIC_APP_URL}/${locale}/invitations`,
+    },
+  });
+  if (deliveryError) return { status: "error", reason: "UNAVAILABLE" };
   revalidatePath(`/${locale}/invitations`);
   return { status: "success" };
 }

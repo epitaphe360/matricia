@@ -39,6 +39,17 @@ async function requestCode(page: Page, locale: Locale, email: string) {
   return (await status.textContent())?.trim();
 }
 
+async function wcagViolationSummary(page: Page) {
+  const results = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+    .analyze();
+  return results.violations.map((violation) => ({
+    id: violation.id,
+    impact: violation.impact,
+    targets: violation.nodes.flatMap((node) => node.target),
+  }));
+}
+
 for (const locale of ["fr", "ar"] as const) {
   const messages = copy[locale];
   const direction = locale === "ar" ? "rtl" : "ltr";
@@ -96,14 +107,7 @@ for (const locale of ["fr", "ar"] as const) {
       await page.setViewportSize({ width: 360, height: 800 });
       await page.goto(`/${locale}/connexion`);
 
-      const results = await new AxeBuilder({ page })
-        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-        .analyze();
-      const summary = results.violations.map((violation) => ({
-        id: violation.id,
-        impact: violation.impact,
-        targets: violation.nodes.flatMap((node) => node.target),
-      }));
+      const summary = await wcagViolationSummary(page);
       expect(summary, "Automated accessibility violations").toEqual([]);
     });
   });
@@ -111,11 +115,28 @@ for (const locale of ["fr", "ar"] as const) {
 
 test.describe("authentication boundaries", () => {
   for (const locale of ["fr", "ar"] as const) {
-    for (const privatePath of ["tableau-de-bord", "organisation", "securite/sessions"] as const) {
+    for (const privatePath of ["tableau-de-bord", "organisation", "organisation/roles", "invitations", "securite/compte", "securite/sessions"] as const) {
       test(`redirects an anonymous visitor from /${locale}/${privatePath}`, async ({ page }) => {
         await page.goto(`/${locale}/${privatePath}`);
         await expect(page).toHaveURL(new RegExp(`/${locale}/connexion/?$`));
         await expect(page.getByRole("textbox", { name: copy[locale].emailLabel })).toBeVisible();
+      });
+    }
+
+    for (const privatePath of ["invitations", "organisation/roles", "securite/compte"] as const) {
+      test(`keeps the anonymous /${locale}/${privatePath} redirect localized and accessible at 360 px`, async ({ page }) => {
+        await page.setViewportSize({ width: 360, height: 800 });
+        await page.goto(`/${locale}/${privatePath}`);
+
+        await expect(page).toHaveURL(new RegExp(`/${locale}/connexion/?$`));
+        await expect(page.locator("html")).toHaveAttribute("lang", locale);
+        await expect(page.locator("html")).toHaveAttribute("dir", locale === "ar" ? "rtl" : "ltr");
+        const sizes = await page.evaluate(() => ({
+          viewport: document.documentElement.clientWidth,
+          content: document.documentElement.scrollWidth,
+        }));
+        expect(sizes.content).toBeLessThanOrEqual(sizes.viewport);
+        expect(await wcagViolationSummary(page), "Automated accessibility violations").toEqual([]);
       });
     }
   }

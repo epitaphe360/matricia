@@ -193,6 +193,7 @@ reset role;
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','a1300000-0000-0000-0000-000000000003',true);
+select set_config('request.jwt.claims','{"sub":"a1300000-0000-0000-0000-000000000003","role":"authenticated","aal":"aal2"}',true);
 select public.decide_organization_access_request(
   (select (value->>'request_id')::uuid from p04_role_observed where key = 'first'), true
 );

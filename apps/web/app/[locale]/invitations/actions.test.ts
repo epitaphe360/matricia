@@ -2,13 +2,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
+  signInWithOtp: vi.fn(),
   rpc: vi.fn(),
   from: vi.fn(),
   revalidatePath: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
-  getSupabaseServerClient: async () => ({ auth: { getUser: mocks.getUser }, rpc: mocks.rpc, from: mocks.from }),
+  getSupabaseServerClient: async () => ({ auth: { getUser: mocks.getUser, signInWithOtp: mocks.signInWithOtp }, rpc: mocks.rpc, from: mocks.from }),
+}));
+vi.mock("@/lib/env", () => ({
+  getServerEnvironment: () => ({ NEXT_PUBLIC_APP_URL: "https://app.matricia.test" }),
 }));
 vi.mock("@/lib/i18n/locale", () => ({
   isLocale: (value: string) => value === "fr" || value === "ar",
@@ -27,6 +31,8 @@ import {
 const idle: InvitationActionState = { status: "idle" };
 const userId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const invitedUserId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+const userEmail = "owner@matricia.test";
+const invitedEmail = "invitee@matricia.test";
 const organizationId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 const invitationId = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 
@@ -34,9 +40,10 @@ function inviteForm(overrides: Record<string, string | string[]> = {}) {
   const values = {
     locale: "fr",
     organizationId,
-    invitedUserId,
+    invitedEmail,
     roleCodes: ["CLIENT_MEMBER", "CLIENT_VIEWER"],
     expiryDays: "7",
+    idempotencyKey: "invitation-test-key-001",
     ...overrides,
   };
   const form = new FormData();
@@ -57,11 +64,13 @@ describe("invitation mutations", () => {
   beforeEach(() => {
     vi.useRealTimers();
     mocks.getUser.mockReset();
+    mocks.signInWithOtp.mockReset();
     mocks.rpc.mockReset();
     mocks.from.mockReset();
     mocks.revalidatePath.mockReset();
-    mocks.getUser.mockResolvedValue({ data: { user: { id: userId } }, error: null });
-    mocks.rpc.mockResolvedValue({ data: invitationId, error: null });
+    mocks.getUser.mockResolvedValue({ data: { user: { id: userId, email: userEmail } }, error: null });
+    mocks.signInWithOtp.mockResolvedValue({ data: {}, error: null });
+    mocks.rpc.mockResolvedValue({ data: { outcome: "INVITATION_CREATED", invitation_id: invitationId }, error: null });
   });
 
   it("valide les champs et les rôles avant tout accès Auth", async () => {
@@ -72,7 +81,7 @@ describe("invitation mutations", () => {
   });
 
   it("interdit une auto-invitation sans appeler le RPC", async () => {
-    await expect(createInvitation(idle, inviteForm({ invitedUserId: userId }))).resolves.toEqual({ status: "error", reason: "VALIDATION" });
+    await expect(createInvitation(idle, inviteForm({ invitedEmail: userEmail.toUpperCase() }))).resolves.toEqual({ status: "error", reason: "VALIDATION" });
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
@@ -80,12 +89,20 @@ describe("invitation mutations", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-11T12:00:00.000Z"));
     await expect(createInvitation(idle, inviteForm())).resolves.toEqual({ status: "success" });
-    expect(mocks.rpc).toHaveBeenCalledWith("invite_organization_member", {
+    expect(mocks.rpc).toHaveBeenCalledWith("invite_organization_member_by_email", {
       p_organization_id: organizationId,
-      p_invited_user_id: invitedUserId,
+      p_invited_email: invitedEmail,
       p_role_codes: ["CLIENT_MEMBER", "CLIENT_VIEWER"],
       p_expires_at: "2026-09-18T12:00:00.000Z",
+      p_idempotency_key: "invitation-test-key-001",
       p_correlation_id: "11111111-1111-4111-8111-111111111111",
+    });
+    expect(mocks.signInWithOtp).toHaveBeenCalledWith({
+      email: invitedEmail,
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: "https://app.matricia.test/fr/invitations",
+      },
     });
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/fr/invitations");
   });
@@ -120,7 +137,7 @@ describe("listInvitations", () => {
   beforeEach(() => {
     mocks.getUser.mockReset();
     mocks.from.mockReset();
-    mocks.getUser.mockResolvedValue({ data: { user: { id: userId } }, error: null });
+    mocks.getUser.mockResolvedValue({ data: { user: { id: userId, email: userEmail } }, error: null });
   });
 
   it("retourne uniquement les organisations où le rôle permet d’inviter et masque l’organisation reçue non encore rejointe", async () => {
@@ -130,9 +147,9 @@ describe("listInvitations", () => {
     const memberRolesResult = { data: [{ membership_id: "ffffffff-ffff-4fff-8fff-ffffffffffff", role_code: "CLIENT_ADMIN", revoked_at: null }], error: null };
     const organizationResult = { data: [{ id: organizationId, display_name: "Atlas Conseil" }], error: null };
     const invitationsResult = { data: [
-      { id: invitationId, organization_id: organizationId, invited_user_id: invitedUserId, invited_by: userId, status: "PENDING", expires_at: "2099-09-18T12:00:00Z", created_at: "2026-09-11T12:00:00Z" },
-      { id: receivedId, organization_id: "99999999-9999-4999-8999-999999999999", invited_user_id: userId, invited_by: invitedUserId, status: "PENDING", expires_at: "2099-09-18T12:00:00Z", created_at: "2026-09-11T13:00:00Z" },
-      { id: declinedId, organization_id: "99999999-9999-4999-8999-999999999999", invited_user_id: userId, invited_by: invitedUserId, status: "DECLINED", expires_at: "2099-09-18T12:00:00Z", created_at: "2026-09-11T14:00:00Z" },
+      { id: invitationId, organization_id: organizationId, invited_user_id: invitedUserId, invited_email: invitedEmail, invited_by: userId, status: "PENDING", expires_at: "2099-09-18T12:00:00Z", created_at: "2026-09-11T12:00:00Z" },
+      { id: receivedId, organization_id: "99999999-9999-4999-8999-999999999999", invited_user_id: null, invited_email: userEmail, invited_by: invitedUserId, status: "PENDING", expires_at: "2099-09-18T12:00:00Z", created_at: "2026-09-11T13:00:00Z" },
+      { id: declinedId, organization_id: "99999999-9999-4999-8999-999999999999", invited_user_id: userId, invited_email: userEmail, invited_by: invitedUserId, status: "DECLINED", expires_at: "2099-09-18T12:00:00Z", created_at: "2026-09-11T14:00:00Z" },
     ], error: null };
     const invitationRolesResult = { data: [
       { invitation_id: invitationId, role_code: "CLIENT_MEMBER" },

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -99,7 +100,7 @@ export default async function InvitationsPage({ params }: { params: Promise<{ lo
 
         <Card className="shadow-lg">
           <CardHeader><CardTitle>{messages.createTitle}</CardTitle><CardDescription>{messages.createDescription}</CardDescription></CardHeader>
-          <CardContent><InviteForm locale={locale} organizations={result.organizations} messages={messages} /></CardContent>
+          <CardContent><InviteForm locale={locale} organizations={result.organizations} messages={messages} idempotencyKey={randomUUID()} /></CardContent>
         </Card>
 
         <section aria-labelledby="received-invitations-title" className="space-y-4">

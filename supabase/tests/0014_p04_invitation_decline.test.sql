@@ -34,11 +34,12 @@ grant select, insert on p04_decline_observed to authenticated;
 select throws_ok(
   $$set local role authenticated;
     select set_config('request.jwt.claim.sub','a1400000-0000-0000-0000-000000000001',true);
-    select public.invite_organization_member(
+    select public.invite_organization_member_by_email(
       'a1410000-0000-0000-0000-000000000001',
-      'a1400000-0000-0000-0000-000000000001',
+      'p04-decline-inviter@example.invalid',
       array['CLIENT_VIEWER'],
-      clock_timestamp() + interval '2 days'
+      clock_timestamp() + interval '2 days',
+      'p04-self-invite-key'
     )$$,
   '42501', 'SELF_INVITATION_FORBIDDEN',
   'an administrator cannot invite themselves'
@@ -47,11 +48,12 @@ reset role;
 select throws_ok(
   $$set local role authenticated;
     select set_config('request.jwt.claim.sub','a1400000-0000-0000-0000-000000000001',true);
-    select public.invite_organization_member(
+    select public.invite_organization_member_by_email(
       'a1410000-0000-0000-0000-000000000001',
-      'a1400000-0000-0000-0000-000000000002',
+      'p04-decline-invitee@example.invalid',
       array['PROVIDER_OWNER'],
-      clock_timestamp() + interval '2 days'
+      clock_timestamp() + interval '2 days',
+      'p04-cross-domain-key'
     )$$,
   '42501', 'CROSS_DOMAIN_OWNER_INVITATION_FORBIDDEN',
   'a tenant administrator cannot grant a cross-domain OWNER role by invitation'
@@ -62,12 +64,13 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub','a1400000-0000-0000-0000-000000000001',true);
 insert into p04_decline_observed values (
   'invitation_id',
-  public.invite_organization_member(
+  public.invite_organization_member_by_email(
     'a1410000-0000-0000-0000-000000000001',
-    'a1400000-0000-0000-0000-000000000002',
+    'p04-decline-invitee@example.invalid',
     array['CLIENT_VIEWER'],
-    clock_timestamp() + interval '2 days'
-  )::text
+    clock_timestamp() + interval '2 days',
+    'p04-decline-invite-key'
+  )->>'invitation_id'
 );
 reset role;
 
@@ -81,6 +84,7 @@ select is(
 select throws_ok(
   $$set local role authenticated;
     select set_config('request.jwt.claim.sub','a1400000-0000-0000-0000-000000000003',true);
+    select set_config('request.jwt.claims','{"sub":"a1400000-0000-0000-0000-000000000003","email":"p04-decline-outsider@example.invalid","role":"authenticated"}',true);
     select public.decline_organization_invitation(
       (select value::uuid from p04_decline_observed where key = 'invitation_id')
     )$$,
@@ -106,6 +110,7 @@ select is(
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','a1400000-0000-0000-0000-000000000002',true);
+select set_config('request.jwt.claims','{"sub":"a1400000-0000-0000-0000-000000000002","email":"p04-decline-invitee@example.invalid","role":"authenticated"}',true);
 insert into p04_decline_observed values (
   'first_decline',
   public.decline_organization_invitation(

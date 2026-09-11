@@ -48,15 +48,17 @@ select is((select count(*) from public.organization_member_roles r join public.o
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','91000000-0000-0000-0000-000000000001',true);
-insert into p04_observed values('invitation_id',public.invite_organization_member(
+insert into p04_observed values('invitation_id',(public.invite_organization_member_by_email(
   ((select value::jsonb->>'organization_id' from p04_observed where key='create_first')::uuid),
-  '91000000-0000-0000-0000-000000000003',array['CLIENT_ADMIN','CLIENT_BUYER'],clock_timestamp()+interval '1 day'
-)::text);
+  'p04-invitee@example.invalid',array['CLIENT_ADMIN','CLIENT_BUYER'],clock_timestamp()+interval '1 day',
+  'p04-identity-invite-key'
+)->>'invitation_id'));
 reset role;
 select is((select count(*) from public.organization_invitation_roles where invitation_id=(select value::uuid from p04_observed where key='invitation_id')),2::bigint,'one invitation carries multiple explicit organization roles');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','91000000-0000-0000-0000-000000000003',true);
+select set_config('request.jwt.claims','{"sub":"91000000-0000-0000-0000-000000000003","email":"p04-invitee@example.invalid","role":"authenticated"}',true);
 select public.accept_organization_invitation((select value::uuid from p04_observed where key='invitation_id'));
 reset role;
 select is((select status from public.organization_invitations where id=(select value::uuid from p04_observed where key='invitation_id')),'ACCEPTED','only the invited identity can accept an active invitation');
@@ -70,6 +72,7 @@ insert into public.organization_member_roles(membership_id,role_code) values('93
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','91000000-0000-0000-0000-000000000004',true);
+select set_config('request.jwt.claims','{"sub":"91000000-0000-0000-0000-000000000004","email":"p04-outsider@example.invalid","role":"authenticated"}',true);
 insert into p04_observed values
 ('outsider_requests',(select count(*)::text from public.organization_access_requests)),
 ('outsider_invitations',(select count(*)::text from public.organization_invitations)),
@@ -97,7 +100,7 @@ insert into p04_observed select 'otp_6',allowed::text from public.reserve_otp_re
 reset role;
 select is((select count(*) from p04_observed where key like 'otp_%' and value='true'),5::bigint,'OTP rate limiter permits only the neutral identifier quota');
 select is((select value::boolean from p04_observed where key='otp_6'),false,'OTP rate limiter blocks excess without account lookup');
-select is((select count(*) from public.audit_events where action='identity.otp.reserved'),6::bigint,'every OTP reservation is audited without raw identifier storage');
+select is((select count(*) from public.audit_events where action='identity.otp.reserved' and request_ip='192.0.2.10'::inet),6::bigint,'every OTP reservation is audited without raw identifier storage');
 select ok(not exists(select 1 from private.otp_rate_limit_buckets where bucket_hash like '%same-person%'),'OTP buckets contain hashes rather than identifiers');
 
 select ok(not has_function_privilege('anon','public.reserve_otp_request(text,inet)','EXECUTE'),'anon cannot invoke the trusted OTP limiter directly');
@@ -105,7 +108,7 @@ select ok(not has_function_privilege('authenticated','public.reserve_otp_request
 select ok(has_function_privilege('authenticated','public.list_my_sessions()','EXECUTE'),'authenticated identities may list only their own sessions through the RPC');
 select ok(not has_table_privilege('authenticated','auth.sessions','SELECT'),'authenticated identities cannot query raw auth sessions');
 select ok((select count(*)>=5 from public.audit_events where action in ('organization.created','organization.access.requested','organization.access.decided','organization.invitation.created','organization.invitation.accepted')),'identity state transitions are audited');
-select ok((select count(*)>=5 from public.event_outbox where event_type in ('OrganizationCreatedV1','OrganizationAccessRequestedV1','OrganizationAccessDecidedV1','OrganizationInvitationCreatedV1','OrganizationInvitationAcceptedV1')),'identity state transitions emit durable Outbox events');
+select ok((select count(*)>=5 from public.event_outbox where event_type in ('OrganizationCreatedV1','OrganizationAccessRequestedV1','OrganizationAccessDecidedV1','OrganizationInvitationCreatedV1','OrganizationEmailInvitationRequestedV1','OrganizationInvitationAcceptedV1')),'identity state transitions emit durable Outbox events');
 
 select * from finish();
 rollback;

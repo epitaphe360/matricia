@@ -19,10 +19,12 @@ export function InviteForm({
   locale,
   organizations,
   messages,
+  idempotencyKey,
 }: {
   locale: Locale;
   organizations: InvitationOrganization[];
   messages: InvitationMessages;
+  idempotencyKey: string;
 }) {
   const [state, action, pending] = useActionState(createInvitation, initialState);
   const statusId = useId();
@@ -38,10 +40,19 @@ export function InviteForm({
   if (organizations.length === 0) {
     return <p className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">{messages.noEligibleOrganization}</p>;
   }
+  if (state.status === "success") {
+    return (
+      <div role="status" className="space-y-4 rounded-lg border border-primary/30 bg-primary/5 p-4">
+        <p className="text-sm text-primary">{messages.sent}</p>
+        <Button type="button" variant="outline" className="min-h-11" onClick={() => window.location.reload()}>{messages.createAnother}</Button>
+      </div>
+    );
+  }
 
   return (
     <form action={action} className="space-y-5" aria-describedby={statusId} noValidate>
       <input type="hidden" name="locale" value={locale} />
+      <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
       <div className="space-y-2">
         <Label htmlFor="invitation-organization">{messages.organizationLabel}</Label>
         <select id="invitation-organization" name="organizationId" required className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50">
@@ -49,9 +60,9 @@ export function InviteForm({
         </select>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="invited-user-id">{messages.userIdLabel}</Label>
-        <Input id="invited-user-id" name="invitedUserId" type="text" inputMode="text" required dir="ltr" spellCheck={false} autoCapitalize="none" autoCorrect="off" className="min-h-11 text-start" aria-describedby="invited-user-id-hint" />
-        <p id="invited-user-id-hint" className="text-xs leading-5 text-muted-foreground">{messages.userIdHint}</p>
+        <Label htmlFor="invited-email">{messages.userIdLabel}</Label>
+        <Input id="invited-email" name="invitedEmail" type="email" inputMode="email" autoComplete="email" required dir="ltr" spellCheck={false} autoCapitalize="none" autoCorrect="off" className="min-h-11 text-start" aria-describedby="invited-email-hint" />
+        <p id="invited-email-hint" className="text-xs leading-5 text-muted-foreground">{messages.userIdHint}</p>
       </div>
       <fieldset className="space-y-3" aria-describedby={rolesHintId}>
         <legend className="text-sm font-medium">{messages.rolesLegend}</legend>
@@ -73,7 +84,7 @@ export function InviteForm({
       </div>
       <Button type="submit" className="min-h-11 w-full sm:w-auto" disabled={pending}>{pending ? messages.sending : messages.send}</Button>
       <p id={statusId} role={error ? "alert" : "status"} aria-live="polite" className={error ? "min-h-5 text-sm text-destructive" : "min-h-5 text-sm text-primary"}>
-        {error ?? (state.status === "success" ? messages.sent : "")}
+        {error ?? ""}
       </p>
     </form>
   );
