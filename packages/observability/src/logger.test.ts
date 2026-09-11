@@ -40,6 +40,54 @@ describe("structured JSON logger", () => {
     });
   });
 
+  it.each([
+    "clientName",
+    "customer_name",
+    "person-name",
+    "ice",
+    "taxIdentifier",
+    "fiscal_id",
+    "iban",
+    "bankAccountNumber",
+    "ipAddress",
+    "xForwardedFor",
+    "privateKey",
+    "service_role_key",
+    "supabaseServiceRoleKey",
+  ])("caviarde la clé sensible %s", (key) => {
+    expect(redactSensitiveData({ [key]: "sensitive-value", safe_count: 3 })).toEqual({
+      [key]: "[REDACTED]",
+      safe_count: 3,
+    });
+  });
+
+  it.each([
+    "customer_name=Acme Direction",
+    "ICE: 001234567890123",
+    "MA64011519000001205000534921",
+    "source 203.0.113.42",
+    "source 2001:db8:85a3::8a2e:370:7334",
+    "service_role=super-secret-value",
+    "sb_secret_a1b2c3d4e5f6g7h8",
+    "-----BEGIN PRIVATE KEY----- contents",
+  ])("caviarde une valeur sensible même sous une clé neutre", (value) => {
+    expect(redactSensitiveData({ note: value })).toEqual({ note: "[REDACTED]" });
+  });
+
+  it("caviarde les secrets imbriqués dans des tableaux sans altérer les données sûres", () => {
+    expect(redactSensitiveData({
+      attempts: [
+        { remoteAddress: "198.51.100.10", result: "denied" },
+        { bank_details: "MA64011519000001205000534921", count: 2 },
+      ],
+    })).toEqual({
+      attempts: [
+        { remoteAddress: "[REDACTED]", result: "denied" },
+        { bank_details: "[REDACTED]", count: 2 },
+      ],
+    });
+  });
+
   it("écrit une ligne JSON exploitable", () => {
     const sink = vi.fn();
     createJsonLogger(sink, instant)("info", {

@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "@matricia/ui/tokens.css";
 
 @utility scrollbar-thin {
   scrollbar-width: thin;
@@ -18,38 +19,38 @@
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #0f2238;
-  --card: #ffffff;
-  --card-foreground: #171717;
-  --popover: #ffffff;
-  --popover-foreground: #171717;
-  --primary: #0b2d4f;
-  --primary-foreground: #fafafa;
-  --secondary: #eef5fb;
-  --secondary-foreground: #0b2d4f;
-  --muted: #f3f6f9;
-  --muted-foreground: #5d6c7d;
-  --accent: #e6f1fb;
-  --accent-foreground: #0b2d4f;
-  --destructive: #e7000b;
-  --border: #dce5ed;
-  --input: #ccd9e4;
-  --ring: #1677c8;
-  --chart-1: #f54900;
-  --chart-2: #009689;
-  --chart-3: #104e64;
-  --chart-4: #ffb900;
-  --chart-5: #fe9a00;
-  --radius: 0.75rem;
-  --sidebar: #f8fafc;
-  --sidebar-foreground: #24384c;
-  --sidebar-primary: #0b2d4f;
-  --sidebar-primary-foreground: #fafafa;
-  --sidebar-accent: #e7f1fa;
-  --sidebar-accent-foreground: #0b2d4f;
-  --sidebar-border: #dce5ed;
-  --sidebar-ring: #1677c8;
+  --background: var(--mat-color-canvas);
+  --foreground: var(--mat-color-text);
+  --card: var(--mat-color-surface);
+  --card-foreground: var(--mat-color-text);
+  --popover: var(--mat-color-surface);
+  --popover-foreground: var(--mat-color-text);
+  --primary: var(--mat-color-brand);
+  --primary-foreground: #ffffff;
+  --secondary: var(--mat-color-surface-muted);
+  --secondary-foreground: var(--mat-color-brand-strong);
+  --muted: var(--mat-color-surface-muted);
+  --muted-foreground: var(--mat-color-text-muted);
+  --accent: #f5ead2;
+  --accent-foreground: var(--mat-color-brand-strong);
+  --destructive: var(--mat-color-danger);
+  --border: var(--mat-color-border);
+  --input: var(--mat-color-border);
+  --ring: var(--mat-color-focus);
+  --chart-1: var(--mat-color-brand);
+  --chart-2: var(--mat-color-accent);
+  --chart-3: var(--mat-color-focus);
+  --chart-4: var(--mat-color-success);
+  --chart-5: var(--mat-color-warning);
+  --radius: var(--mat-radius-medium);
+  --sidebar: var(--mat-color-surface);
+  --sidebar-foreground: var(--mat-color-text);
+  --sidebar-primary: var(--mat-color-brand);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--mat-color-surface-muted);
+  --sidebar-accent-foreground: var(--mat-color-brand-strong);
+  --sidebar-border: var(--mat-color-border);
+  --sidebar-ring: var(--mat-color-focus);
 }
 
 @theme inline {
@@ -88,51 +89,14 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --font-sans: Arial, Helvetica, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --card: #171717;
-    --card-foreground: #ededed;
-    --popover: #171717;
-    --popover-foreground: #ededed;
-    --primary: #ededed;
-    --primary-foreground: #171717;
-    --secondary: #262626;
-    --secondary-foreground: #ededed;
-    --muted: #262626;
-    --muted-foreground: #a1a1a1;
-    --accent: #262626;
-    --accent-foreground: #ededed;
-    --destructive: #ff6467;
-    --border: #ffffff1a;
-    --input: #ffffff26;
-    --ring: #737373;
-    --chart-1: #8e51ff;
-    --chart-2: #00bc7d;
-    --chart-3: #fe9a00;
-    --chart-4: #ad46ff;
-    --chart-5: #ff2056;
-    --sidebar: #171717;
-    --sidebar-foreground: #ededed;
-    --sidebar-primary: #8e51ff;
-    --sidebar-primary-foreground: #ededed;
-    --sidebar-accent: #262626;
-    --sidebar-accent-foreground: #ededed;
-    --sidebar-border: #ffffff1a;
-    --sidebar-ring: #737373;
-  }
+  --font-sans: var(--mat-font-sans);
+  --font-mono: var(--mat-font-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Inter, "Segoe UI", Arial, Helvetica, sans-serif;
+  font-family: var(--mat-font-sans);
 }
 
 *:focus-visible {

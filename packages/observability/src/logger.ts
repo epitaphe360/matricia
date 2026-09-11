@@ -30,19 +30,51 @@ export type StructuredLogRecord = Readonly<{
 export type LogSink = (serializedRecord: string) => void;
 
 const REDACTED = "[REDACTED]";
-const SENSITIVE_KEY = /(?:authorization|cookie|password|passwd|secret|token|api[_-]?key|email|phone|address|birth|national[_-]?id|document|evidence|payload)/i;
-const SENSITIVE_VALUE = /(?:\bBearer\s+\S+|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b)/i;
+
+const SENSITIVE_KEY_PATTERNS = [
+  /^(?:authorization|proxyauthorization|cookie|setcookie)$/,
+  /(?:password|passwd|passphrase|secret|token|apikey|privatekey|servicerole(?:key)?|servicekey)/,
+  /(?:email|phone|mobile|address|birth|dateofbirth|nationalid|passport|document|evidence|payload)/,
+  /(?:(?:client|customer|person|contact|legal|first|last|full)name|name(?:client|customer|person))/,
+  /(?:^ice$|icenumber|iceidentifier|taxid|taxidentifier|fiscalid|vatnumber|taxnumber)/,
+  /(?:^iban$|bankaccount|accountnumber|routingnumber|swiftcode|biccode|bankdetails)/,
+  /(?:^ip$|ipaddress|clientip|remoteaddress|forwardedfor)/,
+] as const;
+
+const SENSITIVE_VALUE_PATTERNS = [
+  /\bBearer\s+\S+/i,
+  /[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/,
+  /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/,
+  /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
+  /\b(?:sb_secret_|sk_live_|gh[oprsu]_)[A-Za-z0-9_-]{8,}\b/,
+  /\b(?:service[_ -]?role|private[_ -]?key|api[_ -]?key)\s*[:=]\s*\S+/i,
+  /\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]){11,30}\b/i,
+  /\b(?:ICE|tax[_ -]?id|tax[_ -]?identifier|fiscal[_ -]?id|VAT)\s*[:=]\s*[A-Z0-9-]{5,}\b/i,
+  /\b(?:client|customer|person)[_ -]?name\s*[:=]\s*[^,;]+/i,
+  /\b(?:\d{1,3}\.){3}\d{1,3}\b/,
+  /(?:^|\s)[A-F0-9]*:[A-F0-9:]+(?:\s|$)/i,
+  /(?:^|[\s[(])(?:[A-F0-9]{1,4}:){2,7}[A-F0-9]{0,4}(?:$|[\s\])])/i,
+] as const;
+
+function isSensitiveKey(key: string): boolean {
+  const normalized = key.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return SENSITIVE_KEY_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
+function isSensitiveValue(value: string): boolean {
+  return SENSITIVE_VALUE_PATTERNS.some((pattern) => pattern.test(value));
+}
 
 function redact(value: unknown, seen: WeakSet<object>): unknown {
   if (Array.isArray(value)) return value.map((entry) => redact(entry, seen));
-  if (typeof value === "string" && SENSITIVE_VALUE.test(value)) return REDACTED;
+  if (typeof value === "string" && isSensitiveValue(value)) return REDACTED;
   if (value === null || typeof value !== "object") return value;
   if (seen.has(value)) return "[CIRCULAR]";
 
   seen.add(value);
   const clean: Record<string, unknown> = {};
   for (const [key, entry] of Object.entries(value)) {
-    clean[key] = SENSITIVE_KEY.test(key) ? REDACTED : redact(entry, seen);
+    clean[key] = isSensitiveKey(key) ? REDACTED : redact(entry, seen);
   }
   return clean;
 }

@@ -148,9 +148,9 @@ decisions: [un build utilisant .env.local ne prouve pas la CI]
 risks: [packages sautés, configuration non hermétique]
 validation_commands: [pnpm install --frozen-lockfile, pnpm lint, pnpm typecheck, pnpm test, pnpm build]
 evidence_paths: [.github/workflows/ci.yml, packages, apps]
-progress_log: [2026-09-11 audit P02 FAIL; findings enregistrés]
-results: Gates locales vertes mais couverture incomplète.
-independent_signoff: FAIL_REMEDIATION_REQUIRED
+progress_log: [2026-09-11 deux audits P02 ont guidé la remédiation; readiness, redaction PII, Worker et design partagé corrigés]
+results: 44 tests verts, readiness Web/Worker branchée et tokens Design A consommés; nouveau visa requis.
+independent_signoff: PENDING_SECOND_REAUDIT
 next_phase: P03
 ---
 id: P03
@@ -186,9 +186,9 @@ decisions: [création utilisateur explicite; aucun doublon ICE silencieux]
 risks: [rate-limit absent, tests insuffisants, session revoke non prouvée]
 validation_commands: [pnpm lint, pnpm typecheck, pnpm test, pnpm test:db, pnpm build]
 evidence_paths: [apps/web/lib/auth, apps/web/app/[locale], supabase/migrations, supabase/tests]
-progress_log: [2026-09-10 OTP/PKCE initial; 2026-09-11 audit partiel]
-results: P04 non signable.
-independent_signoff: FAIL_PARTIAL
+progress_log: [2026-09-10 OTP/PKCE initial; 2026-09-11 OTP serveur, migration identité 014 et 29 assertions appliqués sur development]
+results: Backend identité et OTP serveur opérationnels; interfaces organisation/invitations/sessions, MFA et E2E restent ouverts.
+independent_signoff: PARTIAL_UI_E2E_AND_SECURITY_AUDIT_REQUIRED
 next_phase: P05
 ```
 
