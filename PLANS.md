@@ -136,7 +136,7 @@ next_phase: P02
 ---
 id: P02
 title: Socle professionnel
-status: IN_PROGRESS
+status: GREEN
 goal: Rendre monorepo, CI, design system, observabilité et sécurité de base hermétiques.
 scope: [workspace, packages, CI, design partagé, observabilité, headers]
 requirements: [TypeScript strict, Design Authority A, FR/AR RTL, sécurité]
@@ -148,9 +148,9 @@ decisions: [un build utilisant .env.local ne prouve pas la CI]
 risks: [packages sautés, configuration non hermétique]
 validation_commands: [pnpm install --frozen-lockfile, pnpm lint, pnpm typecheck, pnpm test, pnpm build]
 evidence_paths: [.github/workflows/ci.yml, packages, apps]
-progress_log: [2026-09-11 audits P02 ont guidé readiness réelle, redaction PII, Worker exécutable, strict TS et palette navy/bleu vif]
-results: 74 tests verts, poller Outbox et health/readiness Web/Worker branchés, tokens Design A consommés, logs structurés expurgés; nouveau visa requis.
-independent_signoff: PENDING_FINAL_REAUDIT_AFTER_METADATA_FIX
+progress_log: [2026-09-11 audits P02 ont guidé readiness réelle, redaction PII, Worker exécutable, strict TS et palette navy/bleu vif; 2026-09-11 réaudit indépendant d92d8f0 PASS]
+results: 74 tests verts, poller Outbox et health/readiness Web/Worker branchés, tokens Design A consommés, logs structurés expurgés; aucun finding P0/P1/P2 ouvert.
+independent_signoff: APPROVED:code_quality_reviewer:p02_signoff_d92d8f0
 next_phase: P03
 ---
 id: P03
@@ -167,7 +167,7 @@ decisions: [aucune modification de migration appliquée]
 risks: [Docker local absent, matrices RLS/concurrence partielles]
 validation_commands: [pnpm test:db, supabase db lint, supabase db reset]
 evidence_paths: [supabase/migrations, supabase/tests, scripts/run-db-tests.mjs]
-progress_log: [2026-09-11 deux audits; 152 assertions, ACL runtime minimales et quatre courses réelles vertes]
+progress_log: [2026-09-11 deux audits; 176 assertions, ACL runtime minimales et quatre courses réelles vertes]
 results: Base development alignée et durcie; replay vierge CI bloqué par le compte GitHub Actions avant démarrage des runners.
 independent_signoff: PENDING_CLEAN_REPLAY_GITHUB_ACCOUNT_LOCKED
 next_phase: P04
@@ -186,8 +186,8 @@ decisions: [création utilisateur explicite; aucun doublon ICE silencieux]
 risks: [rate-limit absent, tests insuffisants, session revoke non prouvée]
 validation_commands: [pnpm lint, pnpm typecheck, pnpm test, pnpm test:db, pnpm build]
 evidence_paths: [apps/web/lib/auth, apps/web/app/[locale], supabase/migrations, supabase/tests]
-progress_log: [2026-09-10 OTP/PKCE initial; 2026-09-11 backend identité et écran FR/AR create-or-request ICE livrés]
-results: Backend identité, OTP serveur, parcours organisation et gestion des sessions opérationnels; invitations, MFA et E2E restent ouverts.
+progress_log: [2026-09-10 OTP/PKCE initial; 2026-09-11 backend identité et écran FR/AR create-or-request ICE livrés; 2026-09-11 demandes de rôles cumulables et approbation centrale appliquées sur development]
+results: Backend identité, OTP serveur, parcours organisation, gestion des sessions et demandes de rôles cumulables opérationnels; invitations, MFA et E2E restent ouverts.
 independent_signoff: PARTIAL_INVITATION_MFA_E2E_REQUIRED
 next_phase: P05
 ```

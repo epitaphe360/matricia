@@ -1,10 +1,10 @@
 # Matricia — Project State
 
-Dernière mise à jour : 2026-09-11 08:36 America/Toronto
+Dernière mise à jour : 2026-09-11 08:45 America/Toronto
 
 Phase de contrôle active : **PHASE 01 — contrats atomiques en cours**
 
-Travaux engagés : **PHASES 01 à 04 — en cours, non signées**
+Travaux engagés : **PHASES 01, 03 et 04 — en cours; PHASE 02 signée GREEN**
 
 ## État prouvé
 
@@ -16,12 +16,13 @@ Travaux engagés : **PHASES 01 à 04 — en cours, non signées**
 - Les sept registres bootstrap ont des références nominales cohérentes; P01 reste ouverte car ils ne couvrent pas encore atomiquement les 76 exigences.
 - Traçabilité enregistrée pour MAT-FUNC-001..068 et MARKETING-001..008. Aucune exigence n’est déclarée `VERIFIED` sans preuve.
 - Monorepo pnpm, Next.js App Router, worker et packages TypeScript strict sont opérationnels.
+- PHASE 02 est GREEN au commit `d92d8f0` après réaudit indépendant : installation figée, frontières de modules, lint, typecheck, 74 tests, build, logger expurgé, Worker et Design A sont conformes sans finding P0/P1/P2.
 - Connexion OTP PKCE initiale, renouvellement SSR, protection du tableau de bord et localisation FR/AR RTL sont implémentés; P04 reste partielle.
 - `.env.local` est ignoré par Git; aucune valeur secrète n’est consignée.
 
 ## Supabase development/staging
 
-Projet distant Matricia contrôlé en environnement applicatif `development`. Dix-huit migrations additives sont présentes localement et appliquées à distance :
+Projet distant Matricia contrôlé en environnement applicatif `development`. Dix-neuf migrations additives sont présentes localement et appliquées à distance :
 
 1. extensions et référentiels versionnés;
 2. identité, organisations, memberships et RBAC;
@@ -41,12 +42,13 @@ Projet distant Matricia contrôlé en environnement applicatif `development`. Di
 16. rechargement explicite du schéma API;
 17. correction additive de la sonde sur le schéma Outbox immuable.
 18. révocation complète des ACL runtime dangereuses, grants minimaux et readiness hors dead-letter.
+19. demandes idempotentes de rôles cumulables, interdiction des rôles plateforme, approbation centrale des rôles `OWNER` transverses et refus de l'auto-approbation.
 
 Preuves actuelles :
 
-- migrations locales/distantes 20260910000100..20260911001800 appliquées sur development;
+- migrations locales/distantes 20260910000100..20260911001900 appliquées sur development;
 - lint SQL public/private sans erreur de schéma lors du dernier contrôle distant;
-- `pnpm test:db` vert le 2026-09-11 : 12 fichiers, 152 assertions et quatre scénarios réels à deux connexions (Outbox, journal, crédits, chaîne audit);
+- `pnpm test:db` vert le 2026-09-11 : 13 fichiers, 176 assertions et quatre scénarios réels à deux connexions (Outbox, journal, crédits, chaîne audit);
 - tests négatifs RLS inter-tenant, immutabilité, équilibre/devise, crédits, idempotence, audit et Outbox.
 
 Docker local reste indisponible sur cet hôte; la reconstruction propre doit être prouvée par le job CI Supabase avant signature P03.
@@ -57,7 +59,7 @@ Docker local reste indisponible sur cet hôte; la reconstruction propre doit êt
 - `pnpm lint` : vert.
 - `pnpm typecheck` : vert.
 - `pnpm test` : vert — 74 tests (24 Web, 6 Worker, 2 domaine, 38 observabilité, 4 design system).
-- `pnpm test:db` : vert — 152 assertions et 4 scénarios de concurrence.
+- `pnpm test:db` : vert — 176 assertions et 4 scénarios de concurrence.
 - `pnpm build` : vert — routes OTP/callback/tableau de bord/health compilées.
 - `pnpm release:validate` : vert — uniquement gates structurels et absence de placeholders dans le périmètre contrôlé; ce n’est pas une signature de release.
 
@@ -65,17 +67,17 @@ Docker local reste indisponible sur cet hôte; la reconstruction propre doit êt
 
 - Les réaudits P00/P01 ont identifié puis fait corriger les métriques d’inventaire, la force des validateurs, le signoff positif et le context-pack structuré. Le réaudit final indépendant au commit `32cfd89` est PASS; P00 est fermée GREEN.
 - Le second réaudit P03 a détecté des droits `TRUNCATE` runtime hérités, un seed absent et la prise en compte des dead-letters en readiness. La migration additive 018, le test ACL et `supabase/seed.sql` corrigent ces écarts; seul le replay CI vierge et le nouveau visa restent requis.
-- Les réaudits P02 ont imposé redaction PII, readiness réelle, Worker exécutable, TypeScript renforcé et palette navy/bleu vif. Ces écarts sont corrigés localement : 74 tests, métadonnées structurées expurgées, serveur health avant le premier poll, poller Outbox Supabase, tokens partagés conformes; nouveau visa requis.
+- Les réaudits P02 ont imposé redaction PII, readiness réelle, Worker exécutable, TypeScript renforcé et palette navy/bleu vif. Ces écarts sont corrigés et le visa indépendant final au commit `d92d8f0` est PASS; P02 est fermée GREEN.
 - P01 ne couvre pas encore les contrats atomiques de toutes les phases.
-- P04 ne couvre pas encore les interfaces et E2E d’invitation, rattachement ICE et gestion des sessions, ni le mot de passe facultatif et MFA.
-- P04 dispose désormais côté base de la limitation OTP, de l’unicité ICE, du workflow create-or-request, des invitations multi-rôles et des sessions; l’OTP Web passe côté serveur avec `shouldCreateUser=false`. Les interfaces FR/AR de création/rattachement ICE et de gestion sécurisée des sessions sont livrées; invitations, MFA et E2E restent à livrer.
+- P04 ne couvre pas encore les interfaces et E2E d’invitation, ni le mot de passe facultatif et MFA.
+- P04 dispose désormais côté base de la limitation OTP, de l’unicité ICE, du workflow create-or-request, des invitations multi-rôles, des sessions et des demandes de rôles cumulables avec approbation centrale des rôles `OWNER` transverses; l’OTP Web passe côté serveur avec `shouldCreateUser=false`. Les interfaces FR/AR de création/rattachement ICE et de gestion sécurisée des sessions sont livrées; invitations, MFA et E2E restent à livrer.
 - MAT-FUNC-001..068 et MARKETING-001..008 restent à implémenter et prouver progressivement.
 - Vercel et Railway ne sont pas configurés. Aucune production n’a été modifiée ou autorisée.
 
 ## Prochaine exécution
 
-1. Enregistrer/pousser le visa P00 et obtenir les réaudits indépendants P02/P03.
-2. Obtenir un replay DB vierge CI et fermer les risques P02/P03 restants.
+1. Enregistrer/pousser le visa P02 et la migration P04 de rôles cumulables.
+2. Obtenir un replay DB vierge CI et fermer le dernier risque P03.
 3. Étendre les contrats atomiques P01 au fil des domaines.
 4. Terminer P04 identité/organisations avec mutations serveur, ICE, invitations, sessions et tests complets.
 5. Continuer P05..P19 selon `PLANS.md`, sans sauter de gate.
