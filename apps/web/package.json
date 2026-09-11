@@ -10,12 +10,15 @@
     "build": "next build",
     "start": "next start --port 5173",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
     "@hookform/resolvers": "^5.7.1",
+    "@next/env": "16.2.6",
     "@shadcn/react": "^0.3.0",
+    "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "2.116.0",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
