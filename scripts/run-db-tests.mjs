@@ -100,36 +100,26 @@ function unwrap(result) {
 }
 
 async function verifyOutboxConcurrency(databaseUrl, admin) {
-  const existing = await admin`
-    select count(*)::integer as count
-    from public.event_outbox
-    where published_at is null
-      and dead_lettered_at is null
-      and available_at <= clock_timestamp()
-      and (locked_at is null or locked_at < clock_timestamp()-interval '5 minutes')
-  `;
-  if (existing[0].count !== 0) {
-    throw new Error('outbox concurrency test requires an isolated development/staging queue');
-  }
-
   const correlationId = randomUUID();
   const firstWorkerId = randomUUID();
   const secondWorkerId = randomUUID();
-  const inserted = await admin`
-    insert into public.event_outbox (
-      aggregate_type,aggregate_id,event_type,correlation_id,payload,available_at
-    ) values (
-      'security_test',${correlationId},'OutboxConcurrencyTestV1',
-      ${correlationId}::uuid,jsonb_build_object('test',true),clock_timestamp()
-    )
-    returning id
-  `;
-  const eventId = inserted[0].id;
-  const workerA = postgres(databaseUrl, { max: 1, prepare: false, connect_timeout: 15, idle_timeout: 0 });
-  const workerB = postgres(databaseUrl, { max: 1, prepare: false, connect_timeout: 15, idle_timeout: 0 });
+  const guardWorkerId = randomUUID();
+  const guardReady = deferred();
+  const releaseGuard = deferred();
+  const rollbackGuard = new Error('ROLLBACK_OUTBOX_TEST_GUARD');
+  const rollbackFirst = new Error('ROLLBACK_OUTBOX_TEST_FIRST');
+  const rollbackSecond = new Error('ROLLBACK_OUTBOX_TEST_SECOND');
+  let queueGuard;
+  let workerA;
+  let workerB;
+  let guardTransaction;
+  let eventId;
+  let firstTransaction;
   let releaseFirst;
   let announceFirst;
   let rejectFirst;
+  let primaryError;
+  const lifecycleErrors = [];
   const holdFirst = new Promise((resolveHold) => { releaseFirst = resolveHold; });
   const firstClaimed = new Promise((resolveClaim, rejectClaim) => {
     announceFirst = resolveClaim;
@@ -137,7 +127,44 @@ async function verifyOutboxConcurrency(databaseUrl, admin) {
   });
 
   try {
-    const firstTransaction = workerA.begin(async (transaction) => {
+    queueGuard = postgres(databaseUrl, { max: 1, prepare: false, connect_timeout: 15, idle_timeout: 0 });
+    workerA = postgres(databaseUrl, { max: 1, prepare: false, connect_timeout: 15, idle_timeout: 0 });
+    workerB = postgres(databaseUrl, { max: 1, prepare: false, connect_timeout: 15, idle_timeout: 0 });
+    guardTransaction = queueGuard.begin(async (transaction) => {
+      try {
+        await transaction.unsafe('set local role service_role');
+        while (true) {
+          const guarded = await transaction`
+            select id from public.claim_outbox_events(${guardWorkerId}::uuid,500)
+          `;
+          if (guarded.length === 0) break;
+        }
+        guardReady.resolve();
+        await releaseGuard.promise;
+        throw rollbackGuard;
+      } catch (error) {
+        guardReady.reject(error);
+        throw error;
+      }
+    }).then(
+      () => ({ status: 'rejected', reason: new Error('outbox queue guard committed instead of rolling back') }),
+      (error) => error === rollbackGuard
+        ? { status: 'fulfilled' }
+        : { status: 'rejected', reason: error },
+    );
+    await guardReady.promise;
+    const inserted = await admin`
+      insert into public.event_outbox (
+        aggregate_type,aggregate_id,event_type,correlation_id,payload,available_at
+      ) values (
+        'security_test',${correlationId},'OutboxConcurrencyTestV1',
+        ${correlationId}::uuid,jsonb_build_object('test',true),
+        '2000-01-01T00:00:00Z'::timestamptz
+      )
+      returning id
+    `;
+    eventId = inserted[0].id;
+    firstTransaction = workerA.begin(async (transaction) => {
       try {
         await transaction.unsafe('set local role service_role');
         const claimed = await transaction`
@@ -145,51 +172,88 @@ async function verifyOutboxConcurrency(databaseUrl, admin) {
         `;
         announceFirst(claimed);
         await holdFirst;
-        return claimed;
+        throw rollbackFirst;
       } catch (error) {
         rejectFirst(error);
         throw error;
       }
-    });
+    }).then(
+      () => ({ status: 'rejected', reason: new Error('first Outbox claim committed instead of rolling back') }),
+      (error) => error === rollbackFirst
+        ? { status: 'fulfilled' }
+        : { status: 'rejected', reason: error },
+    );
 
     const firstRows = await firstClaimed;
     let secondRows;
     try {
-      secondRows = await workerB.begin(async (transaction) => {
+      await workerB.begin(async (transaction) => {
         await transaction.unsafe('set local role service_role');
-        return transaction`
+        secondRows = await transaction`
           select id from public.claim_outbox_events(${secondWorkerId}::uuid,1)
         `;
+        throw rollbackSecond;
+      }).catch((error) => {
+        if (error !== rollbackSecond) throw error;
       });
     } finally {
       releaseFirst();
     }
-    await firstTransaction;
+    const firstResult = await firstTransaction;
+    if (firstResult.status === 'rejected') throw firstResult.reason;
 
     if (firstRows.length !== 1 || String(firstRows[0].id) !== String(eventId)) {
       throw new Error('first Outbox worker did not claim the isolated test event');
     }
-    if (secondRows.some((row) => String(row.id) === String(eventId))) {
-      throw new Error('second Outbox worker double-claimed a row locked by the first transaction');
+    if (!secondRows || secondRows.length !== 0) {
+      throw new Error('second Outbox worker claimed a row while the first transaction held the isolated event');
     }
+  } catch (error) {
+    primaryError = error;
   } finally {
     releaseFirst?.();
-    await Promise.allSettled([
-      workerA.end(),
-      workerB.end(),
-    ]);
-    await admin.begin(async (transaction) => {
-      await transaction.unsafe('lock table public.event_outbox in access exclusive mode');
-      await transaction.unsafe('alter table public.event_outbox disable trigger event_outbox_no_delete');
-      await transaction`
-        delete from public.event_outbox
-        where id=${eventId}
-          and aggregate_type='security_test'
-          and event_type='OutboxConcurrencyTestV1'
-      `;
-      await transaction.unsafe('alter table public.event_outbox enable trigger event_outbox_no_delete');
-    });
+    releaseGuard.resolve();
+    const transactionResults = await Promise.all(
+      [firstTransaction, guardTransaction].filter(Boolean),
+    );
+    for (const result of transactionResults) {
+      if (result.status === 'rejected' && result.reason !== primaryError) lifecycleErrors.push(result.reason);
+    }
+    const closePromises = [];
+    for (const client of [workerA, workerB, queueGuard].filter(Boolean)) {
+      try {
+        closePromises.push(Promise.resolve(client.end()));
+      } catch (error) {
+        lifecycleErrors.push(error);
+      }
+    }
+    const closeResults = await Promise.allSettled(closePromises);
+    for (const result of closeResults) {
+      if (result.status === 'rejected') lifecycleErrors.push(result.reason);
+    }
+    if (eventId !== undefined) {
+      try {
+        await admin.begin(async (transaction) => {
+          await transaction.unsafe('lock table public.event_outbox in access exclusive mode');
+          await transaction.unsafe('alter table public.event_outbox disable trigger event_outbox_no_delete');
+          const deleted = await transaction`
+            delete from public.event_outbox
+            where id=${eventId}
+              and aggregate_type='security_test'
+              and event_type='OutboxConcurrencyTestV1'
+            returning id
+          `;
+          if (deleted.length !== 1) throw new Error('outbox concurrency fixture cleanup did not delete exactly one event');
+          await transaction.unsafe('alter table public.event_outbox enable trigger event_outbox_no_delete');
+        });
+      } catch (error) {
+        lifecycleErrors.push(error);
+      }
+    }
   }
+  const errors = [primaryError, ...lifecycleErrors].filter(Boolean);
+  if (errors.length === 1) throw errors[0];
+  if (errors.length > 1) throw new AggregateError(errors, 'outbox concurrency test and lifecycle failed');
 }
 
 async function cleanupFinancialConcurrencyFixture(admin, organizationId, actorId, membershipId) {

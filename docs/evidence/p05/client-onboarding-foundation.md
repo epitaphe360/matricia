@@ -1,51 +1,57 @@
-# P05 — fondation onboarding et conformité Client
+# P05 — Fondation onboarding et conformité Client
 
-État : `IN_PROGRESS`. Cette preuve ne revendique ni la fin de P05 ni un statut
-`VERIFIED` pour une exigence MAT-FUNC.
+État : `IN_PROGRESS`. Cette preuve ne revendique ni la fermeture de P05 ni un
+statut `VERIFIED` pour une exigence MAT-FUNC.
 
 ## Couverture livrée
 
 - Dossier de conformité par organisation et machine d’état serveur explicite.
-- Profil société en versions immuables, avec snapshot du passeport organisation.
+- Profil société en versions immuables avec snapshot du passeport organisation.
 - ICE réutilisé depuis `organization_identifiers`; IF et RC normalisés restent
   `UNVERIFIED` tant qu’aucun registre autorisé ou contrôle manuel ne les valide.
-- Sauvegarde, soumission et décision centrale transactionnelles et idempotentes.
-- `CLIENT_OWNER`/`CLIENT_ADMIN` préparent et soumettent; seuls
-  `SUPER_ADMIN`, `MATRICIA_ADMIN` et `COMPLIANCE_MANAGER` décident.
+- Sauvegarde, soumission, revue documentaire et décision centrale
+  transactionnelles, idempotentes, auditées et reliées à l’Event Outbox.
+- `CLIENT_OWNER`/`CLIENT_ADMIN` préparent et soumettent; seuls les rôles centraux
+  autorisés décident, avec MFA fail-closed pour les actions sensibles.
 - Une décision `VERIFIED` active l’organisation et crée atomiquement un essai
-  `TRIAL_ACTIVE` de 30 jours. Aucune carte ni donnée de paiement n’est demandée.
-- RLS restrictive, versions immuables, audit et Event Outbox pour chaque mutation.
-- Parcours de correction après rejet sans réécriture de la version précédente.
+  `TRIAL_ACTIVE` de 30 jours, sans carte ni donnée de paiement.
+- Documents et politiques versionnés, Storage privé, questions/réponses,
+  matrice documentaire et anomalies administratives sont désormais présents.
+- Interfaces Client et Compliance FR/AR RTL présentes avec actions serveur et
+  formulaires testés unitairement; leur parcours authentifié complet reste à prouver.
 
 ## Artefacts et invariants
 
-- Migration : `supabase/migrations/20260911002400_client_onboarding.sql`.
-- Tests : `supabase/tests/0017_p05_client_onboarding.test.sql`.
-- Une organisation possède au plus un dossier et un essai initial.
-- `trial_ends_at = trial_started_at + interval '30 days'` est une contrainte SQL.
-- Le profil courant référence une version existante par FK différée.
-- Les profils bruts ne sont pas exposés au rôle `READ_ONLY_AUDITOR`.
-- Les mutations directes sont interdites aux rôles runtime.
+- Migrations : `20260911002400`, `02600`, puis `02900` à `03550`.
+- Tests SQL P05 : `0017`, `0020`, `0021`, `0022` et `0023`, soit 160 assertions.
+- Une organisation possède au plus un dossier et un essai initial;
+  `trial_ends_at = trial_started_at + interval '30 days'` est contraint en SQL.
+- Le profil courant référence une version existante; les versions, décisions,
+  scans et preuves ne sont pas réécrits.
+- RLS restrictive et anti-IDOR inter-tenant; les mutations directes sont refusées
+  aux rôles runtime et le scanner n’obtient qu’une RPC minimale.
 
-## Validation prévue
+## Validation acquise
 
-```text
-pnpm db:push:dev
-pnpm db:test
-pnpm db:lint
-```
-
-Le test pgTAP contient 37 assertions ALLOW/DENY couvrant versionnage,
-idempotence, isolation inter-tenant, soumission, validation centrale, création
-atomique de l’essai, durée de 30 jours, rejet/correction, audit et Outbox.
+- Les migrations P05 jusqu’à `03550` sont appliquées sur Supabase `development`.
+- Tests SQL `0001`–`0023` : 23 fichiers et 404 assertions verts.
+- Tests Web P05 ciblés : 4 fichiers et 52 tests verts; suite Web complète observée :
+  99 tests verts.
+- Worker de scan : 54 tests et typecheck strict verts; audit indépendant final
+  sans finding P0/P1/P2.
+- Concurrence Supabase development : les deux scénarios P05 dédiés passent avec
+  deux connexions réelles (revues documentaires sérialisées et question active
+  unique).
+- E2E authentifiés development : 28/28 exactement, zéro skip/flaky/unexpected,
+  FR/AR, 360 px et desktop; AAL2/AAL1, rôle, multi-tenant, Storage, audit/Outbox et
+  cleanup sont prouvés. La preuve persistée est sanitizée et ne contient aucun
+  cookie, token ou secret.
 
 ## Limites honnêtes avant gate P05
 
-- Matrice documentaire, stockage privé, versions de documents et politiques
-  Storage restent à implémenter.
-- Anomalies administratives, questions/réponses et moteur de comparaison restent
-  à implémenter; les états correspondants sont réservés dans la machine d’état.
 - Aucun registre marocain externe n’est appelé et aucune vérification officielle
   n’est simulée.
-- Les interfaces FR/AR RTL, tests E2E, accessibilité et audit indépendant restent
-  nécessaires avant de fermer la phase.
+- Le raccord à un ClamAV réel en staging n’est pas encore prouvé.
+- Accessibilité automatisée, responsive 360 px et RTL sont couverts par les E2E
+  authentifiés et anonymes; un audit manuel lecteur d’écran reste requis au gate.
+- Le replay CI sur base vierge reste requis avant fermeture de la phase.

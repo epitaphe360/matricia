@@ -1,51 +1,60 @@
 import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 import { createClient } from "@supabase/supabase-js";
-import { buildHealthReport, buildReadinessReport, createJsonLogger } from "@matricia/observability";
-import type { OutboxDispatcher, OutboxEnvelope } from "./index";
+import { buildHealthReport, createJsonLogger } from "@matricia/observability";
+import {
+  createClamAvTcpScanner,
+  createClamAvTcpHealthCheck,
+  createDocumentScanLogger,
+  createDocumentScanOutboxConsumer,
+  createDocumentScanProcessor,
+  createSupabaseDocumentScanRecorder,
+  createSupabasePrivateDocumentStore,
+  createSupabaseScanJobRepository,
+  readClamAvTcpConfig,
+} from "./client-compliance";
+import { createWorkerDispatcher } from "./dispatcher";
 import { createSupabaseOutboxRepository } from "./outbox-repository";
 import { pollOutboxOnce } from "./poller";
-
-const required = (name: string): string => {
-  const value = process.env[name]?.trim();
-  if (!value) throw new Error(`WORKER_CONFIG_${name}_REQUIRED`);
-  return value;
-};
+import { readWorkerRuntimeConfig } from "./worker-config";
+import { buildWorkerReadiness, createWorkerCycle } from "./worker-cycle";
 
 async function start(): Promise<void> {
-  const supabaseUrl = required("NEXT_PUBLIC_SUPABASE_URL");
-  const serviceKey = required("SUPABASE_SERVICE_ROLE_KEY");
-  const dispatchUrl = new URL(required("WORKER_DISPATCH_URL"));
-  const webhookSecret = required("INTERNAL_WEBHOOK_SECRET");
+  const config = readWorkerRuntimeConfig(process.env);
   const workerId = randomUUID();
   const log = createJsonLogger((record) => process.stderr.write(`${record}\n`));
-  const repository = createSupabaseOutboxRepository(createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } }));
-  let lastCycle: { ok: boolean; latencyMs: number } | null = null;
+  const serviceClient = createClient(config.supabaseUrl, config.supabaseServiceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const repository = createSupabaseOutboxRepository(serviceClient);
+  const documentScanConsumer = createDocumentScanOutboxConsumer(createDocumentScanProcessor({
+    jobs: createSupabaseScanJobRepository(serviceClient),
+    documents: createSupabasePrivateDocumentStore(serviceClient),
+    antivirus: createClamAvTcpScanner(readClamAvTcpConfig(process.env)),
+    recorder: createSupabaseDocumentScanRecorder(serviceClient),
+    log: createDocumentScanLogger((record) => process.stderr.write(`${record}\n`)),
+  }));
+  const antivirusHealth = createClamAvTcpHealthCheck(readClamAvTcpConfig(process.env));
 
-  const dispatcher: OutboxDispatcher = {
-    async dispatch(event: OutboxEnvelope) {
-      const response = await fetch(dispatchUrl, {
-        method: "POST",
-        headers: { authorization: `Bearer ${webhookSecret}`, "content-type": "application/json", "x-correlation-id": event.correlationId },
-        body: JSON.stringify(event),
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (!response.ok) throw new Error("OUTBOX_DISPATCH_REJECTED");
-    },
-  };
+  const dispatcher = createWorkerDispatcher({
+    documentScanConsumer,
+    dispatchUrl: config.dispatchUrl,
+    webhookSecret: config.webhookSecret,
+  });
 
-  const poll = async () => {
-    const started = performance.now();
-    try {
-      const result = await pollOutboxOnce(repository, dispatcher, workerId);
-      lastCycle = { ok: result.failed === 0, latencyMs: performance.now() - started };
-    } catch {
-      lastCycle = { ok: false, latencyMs: performance.now() - started };
-      log("error", { requestId: randomUUID(), correlationId: randomUUID(), event: "outbox.poll", outcome: "failure", actorId: workerId, errorCode: "OUTBOX_POLL_FAILED" });
-    }
-  };
+  const cycle = createWorkerCycle({
+    checkAntivirus: () => antivirusHealth.check(),
+    pollOutbox: () => pollOutboxOnce(repository, dispatcher, workerId),
+    onFailure: (dependency) => log("error", {
+      requestId: randomUUID(),
+      correlationId: randomUUID(),
+      event: dependency === "antivirus" ? "antivirus.health" : "outbox.poll",
+      outcome: "failure",
+      actorId: workerId,
+      errorCode: dependency === "antivirus" ? "ANTIVIRUS_UNAVAILABLE" : "OUTBOX_POLL_FAILED",
+    }),
+  });
 
-  const port = Number.parseInt(process.env.PORT ?? "8080", 10);
   const server = createServer((request, response) => {
     response.setHeader("content-type", "application/json");
     response.setHeader("cache-control", "no-store");
@@ -54,11 +63,7 @@ async function start(): Promise<void> {
       return;
     }
     if (request.url === "/readiness") {
-      const report = buildReadinessReport("matricia-worker", {
-        outbox: lastCycle?.ok
-          ? { status: "up", latencyMs: lastCycle.latencyMs }
-          : { status: "down", latencyMs: lastCycle?.latencyMs ?? 0, code: lastCycle ? "OUTBOX_POLL_FAILED" : "WORKER_NOT_STARTED" },
-      });
+      const report = buildWorkerReadiness(cycle.getState());
       response.statusCode = report.status === "ready" ? 200 : 503;
       response.end(JSON.stringify(report));
       return;
@@ -66,9 +71,9 @@ async function start(): Promise<void> {
     response.statusCode = 404;
     response.end(JSON.stringify({ status: "not_found" }));
   });
-  server.listen(port);
-  void poll();
-  const timer = setInterval(() => void poll(), 5_000);
+  server.listen(config.port);
+  void cycle.run();
+  const timer = setInterval(() => void cycle.run(), 5_000);
   timer.unref();
 }
 

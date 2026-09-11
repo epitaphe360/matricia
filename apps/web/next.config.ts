@@ -39,6 +39,10 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  experimental: {
+    // Transport headroom only; the server action still enforces the 10 MiB document policy.
+    serverActions: { bodySizeLimit: "12mb" },
+  },
   env: {
     NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: supabasePublishableKey,

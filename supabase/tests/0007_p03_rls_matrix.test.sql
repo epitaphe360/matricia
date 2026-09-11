@@ -90,7 +90,7 @@ insert into observed values
 select set_config('request.jwt.claim.sub','70000000-0000-0000-0000-000000000003',true);
 select set_config('request.jwt.claims','{"sub":"70000000-0000-0000-0000-000000000003","role":"authenticated","aal":"aal2"}',true);
 insert into observed values
-('platform','member_roles',(select count(*) from public.organization_member_roles)),
+('platform','member_roles',(select count(*) from public.organization_member_roles where membership_id in ('73000000-0000-0000-0000-000000000001','73000000-0000-0000-0000-000000000002'))),
 ('platform','accounts',(select count(*) from public.financial_accounts where organization_id in ('71000000-0000-0000-0000-000000000001','71000000-0000-0000-0000-000000000002'))),
 ('platform','entries',(select count(*) from public.financial_entries where organization_id in ('71000000-0000-0000-0000-000000000001','71000000-0000-0000-0000-000000000002'))),
 ('platform','wallets',(select count(*) from public.credit_wallets where organization_id in ('71000000-0000-0000-0000-000000000001','71000000-0000-0000-0000-000000000002'))),

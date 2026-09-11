@@ -2,6 +2,15 @@ begin;
 set local search_path = public, extensions;
 select plan(10);
 
+-- Keep this transactional test hermetic on a long-lived development database:
+-- older unpublished events must not be claimed in place of the fixture below.
+update public.event_outbox
+set available_at = greatest(available_at, clock_timestamp() + interval '1 hour'),
+    locked_at = null,
+    locked_by = null
+where published_at is null
+  and dead_lettered_at is null;
+
 insert into public.event_outbox (aggregate_type,aggregate_id,event_type,correlation_id,payload)
 values ('test','one','TestEventV1','e0000000-0000-0000-0000-000000000001','{"safe":true}');
 

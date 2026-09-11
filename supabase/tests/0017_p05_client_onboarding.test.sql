@@ -103,18 +103,30 @@ update public.organization_identifiers
 set verification_status = 'VERIFIED'
 where organization_id = 'b1710000-0000-0000-0000-000000000001'
   and identifier_type in ('ICE','IF','RC') and is_active;
-insert into public.client_compliance_evidence (
-  compliance_case_id, organization_id, evidence_type, object_path, file_sha256,
-  review_status, reviewed_by, reviewed_at, created_by
+insert into public.client_compliance_documents(
+  id,compliance_case_id,organization_id,document_type,version,policy_version_id,
+  document_number,issuer,issued_on,expires_on,original_file_name,file_extension,
+  declared_mime_type,declared_size_bytes,declared_sha256,storage_object_path,
+  detected_mime_type,detected_size_bytes,status,uploaded_at,reviewed_by,reviewed_at,created_by
 ) values
-((select (value->>'compliance_case_id')::uuid from p05_observed where key='save-a'),
- 'b1710000-0000-0000-0000-000000000001','REGISTRATION_DOCUMENT',
- 'compliance/client-a/registration.pdf',repeat('a',64),'VERIFIED',
- 'b1700000-0000-0000-0000-000000000003',clock_timestamp(),'b1700000-0000-0000-0000-000000000001'),
-((select (value->>'compliance_case_id')::uuid from p05_observed where key='save-a'),
- 'b1710000-0000-0000-0000-000000000001','REPRESENTATIVE_AUTHORITY',
- 'compliance/client-a/authority.pdf',repeat('b',64),'VERIFIED',
- 'b1700000-0000-0000-0000-000000000003',clock_timestamp(),'b1700000-0000-0000-0000-000000000001');
+('b1770000-0000-0000-0000-000000000001',(select (value->>'compliance_case_id')::uuid from p05_observed where key='save-a'),'b1710000-0000-0000-0000-000000000001','REGISTRATION_DOCUMENT',1,(select id from public.client_document_policy_versions where document_type='REGISTRATION_DOCUMENT' and status='ACTIVE'),'RC-A','Tribunal',current_date-30,current_date+365,'registration-a.pdf','pdf','application/pdf',128,repeat('a',64),'b1710000-0000-0000-0000-000000000001/client-a/registration.pdf','application/pdf',128,'VERIFIED',clock_timestamp(),'b1700000-0000-0000-0000-000000000003',clock_timestamp(),'b1700000-0000-0000-0000-000000000001'),
+('b1770000-0000-0000-0000-000000000002',(select (value->>'compliance_case_id')::uuid from p05_observed where key='save-a'),'b1710000-0000-0000-0000-000000000001','REPRESENTATIVE_AUTHORITY',1,(select id from public.client_document_policy_versions where document_type='REPRESENTATIVE_AUTHORITY' and status='ACTIVE'),'AUTH-A','Notaire',current_date-30,current_date+365,'authority-a.pdf','pdf','application/pdf',128,repeat('b',64),'b1710000-0000-0000-0000-000000000001/client-a/authority.pdf','application/pdf',128,'VERIFIED',clock_timestamp(),'b1700000-0000-0000-0000-000000000003',clock_timestamp(),'b1700000-0000-0000-0000-000000000001');
+insert into private.client_document_scan_results(
+  id,document_id,organization_id,sequence,result,engine_code,engine_version,computed_sha256,
+  detected_mime_type,detected_size_bytes,observed_claims,recorded_by,scanner_principal,correlation_id
+) values
+('b1780000-0000-0000-0000-000000000001','b1770000-0000-0000-0000-000000000001','b1710000-0000-0000-0000-000000000001',1,'CLEAN','DEMO_SCANNER','1.0',repeat('a',64),'application/pdf',128,'{}',null,'SUPABASE_SERVICE_ROLE','b1790000-0000-0000-0000-000000000001'),
+('b1780000-0000-0000-0000-000000000002','b1770000-0000-0000-0000-000000000002','b1710000-0000-0000-0000-000000000001',1,'CLEAN','DEMO_SCANNER','1.0',repeat('b',64),'application/pdf',128,'{}',null,'SUPABASE_SERVICE_ROLE','b1790000-0000-0000-0000-000000000002');
+update public.client_compliance_documents set current_scan_result_id=case id
+  when 'b1770000-0000-0000-0000-000000000001' then 'b1780000-0000-0000-0000-000000000001'::uuid
+  else 'b1780000-0000-0000-0000-000000000002'::uuid end,scan_status='CLEAN',scanned_at=clock_timestamp()
+where id in ('b1770000-0000-0000-0000-000000000001','b1770000-0000-0000-0000-000000000002');
+insert into public.client_compliance_evidence(
+  compliance_case_id,organization_id,evidence_type,object_path,file_sha256,review_status,
+  reviewed_by,reviewed_at,created_by,source_document_id,valid_until,validation_state
+) values
+((select (value->>'compliance_case_id')::uuid from p05_observed where key='save-a'),'b1710000-0000-0000-0000-000000000001','REGISTRATION_DOCUMENT','compliance/client-a/registration.pdf',repeat('a',64),'VERIFIED','b1700000-0000-0000-0000-000000000003',clock_timestamp(),'b1700000-0000-0000-0000-000000000001','b1770000-0000-0000-0000-000000000001',current_date+365,'SCANNED_CLEAN'),
+((select (value->>'compliance_case_id')::uuid from p05_observed where key='save-a'),'b1710000-0000-0000-0000-000000000001','REPRESENTATIVE_AUTHORITY','compliance/client-a/authority.pdf',repeat('b',64),'VERIFIED','b1700000-0000-0000-0000-000000000003',clock_timestamp(),'b1700000-0000-0000-0000-000000000001','b1770000-0000-0000-0000-000000000002',current_date+365,'SCANNED_CLEAN');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','b1700000-0000-0000-0000-000000000002',true);
@@ -210,6 +222,33 @@ insert into p05_observed values ('save-b', public.save_client_profile_draft(
   'b1710000-0000-0000-0000-000000000002',
   (select payload from p05_fixture where key='b'), 'p05-save-client-b-0001'
 ));
+reset role;
+insert into public.client_compliance_documents(
+  id,compliance_case_id,organization_id,document_type,version,policy_version_id,
+  document_number,issuer,issued_on,expires_on,original_file_name,file_extension,
+  declared_mime_type,declared_size_bytes,declared_sha256,storage_object_path,
+  detected_mime_type,detected_size_bytes,status,uploaded_at,reviewed_by,reviewed_at,created_by
+) values
+('b1770000-0000-0000-0000-000000000003',(select (value->>'compliance_case_id')::uuid from p05_observed where key='save-b'),'b1710000-0000-0000-0000-000000000002','REGISTRATION_DOCUMENT',1,(select id from public.client_document_policy_versions where document_type='REGISTRATION_DOCUMENT' and status='ACTIVE'),'RC-B','Tribunal',current_date-30,current_date+365,'registration-b.pdf','pdf','application/pdf',128,repeat('c',64),'b1710000-0000-0000-0000-000000000002/client-b/registration.pdf','application/pdf',128,'VERIFIED',clock_timestamp(),'b1700000-0000-0000-0000-000000000003',clock_timestamp(),'b1700000-0000-0000-0000-000000000002'),
+('b1770000-0000-0000-0000-000000000004',(select (value->>'compliance_case_id')::uuid from p05_observed where key='save-b'),'b1710000-0000-0000-0000-000000000002','REPRESENTATIVE_AUTHORITY',1,(select id from public.client_document_policy_versions where document_type='REPRESENTATIVE_AUTHORITY' and status='ACTIVE'),'AUTH-B','Notaire',current_date-30,current_date+365,'authority-b.pdf','pdf','application/pdf',128,repeat('d',64),'b1710000-0000-0000-0000-000000000002/client-b/authority.pdf','application/pdf',128,'VERIFIED',clock_timestamp(),'b1700000-0000-0000-0000-000000000003',clock_timestamp(),'b1700000-0000-0000-0000-000000000002');
+insert into private.client_document_scan_results(
+  id,document_id,organization_id,sequence,result,engine_code,engine_version,computed_sha256,
+  detected_mime_type,detected_size_bytes,observed_claims,recorded_by,scanner_principal,correlation_id
+) values
+('b1780000-0000-0000-0000-000000000003','b1770000-0000-0000-0000-000000000003','b1710000-0000-0000-0000-000000000002',1,'CLEAN','DEMO_SCANNER','1.0',repeat('c',64),'application/pdf',128,'{}',null,'SUPABASE_SERVICE_ROLE','b1790000-0000-0000-0000-000000000003'),
+('b1780000-0000-0000-0000-000000000004','b1770000-0000-0000-0000-000000000004','b1710000-0000-0000-0000-000000000002',1,'CLEAN','DEMO_SCANNER','1.0',repeat('d',64),'application/pdf',128,'{}',null,'SUPABASE_SERVICE_ROLE','b1790000-0000-0000-0000-000000000004');
+update public.client_compliance_documents set current_scan_result_id=case id
+  when 'b1770000-0000-0000-0000-000000000003' then 'b1780000-0000-0000-0000-000000000003'::uuid
+  else 'b1780000-0000-0000-0000-000000000004'::uuid end,scan_status='CLEAN',scanned_at=clock_timestamp()
+where id in ('b1770000-0000-0000-0000-000000000003','b1770000-0000-0000-0000-000000000004');
+insert into public.client_compliance_evidence(
+  compliance_case_id,organization_id,evidence_type,object_path,file_sha256,review_status,
+  reviewed_by,reviewed_at,created_by,source_document_id,valid_until,validation_state
+) values
+((select (value->>'compliance_case_id')::uuid from p05_observed where key='save-b'),'b1710000-0000-0000-0000-000000000002','REGISTRATION_DOCUMENT','compliance/client-b/registration.pdf',repeat('c',64),'VERIFIED','b1700000-0000-0000-0000-000000000003',clock_timestamp(),'b1700000-0000-0000-0000-000000000002','b1770000-0000-0000-0000-000000000003',current_date+365,'SCANNED_CLEAN'),
+((select (value->>'compliance_case_id')::uuid from p05_observed where key='save-b'),'b1710000-0000-0000-0000-000000000002','REPRESENTATIVE_AUTHORITY','compliance/client-b/authority.pdf',repeat('d',64),'VERIFIED','b1700000-0000-0000-0000-000000000003',clock_timestamp(),'b1700000-0000-0000-0000-000000000002','b1770000-0000-0000-0000-000000000004',current_date+365,'SCANNED_CLEAN');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','b1700000-0000-0000-0000-000000000002',true);
 select public.submit_client_compliance(
   (select (value->>'compliance_case_id')::uuid from p05_observed where key='save-b'),
   'p05-submit-client-b-0001'

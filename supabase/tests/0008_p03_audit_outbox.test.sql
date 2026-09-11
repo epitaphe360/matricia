@@ -45,6 +45,16 @@ select throws_ok(
   '55000','IMMUTABLE_RECORD','audit events reject DELETE'
 );
 
+-- A persistent development queue can contain legitimate unpublished events from
+-- other phase fixtures. Delay them transactionally so this test claims only its
+-- own event; ROLLBACK restores their dispatch state.
+update public.event_outbox
+set available_at = greatest(available_at, clock_timestamp() + interval '1 hour'),
+    locked_at = null,
+    locked_by = null
+where published_at is null
+  and dead_lettered_at is null;
+
 insert into public.event_outbox (
   aggregate_type,aggregate_id,event_type,correlation_id,payload,attempt_count
 ) values ('p03-test','dead-letter','P03DeadLetterTestV1','83000000-0000-0000-0000-000000000001','{"safe":true}',9);

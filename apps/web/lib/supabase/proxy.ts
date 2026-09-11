@@ -21,7 +21,18 @@ export async function refreshSupabaseSession(request: NextRequest) {
   });
   const { data: { user } } = await supabase.auth.getUser();
   const isLogin = request.nextUrl.pathname === `/${locale}/connexion`;
-  const isProtected = request.nextUrl.pathname.startsWith(`/${locale}/tableau-de-bord`);
+  const protectedPrefixes = [
+    "tableau-de-bord",
+    "organisation",
+    "invitations",
+    "securite",
+    "client",
+    "administration",
+  ];
+  const isProtected = protectedPrefixes.some((prefix) =>
+    request.nextUrl.pathname === `/${locale}/${prefix}`
+    || request.nextUrl.pathname.startsWith(`/${locale}/${prefix}/`)
+  );
   if (!user && isProtected) return NextResponse.redirect(new URL(`/${locale}/connexion`, request.url));
   if (user && isLogin) return NextResponse.redirect(new URL(`/${locale}/tableau-de-bord`, request.url));
   response.cookies.set("matricia_locale", locale, { sameSite: "lax", secure: request.nextUrl.protocol === "https:", path: "/" });
