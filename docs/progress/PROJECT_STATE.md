@@ -1,6 +1,6 @@
 # Matricia — Project State
 
-Dernière mise à jour : 2026-09-11 08:45 America/Toronto
+Dernière mise à jour : 2026-09-11 08:58 America/Toronto
 
 Phase de contrôle active : **PHASE 01 — contrats atomiques en cours**
 
@@ -22,7 +22,7 @@ Travaux engagés : **PHASES 01, 03 et 04 — en cours; PHASE 02 signée GREEN**
 
 ## Supabase development/staging
 
-Projet distant Matricia contrôlé en environnement applicatif `development`. Dix-neuf migrations additives sont présentes localement et appliquées à distance :
+Projet distant Matricia contrôlé en environnement applicatif `development`. Vingt migrations additives sont présentes localement et appliquées à distance :
 
 1. extensions et référentiels versionnés;
 2. identité, organisations, memberships et RBAC;
@@ -43,12 +43,13 @@ Projet distant Matricia contrôlé en environnement applicatif `development`. Di
 17. correction additive de la sonde sur le schéma Outbox immuable.
 18. révocation complète des ACL runtime dangereuses, grants minimaux et readiness hors dead-letter.
 19. demandes idempotentes de rôles cumulables, interdiction des rôles plateforme, approbation centrale des rôles `OWNER` transverses et refus de l'auto-approbation.
+20. refus explicite et idempotent d'invitation, statut `DECLINED`, blocage de l'auto-invitation et du contournement des rôles `OWNER` transverses.
 
 Preuves actuelles :
 
-- migrations locales/distantes 20260910000100..20260911001900 appliquées sur development;
+- migrations locales/distantes 20260910000100..20260911002000 appliquées sur development;
 - lint SQL public/private sans erreur de schéma lors du dernier contrôle distant;
-- `pnpm test:db` vert le 2026-09-11 : 13 fichiers, 176 assertions et quatre scénarios réels à deux connexions (Outbox, journal, crédits, chaîne audit);
+- `pnpm test:db` vert le 2026-09-11 : 14 fichiers, 192 assertions et quatre scénarios réels à deux connexions (Outbox, journal, crédits, chaîne audit);
 - tests négatifs RLS inter-tenant, immutabilité, équilibre/devise, crédits, idempotence, audit et Outbox.
 
 Docker local reste indisponible sur cet hôte; la reconstruction propre doit être prouvée par le job CI Supabase avant signature P03.
@@ -58,8 +59,9 @@ Docker local reste indisponible sur cet hôte; la reconstruction propre doit êt
 - `pnpm verify:phase00` : vert — catalogue 10/200/6000, 7 registres bootstrap, 68 fonctions, 8 exigences Marketing conformes à l’addendum et 63 agents.
 - `pnpm lint` : vert.
 - `pnpm typecheck` : vert.
-- `pnpm test` : vert — 74 tests (24 Web, 6 Worker, 2 domaine, 38 observabilité, 4 design system).
-- `pnpm test:db` : vert — 176 assertions et 4 scénarios de concurrence.
+- `pnpm test` : vert — 83 tests (33 Web, 6 Worker, 2 domaine, 38 observabilité, 4 design system).
+- `pnpm test:db` : vert — 192 assertions et 4 scénarios de concurrence.
+- `pnpm test:e2e` : vert — 36 tests Chromium mobile 360 px et desktop, sans test ignoré.
 - `pnpm build` : vert — routes OTP/callback/tableau de bord/health compilées.
 - `pnpm release:validate` : vert — uniquement gates structurels et absence de placeholders dans le périmètre contrôlé; ce n’est pas une signature de release.
 
@@ -69,15 +71,15 @@ Docker local reste indisponible sur cet hôte; la reconstruction propre doit êt
 - Le second réaudit P03 a détecté des droits `TRUNCATE` runtime hérités, un seed absent et la prise en compte des dead-letters en readiness. La migration additive 018, le test ACL et `supabase/seed.sql` corrigent ces écarts; seul le replay CI vierge et le nouveau visa restent requis.
 - Les réaudits P02 ont imposé redaction PII, readiness réelle, Worker exécutable, TypeScript renforcé et palette navy/bleu vif. Ces écarts sont corrigés et le visa indépendant final au commit `d92d8f0` est PASS; P02 est fermée GREEN.
 - P01 ne couvre pas encore les contrats atomiques de toutes les phases.
-- P04 ne couvre pas encore les interfaces et E2E d’invitation, ni le mot de passe facultatif et MFA.
-- P04 dispose désormais côté base de la limitation OTP, de l’unicité ICE, du workflow create-or-request, des invitations multi-rôles, des sessions et des demandes de rôles cumulables avec approbation centrale des rôles `OWNER` transverses; l’OTP Web passe côté serveur avec `shouldCreateUser=false`. Les interfaces FR/AR de création/rattachement ICE et de gestion sécurisée des sessions sont livrées; invitations, MFA et E2E restent à livrer.
+- P04 ne couvre pas encore le mot de passe facultatif, le MFA, l'invitation ergonomique par courriel, l'interface de demandes de rôles additionnels et l'audit sécurité indépendant.
+- P04 dispose côté base de la limitation OTP, de l’unicité ICE, du workflow create-or-request, des invitations multi-rôles, des sessions et des demandes de rôles cumulables avec approbation centrale des rôles `OWNER` transverses; l’OTP Web passe côté serveur avec `shouldCreateUser=false`. Les interfaces FR/AR de création/rattachement ICE, de gestion sécurisée des sessions et d'invitations accept/refuse sont livrées. Les 36 E2E prouvent FR/AR RTL, 360 px, Axe WCAG 2.1 A/AA, clavier, anti-énumération et barrières anonymes.
 - MAT-FUNC-001..068 et MARKETING-001..008 restent à implémenter et prouver progressivement.
 - Vercel et Railway ne sont pas configurés. Aucune production n’a été modifiée ou autorisée.
 
 ## Prochaine exécution
 
-1. Enregistrer/pousser le visa P02 et la migration P04 de rôles cumulables.
+1. Enregistrer/pousser les invitations P04, la migration 020 et les preuves E2E.
 2. Obtenir un replay DB vierge CI et fermer le dernier risque P03.
 3. Étendre les contrats atomiques P01 au fil des domaines.
-4. Terminer P04 identité/organisations avec mutations serveur, ICE, invitations, sessions et tests complets.
+4. Terminer P04 avec MFA, mot de passe facultatif, invitation par courriel, demandes de rôles en UI et audit indépendant.
 5. Continuer P05..P19 selon `PLANS.md`, sans sauter de gate.

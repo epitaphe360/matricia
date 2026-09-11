@@ -4,7 +4,7 @@ Autorité : Gold Master V4 FINAL. `PLANNED` signifie que l’exigence est enregi
 
 | requirement | status | implementation_refs | test_refs | evidence | owner | release_signoff |
 |---|---|---|---|---|---|---|
-| MAT-FUNC-001 | IN_PROGRESS | [apps/web/app/[locale]/organisation/actions.ts, supabase/migrations/20260911001400_identity_workflows.sql, supabase/migrations/20260911001900_identity_role_requests.sql] | [apps/web/app/[locale]/organisation/actions.test.ts, supabase/tests/0010_p04_identity_workflows.test.sql, supabase/tests/0013_p04_role_requests.test.sql] | [docs/evidence/p04/identity-foundation.md] | auth_identity_agent | PENDING |
+| MAT-FUNC-001 | IN_PROGRESS | [apps/web/app/[locale]/organisation/actions.ts, apps/web/app/[locale]/invitations/actions.ts, supabase/migrations/20260911001400_identity_workflows.sql, supabase/migrations/20260911001900_identity_role_requests.sql, supabase/migrations/20260911002000_invitation_decline.sql] | [apps/web/app/[locale]/organisation/actions.test.ts, apps/web/app/[locale]/invitations/actions.test.ts, supabase/tests/0010_p04_identity_workflows.test.sql, supabase/tests/0013_p04_role_requests.test.sql, supabase/tests/0014_p04_invitation_decline.test.sql, tests/e2e/p04-identity.spec.ts] | [docs/evidence/p04/identity-foundation.md] | auth_identity_agent | PENDING |
 | MAT-FUNC-002 | PLANNED | [] | [] | [] | diagnostics_agent | PENDING |
 | MAT-FUNC-003 | PLANNED | [] | [] | [] | diagnostics_agent | PENDING |
 | MAT-FUNC-004 | PLANNED | [] | [] | [] | diagnostics_agent | PENDING |

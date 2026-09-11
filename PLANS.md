@@ -167,7 +167,7 @@ decisions: [aucune modification de migration appliquée]
 risks: [Docker local absent, matrices RLS/concurrence partielles]
 validation_commands: [pnpm test:db, supabase db lint, supabase db reset]
 evidence_paths: [supabase/migrations, supabase/tests, scripts/run-db-tests.mjs]
-progress_log: [2026-09-11 deux audits; 176 assertions, ACL runtime minimales et quatre courses réelles vertes]
+progress_log: [2026-09-11 deux audits; 192 assertions, ACL runtime minimales et quatre courses réelles vertes]
 results: Base development alignée et durcie; replay vierge CI bloqué par le compte GitHub Actions avant démarrage des runners.
 independent_signoff: PENDING_CLEAN_REPLAY_GITHUB_ACCOUNT_LOCKED
 next_phase: P04
@@ -186,9 +186,9 @@ decisions: [création utilisateur explicite; aucun doublon ICE silencieux]
 risks: [rate-limit absent, tests insuffisants, session revoke non prouvée]
 validation_commands: [pnpm lint, pnpm typecheck, pnpm test, pnpm test:db, pnpm build]
 evidence_paths: [apps/web/lib/auth, apps/web/app/[locale], supabase/migrations, supabase/tests]
-progress_log: [2026-09-10 OTP/PKCE initial; 2026-09-11 backend identité et écran FR/AR create-or-request ICE livrés; 2026-09-11 demandes de rôles cumulables et approbation centrale appliquées sur development]
-results: Backend identité, OTP serveur, parcours organisation, gestion des sessions et demandes de rôles cumulables opérationnels; invitations, MFA et E2E restent ouverts.
-independent_signoff: PARTIAL_INVITATION_MFA_E2E_REQUIRED
+progress_log: [2026-09-10 OTP/PKCE initial; 2026-09-11 backend identité et écran FR/AR create-or-request ICE livrés; 2026-09-11 demandes de rôles cumulables et approbation centrale appliquées sur development; 2026-09-11 invitations accept/refuse et 36 E2E FR/AR mobile/desktop verts]
+results: Backend identité, OTP serveur, parcours organisation, gestion des sessions, demandes de rôles cumulables et invitations opérationnels; 33 tests Web, 69 assertions SQL P04 et 36 E2E verts; MFA, mot de passe facultatif, invitation par courriel et audit indépendant restent ouverts.
+independent_signoff: PARTIAL_MFA_EMAIL_INVITE_ROLE_UI_SECURITY_AUDIT_REQUIRED
 next_phase: P05
 ```
 
