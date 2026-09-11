@@ -98,7 +98,7 @@ next_phase: Fermer P00 indépendamment, puis poursuivre P04 sans perdre les gate
 ```yaml
 id: P00
 title: Reconnaissance et mémoire projet
-status: IN_PROGRESS
+status: GREEN
 goal: Obtenir un inventaire, une orchestration, des plans et matrices fidèles et auditables.
 scope: [inventaire, architecture, threat model, ownership, agents, index, traceabilité initiale]
 requirements: [Gold Master sections 2, 3, 30]
@@ -111,8 +111,8 @@ risks: [faux positif structurel]
 validation_commands: [pnpm verify:phase00, pnpm release:validate]
 evidence_paths: [docs/inventory/PHASE00_INVENTORY.md, docs/specs/context-index.json, .codex/agents]
 progress_log: [2026-09-11 audit FAIL puis remédiation autorité Marketing/agents/inventaire]
-results: Gate à rejouer puis réaudit.
-independent_signoff: PENDING_REAUDIT
+results: Gate automatisé vert et audit indépendant PASS au commit 32cfd89.
+independent_signoff: APPROVED:requirements_traceability_auditor:phase00_signoff_32cfd89
 next_phase: P01
 ---
 id: P01

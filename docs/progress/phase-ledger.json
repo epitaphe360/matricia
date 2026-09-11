@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
   "authority": "Matricia_GOLD_MASTER_PROMPT_UNIQUE_CODEX_V4_FINAL_2026-09-10.md",
-  "updated_at": "2026-09-11T11:55:00Z",
+  "updated_at": "2026-09-11T12:00:00Z",
   "phases": [
-    {"id":"P00","name":"Reconnaissance et extraction","status":"IN_PROGRESS","gate":"inventory_architecture_ownership_matrices","evidence":["pnpm verify:phase00 (green 2026-09-11)", "pnpm release:validate (green 2026-09-11)", "docs/inventory/PHASE00_INVENTORY.md baseline d9e28f7", "PLANS.md", ".codex/agents (63 TOML)", "scripts/context-pack.ts"],"signoff":"PENDING_FINAL_INDEPENDENT_REAUDIT"},
+    {"id":"P00","name":"Reconnaissance et extraction","status":"GREEN","gate":"inventory_architecture_ownership_matrices","evidence":["pnpm verify:phase00 (green 2026-09-11)", "pnpm release:validate (green 2026-09-11)", "docs/inventory/PHASE00_INVENTORY.md baseline d9e28f7", "PLANS.md", ".codex/agents (63 TOML)", "scripts/context-pack.ts", "independent audit PASS commit 32cfd89"],"signoff":"APPROVED:requirements_traceability_auditor:phase00_signoff_32cfd89"},
     {"id":"P01","name":"Spécifications atomiques","status":"IN_PROGRESS","gate":"spec_validate","evidence":["pnpm spec:validate (green 2026-09-11)","docs/specs/context-index.json","docs/specs/registries","docs/specs/sections/identity-rbac.md","docs/specs/sections/marketing-autopilot.md"],"signoff":"PENDING_FULL_ATOMIC_COVERAGE"},
     {"id":"P02","name":"Socle monorepo","status":"IN_PROGRESS","gate":"minimal_quality_build","evidence":["pnpm lint/typecheck/build (green 2026-09-11)","pnpm test (14 green)","scripts/validate-boundaries.ts (10 packages)","headers /api/health verified"],"signoff":"PENDING_INDEPENDENT_REAUDIT"},
     {"id":"P03","name":"Base, RLS, Outbox, audit et ledgers","status":"IN_PROGRESS","gate":"db_reset_migrations_rls_constraints","evidence":["supabase/migrations/20260910000100..20260910001300","pnpm test:db (9 files, 111 assertions, 4 concurrency scenarios)","independent audit: no P0/P1"],"signoff":"PENDING_CLEAN_REPLAY_AND_REAUDIT"},

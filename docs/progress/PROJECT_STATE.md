@@ -1,14 +1,15 @@
 # Matricia — Project State
 
-Dernière mise à jour : 2026-09-11 07:55 America/Toronto
+Dernière mise à jour : 2026-09-11 08:00 America/Toronto
 
-Phase de contrôle active : **PHASE 00 — gate automatisé vert, nouvel audit indépendant requis**
+Phase de contrôle active : **PHASE 01 — contrats atomiques en cours**
 
 Travaux engagés : **PHASES 01 à 04 — en cours, non signées**
 
 ## État prouvé
 
 - Gold Master V4 FINAL et `AGENTS.md` sont les autorités actives.
+- PHASE 00 est GREEN au commit `32cfd89` après visa indépendant : inventaire, 63 agents, index des 76 exigences, plans, Marketing et context-pack ciblé sont conformes.
 - Inventaire PHASE 00, ExecPlan P00–P19, index de contexte, architecture, threat model et carte d’ownership sont présents.
 - Les 57 agents du corps principal et les 6 agents obligatoires Marketing possèdent 63 configurations TOML projet.
 - Catalogue validé : 10 bibliothèques, 40 catégories, 80 sous-catégories, 200 services, 212 liaisons et 6 000 questions.
@@ -57,7 +58,7 @@ Docker local reste indisponible sur cet hôte; la reconstruction propre doit êt
 
 ## Audits et écarts
 
-- Les réaudits P00/P01 ont refusé la signature puis identifié quatre écarts résiduels : métriques d’inventaire, force des validateurs, signoff positif et context-pack structuré. Ces quatre écarts sont corrigés localement; les gates P00 sont vertes et un nouveau réaudit est requis.
+- Les réaudits P00/P01 ont identifié puis fait corriger les métriques d’inventaire, la force des validateurs, le signoff positif et le context-pack structuré. Le réaudit final indépendant au commit `32cfd89` est PASS; P00 est fermée GREEN.
 - Le réaudit P03 n’a trouvé aucun P0/P1. Les matrices RLS, preuves audit/Outbox et courses journal/crédits/audit sont désormais étendues; le replay DB vierge CI et le nouveau visa restent requis.
 - Les écarts P02 sont corrigés localement : CI hermétique, 10 packages contrôlés, frontières modulaires, observabilité structurée, tokens Design Authority A et headers de sécurité. Le nouveau visa reste requis. Les écarts P04 restent ouverts.
 - P01 ne couvre pas encore les contrats atomiques de toutes les phases.
@@ -67,7 +68,7 @@ Docker local reste indisponible sur cet hôte; la reconstruction propre doit êt
 
 ## Prochaine exécution
 
-1. Committer/pousser la remédiation P00/P02/P03 et obtenir les réaudits indépendants.
+1. Enregistrer/pousser le visa P00 et obtenir les réaudits indépendants P02/P03.
 2. Obtenir un replay DB vierge CI et fermer les risques P02/P03 restants.
 3. Étendre les contrats atomiques P01 au fil des domaines.
 4. Terminer P04 identité/organisations avec mutations serveur, ICE, invitations, sessions et tests complets.
