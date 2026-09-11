@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "scripts": { "build": "tsc --noEmit", "lint": "tsc --noEmit", "typecheck": "tsc --noEmit", "test": "vitest run" },
-  "dependencies": { "@matricia/observability": "workspace:*" },
-  "devDependencies": { "typescript": "5.9.3", "@types/node": "22.19.19", "vitest": "5.0.0" }
+  "scripts": { "build": "tsc --noEmit", "lint": "tsc --noEmit", "typecheck": "tsc --noEmit", "test": "vitest run", "start": "tsx src/main.ts" },
+  "dependencies": { "@matricia/observability": "workspace:*", "@supabase/supabase-js": "2.116.0" },
+  "devDependencies": { "typescript": "5.9.3", "@types/node": "22.19.19", "vitest": "5.0.0", "tsx": "4.20.6" }
 }

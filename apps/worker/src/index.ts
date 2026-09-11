@@ -21,7 +21,7 @@ export type WorkerDispatchState = Readonly<{
   dispatched: number;
   latencyMs: number;
   failedEventId?: string;
-  errorCode?: "OUTBOX_DISPATCH_FAILED";
+  errorCode?: "OUTBOX_DISPATCH_FAILED" | "WORKER_NOT_STARTED";
   completedAt?: string;
 }>;
 
@@ -91,7 +91,9 @@ export function createWorkerRuntime(
     getDispatchState: () => state,
     getReadiness: () => buildReadinessReport(
       "matricia-worker",
-      state.status === "failed"
+      state.status === "idle"
+        ? { outbox_dispatch: { status: "down", latencyMs: 0, code: "WORKER_NOT_STARTED" } }
+        : state.status === "failed"
         ? { outbox_dispatch: { status: "down", latencyMs: state.latencyMs, code: "OUTBOX_DISPATCH_FAILED" } }
         : { outbox_dispatch: { status: "up", latencyMs: state.latencyMs } },
       now,

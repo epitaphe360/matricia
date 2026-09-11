@@ -1,14 +1,15 @@
 :root {
-  --mat-color-brand: #123b3b;
-  --mat-color-brand-strong: #0b2929;
-  --mat-color-accent: #9a6b18;
-  --mat-color-canvas: #f7f8f5;
+  --mat-color-brand: #0b2d4f;
+  --mat-color-brand-strong: #071e35;
+  --mat-color-accent: #1677c8;
+  --mat-color-accent-muted: #e6f1fb;
+  --mat-color-canvas: #f7f9fb;
   --mat-color-surface: #ffffff;
-  --mat-color-surface-muted: #eef2ef;
-  --mat-color-text: #172020;
-  --mat-color-text-muted: #526060;
-  --mat-color-border: #cbd5d1;
-  --mat-color-focus: #176b87;
+  --mat-color-surface-muted: #eef5fb;
+  --mat-color-text: #0f2238;
+  --mat-color-text-muted: #5d6c7d;
+  --mat-color-border: #dce5ed;
+  --mat-color-focus: #1677c8;
   --mat-color-success: #17643a;
   --mat-color-warning: #805400;
   --mat-color-danger: #a12828;
@@ -17,8 +18,8 @@
   --mat-radius-small: 0.375rem;
   --mat-radius-medium: 0.625rem;
   --mat-radius-large: 1rem;
-  --mat-shadow-small: 0 1px 2px rgb(11 41 41 / 8%);
-  --mat-shadow-medium: 0 8px 24px rgb(11 41 41 / 12%);
-  --mat-shadow-overlay: 0 24px 64px rgb(11 41 41 / 18%);
-  --mat-focus-ring: 0 0 0 3px rgb(23 107 135 / 35%);
+  --mat-shadow-small: 0 1px 2px rgb(7 30 53 / 8%);
+  --mat-shadow-medium: 0 8px 24px rgb(7 30 53 / 12%);
+  --mat-shadow-overlay: 0 24px 64px rgb(7 30 53 / 18%);
+  --mat-focus-ring: 0 0 0 3px rgb(22 119 200 / 35%);
 }

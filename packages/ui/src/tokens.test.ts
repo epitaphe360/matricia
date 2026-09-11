@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { designTokenCssVariables, designTokens, MATRICIA_BREAKPOINT_MIN_PX } from "./tokens";
 
 function relativeLuminance(hex: string): number {
@@ -33,5 +34,13 @@ describe("Design Authority A tokens", () => {
   it("expose des variables CSS partagées sans direction physique", () => {
     expect(designTokenCssVariables["--mat-color-brand"]).toBe(designTokens.color.brand);
     expect(Object.keys(designTokenCssVariables).some((key) => /(?:left|right)/i.test(key))).toBe(false);
+  });
+
+  it("garde les couleurs TypeScript et CSS synchronisées", () => {
+    const css = readFileSync(new URL("./tokens.css", import.meta.url), "utf8").toLowerCase();
+    for (const [name, value] of Object.entries(designTokenCssVariables)) {
+      if (!name.startsWith("--mat-color-")) continue;
+      expect(css).toContain(`${name}: ${value.toLowerCase()};`);
+    }
   });
 });

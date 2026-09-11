@@ -13,6 +13,11 @@ const event = (id: string): OutboxEnvelope => ({
 const fixedNow = () => new Date("2026-09-11T12:00:00.000Z");
 
 describe("worker outbox dispatch", () => {
+  it("reste non prêt avant le premier cycle", () => {
+    const runtime = createWorkerRuntime({ dispatch: async () => undefined }, fixedNow);
+    expect(runtime.getReadiness()).toMatchObject({ status: "not_ready", checks: { outbox_dispatch: { code: "WORKER_NOT_STARTED" } } });
+  });
+
   it("conserve l'ordre du lot avec l'API de compatibilité", async () => {
     const calls: string[] = [];
 

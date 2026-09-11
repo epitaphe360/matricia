@@ -31,7 +31,7 @@
   --secondary-foreground: var(--mat-color-brand-strong);
   --muted: var(--mat-color-surface-muted);
   --muted-foreground: var(--mat-color-text-muted);
-  --accent: #f5ead2;
+  --accent: var(--mat-color-accent-muted);
   --accent-foreground: var(--mat-color-brand-strong);
   --destructive: var(--mat-color-danger);
   --border: var(--mat-color-border);

@@ -70,6 +70,11 @@ describe("structured JSON logger", () => {
     "service_role=super-secret-value",
     "sb_secret_a1b2c3d4e5f6g7h8",
     "-----BEGIN PRIVATE KEY----- contents",
+    "github_pat_11AA22BB33CC44DD",
+    "+212 6 12 34 56 78",
+    "AB123456",
+    "password=hunter-value",
+    "access_token=opaque-value",
   ])("caviarde une valeur sensible même sous une clé neutre", (value) => {
     expect(redactSensitiveData({ note: value })).toEqual({ note: "[REDACTED]" });
   });

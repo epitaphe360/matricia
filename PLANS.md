@@ -148,9 +148,9 @@ decisions: [un build utilisant .env.local ne prouve pas la CI]
 risks: [packages sautés, configuration non hermétique]
 validation_commands: [pnpm install --frozen-lockfile, pnpm lint, pnpm typecheck, pnpm test, pnpm build]
 evidence_paths: [.github/workflows/ci.yml, packages, apps]
-progress_log: [2026-09-11 deux audits P02 ont guidé la remédiation; readiness, redaction PII, Worker et design partagé corrigés]
-results: 44 tests verts, readiness Web/Worker branchée et tokens Design A consommés; nouveau visa requis.
-independent_signoff: PENDING_SECOND_REAUDIT
+progress_log: [2026-09-11 audits P02 ont guidé readiness réelle, redaction PII, Worker exécutable, strict TS et palette navy/bleu vif]
+results: 61 tests verts, poller Outbox et health/readiness Web/Worker branchés, tokens Design A consommés; nouveau visa requis.
+independent_signoff: PENDING_THIRD_REAUDIT
 next_phase: P03
 ---
 id: P03
@@ -167,9 +167,9 @@ decisions: [aucune modification de migration appliquée]
 risks: [Docker local absent, matrices RLS/concurrence partielles]
 validation_commands: [pnpm test:db, supabase db lint, supabase db reset]
 evidence_paths: [supabase/migrations, supabase/tests, scripts/run-db-tests.mjs]
-progress_log: [2026-09-11 audit sans P0/P1; preuves P2/P3 restantes]
-results: 61 assertions et Outbox concurrent verts; signature refusée.
-independent_signoff: FAIL_EVIDENCE_INCOMPLETE
+progress_log: [2026-09-11 deux audits; 152 assertions, ACL runtime minimales et quatre courses réelles vertes]
+results: Base development alignée et durcie; replay vierge CI bloqué par le compte GitHub Actions avant démarrage des runners.
+independent_signoff: PENDING_CLEAN_REPLAY_GITHUB_ACCOUNT_LOCKED
 next_phase: P04
 ---
 id: P04
@@ -186,9 +186,9 @@ decisions: [création utilisateur explicite; aucun doublon ICE silencieux]
 risks: [rate-limit absent, tests insuffisants, session revoke non prouvée]
 validation_commands: [pnpm lint, pnpm typecheck, pnpm test, pnpm test:db, pnpm build]
 evidence_paths: [apps/web/lib/auth, apps/web/app/[locale], supabase/migrations, supabase/tests]
-progress_log: [2026-09-10 OTP/PKCE initial; 2026-09-11 OTP serveur, migration identité 014 et 29 assertions appliqués sur development]
-results: Backend identité et OTP serveur opérationnels; interfaces organisation/invitations/sessions, MFA et E2E restent ouverts.
-independent_signoff: PARTIAL_UI_E2E_AND_SECURITY_AUDIT_REQUIRED
+progress_log: [2026-09-10 OTP/PKCE initial; 2026-09-11 backend identité et écran FR/AR create-or-request ICE livrés]
+results: Backend identité, OTP serveur et parcours organisation opérationnels; invitations/sessions, MFA et E2E restent ouverts.
+independent_signoff: PARTIAL_INVITATION_SESSION_E2E_REQUIRED
 next_phase: P05
 ```
 
