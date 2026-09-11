@@ -2,7 +2,7 @@ name: Matricia CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, "codex/**"]
   pull_request:
 
 permissions:
@@ -44,4 +44,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec supabase start
       - run: pnpm exec supabase db reset
-      - run: pnpm exec supabase test db
+      - run: pnpm test:db
+        env:
+          APP_ENV: development
+          DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321

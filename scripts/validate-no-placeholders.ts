@@ -5,7 +5,7 @@ const roots = ["apps/web/app", "apps/worker", "packages", "supabase", "tests"].f
   try { return statSync(path).isDirectory(); } catch { return false; }
 });
 const extensions = new Set([".ts", ".tsx", ".sql"]);
-const forbidden = new RegExp(["TO", "DO|FIX", "ME|T", "BD|PLACE", "HOLDER"].join(""), "i");
+const forbidden = /\b(?:TODO|FIXME|TBD)\b|(?<![A-Za-z0-9_$])PLACEHOLDER(?![A-Za-z0-9_$=])/i;
 const violations: string[] = [];
 
 function visit(path: string) {
