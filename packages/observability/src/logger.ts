@@ -87,6 +87,10 @@ export function redactSensitiveData(value: unknown): unknown {
   return redact(value, new WeakSet<object>());
 }
 
+function safeMetadata(value: string): string {
+  return isSensitiveValue(value) ? REDACTED : value.slice(0, 200);
+}
+
 export function createLogRecord(
   level: LogLevel,
   context: StructuredLogContext,
@@ -95,14 +99,14 @@ export function createLogRecord(
   return {
     timestamp: now().toISOString(),
     level,
-    request_id: context.requestId,
-    correlation_id: context.correlationId,
-    event: context.event,
+    request_id: safeMetadata(context.requestId),
+    correlation_id: safeMetadata(context.correlationId),
+    event: safeMetadata(context.event),
     outcome: context.outcome,
-    ...(context.actorId === undefined ? {} : { actor_id: context.actorId }),
-    ...(context.aggregateType === undefined ? {} : { aggregate_type: context.aggregateType }),
-    ...(context.aggregateId === undefined ? {} : { aggregate_id: context.aggregateId }),
-    ...(context.errorCode === undefined ? {} : { error_code: context.errorCode }),
+    ...(context.actorId === undefined ? {} : { actor_id: safeMetadata(context.actorId) }),
+    ...(context.aggregateType === undefined ? {} : { aggregate_type: safeMetadata(context.aggregateType) }),
+    ...(context.aggregateId === undefined ? {} : { aggregate_id: safeMetadata(context.aggregateId) }),
+    ...(context.errorCode === undefined ? {} : { error_code: safeMetadata(context.errorCode) }),
     ...(context.data === undefined ? {} : { data: redactSensitiveData(context.data) }),
   };
 }

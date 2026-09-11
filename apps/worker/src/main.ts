@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 import { createClient } from "@supabase/supabase-js";
-import { buildHealthReport, buildReadinessReport } from "@matricia/observability";
+import { buildHealthReport, buildReadinessReport, createJsonLogger } from "@matricia/observability";
 import type { OutboxDispatcher, OutboxEnvelope } from "./index";
 import { createSupabaseOutboxRepository } from "./outbox-repository";
 import { pollOutboxOnce } from "./poller";
@@ -18,6 +18,7 @@ async function start(): Promise<void> {
   const dispatchUrl = new URL(required("WORKER_DISPATCH_URL"));
   const webhookSecret = required("INTERNAL_WEBHOOK_SECRET");
   const workerId = randomUUID();
+  const log = createJsonLogger((record) => process.stderr.write(`${record}\n`));
   const repository = createSupabaseOutboxRepository(createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } }));
   let lastCycle: { ok: boolean; latencyMs: number } | null = null;
 
@@ -40,14 +41,12 @@ async function start(): Promise<void> {
       lastCycle = { ok: result.failed === 0, latencyMs: performance.now() - started };
     } catch {
       lastCycle = { ok: false, latencyMs: performance.now() - started };
+      log("error", { requestId: randomUUID(), correlationId: randomUUID(), event: "outbox.poll", outcome: "failure", actorId: workerId, errorCode: "OUTBOX_POLL_FAILED" });
     }
   };
-  await poll();
-  const timer = setInterval(() => void poll(), 5_000);
-  timer.unref();
 
   const port = Number.parseInt(process.env.PORT ?? "8080", 10);
-  createServer((request, response) => {
+  const server = createServer((request, response) => {
     response.setHeader("content-type", "application/json");
     response.setHeader("cache-control", "no-store");
     if (request.url === "/health") {
@@ -66,9 +65,16 @@ async function start(): Promise<void> {
     }
     response.statusCode = 404;
     response.end(JSON.stringify({ status: "not_found" }));
-  }).listen(port);
+  });
+  server.listen(port);
+  void poll();
+  const timer = setInterval(() => void poll(), 5_000);
+  timer.unref();
 }
 
 void start().catch(() => {
+  createJsonLogger((record) => process.stderr.write(`${record}\n`))("error", {
+    requestId: randomUUID(), correlationId: randomUUID(), event: "worker.start", outcome: "failure", errorCode: "WORKER_START_FAILED",
+  });
   process.exitCode = 1;
 });

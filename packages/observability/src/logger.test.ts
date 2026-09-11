@@ -107,4 +107,27 @@ describe("structured JSON logger", () => {
       correlation_id: "corr-2",
     });
   });
+
+  it.each([
+    "github_pat_11AA22BB33CC44DD",
+    "+212 6 12 34 56 78",
+    "AB123456",
+    "password=hunter-value",
+    "access_token=opaque-value",
+  ])("caviarde aussi les métadonnées structurées sensibles", (value) => {
+    const record = createLogRecord("error", {
+      requestId: value,
+      correlationId: value,
+      event: value,
+      outcome: "failure",
+      actorId: value,
+      aggregateType: value,
+      aggregateId: value,
+      errorCode: value,
+    }, instant);
+    expect(record).toMatchObject({
+      request_id: "[REDACTED]", correlation_id: "[REDACTED]", event: "[REDACTED]",
+      actor_id: "[REDACTED]", aggregate_type: "[REDACTED]", aggregate_id: "[REDACTED]", error_code: "[REDACTED]",
+    });
+  });
 });

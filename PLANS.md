@@ -149,8 +149,8 @@ risks: [packages sautés, configuration non hermétique]
 validation_commands: [pnpm install --frozen-lockfile, pnpm lint, pnpm typecheck, pnpm test, pnpm build]
 evidence_paths: [.github/workflows/ci.yml, packages, apps]
 progress_log: [2026-09-11 audits P02 ont guidé readiness réelle, redaction PII, Worker exécutable, strict TS et palette navy/bleu vif]
-results: 61 tests verts, poller Outbox et health/readiness Web/Worker branchés, tokens Design A consommés; nouveau visa requis.
-independent_signoff: PENDING_THIRD_REAUDIT
+results: 74 tests verts, poller Outbox et health/readiness Web/Worker branchés, tokens Design A consommés, logs structurés expurgés; nouveau visa requis.
+independent_signoff: PENDING_FINAL_REAUDIT_AFTER_METADATA_FIX
 next_phase: P03
 ---
 id: P03
@@ -187,8 +187,8 @@ risks: [rate-limit absent, tests insuffisants, session revoke non prouvée]
 validation_commands: [pnpm lint, pnpm typecheck, pnpm test, pnpm test:db, pnpm build]
 evidence_paths: [apps/web/lib/auth, apps/web/app/[locale], supabase/migrations, supabase/tests]
 progress_log: [2026-09-10 OTP/PKCE initial; 2026-09-11 backend identité et écran FR/AR create-or-request ICE livrés]
-results: Backend identité, OTP serveur et parcours organisation opérationnels; invitations/sessions, MFA et E2E restent ouverts.
-independent_signoff: PARTIAL_INVITATION_SESSION_E2E_REQUIRED
+results: Backend identité, OTP serveur, parcours organisation et gestion des sessions opérationnels; invitations, MFA et E2E restent ouverts.
+independent_signoff: PARTIAL_INVITATION_MFA_E2E_REQUIRED
 next_phase: P05
 ```
 
