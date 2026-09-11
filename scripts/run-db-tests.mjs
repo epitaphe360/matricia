@@ -47,7 +47,7 @@ function tapLines(value, target = []) {
   else if (typeof value === 'string') {
     for (const rawLine of value.split(/\r?\n/)) {
       const line = rawLine.trim();
-      if (/^(?:not )?ok\b|^1\.\.\d+\b|^Bail out!/i.test(line)) target.push(line);
+      if (/^(?:not )?ok\b|^1\.\.\d+\b|^Bail out!|^#/i.test(line)) target.push(line);
     }
   }
   return target;
@@ -73,7 +73,10 @@ function validateTap(file, lines) {
   }
 
   const failures = assertionLines.filter((line) => line.startsWith('not ok'));
-  if (failures.length) throw new Error(`${file}: ${failures.join(' | ')}`);
+  if (failures.length) {
+    const diagnostics = lines.filter((line) => line.startsWith('#'));
+    throw new Error(`${file}: ${[...failures, ...diagnostics].join(' | ')}`);
+  }
   return planned;
 }
 
@@ -527,7 +530,14 @@ if (!['development', 'staging'].includes(env.APP_ENV)) throw new Error('DB tests
 const databaseUrl = await resolveDatabaseUrl(env, root);
 const sql = postgres(databaseUrl, { max: 1, prepare: false, connect_timeout: 15, idle_timeout: 0 });
 const testDirectory = resolve(root, 'supabase', 'tests');
-const files = (await readdir(testDirectory)).filter((file) => file.endsWith('.test.sql')).sort();
+const testPattern = process.env.DB_TEST_PATTERN
+  ? new RegExp(process.env.DB_TEST_PATTERN)
+  : null;
+const files = (await readdir(testDirectory))
+  .filter((file) => file.endsWith('.test.sql'))
+  .filter((file) => !testPattern || testPattern.test(file))
+  .sort();
+if (files.length === 0) throw new Error('DB_TEST_PATTERN matched no SQL test files');
 let assertions = 0;
 
 try {

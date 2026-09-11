@@ -540,7 +540,7 @@ SECONDARY_SERVICE_SUBCATEGORIES: dict[str, list[str]] = {
     'IT-ERP-CRM': ['IT-SUPPORT'],
     'COM-COPY': ['COM-DIGITAL'],
     'ACC-INVOICING': ['ACC-SYS'],
-    'LEGAL-PRIVACY': ['LEGAL-IP'],
+    'LEGAL-PRIVACY': ['LEGAL-COMP'],
     'HR-PAYROLL': ['HR-ADMIN'],
     'INS-CYBER': ['INS-RISK'],
     'LOG-WMS': ['LOG-DIGI'],
