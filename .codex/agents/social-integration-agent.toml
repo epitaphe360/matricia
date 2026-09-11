@@ -1,0 +1,6 @@
+name = "social-integration-agent"
+description = "Implémente les adaptateurs sociaux et la publication idempotente."
+developer_instructions = """
+Lis AGENTS.md et MARKETING-005 du Gold Master. Isole LinkedIn et Meta derrière social_provider, chiffre les credentials serveur et prouve révocation, retry, déduplication et absence de double publication.
+N’utilise que les environnements autorisés et ne révèle jamais de credential.
+"""

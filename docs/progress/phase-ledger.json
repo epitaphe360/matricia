@@ -1,13 +1,13 @@
 {
   "schema_version": 2,
   "authority": "Matricia_GOLD_MASTER_PROMPT_UNIQUE_CODEX_V4_FINAL_2026-09-10.md",
-  "updated_at": "2026-09-11T11:22:00Z",
+  "updated_at": "2026-09-11T11:40:00Z",
   "phases": [
-    {"id":"P00","name":"Reconnaissance et extraction","status":"IN_PROGRESS","gate":"inventory_architecture_ownership_matrices","evidence":["pnpm verify:phase00 (green 2026-09-11)","docs/inventory/PHASE00_INVENTORY.md","PLANS.md",".codex/agents (57 TOML)","docs/orchestration/file-ownership-map.csv"],"signoff":"PENDING_INDEPENDENT_REAUDIT"},
+    {"id":"P00","name":"Reconnaissance et extraction","status":"IN_PROGRESS","gate":"inventory_architecture_ownership_matrices","evidence":["pnpm verify:phase00 (green 2026-09-11)", "docs/inventory/PHASE00_INVENTORY.md", "PLANS.md", ".codex/agents (63 TOML)", "docs/orchestration/file-ownership-map.csv"],"signoff":"FAIL_C709551_REMEDIATED_LOCALLY_REAUDIT_REQUIRED"},
     {"id":"P01","name":"Spécifications atomiques","status":"IN_PROGRESS","gate":"spec_validate","evidence":["pnpm spec:validate (green 2026-09-11)","docs/specs/context-index.json","docs/specs/registries","docs/specs/sections/identity-rbac.md","docs/specs/sections/marketing-autopilot.md"],"signoff":"PENDING_FULL_ATOMIC_COVERAGE"},
-    {"id":"P02","name":"Socle monorepo","status":"IN_PROGRESS","gate":"minimal_quality_build","evidence":["pnpm lint (green 2026-09-11)","pnpm typecheck (green 2026-09-11)","pnpm test (5 green)","pnpm build (green 2026-09-11)"],"signoff":"PENDING_INDEPENDENT_AUDIT"},
-    {"id":"P03","name":"Base, RLS, Outbox, audit et ledgers","status":"IN_PROGRESS","gate":"db_reset_migrations_rls_constraints","evidence":["supabase/migrations/20260910000100..20260910001300","pnpm test:db (6 files, 61 assertions, 1 concurrency scenario)","supabase db lint public/private (last remote check green)"],"signoff":"PENDING_CLEAN_REPLAY_AND_INDEPENDENT_REAUDIT"},
-    {"id":"P04","name":"Auth et organisation multi-rôles","status":"IN_PROGRESS","gate":"identity_flows","evidence":["apps/web/app/[locale]/connexion","apps/web/app/[locale]/auth/callback","apps/web/app/[locale]/tableau-de-bord","apps/web/lib/auth/otp.test.ts"],"signoff":"PARTIAL"},
+    {"id":"P02","name":"Socle monorepo","status":"IN_PROGRESS","gate":"minimal_quality_build","evidence":["pnpm lint (green 2026-09-11)","pnpm typecheck (green 2026-09-11)","pnpm test (5 green)","pnpm build (green 2026-09-11)"],"signoff":"FAIL_C709551_CI_PACKAGES_SECURITY_REMEDIATION_REQUIRED"},
+    {"id":"P03","name":"Base, RLS, Outbox, audit et ledgers","status":"IN_PROGRESS","gate":"db_reset_migrations_rls_constraints","evidence":["supabase/migrations/20260910000100..20260910001300","pnpm test:db (6 files, 61 assertions, 1 concurrency scenario)","independent audit: no P0/P1"],"signoff":"FAIL_RLS_CONCURRENCY_REPLAY_EVIDENCE_INCOMPLETE"},
+    {"id":"P04","name":"Auth et organisation multi-rôles","status":"IN_PROGRESS","gate":"identity_flows","evidence":["apps/web/app/[locale]/connexion","apps/web/app/[locale]/auth/callback","apps/web/app/[locale]/tableau-de-bord","apps/web/lib/auth/otp.test.ts"],"signoff":"FAIL_PARTIAL_SERVER_WORKFLOWS_AND_TESTS_REQUIRED"},
     {"id":"P05","name":"Onboarding Client","status":"QUEUED","gate":"client_trial_flow","evidence":[]},
     {"id":"P06","name":"Catalogue et Question Engine","status":"QUEUED","gate":"publishable_library","evidence":[]},
     {"id":"P07","name":"Diagnostics et opportunités","status":"QUEUED","gate":"diagnostic_to_opportunity","evidence":[]},

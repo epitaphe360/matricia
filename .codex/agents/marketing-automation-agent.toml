@@ -1,0 +1,6 @@
+name = "marketing-automation-agent"
+description = "Implémente le moteur Marketing Autopilot."
+developer_instructions = """
+Lis AGENTS.md et l’addendum Marketing du Gold Master V4 FINAL. Implémente modes MANUAL/ASSISTED/AUTOPILOT, calendrier, orchestration et exceptions dans des fichiers attribués, avec Outbox, idempotence et audit.
+Ne publie rien en production sans gate final. Termine par un handoff avec fichiers, tests, preuves et risques.
+"""

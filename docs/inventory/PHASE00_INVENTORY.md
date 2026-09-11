@@ -1,30 +1,38 @@
-# Inventaire PHASE 00
+# Inventaire reproductible PHASE 00
 
-Date de contrôle : 2026-09-11. Autorité : Gold Master V4 FINAL.
+Autorité : Gold Master V4 FINAL. Baseline auditée : commit `c7095510bc3143d54ace67549747be0e1fb461ea`.
 
-## État observé
+## Commandes de reproduction
 
-- 233 fichiers suivis par Git avant remédiation.
-- Racine applicative : `apps/web` et `apps/worker`.
-- Architecture partagée : 10 packages sous `packages/`.
-- Base : 13 migrations additives et 6 suites SQL sous `supabase/`.
-- Catalogue : 10 bibliothèques, 40 catégories, 80 sous-catégories, 200 services, 212 liaisons et 6 000 questions; validation agrégée seulement.
-- Skills projet actifs : 23 sous `.agents/skills/`; le dossier `skills/` racine est conservé pour compatibilité du package.
-- Spécifications et mémoire : `docs/`, `specs/`, `PLANS.md`, `AGENTS.md` et le Gold Master.
-- Configurations d’agents : 57 fichiers TOML sous `.codex/agents/`.
-- Secrets locaux : `.env.local` présent, ignoré par Git et exclu de l’inventaire de valeurs.
+```powershell
+git ls-tree -r --name-only c7095510bc3143d54ace67549747be0e1fb461ea
+git ls-tree -r --name-only c7095510bc3143d54ace67549747be0e1fb461ea .codex/agents
+git ls-tree -r --name-only c7095510bc3143d54ace67549747be0e1fb461ea .agents/skills
+git check-ignore -v .env.local
+```
 
-## Décisions
+## État versionné de la baseline
 
-| Chemin | Décision | Motif |
+- 294 fichiers Git.
+- 57 configurations TOML du corps principal; la remédiation suivante ajoute les 6 agents obligatoires Marketing, soit 63.
+- 23 skills projet actifs sous `.agents/skills/`.
+- 13 migrations et 6 suites SQL.
+- 97 fichiers sources/configuration sous `apps/` hors sorties générées; 23 sous `packages/` hors dépendances.
+- Catalogue validé : 10 bibliothèques, 200 services et 6 000 questions.
+- `.env.local` ignoré et non suivi; aucune valeur n’est inventoriée.
+
+Les dossiers locaux vides `skills/` et `specs/` ne figurent pas dans Git et ne sont pas des sources actives. Les chemins canoniques sont `.agents/skills/` et `docs/specs/`.
+
+## Décisions keep/replace
+
+| Chemin versionné | Décision | Motif |
 |---|---|---|
-| `Matricia_GOLD_MASTER_PROMPT_UNIQUE_CODEX_V4_FINAL_2026-09-10.md` | KEEP / autorité | Source unique |
-| `matricia_gold_v2/` | KEEP / référence historique | Ne prévaut jamais sur V4 |
-| `catalogue/Matricia_Catalogue_Metier_V1/` | KEEP | Source catalogue canonique |
-| `.agents/skills/` | KEEP / actif | Skills ciblés des agents |
-| `skills/` | KEEP / compatibilité | Aucun déplacement destructif |
-| `specs/` | KEEP / entrée package | Les specs exécutables vivent sous `docs/specs/` |
-| `apps/`, `packages/`, `supabase/` | KEEP / actif | Socle V1 |
-| artefacts `.next/`, `node_modules/` | REGENERATE | Sorties locales non sources |
+| Gold Master V4 FINAL, `AGENTS.md`, `PLANS.md` | KEEP / autorité | Mémoire permanente |
+| `matricia_gold_v2/` | KEEP / archive | Ne prévaut jamais sur V4 |
+| `catalogue/Matricia_Catalogue_Metier_V1/` | KEEP / canonique | Source catalogue |
+| `.agents/skills/`, `.codex/agents/` | KEEP / actif | Contexte et rôles ciblés |
+| `apps/`, `packages/`, `supabase/` | KEEP / actif | Produit, domaines et données |
+| `docs/`, `scripts/`, `.github/` | KEEP / actif | Contrats, gates et CI |
+| `.next/`, `node_modules/` | REGENERATE / non versionné | Sorties locales |
 
-Aucun fichier n’est supprimé ni remplacé silencieusement. Tout conflit futur doit privilégier la version finale la plus récente après comparaison et être journalisé.
+Aucun conflit de nom ni remplacement destructif n’a été observé dans la remédiation. Toute collision future doit être comparée, attribuée à un propriétaire et journalisée avant écriture.

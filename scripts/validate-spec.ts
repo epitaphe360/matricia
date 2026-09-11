@@ -127,6 +127,8 @@ const mandatoryAgents = [
   "browser_e2e_agent","accessibility_qa_agent","performance_agent","observability_agent","code_quality_reviewer",
   "financial_integrity_auditor","requirements_traceability_auditor","integration_manager","release_manager",
   "documentation_curator","morocco_tax_compliance_agent","franchise_performance_auditor","billing_automation_auditor",
+  "marketing-automation-agent","marketing-content-agent","marketing-compliance-agent",
+  "social-integration-agent","marketing-analytics-agent","marketing-autopilot-auditor",
 ];
 const configuredAgents = new Set(readdirSync(".codex/agents").filter((name) => name.endsWith(".toml")).map((name) => name.slice(0, -5)));
 assertKnown("Configurations agent obligatoires", mandatoryAgents, configuredAgents);
@@ -137,4 +139,14 @@ for (const agent of mandatoryAgents) {
   }
 }
 
-console.log(`Spécifications Phase 00 valides: ${registryPaths.length} registres, 68 fonctions, 8 exigences marketing et ${mandatoryAgents.length} agents.`);
+const marketingSpec = read("docs/specs/sections/marketing-autopilot.md");
+const marketingAuthorityTerms = [
+  "Brand Kit automatisé", "1 service = 3 contenus", "Six templates standardisés",
+  "Calendrier mensuel automatique", "Publication sociale contrôlée",
+  "Tracking CTA → contrat", "Campagnes depuis anomalies réelles", "Dashboard actionnable",
+];
+for (const term of marketingAuthorityTerms) {
+  if (!marketingSpec.includes(term)) fail(`Contrat Marketing non conforme à l’autorité: ${term}`);
+}
+
+console.log(`Bootstrap PHASE 00 cohérent: ${registryPaths.length} registres initialisés, 68 fonctions, 8 exigences marketing et ${mandatoryAgents.length} agents. P01 reste ouverte jusqu’aux contrats atomiques exhaustifs.`);

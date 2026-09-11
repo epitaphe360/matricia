@@ -93,4 +93,103 @@ independent_signoff: PENDING
 next_phase: Fermer P00 indépendamment, puis poursuivre P04 sans perdre les gates P01-P03.
 ```
 
+## ExecPlans des phases actives
+
+```yaml
+id: P00
+title: Reconnaissance et mémoire projet
+status: IN_PROGRESS
+goal: Obtenir un inventaire, une orchestration, des plans et matrices fidèles et auditables.
+scope: [inventaire, architecture, threat model, ownership, agents, index, traceabilité initiale]
+requirements: [Gold Master sections 2, 3, 30]
+invariants: [autorité V4 unique, aucun secret, aucun faux VERIFIED]
+ownership: program_orchestrator et documentation_curator sur fichiers réservés
+dependencies: [AGENTS.md, dépôt Git]
+milestones: [inventaire reproductible, 63 agents, registres initialisés, audit indépendant]
+decisions: [P01 non signée par simple présence de registres]
+risks: [faux positif structurel]
+validation_commands: [pnpm verify:phase00, pnpm release:validate]
+evidence_paths: [docs/inventory/PHASE00_INVENTORY.md, docs/specs/context-index.json, .codex/agents]
+progress_log: [2026-09-11 audit FAIL puis remédiation autorité Marketing/agents/inventaire]
+results: Gate à rejouer puis réaudit.
+independent_signoff: PENDING_REAUDIT
+next_phase: P01
+---
+id: P01
+title: Spécifications atomiques
+status: IN_PROGRESS
+goal: Décrire sans ambiguïté les contrats des 68 fonctions et 8 fonctions Marketing.
+scope: [écrans, formulaires, permissions, API, événements, notifications, états, tests]
+requirements: [MAT-FUNC-001..068, MARKETING-001..008]
+invariants: [références résolues, statuts honnêtes, preuves exigées pour VERIFIED]
+ownership: requirements_architect sur registres attribués
+dependencies: [P00, Gold Master fonctionnel]
+milestones: [identité, domaines P05-P17, Marketing, matrice tests]
+decisions: [aucun contrat inventé au-delà du Gold Master]
+risks: [registre incomplet, références non exécutables]
+validation_commands: [pnpm spec:validate, pnpm traceability:validate]
+evidence_paths: [docs/specs/registries, docs/specs/sections, docs/traceability/REQUIREMENTS_COVERAGE.md]
+progress_log: [2026-09-11 identité et Marketing extraits; couverture exhaustive restante]
+results: 0/76 exigences VERIFIED; phase ouverte.
+independent_signoff: PENDING_FULL_COVERAGE
+next_phase: P02
+---
+id: P02
+title: Socle professionnel
+status: IN_PROGRESS
+goal: Rendre monorepo, CI, design system, observabilité et sécurité de base hermétiques.
+scope: [workspace, packages, CI, design partagé, observabilité, headers]
+requirements: [TypeScript strict, Design Authority A, FR/AR RTL, sécurité]
+invariants: [chaque package contrôlé, clone propre reproductible]
+ownership: integration_manager sur fichiers partagés
+dependencies: [P00, P01 contrats socle]
+milestones: [scripts tous packages, CI sans secrets, frontières, readiness, UI partagée]
+decisions: [un build utilisant .env.local ne prouve pas la CI]
+risks: [packages sautés, configuration non hermétique]
+validation_commands: [pnpm install --frozen-lockfile, pnpm lint, pnpm typecheck, pnpm test, pnpm build]
+evidence_paths: [.github/workflows/ci.yml, packages, apps]
+progress_log: [2026-09-11 audit P02 FAIL; findings enregistrés]
+results: Gates locales vertes mais couverture incomplète.
+independent_signoff: FAIL_REMEDIATION_REQUIRED
+next_phase: P03
+---
+id: P03
+title: PostgreSQL, RLS et primitives transactionnelles
+status: IN_PROGRESS
+goal: Prouver migrations propres, isolation, ledgers, audit, idempotence et Outbox.
+scope: [migrations, RLS, tests SQL, concurrence, CI Supabase]
+requirements: [multi-tenant, argent exact, ledgers immuables, audit, Outbox]
+invariants: [ALLOW et DENY, replay propre, concurrence sûre]
+ownership: database_architect; auditeur database_rls_test_agent en lecture seule
+dependencies: [P02 CI, Supabase development]
+milestones: [13 migrations, tests adversariaux complets, db reset CI, réaudit]
+decisions: [aucune modification de migration appliquée]
+risks: [Docker local absent, matrices RLS/concurrence partielles]
+validation_commands: [pnpm test:db, supabase db lint, supabase db reset]
+evidence_paths: [supabase/migrations, supabase/tests, scripts/run-db-tests.mjs]
+progress_log: [2026-09-11 audit sans P0/P1; preuves P2/P3 restantes]
+results: 61 assertions et Outbox concurrent verts; signature refusée.
+independent_signoff: FAIL_EVIDENCE_INCOMPLETE
+next_phase: P04
+---
+id: P04
+title: Auth, organisation unique et multi-rôles
+status: IN_PROGRESS
+goal: Livrer OTP, sessions, rattachement ICE, invitations et rôles cumulables.
+scope: [auth serveur, organisations, memberships, sessions, routes FR/AR]
+requirements: [MAT-FUNC-001, gate P04]
+invariants: [anti-énumération, contexte serveur, cross-tenant DENY, audit]
+ownership: auth_identity_agent sur tranche attribuée
+dependencies: [P02, P03]
+milestones: [OTP instrumenté, create/join/merge, invitations, rôles, sessions, E2E]
+decisions: [création utilisateur explicite; aucun doublon ICE silencieux]
+risks: [rate-limit absent, tests insuffisants, session revoke non prouvée]
+validation_commands: [pnpm lint, pnpm typecheck, pnpm test, pnpm test:db, pnpm build]
+evidence_paths: [apps/web/lib/auth, apps/web/app/[locale], supabase/migrations, supabase/tests]
+progress_log: [2026-09-10 OTP/PKCE initial; 2026-09-11 audit partiel]
+results: P04 non signable.
+independent_signoff: FAIL_PARTIAL
+next_phase: P05
+```
+
 La carte détaillée et les gates sont dans `docs/specs/sections/phase-map.md`.

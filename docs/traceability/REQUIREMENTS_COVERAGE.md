@@ -72,13 +72,13 @@ Autorité : Gold Master V4 FINAL. `PLANNED` signifie que l’exigence est enregi
 | MAT-FUNC-066 | PLANNED | [] | [] | [] | admin_command_center_agent | PENDING |
 | MAT-FUNC-067 | PLANNED | [] | [] | [] | rfq_matching_agent | PENDING |
 | MAT-FUNC-068 | PLANNED | [] | [] | [] | security_architect | PENDING |
-| MARKETING-001 | PLANNED | [] | [] | [] | notifications_agent | PENDING |
-| MARKETING-002 | PLANNED | [] | [] | [] | privacy_data_agent | PENDING |
-| MARKETING-003 | PLANNED | [] | [] | [] | notifications_agent | PENDING |
-| MARKETING-004 | PLANNED | [] | [] | [] | domain_content_agent | PENDING |
-| MARKETING-005 | PLANNED | [] | [] | [] | event_workflow_architect | PENDING |
-| MARKETING-006 | PLANNED | [] | [] | [] | privacy_data_agent | PENDING |
-| MARKETING-007 | PLANNED | [] | [] | [] | diagnostics_agent | PENDING |
-| MARKETING-008 | PLANNED | [] | [] | [] | admin_command_center_agent | PENDING |
+| MARKETING-001 | PLANNED | [] | [] | [] | marketing-content-agent | PENDING |
+| MARKETING-002 | PLANNED | [] | [] | [] | marketing-content-agent | PENDING |
+| MARKETING-003 | PLANNED | [] | [] | [] | marketing-content-agent | PENDING |
+| MARKETING-004 | PLANNED | [] | [] | [] | marketing-automation-agent | PENDING |
+| MARKETING-005 | PLANNED | [] | [] | [] | social-integration-agent | PENDING |
+| MARKETING-006 | PLANNED | [] | [] | [] | marketing-analytics-agent | PENDING |
+| MARKETING-007 | PLANNED | [] | [] | [] | marketing-automation-agent | PENDING |
+| MARKETING-008 | PLANNED | [] | [] | [] | marketing-analytics-agent | PENDING |
 
 Les exigences `MAT-FUNC-069..090` sont explicitement hors périmètre V1. Marketing Autopilot est détaillé dans `docs/specs/sections/marketing-autopilot.md`.

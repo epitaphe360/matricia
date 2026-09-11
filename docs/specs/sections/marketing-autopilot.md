@@ -1,16 +1,24 @@
 # Marketing Autopilot — contrat P18
 
-Les exigences MARKETING-001..008 sont V1 obligatoires et restent versionnées, consent-aware et soumises à approbation humaine pour toute publication externe.
+Autorité : addendum obligatoire V1 du Gold Master V4 FINAL. Le mode initial est `ASSISTED`; `AUTOPILOT` exige comptes sociaux connectés et règles de marque validées. Toute exception de conformité bloque uniquement le contenu concerné.
 
-| ID | Contrat vérifiable |
+| ID | Fonction V1 et preuve de sortie |
 |---|---|
-| MARKETING-001 | Segments versionnés, explicables et strictement isolés par organisation. |
-| MARKETING-002 | Consentement, base de traitement, opt-out et liste de suppression appliqués avant chaque ciblage. |
-| MARKETING-003 | Campagne versionnée avec objectif, audience, canaux, budget exact, calendrier et propriétaire. |
-| MARKETING-004 | Contenu FR/AR versionné, relu et approuvé; aucune publication automatique sans policy autorisée. |
-| MARKETING-005 | Orchestration par Outbox avec idempotence, retries bornés, déduplication et dead-letter. |
-| MARKETING-006 | Attribution et métriques sans fuite inter-tenant, PII minimisée et période de rétention définie. |
-| MARKETING-007 | Boucle d’optimisation propose des changements explicables; toute modification sensible reste approuvée et auditée. |
-| MARKETING-008 | Command center expose files, erreurs, reprises, arrêt d’urgence et journal d’audit. |
+| MARKETING-001 | **Brand Kit automatisé** : source versionnée par Provider, Franchisé ou Matricia, préremplie depuis les données existantes; statut READY et certifications valides requis avant publication. |
+| MARKETING-002 | **1 service = 3 contenus** : lot LinkedIn B2B, Facebook/Instagram et script Reel 20–30 s, avec sources, claims, CTA tracké, cible, langue, risque et expiration. |
+| MARKETING-003 | **Six templates standardisés** : PROBLEM_SOLUTION, EXPERT_TIP, PROVIDER_INTRO, BEFORE_AFTER, SERVICE_OF_MONTH et SUCCESS_CASE, chacun versionné avec structure et limites réseau. |
+| MARKETING-004 | **Calendrier mensuel automatique** : génération le 25 pour le mois suivant, valeurs initiales 8 posts + 4 Reels, états DRAFT à PUBLISHED/FAILED/SKIPPED et approbation globale en ASSISTED. |
+| MARKETING-005 | **Publication sociale contrôlée** : abstraction social_provider LinkedIn/Meta, OAuth serveur, permissions minimales, révocation, audit et retry idempotent sans double publication. |
+| MARKETING-006 | **Tracking CTA → contrat** : UTM normalisées, chemin multi-touch et attribution configurable LAST_NON_DIRECT_CLICK par défaut jusqu’aux diagnostics, RFQ, contrats et valeur exacte. |
+| MARKETING-007 | **Campagnes depuis anomalies réelles** : agrégation hebdomadaire, seuil k-anonymity, tendances, snapshot source, services associés et publication uniquement si policy autorisée. |
+| MARKETING-008 | **Dashboard actionnable** : KPI obligatoires par acteur/bibliothèque/service/réseau/campagne/période et recommandation hebdomadaire KEEP/INCREASE/REDUCE/CHANGE/PAUSE. |
 
-Gate : tests unitaires/intégration/RLS/E2E, consentement positif et refus, accessibilité FR/AR, audit sécurité et preuve de non-publication sans approbation.
+## Conformité et états
+
+Pipeline obligatoire : `GENERATE → SOURCE_CHECK → BRAND_CHECK → CLAIMS_CHECK → PRIVACY_CHECK → CERTIFICATION_CHECK → DUPLICATE_CHECK → RISK_SCORE → SCHEDULE/PUBLISH`.
+
+Interdictions : client nommé sans consentement, chiffre sans source, certification ou promotion expirée, prix non validé, promesse absolue, donnée privée et répétition excessive. Un échec crée une `MARKETING_EXCEPTION`; il ne doit jamais publier le contenu.
+
+## Gate
+
+Les huit fonctions, AUTOPILOT démo, 10 Brand Kits franchises, 20 Provider, 50 campagnes, 300 contenus et 100 programmations doivent être prouvés. Tests obligatoires : génération déterministe, Brand Kit, claims/certifications/PII bloqués, retry sans doublon, attribution, RLS, calendrier, AUTOPILOT PASS seulement, FR/AR, mobile, audit et failover provider.
