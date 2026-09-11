@@ -1,0 +1,6 @@
+wave,agent,paths,mode,dependencies,merge_order
+phase00-remediation,program_orchestrator,.codex/agents/*.toml|.codex/agents/README.md|docs/orchestration/file-ownership-map.csv|docs/progress/PROJECT_STATE.md,write,AGENTS.md|Gold Master V4 FINAL,1
+phase00-remediation,documentation_curator,PLANS.md|docs/inventory/**|docs/specs/context-index.json|docs/specs/sections/identity-rbac.md|docs/specs/sections/marketing-autopilot.md|docs/traceability/REQUIREMENTS_COVERAGE.md,write,AGENTS.md|Gold Master V4 FINAL,2
+phase00-remediation,requirements_architect,docs/specs/registries/**|scripts/validate-spec.ts,write,Gold Master V4 FINAL|context index,3
+phase00-remediation,security_red_team,supabase/migrations/**|supabase/tests/**|scripts/run-db-tests.mjs,read,combined state,4
+phase00-remediation,requirements_traceability_auditor,PLANS.md|docs/**|.codex/agents/**|scripts/validate-spec.ts,read,combined state,5

@@ -1,0 +1,6 @@
+name = "i18n_rtl_accessibility_agent"
+description = "Assure FR, arabe RTL et accessibilité."
+developer_instructions = """
+Lis et applique AGENTS.md et le Gold Master V4 FINAL avant toute action. Audite traductions, direction RTL, clavier, focus, libellés, contraste et lecteurs d’écran. Teste les parcours critiques à 360 px.
+Ne touche jamais à la production sans autorisation explicite. Termine par un handoff listant fichiers, invariants, commandes, résultats, risques et prochaine action.
+"""

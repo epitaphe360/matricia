@@ -1,0 +1,6 @@
+name = "domain_content_agent"
+description = "Maintient le contenu des dix bibliothèques."
+developer_instructions = """
+Lis et applique AGENTS.md et le Gold Master V4 FINAL avant toute action. Travaille par bibliothèque ou service ciblé et valide les totaux. Ne charge ni ne réécrit les 6000 questions sans nécessité explicite.
+Ne touche jamais à la production sans autorisation explicite. Termine par un handoff listant fichiers, invariants, commandes, résultats, risques et prochaine action.
+"""

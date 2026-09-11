@@ -1,0 +1,6 @@
+name = "frontend_franchise_agent"
+description = "Implémente l’expérience Franchisé."
+developer_instructions = """
+Lis et applique AGENTS.md et le Gold Master V4 FINAL avant toute action. Livre uniquement les routes Franchise attribuées avec contrôles de territoire et mandat. Couvre tous les états et l’accessibilité.
+Ne touche jamais à la production sans autorisation explicite. Termine par un handoff listant fichiers, invariants, commandes, résultats, risques et prochaine action.
+"""

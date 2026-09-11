@@ -1,0 +1,6 @@
+name = "library_catalog_agent"
+description = "Implémente catalogue et publication versionnée."
+developer_instructions = """
+Lis et applique AGENTS.md et le Gold Master V4 FINAL avant toute action. Gère 10 bibliothèques, catégories, sous-catégories, 200 services et versions publiables. Ne charge jamais les 6000 questions hors sous-ensemble nécessaire.
+Ne touche jamais à la production sans autorisation explicite. Termine par un handoff listant fichiers, invariants, commandes, résultats, risques et prochaine action.
+"""

@@ -15,3 +15,63 @@ notifications:
     user_preference: not suppressible security message
     test: INT-NOTIF-MEMBER-INVITE
     capture: docs/evidence/notifications/member-invite
+  - notification_id: OrganizationActivatedNotificationV1
+    event: OrganizationActivatedV1
+    recipients: organization owners
+    channel: email and in_app
+    subject_fr: Organisation activée
+    subject_ar: تم تفعيل المؤسسة
+    body_fr: Votre organisation est maintenant active.
+    body_ar: مؤسستك نشطة الآن.
+    cta: Ouvrir le tableau de bord
+    variables: [organization_display_name]
+    delivery: mandatory
+    deduplication_window: event id
+    user_preference: in_app not suppressible
+    test: INT-NOTIF-ORG-ACTIVATED
+    capture: docs/evidence/notifications/organization-activated
+  - notification_id: OrganizationSuspendedNotificationV1
+    event: OrganizationSuspendedV1
+    recipients: organization owners
+    channel: email and in_app
+    subject_fr: Organisation suspendue
+    subject_ar: تم تعليق المؤسسة
+    body_fr: Votre organisation est suspendue; consultez les actions requises.
+    body_ar: تم تعليق مؤسستك؛ راجع الإجراءات المطلوبة.
+    cta: Consulter le dossier
+    variables: [organization_display_name, reason_code]
+    delivery: mandatory
+    deduplication_window: event id
+    user_preference: not suppressible security message
+    test: INT-NOTIF-ORG-SUSPENDED
+    capture: docs/evidence/notifications/organization-suspended
+  - notification_id: MemberActivatedNotificationV1
+    event: OrganizationMemberActivatedV1
+    recipients: activated member and organization owners
+    channel: email and in_app
+    subject_fr: Accès activé
+    subject_ar: تم تفعيل الوصول
+    body_fr: L’accès à l’organisation est actif.
+    body_ar: أصبح الوصول إلى المؤسسة نشطاً.
+    cta: Ouvrir l’espace
+    variables: [organization_display_name]
+    delivery: mandatory
+    deduplication_window: event id
+    user_preference: email configurable, in_app mandatory
+    test: INT-NOTIF-MEMBER-ACTIVATED
+    capture: docs/evidence/notifications/member-activated
+  - notification_id: MemberRevokedNotificationV1
+    event: OrganizationMemberRevokedV1
+    recipients: revoked member and organization owners
+    channel: email and in_app
+    subject_fr: Accès révoqué
+    subject_ar: تم إلغاء الوصول
+    body_fr: L’accès à l’organisation a été révoqué.
+    body_ar: تم إلغاء الوصول إلى المؤسسة.
+    cta: Consulter la sécurité
+    variables: [organization_display_name, reason_code]
+    delivery: mandatory
+    deduplication_window: event id
+    user_preference: not suppressible security message
+    test: INT-NOTIF-MEMBER-REVOKED
+    capture: docs/evidence/notifications/member-revoked

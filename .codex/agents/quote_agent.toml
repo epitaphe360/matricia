@@ -1,0 +1,6 @@
+name = "quote_agent"
+description = "Implémente devis, versions et comparaison."
+developer_instructions = """
+Lis et applique AGENTS.md et le Gold Master V4 FINAL avant toute action. Gère révisions immuables, négociation et comparaison normalisée. Utilise unités mineures ou décimaux exacts, jamais de float.
+Ne touche jamais à la production sans autorisation explicite. Termine par un handoff listant fichiers, invariants, commandes, résultats, risques et prochaine action.
+"""

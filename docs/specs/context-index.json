@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "authority": "Matricia_GOLD_MASTER_PROMPT_UNIQUE_CODEX_V4_FINAL_2026-09-10.md",
   "v1_scope": {
     "required_functions": "MAT-FUNC-001..MAT-FUNC-068",
@@ -7,19 +7,28 @@
     "required_addendum": "MARKETING-001..MARKETING-008"
   },
   "indexes": {
+    "agent_rules": "AGENTS.md",
+    "skills": ".agents/skills",
+    "custom_agents": ".codex/agents",
+    "inventory": "docs/inventory/PHASE00_INVENTORY.md",
     "phases": "docs/specs/sections/phase-map.md",
+    "identity_rbac": "docs/specs/sections/identity-rbac.md",
+    "marketing_autopilot": "docs/specs/sections/marketing-autopilot.md",
     "requirements": "docs/traceability/REQUIREMENTS_COVERAGE.md",
     "architecture": "docs/architecture/ARCHITECTURE.md",
+    "threat_model": "docs/security/THREAT_MODEL.md",
+    "ownership_rules": "docs/orchestration/FILE_OWNERSHIP.md",
+    "ownership_map": "docs/orchestration/file-ownership-map.csv",
     "plans": "PLANS.md",
     "progress": "docs/progress/PROJECT_STATE.md",
-    "phase_ledger": "docs/progress/phase-ledger.json"
-    ,"screens": "docs/specs/registries/screens.yaml"
-    ,"forms": "docs/specs/registries/forms.yaml"
-    ,"permissions": "docs/specs/registries/permissions.csv"
-    ,"apis": "docs/specs/registries/apis.yaml"
-    ,"events": "docs/specs/registries/events.yaml"
-    ,"notifications": "docs/specs/registries/notifications.yaml"
-    ,"state_machines": "docs/specs/registries/state-machines.csv"
+    "phase_ledger": "docs/progress/phase-ledger.json",
+    "screens": "docs/specs/registries/screens.yaml",
+    "forms": "docs/specs/registries/forms.yaml",
+    "permissions": "docs/specs/registries/permissions.csv",
+    "apis": "docs/specs/registries/apis.yaml",
+    "events": "docs/specs/registries/events.yaml",
+    "notifications": "docs/specs/registries/notifications.yaml",
+    "state_machines": "docs/specs/registries/state-machines.csv"
   },
   "domains": {
     "identity": ["MAT-FUNC-001", "MAT-FUNC-028", "MAT-FUNC-051", "MAT-FUNC-052"],

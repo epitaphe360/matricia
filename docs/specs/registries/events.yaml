@@ -1,5 +1,13 @@
 version: 1
 events:
+  - event_type: DashboardViewedV1
+    producer: web application
+    consumers: [analytics_projection]
+    schema: contracts/events/dashboard-viewed.v1
+    deduplication: session_id plus organization_id plus minute bucket
+    retry: best effort without blocking user navigation
+    ordering: none
+    sensitive_data: no personal data or business payload
   - event_type: OrganizationUpdatedV1
     producer: identity application service
     consumers: [audit_projection, search_projection]
@@ -16,3 +24,43 @@ events:
     retry: exponential capped at 24 hours
     ordering: per organization aggregate
     sensitive_data: no personal data
+  - event_type: OrganizationActivatedV1
+    producer: identity application service
+    consumers: [notification_dispatcher, onboarding_orchestrator]
+    schema: contracts/events/organization-activated.v1
+    deduplication: organization_id plus activation_version
+    retry: exponential capped at 24 hours
+    ordering: per organization aggregate
+    sensitive_data: identifiers excluded
+  - event_type: OrganizationSuspendedV1
+    producer: identity application service
+    consumers: [notification_dispatcher, session_revoker]
+    schema: contracts/events/organization-suspended.v1
+    deduplication: organization_id plus suspension_version
+    retry: exponential capped at 24 hours
+    ordering: per organization aggregate
+    sensitive_data: reason code only
+  - event_type: OrganizationMemberInvitedV1
+    producer: identity application service
+    consumers: [notification_dispatcher]
+    schema: contracts/events/organization-member-invited.v1
+    deduplication: invitation_id
+    retry: exponential capped at 24 hours
+    ordering: per invitation
+    sensitive_data: recipient reference, not raw contact
+  - event_type: OrganizationMemberActivatedV1
+    producer: identity application service
+    consumers: [notification_dispatcher, access_projection]
+    schema: contracts/events/organization-member-activated.v1
+    deduplication: membership_id plus activation_version
+    retry: exponential capped at 24 hours
+    ordering: per membership
+    sensitive_data: no personal data
+  - event_type: OrganizationMemberRevokedV1
+    producer: identity application service
+    consumers: [notification_dispatcher, session_revoker]
+    schema: contracts/events/organization-member-revoked.v1
+    deduplication: membership_id plus revocation_version
+    retry: exponential capped at 24 hours
+    ordering: per membership
+    sensitive_data: reason code only
