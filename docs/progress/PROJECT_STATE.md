@@ -1,6 +1,6 @@
 # Matricia — Project State
 
-Dernière mise à jour : 2026-09-11 12:50 America/Toronto
+Dernière mise à jour : 2026-09-11 15:24 America/Toronto
 
 Phase de contrôle active : **PHASE 01 — contrats atomiques en cours**
 
@@ -22,7 +22,7 @@ Travaux engagés : **PHASES 01, 03, 05 et 06 — en cours; PHASES 02 et 04 sign�
 
 ## Supabase development/staging
 
-Projet distant Matricia contrôlé en environnement applicatif `development`. Les 37 migrations additives jusqu’à `20260911003600` sont appliquées à distance.
+Projet distant Matricia contrôlé en environnement applicatif `development`. Les 42 migrations additives jusqu’à `20260911004100` sont appliquées à distance.
 
 1. extensions et référentiels versionnés;
 2. identité, organisations, memberships et RBAC;
@@ -50,10 +50,18 @@ Projet distant Matricia contrôlé en environnement applicatif `development`. Le
 24. catalogue W1 : hiérarchie et versions immuables, releases gouvernées,
     audiences/fenêtres canoniques, attestation AR, worker à lease/retry/dead-letter,
     audit, Outbox et RLS restrictive.
+25. persistance Question/Rule Engine : questionnaires/règles versionnés, snapshots,
+    réponses validées, calculs décimaux exacts, idempotence, audit et Outbox;
+26. API Client catalogue : lectures RPC authentifiées, snapshot de release exact,
+    visibilité fail-closed et pagination keyset;
+27. compatibilité additive des anciens writers de versions catalogue;
+28. snapshots catalogue historiques explicites préservés avec FK intra-bibliothèque;
+29. lifecycle catalogue durci par capabilities transactionnelles à usage unique,
+    MFA fail-closed, items scellés et récupération rollback contrôlée.
 
 Preuves actuelles :
 
-- migrations locales/distantes `20260910000100`..`20260911003600` appliquées sur development;
+- migrations locales/distantes `20260910000100`..`20260911004100` appliquées sur development;
 - lint SQL public/private sans erreur de schéma lors du dernier contrôle distant;
 - `pnpm test:db` vert le 2026-09-11 pour les fichiers `0001`..`0023` : 23 fichiers et 404 assertions; les quatre scénarios historiques à deux connexions couvrent Outbox, journal, crédits et chaîne audit;
 - tests négatifs RLS inter-tenant, immutabilité, équilibre/devise, crédits, idempotence, audit et Outbox.
@@ -72,7 +80,10 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - `pnpm typecheck` : vert.
 - Tests Web : vert — 12 fichiers, 99 tests; sous-ensemble P05 ciblé : 4 fichiers, 52 tests.
 - Tests Worker : vert — 11 fichiers, 54 tests; typecheck strict vert.
-- `pnpm test:db` : vert pour `0001`..`0024` — 24 fichiers et 511 assertions, plus quatre scénarios génériques à deux connexions. Les deux scénarios P05 et les quatre scénarios P06 dédiés passent aussi sur Supabase development.
+- `pnpm test:db` : vert pour `0001`..`0029` — 29 fichiers et 734 assertions, plus quatre scénarios génériques à deux connexions. Les deux scénarios P05 et les quatre scénarios P06 dédiés passent aussi sur Supabase development.
+- E2E catalogue authentifié réel : 4/4 en FR/AR à 360 px, navigation clavier,
+  axe, recherche discriminante et RPC de publication/lecture réelles; crash/reaper
+  `SCHEDULED` et `PUBLISHING` prouvés, zéro résidu actif ou artefact local.
 - E2E P05 authentifiés : 28/28 exactement, zéro skip/flaky/unexpected, FR/AR, 360 px et desktop; cleanup distant vérifié et preuve sanitizée persistée.
 - `pnpm build` : vert — routes identité, organisation, invitations, rôles, sécurité et santé compilées.
 - `pnpm release:validate` : vert — uniquement gates structurels et absence de placeholders dans le périmètre contrôlé; ce n’est pas une signature de release.
@@ -85,7 +96,12 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - P01 ne couvre pas encore les contrats atomiques de toutes les phases.
 - P04 est GREEN : OTP, organisations, invitations courriel, rôles, sessions, mot de passe facultatif, MFA TOTP, AAL2 et saga d'audit Auth durable ont passé le visa indépendant sans P0/P1/P2.
 - P05 dispose des migrations appliquées `024`, `026` et `029`–`03550` : profils, documents privés, questionnaires, matrice/anomalies, scan serveur, activation et essai 30 jours. Interfaces, Worker, concurrence et E2E authentifiés sont prouvés. ClamAV staging réel et replay vierge restent requis; P05 demeure `IN_PROGRESS`.
-- P06 est en cours : le catalogue W1 est appliqué et vert (107 assertions SQL + quatre scénarios de concurrence). Le moteur pur Question/Rule W2 a obtenu un réaudit indépendant PASS sans finding P0/P1/P2 (38 tests, typecheck et lint verts). Import baseline, persistance questionnaires/règles et parcours Builder restent requis avant GREEN.
+- P06 est en cours : catalogue W1, persistance Question/Rule W2, API Client,
+  lifecycle immuable et E2E authentifié sont appliqués/verts. Preuves : 330 assertions
+  SQL P06 dans la suite globale, 38 tests du moteur pur, quatre scénarios de concurrence
+  et 4/4 E2E, avec réaudits indépendants sans finding P0/P1/P2. Import baseline complet
+  des 10 bibliothèques/200 services/6 000 questions et parcours Builder restent requis
+  avant GREEN.
 - MAT-FUNC-001..068 et MARKETING-001..008 restent à implémenter et prouver progressivement.
 - Vercel et Railway ne sont pas configurés. Aucune production n’a été modifiée ou autorisée.
 
