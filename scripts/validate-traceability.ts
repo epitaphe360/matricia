@@ -25,7 +25,9 @@ for (const cells of parsed) {
   if (!owner || !signoff) throw new Error(`Owner/signoff absent: ${id}`);
   if (status === "VERIFIED") {
     if ([implementationRefs, testRefs, evidence].some((value) => value === "[]")) throw new Error(`Preuves vides pour ${id}`);
-    if (signoff === "PENDING") throw new Error(`Signoff absent pour ${id}`);
+    if (!/^APPROVED:[A-Za-z0-9_-]+:.+/.test(signoff!)) {
+      throw new Error(`Signoff indépendant positif invalide pour ${id}; format attendu APPROVED:auditeur:preuve`);
+    }
   }
   for (const raw of [implementationRefs, testRefs, evidence]) {
     if (raw === "[]") continue;

@@ -77,6 +77,28 @@ function validateTap(file, lines) {
   return planned;
 }
 
+function deferred() {
+  let resolvePromise;
+  let rejectPromise;
+  const promise = new Promise((resolve, reject) => {
+    resolvePromise = resolve;
+    rejectPromise = reject;
+  });
+  return { promise, resolve: resolvePromise, reject: rejectPromise };
+}
+
+async function expectBlocked(promise, label) {
+  let settled = false;
+  promise.finally(() => { settled = true; }).catch(() => {});
+  await new Promise((resolveWait) => setTimeout(resolveWait, 250));
+  if (settled) throw new Error(`${label} did not overlap the first open transaction`);
+}
+
+function unwrap(result) {
+  if (result.status === 'rejected') throw result.reason;
+  return result.value;
+}
+
 async function verifyOutboxConcurrency(databaseUrl, admin) {
   const existing = await admin`
     select count(*)::integer as count
@@ -170,6 +192,264 @@ async function verifyOutboxConcurrency(databaseUrl, admin) {
   }
 }
 
+async function cleanupFinancialConcurrencyFixture(admin, organizationId, actorId, membershipId) {
+  await admin.begin(async (transaction) => {
+    await transaction.unsafe('lock table public.event_outbox, public.audit_events, public.financial_entries, public.financial_journals, public.financial_accounts, public.credit_ledger_entries, public.credit_wallets in access exclusive mode');
+    await transaction.unsafe('alter table public.event_outbox disable trigger event_outbox_no_delete');
+    await transaction.unsafe('alter table public.audit_events disable trigger audit_events_immutable');
+    await transaction.unsafe('alter table public.financial_entries disable trigger financial_entries_immutable');
+    await transaction.unsafe('alter table public.financial_entries disable trigger financial_journal_balanced');
+    await transaction.unsafe('alter table public.financial_journals disable trigger financial_journals_immutable');
+    await transaction.unsafe('alter table public.financial_accounts disable trigger financial_accounts_immutable');
+    await transaction.unsafe('alter table public.credit_ledger_entries disable trigger credit_ledger_entries_immutable');
+    await transaction.unsafe('alter table public.credit_wallets disable trigger credit_wallets_immutable');
+    await transaction`delete from public.event_outbox where organization_id=${organizationId}::uuid`;
+    await transaction`delete from public.audit_events where organization_id=${organizationId}::uuid`;
+    await transaction`delete from public.idempotency_keys where organization_id=${organizationId}::uuid`;
+    await transaction`delete from public.financial_entries where organization_id=${organizationId}::uuid`;
+    await transaction`delete from public.financial_journals where organization_id=${organizationId}::uuid`;
+    await transaction`delete from public.financial_accounts where organization_id=${organizationId}::uuid`;
+    await transaction`delete from public.credit_ledger_entries where organization_id=${organizationId}::uuid`;
+    await transaction`delete from public.credit_wallets where organization_id=${organizationId}::uuid`;
+    await transaction`delete from public.organization_member_roles where membership_id=${membershipId}::uuid`;
+    await transaction`delete from public.organization_memberships where id=${membershipId}::uuid`;
+    await transaction`delete from public.organizations where id=${organizationId}::uuid`;
+    await transaction`delete from auth.users where id=${actorId}::uuid`;
+    await transaction.unsafe('alter table public.credit_wallets enable trigger credit_wallets_immutable');
+    await transaction.unsafe('alter table public.credit_ledger_entries enable trigger credit_ledger_entries_immutable');
+    await transaction.unsafe('alter table public.financial_accounts enable trigger financial_accounts_immutable');
+    await transaction.unsafe('alter table public.financial_journals enable trigger financial_journals_immutable');
+    await transaction.unsafe('alter table public.financial_entries enable trigger financial_journal_balanced');
+    await transaction.unsafe('alter table public.financial_entries enable trigger financial_entries_immutable');
+    await transaction.unsafe('alter table public.audit_events enable trigger audit_events_immutable');
+    await transaction.unsafe('alter table public.event_outbox enable trigger event_outbox_no_delete');
+  });
+}
+
+async function cleanupStaleFinancialConcurrencyFixtures(admin) {
+  const stale = await admin`
+    select organization.id as organization_id,organization.created_by as actor_id,membership.id as membership_id
+    from public.organizations organization
+    join public.organization_memberships membership
+      on membership.organization_id=organization.id and membership.user_id=organization.created_by
+    where organization.legal_name='P03 Concurrency SARL'
+      and organization.display_name='P03 Concurrency'
+  `;
+  for (const fixture of stale) {
+    await cleanupFinancialConcurrencyFixture(
+      admin, fixture.organization_id, fixture.actor_id, fixture.membership_id,
+    );
+  }
+}
+
+async function verifyFinancialConcurrency(databaseUrl, admin) {
+  await cleanupStaleFinancialConcurrencyFixtures(admin);
+  const fixture = {
+    actorId: randomUUID(),
+    organizationId: randomUUID(),
+    membershipId: randomUUID(),
+    debitAccountId: randomUUID(),
+    creditAccountId: randomUUID(),
+    walletId: randomUUID(),
+    journalCorrelationId: randomUUID(),
+    creditCorrelationId: randomUUID(),
+    auditCorrelationA: randomUUID(),
+    auditCorrelationB: randomUUID(),
+    journalKey: `p03-journal-${randomUUID()}`,
+    creditKey: `p03-credit-${randomUUID()}`,
+    effectiveAt: '2026-09-11T12:00:00.000Z',
+  };
+  const workerA = postgres(databaseUrl, { max: 1, prepare: false, connect_timeout: 15, idle_timeout: 0 });
+  const workerB = postgres(databaseUrl, { max: 1, prepare: false, connect_timeout: 15, idle_timeout: 0 });
+
+  async function authenticated(transaction) {
+    await transaction.unsafe('set local role authenticated');
+    await transaction`select set_config('request.jwt.claim.sub',${fixture.actorId},true)`;
+  }
+
+  async function invokeJournal(transaction) {
+    await authenticated(transaction);
+    return transaction`
+      select public.post_financial_journal(
+        ${fixture.organizationId}::uuid,${fixture.journalKey},null,'P03_CONCURRENCY','MAD'::char(3),
+        ${fixture.effectiveAt}::timestamptz,'P03 two-connection journal',
+        ${[
+          { account_id: fixture.debitAccountId, direction: 'DEBIT', amount_minor: 9900 },
+          { account_id: fixture.creditAccountId, direction: 'CREDIT', amount_minor: 9900 },
+        ]}::jsonb,${fixture.journalCorrelationId}::uuid
+      ) as id
+    `;
+  }
+
+  async function invokeCredit(transaction) {
+    await authenticated(transaction);
+    return transaction`
+      select public.append_credit_entry(
+        ${fixture.organizationId}::uuid,${fixture.walletId}::uuid,'GRANT',17,
+        'P03_TEST','two-connection-credit',${fixture.creditKey},null,${fixture.creditCorrelationId}::uuid
+      ) as id
+    `;
+  }
+
+  async function runDuplicateRace(invoke, label) {
+    const firstReady = deferred();
+    const releaseFirst = deferred();
+    const first = workerA.begin(async (transaction) => {
+      try {
+        const rows = await invoke(transaction);
+        firstReady.resolve(rows);
+        await releaseFirst.promise;
+        return rows;
+      } catch (error) {
+        firstReady.reject(error);
+        throw error;
+      }
+    });
+    const firstRows = await firstReady.promise;
+    const second = workerB.begin(invoke).then(
+      (value) => ({ status: 'fulfilled', value }),
+      (reason) => ({ status: 'rejected', reason }),
+    );
+    try {
+      await expectBlocked(second, label);
+    } finally {
+      releaseFirst.resolve();
+    }
+    const [committedFirst, secondResult] = await Promise.all([first, second]);
+    const secondRows = unwrap(secondResult);
+    if (String(firstRows[0]?.id) !== String(committedFirst[0]?.id)
+      || String(firstRows[0]?.id) !== String(secondRows[0]?.id)) {
+      throw new Error(`${label} returned different identifiers for one idempotency key`);
+    }
+    return String(firstRows[0].id);
+  }
+
+  async function runAuditRace() {
+    const firstReady = deferred();
+    const releaseFirst = deferred();
+    const insertAudit = (transaction, correlationId, resourceId) => transaction`
+      insert into public.audit_events (
+        organization_id,actor_user_id,actor_type,action,resource_type,resource_id,
+        correlation_id,metadata,previous_hash,event_hash
+      ) values (
+        ${fixture.organizationId}::uuid,${fixture.actorId}::uuid,'USER','p03.audit.concurrent',
+        'p03_test',${resourceId}::text,${correlationId}::uuid,jsonb_build_object('resource',${resourceId}::text),
+        null,repeat('0',64)
+      ) returning id,event_hash,previous_hash
+    `;
+    const first = workerA.begin(async (transaction) => {
+      try {
+        const rows = await insertAudit(transaction, fixture.auditCorrelationA, 'first');
+        firstReady.resolve(rows);
+        await releaseFirst.promise;
+        return rows;
+      } catch (error) {
+        firstReady.reject(error);
+        throw error;
+      }
+    });
+    const firstRows = await firstReady.promise;
+    const second = workerB.begin((transaction) => insertAudit(
+      transaction, fixture.auditCorrelationB, 'second',
+    )).then(
+      (value) => ({ status: 'fulfilled', value }),
+      (reason) => ({ status: 'rejected', reason }),
+    );
+    try {
+      await expectBlocked(second, 'audit chain race');
+    } finally {
+      releaseFirst.resolve();
+    }
+    await first;
+    const secondRows = unwrap(await second);
+    if (secondRows[0]?.previous_hash !== firstRows[0]?.event_hash) {
+      throw new Error('concurrent audit event did not link to the committed predecessor');
+    }
+  }
+
+  try {
+    await admin.begin(async (transaction) => {
+      await transaction`
+        insert into auth.users (
+          id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,
+          raw_app_meta_data,raw_user_meta_data,created_at,updated_at
+        ) values (
+          ${fixture.actorId}::uuid,'00000000-0000-0000-0000-000000000000',
+          'authenticated','authenticated',${`p03-${fixture.actorId}@example.invalid`},'',now(),'{}','{}',now(),now()
+        )
+      `;
+      await transaction`
+        insert into public.organizations (id,legal_name,display_name,status,created_by)
+        values (${fixture.organizationId}::uuid,'P03 Concurrency SARL','P03 Concurrency','ACTIVE',${fixture.actorId}::uuid)
+      `;
+      await transaction`
+        insert into public.organization_memberships (id,organization_id,user_id,status,activated_at)
+        values (${fixture.membershipId}::uuid,${fixture.organizationId}::uuid,${fixture.actorId}::uuid,'ACTIVE',now())
+      `;
+      await transaction`
+        insert into public.organization_member_roles (membership_id,role_code)
+        values (${fixture.membershipId}::uuid,'CLIENT_ACCOUNTING')
+      `;
+      await transaction`
+        insert into public.financial_accounts (id,organization_id,code,name,account_type,currency) values
+        (${fixture.debitAccountId}::uuid,${fixture.organizationId}::uuid,'P03-CASH','P03 Cash','ASSET','MAD'),
+        (${fixture.creditAccountId}::uuid,${fixture.organizationId}::uuid,'P03-REVENUE','P03 Revenue','REVENUE','MAD')
+      `;
+      await transaction`
+        insert into public.credit_wallets (id,organization_id,wallet_type)
+        values (${fixture.walletId}::uuid,${fixture.organizationId}::uuid,'CLIENT')
+      `;
+    });
+
+    const journalId = await runDuplicateRace(invokeJournal, 'journal duplicate invocation');
+    const journalEvidence = await admin`
+      select
+        (select count(*)::integer from public.financial_journals where organization_id=${fixture.organizationId}::uuid and id=${journalId}::uuid) as journals,
+        (select count(*)::integer from public.financial_entries where organization_id=${fixture.organizationId}::uuid and journal_id=${journalId}::uuid) as entries,
+        (select count(*)::integer from public.audit_events where organization_id=${fixture.organizationId}::uuid and action='financial.journal.posted') as audits,
+        (select count(*)::integer from public.event_outbox where organization_id=${fixture.organizationId}::uuid and event_type='FinancialJournalPostedV1') as outbox
+    `;
+    if (journalEvidence[0].journals !== 1 || journalEvidence[0].entries !== 2
+      || journalEvidence[0].audits !== 1 || journalEvidence[0].outbox !== 1) {
+      throw new Error('journal duplicate invocation produced duplicate or incomplete durable effects');
+    }
+
+    const creditEntryId = await runDuplicateRace(invokeCredit, 'credit duplicate invocation');
+    const creditEvidence = await admin`
+      select
+        (select count(*)::integer from public.credit_ledger_entries where organization_id=${fixture.organizationId}::uuid and id=${creditEntryId}::bigint) as entries,
+        (select balance from public.credit_wallet_balances where organization_id=${fixture.organizationId}::uuid and wallet_id=${fixture.walletId}::uuid) as balance,
+        (select count(*)::integer from public.audit_events where organization_id=${fixture.organizationId}::uuid and action='credit.entry.appended') as audits,
+        (select count(*)::integer from public.event_outbox where organization_id=${fixture.organizationId}::uuid and event_type='CreditLedgerEntryAppendedV1') as outbox
+    `;
+    if (creditEvidence[0].entries !== 1 || String(creditEvidence[0].balance) !== '17'
+      || creditEvidence[0].audits !== 1 || creditEvidence[0].outbox !== 1) {
+      throw new Error('credit duplicate invocation produced duplicate or incomplete durable effects');
+    }
+
+    await runAuditRace();
+    const auditEvidence = await admin`
+      select count(*)::integer as count,
+        bool_and(event_hash=encode(extensions.digest(convert_to(jsonb_build_object(
+          'previous_hash',coalesce(previous_hash,''),'organization_id',organization_id,'actor_user_id',actor_user_id,
+          'actor_type',actor_type,'action',action,'resource_type',resource_type,'resource_id',resource_id,
+          'correlation_id',correlation_id,'occurred_at',occurred_at,'request_ip',request_ip,
+          'user_agent',user_agent,'metadata',metadata
+        )::text,'UTF8'),'sha256'),'hex')) as hashes_valid
+      from public.audit_events
+      where correlation_id in (${fixture.auditCorrelationA}::uuid,${fixture.auditCorrelationB}::uuid)
+    `;
+    if (auditEvidence[0].count !== 2 || auditEvidence[0].hashes_valid !== true) {
+      throw new Error('concurrent audit chain hashes failed independent recomputation');
+    }
+  } finally {
+    await Promise.allSettled([workerA.end(), workerB.end()]);
+    await cleanupFinancialConcurrencyFixture(
+      admin, fixture.organizationId, fixture.actorId, fixture.membershipId,
+    );
+  }
+}
+
 const root = resolve(import.meta.dirname, '..');
 let fileEnv = {};
 try {
@@ -187,6 +467,7 @@ const files = (await readdir(testDirectory)).filter((file) => file.endsWith('.te
 let assertions = 0;
 
 try {
+  await cleanupStaleFinancialConcurrencyFixtures(sql);
   for (const file of files) {
     const source = await readFile(resolve(testDirectory, file), 'utf8');
     const result = await sql.unsafe(source, [], { simple: true });
@@ -196,7 +477,11 @@ try {
   }
   await verifyOutboxConcurrency(databaseUrl, sql);
   console.log('PASS outbox_concurrency (2 connections)');
-  console.log(`DB tests passed: ${files.length} files, ${assertions} assertions, 1 concurrency scenario`);
+  await verifyFinancialConcurrency(databaseUrl, sql);
+  console.log('PASS journal_idempotency_concurrency (2 connections)');
+  console.log('PASS credit_idempotency_concurrency (2 connections)');
+  console.log('PASS audit_chain_concurrency (2 connections)');
+  console.log(`DB tests passed: ${files.length} files, ${assertions} assertions, 4 concurrency scenarios`);
 } finally {
   await sql.end({ timeout: 2 });
 }

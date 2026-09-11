@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 
 const required = [
   "AGENTS.md", "PLANS.md", "docs/inventory/PHASE00_INVENTORY.md",
@@ -61,11 +62,39 @@ function assertKnown(kind: string, refs: string[], known: Set<string>): void {
 const missing = required.filter((path) => !existsSync(path));
 if (missing.length) fail(`Spécifications manquantes: ${missing.join(", ")}`);
 
-const context = JSON.parse(read("docs/specs/context-index.json")) as { indexes?: Record<string, string> };
+const context = JSON.parse(read("docs/specs/context-index.json")) as {
+  schema_version?: number;
+  authority?: string;
+  v1_scope?: Record<string, string>;
+  indexes?: Record<string, string>;
+  domains?: Record<string, string[]>;
+  evidence_roots?: string[];
+};
+if (context.schema_version !== 2 || context.authority !== "Matricia_GOLD_MASTER_PROMPT_UNIQUE_CODEX_V4_FINAL_2026-09-10.md") {
+  fail("Autorité ou version de l’index de contexte invalide.");
+}
+if (context.v1_scope?.required_functions !== "MAT-FUNC-001..MAT-FUNC-068" ||
+    context.v1_scope?.excluded_functions !== "MAT-FUNC-069..MAT-FUNC-090" ||
+    context.v1_scope?.required_addendum !== "MARKETING-001..MARKETING-008") {
+  fail("Périmètre V1 de l’index invalide.");
+}
 const missingIndexes = Object.entries(context.indexes ?? {})
   .filter(([, path]) => !existsSync(path))
   .map(([key, path]) => `${key}=${path}`);
 if (missingIndexes.length) fail(`Index de contexte invalides: ${missingIndexes.join(", ")}`);
+const requiredIndexKeys = ["agent_rules", "skills", "custom_agents", "inventory", "phases", "identity_rbac", "marketing_autopilot", "requirements", "architecture", "threat_model", "ownership_rules", "ownership_map", "plans", "progress", "phase_ledger", "screens", "forms", "permissions", "apis", "events", "notifications", "state_machines"];
+if (Object.keys(context.indexes ?? {}).sort().join("|") !== [...requiredIndexKeys].sort().join("|")) fail("Clés de l’index de contexte inexactes.");
+for (const root of context.evidence_roots ?? []) if (!existsSync(root)) fail(`Racine de preuve absente: ${root}`);
+
+const expectedRequirements = [
+  ...Array.from({ length: 68 }, (_, index) => `MAT-FUNC-${String(index + 1).padStart(3, "0")}`),
+  ...Array.from({ length: 8 }, (_, index) => `MARKETING-${String(index + 1).padStart(3, "0")}`),
+];
+const indexedRequirements = Object.values(context.domains ?? {}).flat();
+if (indexedRequirements.length !== 76 || new Set(indexedRequirements).size !== 76 ||
+    [...expectedRequirements].sort().join("|") !== [...indexedRequirements].sort().join("|")) {
+  fail("L’index doit attribuer exactement une fois les 76 exigences V1, sans fonction V2.");
+}
 JSON.parse(read("docs/progress/phase-ledger.json"));
 
 const registryPaths = required.filter((path) => path.includes("/registries/"));
@@ -131,22 +160,58 @@ const mandatoryAgents = [
   "social-integration-agent","marketing-analytics-agent","marketing-autopilot-auditor",
 ];
 const configuredAgents = new Set(readdirSync(".codex/agents").filter((name) => name.endsWith(".toml")).map((name) => name.slice(0, -5)));
+if (configuredAgents.size !== mandatoryAgents.length) fail(`Nombre de configurations agent invalide: ${configuredAgents.size}/63.`);
 assertKnown("Configurations agent obligatoires", mandatoryAgents, configuredAgents);
 for (const agent of mandatoryAgents) {
   const toml = read(`.codex/agents/${agent}.toml`);
-  for (const field of ["name", "description", "developer_instructions"]) {
-    if (!new RegExp(`^${field}\\s*=`, "m").test(toml)) fail(`Champ ${field} manquant: ${agent}.toml`);
-  }
+  const parsed = toml.match(/^name = "([^"\r\n]+)"\r?\ndescription = "([^"\r\n]+)"\r?\ndeveloper_instructions = """\r?\n([\s\S]+?)\r?\n"""\r?\n?$/);
+  if (!parsed) fail(`TOML agent non conforme au schéma strict: ${agent}.toml`);
+  if (parsed[1] !== agent) fail(`Le nom interne ne correspond pas au fichier: ${agent}.toml`);
+  if (parsed[2]!.trim().length < 20 || parsed[3]!.trim().length < 80) fail(`Description/instructions trop courtes: ${agent}.toml`);
+}
+
+const baseline = "d9e28f7";
+const tree = execFileSync("git", ["ls-tree", "-r", "--name-only", baseline], { encoding: "utf8" }).trim().split(/\r?\n/);
+const metrics = {
+  total: tree.length,
+  apps: tree.filter((path) => path.startsWith("apps/")).length,
+  web: tree.filter((path) => path.startsWith("apps/web/")).length,
+  worker: tree.filter((path) => path.startsWith("apps/worker/")).length,
+  packages: tree.filter((path) => path.startsWith("packages/")).length,
+  agents: tree.filter((path) => /^\.codex\/agents\/[^/]+\.toml$/.test(path)).length,
+  skills: tree.filter((path) => /^\.agents\/skills\/[^/]+\/SKILL\.md$/.test(path)).length,
+  migrations: tree.filter((path) => /^supabase\/migrations\/[^/]+\.sql$/.test(path)).length,
+  dbTests: tree.filter((path) => /^supabase\/tests\/[^/]+\.sql$/.test(path)).length,
+};
+const expectedMetrics = { total: 300, apps: 95, web: 92, worker: 3, packages: 23, agents: 63, skills: 23, migrations: 13, dbTests: 6 };
+if (JSON.stringify(metrics) !== JSON.stringify(expectedMetrics)) fail(`Métriques Git de baseline inattendues: ${JSON.stringify(metrics)}`);
+const inventory = read("docs/inventory/PHASE00_INVENTORY.md");
+for (const value of ["`d9e28f7`", "300 fichiers Git", "95 fichiers sous `apps/`", "92 Web", "3 Worker", "23 sous `packages/`", "63 configurations TOML", "23 skills", "13 migrations et 6 suites SQL"]) {
+  if (!inventory.includes(value)) fail(`Inventaire sans métrique prouvée: ${value}`);
+}
+
+const plan = read("PLANS.md");
+const planFields = ["id", "title", "status", "goal", "scope", "requirements", "invariants", "ownership", "dependencies", "milestones", "decisions", "risks", "validation_commands", "evidence_paths", "progress_log", "results", "independent_signoff", "next_phase"];
+for (const phase of ["P00", "P01", "P02", "P03", "P04"]) {
+  const block = plan.match(new RegExp(`id: ${phase}\\r?\\n([\\s\\S]*?)(?:\\r?\\n---|\\r?\\n\`\`\`)`))?.[0];
+  if (!block) fail(`ExecPlan absent: ${phase}`);
+  for (const field of planFields) if (!new RegExp(`^${field}:`, "m").test(block)) fail(`Champ ${field} absent de l’ExecPlan ${phase}`);
 }
 
 const marketingSpec = read("docs/specs/sections/marketing-autopilot.md");
-const marketingAuthorityTerms = [
-  "Brand Kit automatisé", "1 service = 3 contenus", "Six templates standardisés",
-  "Calendrier mensuel automatique", "Publication sociale contrôlée",
-  "Tracking CTA → contrat", "Campagnes depuis anomalies réelles", "Dashboard actionnable",
-];
-for (const term of marketingAuthorityTerms) {
-  if (!marketingSpec.includes(term)) fail(`Contrat Marketing non conforme à l’autorité: ${term}`);
+const marketingAuthority = new Map([
+  ["MARKETING-001", "Brand Kit automatisé"], ["MARKETING-002", "1 service = 3 contenus"],
+  ["MARKETING-003", "Six templates standardisés"], ["MARKETING-004", "Calendrier mensuel automatique"],
+  ["MARKETING-005", "Publication sociale contrôlée"], ["MARKETING-006", "Tracking CTA → contrat"],
+  ["MARKETING-007", "Campagnes depuis anomalies réelles"], ["MARKETING-008", "Dashboard actionnable"],
+]);
+for (const [id, name] of marketingAuthority) if (!new RegExp(`\\| ${id} \\| \\*\\*${name.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}\\*\\*`).test(marketingSpec)) fail(`Mapping Marketing invalide: ${id}`);
+for (const term of ["MANUAL", "ASSISTED", "AUTOPILOT", "LinkedIn", "Facebook/Instagram", "Reel 20–30 s", "PROBLEM_SOLUTION", "EXPERT_TIP", "PROVIDER_INTRO", "BEFORE_AFTER", "SERVICE_OF_MONTH", "SUCCESS_CASE", "8 posts + 4 Reels", "social_provider", "OAuth serveur", "LAST_NON_DIRECT_CLICK", "k-anonymity", "KEEP/INCREASE/REDUCE/CHANGE/PAUSE", "GENERATE → SOURCE_CHECK → BRAND_CHECK → CLAIMS_CHECK → PRIVACY_CHECK → CERTIFICATION_CHECK → DUPLICATE_CHECK → RISK_SCORE → SCHEDULE/PUBLISH"]) {
+  if (!marketingSpec.includes(term)) fail(`Obligation Marketing absente: ${term}`);
 }
+
+const contextPacket = JSON.parse(execFileSync(process.execPath, ["--experimental-strip-types", "scripts/context-pack.ts", "MAT-FUNC-001"], { encoding: "utf8" })) as Record<string, unknown>;
+for (const key of ["schema_version", "authority", "requirement", "domain", "sources", "contracts", "catalog_rule"]) if (!(key in contextPacket)) fail(`Paquet de contexte incomplet: ${key}`);
+if (contextPacket.domain !== "identity" || (contextPacket.requirement as { id?: string }).id !== "MAT-FUNC-001") fail("Paquet de contexte non ciblé.");
 
 console.log(`Bootstrap PHASE 00 cohérent: ${registryPaths.length} registres initialisés, 68 fonctions, 8 exigences marketing et ${mandatoryAgents.length} agents. P01 reste ouverte jusqu’aux contrats atomiques exhaustifs.`);

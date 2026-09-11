@@ -12,6 +12,10 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      # Public, deliberately non-secret values for hermetic Next.js validation.
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-local-publishable-key-not-a-secret
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -23,6 +27,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm verify:phase00
+      - run: node --experimental-strip-types scripts/validate-boundaries.ts
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test

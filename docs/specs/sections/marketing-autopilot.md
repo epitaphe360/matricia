@@ -1,6 +1,6 @@
 # Marketing Autopilot — contrat P18
 
-Autorité : addendum obligatoire V1 du Gold Master V4 FINAL. Le mode initial est `ASSISTED`; `AUTOPILOT` exige comptes sociaux connectés et règles de marque validées. Toute exception de conformité bloque uniquement le contenu concerné.
+Autorité : addendum obligatoire V1 du Gold Master V4 FINAL. Les modes sont `MANUAL`, `ASSISTED` et `AUTOPILOT`. Le mode initial est `ASSISTED`; `AUTOPILOT` exige comptes sociaux connectés et règles de marque validées. Toute exception de conformité bloque uniquement le contenu concerné.
 
 | ID | Fonction V1 et preuve de sortie |
 |---|---|

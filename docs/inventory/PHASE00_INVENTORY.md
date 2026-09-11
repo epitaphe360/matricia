@@ -1,23 +1,30 @@
 # Inventaire reproductible PHASE 00
 
-Autorité : Gold Master V4 FINAL. Baseline auditée : commit `c7095510bc3143d54ace67549747be0e1fb461ea`.
+Autorité : Gold Master V4 FINAL. Baseline auditée : commit `d9e28f7`.
 
 ## Commandes de reproduction
 
 ```powershell
-git ls-tree -r --name-only c7095510bc3143d54ace67549747be0e1fb461ea
-git ls-tree -r --name-only c7095510bc3143d54ace67549747be0e1fb461ea .codex/agents
-git ls-tree -r --name-only c7095510bc3143d54ace67549747be0e1fb461ea .agents/skills
+$files = git ls-tree -r --name-only d9e28f7
+$files.Count
+($files | Where-Object { $_ -like 'apps/*' }).Count
+($files | Where-Object { $_ -like 'apps/web/*' }).Count
+($files | Where-Object { $_ -like 'apps/worker/*' }).Count
+($files | Where-Object { $_ -like 'packages/*' }).Count
+($files | Where-Object { $_ -like '.codex/agents/*.toml' }).Count
+($files | Where-Object { $_ -like '.agents/skills/*/SKILL.md' }).Count
+($files | Where-Object { $_ -like 'supabase/migrations/*.sql' }).Count
+($files | Where-Object { $_ -like 'supabase/tests/*.sql' }).Count
 git check-ignore -v .env.local
 ```
 
 ## État versionné de la baseline
 
-- 294 fichiers Git.
-- 57 configurations TOML du corps principal; la remédiation suivante ajoute les 6 agents obligatoires Marketing, soit 63.
+- 300 fichiers Git.
+- 63 configurations TOML : 57 agents principaux et 6 agents Marketing obligatoires.
 - 23 skills projet actifs sous `.agents/skills/`.
 - 13 migrations et 6 suites SQL.
-- 97 fichiers sources/configuration sous `apps/` hors sorties générées; 23 sous `packages/` hors dépendances.
+- 95 fichiers sous `apps/` : 92 Web et 3 Worker; 23 sous `packages/`.
 - Catalogue validé : 10 bibliothèques, 200 services et 6 000 questions.
 - `.env.local` ignoré et non suivi; aucune valeur n’est inventoriée.
 

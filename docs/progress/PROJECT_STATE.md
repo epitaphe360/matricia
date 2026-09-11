@@ -1,6 +1,6 @@
 # Matricia — Project State
 
-Dernière mise à jour : 2026-09-11 07:40 America/Toronto
+Dernière mise à jour : 2026-09-11 07:55 America/Toronto
 
 Phase de contrôle active : **PHASE 00 — gate automatisé vert, nouvel audit indépendant requis**
 
@@ -40,7 +40,7 @@ Preuves actuelles :
 
 - migrations locales/distantes 20260910000100..20260910001300 alignées lors du dernier contrôle distant;
 - lint SQL public/private sans erreur de schéma lors du dernier contrôle distant;
-- `pnpm test:db` vert le 2026-09-11 : 6 fichiers, 61 assertions et un scénario réel Outbox à deux connexions;
+- `pnpm test:db` vert le 2026-09-11 : 9 fichiers, 111 assertions et quatre scénarios réels à deux connexions (Outbox, journal, crédits, chaîne audit);
 - tests négatifs RLS inter-tenant, immutabilité, équilibre/devise, crédits, idempotence, audit et Outbox.
 
 Docker local reste indisponible sur cet hôte; la reconstruction propre doit être prouvée par le job CI Supabase avant signature P03.
@@ -50,16 +50,16 @@ Docker local reste indisponible sur cet hôte; la reconstruction propre doit êt
 - `pnpm verify:phase00` : vert — catalogue 10/200/6000, 7 registres bootstrap, 68 fonctions, 8 exigences Marketing conformes à l’addendum et 63 agents.
 - `pnpm lint` : vert.
 - `pnpm typecheck` : vert.
-- `pnpm test` : vert — 5 tests (3 Web, 2 domaine).
-- `pnpm test:db` : vert — 61 assertions et 1 scénario de concurrence.
+- `pnpm test` : vert — 14 tests (3 Web, 2 domaine, 6 observabilité, 3 design system).
+- `pnpm test:db` : vert — 111 assertions et 4 scénarios de concurrence.
 - `pnpm build` : vert — routes OTP/callback/tableau de bord/health compilées.
 - `pnpm release:validate` : vert — uniquement gates structurels et absence de placeholders dans le périmètre contrôlé; ce n’est pas une signature de release.
 
 ## Audits et écarts
 
-- Le réaudit P00/P01 du commit `c709551` a refusé la signature : Marketing mal mappé, six agents manquants, inventaire non reproductible, plans de phases absents et validateurs trop permissifs. Autorité Marketing, 63 agents, inventaire, plans P00-P04 et traçabilité conditionnelle sont corrigés localement; nouveau réaudit requis.
-- Le réaudit P03 n’a trouvé aucun P0/P1. Signature refusée pour couverture RLS partielle, concurrence journal/crédits/audit manquante, preuves audit/outbox incomplètes et absence de replay DB vierge.
-- L’audit P02/P04 a refusé la signature : CI dépendante de `.env.local`, huit packages hors gates, observabilité/design partagé/headers insuffisants, OTP côté navigateur sans rate-limit/audit, aucun workflow ICE/invitation/session complet et tests P04 insuffisants.
+- Les réaudits P00/P01 ont refusé la signature puis identifié quatre écarts résiduels : métriques d’inventaire, force des validateurs, signoff positif et context-pack structuré. Ces quatre écarts sont corrigés localement; les gates P00 sont vertes et un nouveau réaudit est requis.
+- Le réaudit P03 n’a trouvé aucun P0/P1. Les matrices RLS, preuves audit/Outbox et courses journal/crédits/audit sont désormais étendues; le replay DB vierge CI et le nouveau visa restent requis.
+- Les écarts P02 sont corrigés localement : CI hermétique, 10 packages contrôlés, frontières modulaires, observabilité structurée, tokens Design Authority A et headers de sécurité. Le nouveau visa reste requis. Les écarts P04 restent ouverts.
 - P01 ne couvre pas encore les contrats atomiques de toutes les phases.
 - P04 ne couvre pas encore invitations complètes, rattachement/fusion ICE, gestion/revocation des sessions, mot de passe facultatif, MFA et limitation applicative.
 - MAT-FUNC-001..068 et MARKETING-001..008 restent à implémenter et prouver progressivement.
@@ -67,8 +67,8 @@ Docker local reste indisponible sur cet hôte; la reconstruction propre doit êt
 
 ## Prochaine exécution
 
-1. Rejouer les gates, committer/pousser la seconde remédiation P00 et obtenir un nouveau réaudit indépendant.
-2. Corriger P02 : CI hermétique, gates de tous les packages, frontières, observabilité, design partagé et headers.
-3. Étendre les tests P03 puis obtenir un replay vierge CI et un réaudit.
+1. Committer/pousser la remédiation P00/P02/P03 et obtenir les réaudits indépendants.
+2. Obtenir un replay DB vierge CI et fermer les risques P02/P03 restants.
+3. Étendre les contrats atomiques P01 au fil des domaines.
 4. Terminer P04 identité/organisations avec mutations serveur, ICE, invitations, sessions et tests complets.
 5. Continuer P05..P19 selon `PLANS.md`, sans sauter de gate.
