@@ -151,21 +151,15 @@ async function recoverResourcesFromJournal(directory, config, runName) {
 async function neutralizeCatalogFixture(database, fixture, actorId = null) {
   if (!fixture?.library) return;
   await database.begin(async (transaction) => {
-    if (fixture.release) {
-      await transaction`select pg_advisory_xact_lock(hashtextextended('catalog-library-publish:'||${fixture.release}::text,0))`;
-    }
+    await transaction`select pg_advisory_xact_lock(hashtextextended('catalog-library-cleanup:'||${fixture.library}::text,0))`;
     const library = await transaction`select steward_organization_id from public.catalog_libraries
       where id=${fixture.library}::uuid for update`;
     if (library.length === 0) return;
-    const release = fixture.release ? await transaction`select status from public.catalog_releases
-      where id=${fixture.release}::uuid and library_id=${fixture.library}::uuid for update` : [];
-    if (release[0]?.status === "PUBLISHED") {
-      await transaction`update public.catalog_releases set status='RETIRED',lease_token=null,leased_until=null,next_attempt_at=null,retired_at=clock_timestamp(),row_version=row_version+1
-        where id=${fixture.release}::uuid and status='PUBLISHED'`;
-    } else if (release.length > 0) {
-      await transaction`update public.catalog_releases set status='ARCHIVED',lease_token=null,leased_until=null,next_attempt_at=null,published_at=null,retired_at=null,row_version=row_version+1
-        where id=${fixture.release}::uuid and status in ('DRAFT','IN_REVIEW','APPROVED','SCHEDULED','PUBLISHING','FAILED','DEAD_LETTER')`;
-    }
+    await transaction`select id,status from public.catalog_releases where library_id=${fixture.library}::uuid for update`;
+    await transaction`update public.catalog_releases set status='RETIRED',lease_token=null,leased_until=null,next_attempt_at=null,retired_at=clock_timestamp(),row_version=row_version+1
+      where library_id=${fixture.library}::uuid and status='PUBLISHED'`;
+    await transaction`update public.catalog_releases set status='ARCHIVED',lease_token=null,leased_until=null,next_attempt_at=null,published_at=null,retired_at=null,row_version=row_version+1
+      where library_id=${fixture.library}::uuid and status in ('DRAFT','IN_REVIEW','APPROVED','SCHEDULED','PUBLISHING','FAILED','DEAD_LETTER')`;
     await transaction`update public.catalog_libraries set status='ARCHIVED',archived_at=coalesce(archived_at,clock_timestamp()),current_release_id=null,row_version=row_version+1,updated_at=clock_timestamp()
       where id=${fixture.library}::uuid and status<>'ARCHIVED'`;
     await transaction`update public.catalog_categories set status='ARCHIVED',archived_at=coalesce(archived_at,clock_timestamp()),row_version=row_version+1
@@ -191,7 +185,6 @@ async function neutralizeCatalogFixture(database, fixture, actorId = null) {
   const active = await database`select
     (select count(*) from public.catalog_libraries where id=${fixture.library}::uuid and status<>'ARCHIVED')
     +(select count(*) from public.catalog_releases where library_id=${fixture.library}::uuid
-      and (${fixture.release ?? null}::uuid is null or id=${fixture.release ?? null}::uuid)
       and status in ('DRAFT','IN_REVIEW','APPROVED','SCHEDULED','PUBLISHING','FAILED','DEAD_LETTER','PUBLISHED')) as count`;
   if (Number(active[0]?.count) !== 0) throw new Error("P06 catalogue fixture remained active after neutralization");
 }
@@ -325,7 +318,8 @@ async function createCatalogFixture(database, userClient, serviceClient, actorId
   const ids = Object.fromEntries([
     "library", "libraryVersion", "category", "categoryVersion", "subcategory", "subcategoryVersion",
     "serviceA", "serviceAVersion", "serviceB", "serviceBVersion", "linkA", "linkAVersion",
-    "linkB", "linkBVersion", "release",
+    "linkB", "linkBVersion", "adminLibraryVersion", "adminCategoryVersion", "adminSubcategoryVersion",
+    "adminServiceAVersion", "adminServiceBVersion", "adminLinkAVersion", "adminLinkBVersion", "release",
   ].map((key) => [key, randomUUID()]));
   const suffix = runId.replaceAll("-", "").slice(0, 8).toUpperCase();
   const fixture = {
@@ -339,11 +333,23 @@ async function createCatalogFixture(database, userClient, serviceClient, actorId
     releaseKey: `P06.E2E.${suffix}`,
   };
   const hash = (label) => createHash("sha256").update(`${runId}:${label}`).digest("hex");
+  fixture.serviceAHash = hash("service-1");
+  fixture.adminSourceHash = hash("admin-release-source");
+  fixture.adminReleaseKey = `P06.ADMIN.${suffix}`;
+  fixture.adminItems = [
+    { objectType: "LIBRARY", objectId: fixture.library, versionId: fixture.adminLibraryVersion, contentHash: hash("admin-library") },
+    { objectType: "CATEGORY", objectId: fixture.category, versionId: fixture.adminCategoryVersion, contentHash: hash("admin-category") },
+    { objectType: "SUBCATEGORY", objectId: fixture.subcategory, versionId: fixture.adminSubcategoryVersion, contentHash: hash("admin-subcategory") },
+    { objectType: "SERVICE", objectId: fixture.serviceA, versionId: fixture.adminServiceAVersion, contentHash: hash("admin-service-1") },
+    { objectType: "SERVICE_SUBCATEGORY_LINK", objectId: fixture.linkA, versionId: fixture.adminLinkAVersion, contentHash: hash("admin-link-1") },
+    { objectType: "SERVICE", objectId: fixture.serviceB, versionId: fixture.adminServiceBVersion, contentHash: hash("admin-service-2") },
+    { objectType: "SERVICE_SUBCATEGORY_LINK", objectId: fixture.linkB, versionId: fixture.adminLinkBVersion, contentHash: hash("admin-link-2") },
+  ];
   const items = [
     ["LIBRARY", fixture.library, fixture.libraryVersion, hash("library")],
     ["CATEGORY", fixture.category, fixture.categoryVersion, hash("category")],
     ["SUBCATEGORY", fixture.subcategory, fixture.subcategoryVersion, hash("subcategory")],
-    ["SERVICE", fixture.serviceA, fixture.serviceAVersion, hash("service-1")],
+    ["SERVICE", fixture.serviceA, fixture.serviceAVersion, fixture.serviceAHash],
     ["SERVICE_SUBCATEGORY_LINK", fixture.linkA, fixture.linkAVersion, hash("link-1")],
     ["SERVICE", fixture.serviceB, fixture.serviceBVersion, hash("service-2")],
     ["SERVICE_SUBCATEGORY_LINK", fixture.linkB, fixture.linkBVersion, hash("link-2")],
@@ -473,6 +479,33 @@ async function createCatalogFixture(database, userClient, serviceClient, actorId
   crashIfRequested("CATALOG_MUTATED");
   evidence.push({ correlationId: publishCorrelationId, action: "catalog.release.published", eventType: "CatalogReleasePublishedV1", count: 1 });
   await verifyCatalogEvidence(database, stewardId, fixture.release, evidence);
+  await database.begin(async (transaction) => {
+    await transaction`insert into public.catalog_library_versions(id,library_id,version,status,name_fr,name_ar,description_fr,description_ar,icon_key,sort_order,change_reason,content_hash,sensitive,translation_review_status,translation_reviewer_user_id,translation_reviewed_at,translation_review_proof_hash,translation_review_version,created_by,code,slug)
+      select ${fixture.adminLibraryVersion}::uuid,library_id,2,'APPROVED',name_fr,name_ar,description_fr,description_ar,icon_key,sort_order,'Version E2E administration',${hash("admin-library")},sensitive,'APPROVED',${actorId}::uuid,clock_timestamp(),${hash("admin-library-ar")},1,${actorId}::uuid,code,slug
+      from public.catalog_library_versions where id=${fixture.libraryVersion}::uuid`;
+    await transaction`insert into public.catalog_category_versions(id,category_id,library_id,version,status,name_fr,name_ar,description_fr,description_ar,icon_key,sort_order,visibility_rules,change_reason,content_hash,sensitive,translation_review_status,translation_reviewer_user_id,translation_reviewed_at,translation_review_proof_hash,translation_review_version,created_by,code,slug)
+      select ${fixture.adminCategoryVersion}::uuid,category_id,library_id,2,'APPROVED',name_fr,name_ar,description_fr,description_ar,icon_key,sort_order,visibility_rules,'Version E2E administration',${hash("admin-category")},sensitive,'APPROVED',${actorId}::uuid,clock_timestamp(),${hash("admin-category-ar")},1,${actorId}::uuid,code,slug
+      from public.catalog_category_versions where id=${fixture.categoryVersion}::uuid`;
+    await transaction`insert into public.catalog_subcategory_versions(id,subcategory_id,library_id,version,status,name_fr,name_ar,description_fr,description_ar,icon_key,sort_order,visibility_rules,change_reason,content_hash,sensitive,translation_review_status,translation_reviewer_user_id,translation_reviewed_at,translation_review_proof_hash,translation_review_version,created_by,category_id,code,slug)
+      select ${fixture.adminSubcategoryVersion}::uuid,subcategory_id,library_id,2,'APPROVED',name_fr,name_ar,description_fr,description_ar,icon_key,sort_order,visibility_rules,'Version E2E administration',${hash("admin-subcategory")},sensitive,'APPROVED',${actorId}::uuid,clock_timestamp(),${hash("admin-subcategory-ar")},1,${actorId}::uuid,category_id,code,slug
+      from public.catalog_subcategory_versions where id=${fixture.subcategoryVersion}::uuid`;
+    for (const [sourceVersionId, targetVersionId, contentHash, reviewHash] of [
+      [fixture.serviceAVersion, fixture.adminServiceAVersion, hash("admin-service-1"), hash("admin-service-1-ar")],
+      [fixture.serviceBVersion, fixture.adminServiceBVersion, hash("admin-service-2"), hash("admin-service-2-ar")],
+    ]) {
+      await transaction`insert into public.catalog_service_versions(id,service_id,library_id,version,status,name_fr,name_ar,short_description_fr,short_description_ar,long_description_fr,long_description_ar,service_type,unit_label_fr,unit_label_ar,credit_eligible,volume_eligible,recurring_eligible,trial_eligible,rfq_required,fixed_fulfillment_allowed,base_currency,sort_order,fulfillment_config,visibility_rules,change_reason,content_hash,sensitive,translation_review_status,translation_reviewer_user_id,translation_reviewed_at,translation_review_proof_hash,translation_review_version,created_by,primary_subcategory_id,code,slug)
+        select ${targetVersionId}::uuid,service_id,library_id,2,'APPROVED',name_fr,name_ar,short_description_fr,short_description_ar,long_description_fr,long_description_ar,service_type,unit_label_fr,unit_label_ar,credit_eligible,volume_eligible,recurring_eligible,trial_eligible,rfq_required,fixed_fulfillment_allowed,base_currency,sort_order,fulfillment_config,visibility_rules,'Version E2E administration',${contentHash},sensitive,'APPROVED',${actorId}::uuid,clock_timestamp(),${reviewHash},1,${actorId}::uuid,primary_subcategory_id,code,slug
+        from public.catalog_service_versions where id=${sourceVersionId}::uuid`;
+    }
+    for (const [sourceVersionId, targetVersionId, contentHash] of [
+      [fixture.linkAVersion, fixture.adminLinkAVersion, hash("admin-link-1")],
+      [fixture.linkBVersion, fixture.adminLinkBVersion, hash("admin-link-2")],
+    ]) {
+      await transaction`insert into public.catalog_service_subcategory_link_versions(id,link_id,library_id,version,status,change_reason,content_hash,created_by)
+        select ${targetVersionId}::uuid,link_id,library_id,2,'APPROVED','Version E2E administration',${contentHash},${actorId}::uuid
+        from public.catalog_service_subcategory_link_versions where id=${sourceVersionId}::uuid`;
+    }
+  });
   await onProgress(fixture, "CATALOG_PUBLISHED");
   return fixture;
 }
@@ -486,6 +519,7 @@ async function runPlaywright(environment) {
     resolve(root, "node_modules", "@playwright", "test", "cli.js"),
     "test",
     "tests/e2e/p06-catalog.spec.ts",
+    "tests/e2e/p06-catalog-admin.spec.ts",
     "--reporter=line",
     "--output",
     playwrightDirectory,
@@ -660,6 +694,13 @@ try {
       libraryNameAr: catalogFixture.libraryNameAr,
       firstCode: catalogFixture.firstCode,
       secondCode: catalogFixture.secondCode,
+      libraryId: catalogFixture.library,
+      serviceId: catalogFixture.serviceA,
+      serviceVersionId: catalogFixture.serviceAVersion,
+      serviceContentHash: catalogFixture.serviceAHash,
+      adminItems: catalogFixture.adminItems,
+      adminSourceHash: catalogFixture.adminSourceHash,
+      adminReleaseKey: catalogFixture.adminReleaseKey,
     },
   };
   const childManifestKey = randomBytes(32).toString("base64url");

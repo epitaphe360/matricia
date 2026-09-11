@@ -1,0 +1,100 @@
+import { describe, expect, it, vi } from "vitest";
+import { createCatalogBuilderRepository, type BuilderRepositoryDependencies } from "./repository";
+
+const library = { id: "11111111-1111-4111-8111-111111111111", code: "IT", status: "PUBLISHED", row_version: 4, current_release_id: null };
+const commandIdentity = { idempotencyKey: "33333333-3333-4333-8333-333333333333", correlationId: "44444444-4444-4444-8444-444444444444" };
+function dependencies(overrides: Partial<BuilderRepositoryDependencies> = {}): BuilderRepositoryDependencies {
+  return {
+    authenticated: async () => true,
+    libraries: async () => ({ data: [library], error: null }),
+    library: async (libraryId) => ({ data: libraryId === library.id ? [library] : [], error: null }),
+    services: async () => ({ data: [{ id: "22222222-2222-4222-8222-222222222222", library_id: library.id, code: "IT_AUDIT", slug: "it-audit", status: "PUBLISHED" }], error: null }),
+    rpc: vi.fn(async () => ({ data: null, error: { code: "42501" } })),
+    ...overrides,
+  };
+}
+
+describe("catalogue builder repository", () => {
+  it("loads at most the selected service subset", async () => {
+    const deps = dependencies(); const result = await createCatalogBuilderRepository(deps).loadWorkspace(library.id);
+    expect(result.status).toBe("success");
+    if (result.status === "success") expect(result.value.services).toHaveLength(1);
+  });
+  it("fails closed on malformed status and excess library/service cardinality", async () => {
+    const malformed = await createCatalogBuilderRepository(dependencies({ libraries: async () => ({ data: [{ ...library, status: "UNKNOWN" }], error: null }) })).loadWorkspace(null);
+    expect(malformed).toEqual({ status: "error", reason: "INVALID_RESPONSE" });
+    const tooManyLibraries = await createCatalogBuilderRepository(dependencies({ libraries: async () => ({ data: Array.from({ length: 11 }, () => library), error: null }) })).loadWorkspace(null);
+    expect(tooManyLibraries).toEqual({ status: "error", reason: "INVALID_RESPONSE" });
+    const service = { id: "22222222-2222-4222-8222-222222222222", library_id: library.id, code: "IT_AUDIT", slug: "it-audit", status: "PUBLISHED" };
+    const tooManyServices = await createCatalogBuilderRepository(dependencies({ services: async () => ({ data: Array.from({ length: 201 }, () => service), error: null }) })).loadWorkspace(library.id);
+    expect(tooManyServices).toEqual({ status: "error", reason: "INVALID_RESPONSE" });
+  });
+  it("does not invent a questionnaire persistence mutation", async () => {
+    const rpc = vi.fn(async () => ({ data: null, error: null }));
+    const repo = createCatalogBuilderRepository(dependencies({ rpc }));
+    const result = await repo.persistQuestionnaireDraft({} as never);
+    expect(result).toEqual({ status: "error", reason: "INVALID_INPUT" });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+  it("reports the missing write contract without emulating questionnaire persistence", async () => {
+    const rpc = vi.fn(async () => ({ data: null, error: null }));
+    const repo = createCatalogBuilderRepository(dependencies({ rpc }));
+    const result = await repo.persistQuestionnaireDraft({
+      libraryId: library.id, serviceId: "22222222-2222-4222-8222-222222222222", code: "SECURITY_BASE", version: 1,
+      title: { fr: "Sécurité", ar: "الأمن" }, description: { fr: "Questionnaire sécurité", ar: "استبيان الأمن" },
+      questions: [{ key: "MFA", label: { fr: "MFA active ?", ar: "هل التحقق مفعل؟" }, answerType: "YES_NO", required: true, options: [] }],
+      rules: [],
+    });
+    expect(result).toEqual({ status: "error", reason: "MISSING_QUESTIONNAIRE_WRITE_RPC" });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+  it("does not call a release command without an authenticated session", async () => {
+    const rpc = vi.fn(async () => ({ data: null, error: null }));
+    const repo = createCatalogBuilderRepository(dependencies({ authenticated: async () => false, rpc }));
+    const result = await repo.submitRelease({ releaseId: "22222222-2222-4222-8222-222222222222", expectedRowVersion: 1, ...commandIdentity });
+    expect(result).toEqual({ status: "error", reason: "UNAUTHENTICATED" });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+  it("maps catalogue command authorization failures", async () => {
+    const result = await createCatalogBuilderRepository(dependencies()).createRelease({ libraryId: library.id, releaseKey: "IT.V2", sourceBundleHash: "a".repeat(64), requiresCentralApproval: false, expectedLibraryRowVersion: 4, ...commandIdentity });
+    expect(result).toEqual({ status: "error", reason: "FORBIDDEN" });
+  });
+  it("forwards stable command identities and parses the release response", async () => {
+    const rpc = vi.fn(async () => ({
+      data: { outcome: "CATALOG_RELEASE_CREATED", release_id: "55555555-5555-4555-8555-555555555555", status: "DRAFT", library_row_version: 5 },
+      error: null,
+    }));
+    const result = await createCatalogBuilderRepository(dependencies({ rpc })).createRelease({
+      libraryId: library.id, releaseKey: "IT.V2", sourceBundleHash: "a".repeat(64), requiresCentralApproval: false,
+      expectedLibraryRowVersion: 4, ...commandIdentity,
+    });
+    expect(result).toEqual({ status: "success", value: { id: "55555555-5555-4555-8555-555555555555", rowVersion: 1 } });
+    expect(rpc).toHaveBeenCalledWith("create_catalog_release", expect.objectContaining({
+      p_idempotency_key: commandIdentity.idempotencyKey,
+      p_correlation_id: commandIdentity.correlationId,
+    }));
+  });
+  it("fails closed on an augmented command response DTO", async () => {
+    const rpc = vi.fn(async () => ({
+      data: { outcome: "CATALOG_RELEASE_CREATED", release_id: "55555555-5555-4555-8555-555555555555", status: "DRAFT", library_row_version: 5, injected: true },
+      error: null,
+    }));
+    const result = await createCatalogBuilderRepository(dependencies({ rpc })).createRelease({
+      libraryId: library.id, releaseKey: "IT.V2", sourceBundleHash: "a".repeat(64), requiresCentralApproval: false,
+      expectedLibraryRowVersion: 4, ...commandIdentity,
+    });
+    expect(result).toEqual({ status: "error", reason: "INVALID_RESPONSE" });
+  });
+  it("adds and submits through exact response contracts", async () => {
+    const releaseId = "55555555-5555-4555-8555-555555555555";
+    const rpc = vi.fn(async (name: string) => name === "add_catalog_release_item"
+      ? { data: { outcome: "CATALOG_RELEASE_ITEM_ADDED", release_id: releaseId, release_row_version: 2 }, error: null }
+      : { data: { outcome: "CATALOG_RELEASE_SUBMITTED", release_id: releaseId, status: "APPROVED", snapshot_hash: "d".repeat(64) }, error: null });
+    const repo = createCatalogBuilderRepository(dependencies({ rpc }));
+    const added = await repo.addReleaseItem({ releaseId, objectType: "SERVICE", objectId: "22222222-2222-4222-8222-222222222222", versionId: "66666666-6666-4666-8666-666666666666", contentHash: "c".repeat(64), sortOrder: 1, expectedRowVersion: 1, ...commandIdentity });
+    const submitted = await repo.submitRelease({ releaseId, expectedRowVersion: 2, ...commandIdentity });
+    expect(added).toEqual({ status: "success", value: { rowVersion: 2 } });
+    expect(submitted).toEqual({ status: "success", value: { releaseId, status: "APPROVED", snapshotHash: "d".repeat(64) } });
+    expect(rpc).toHaveBeenCalledTimes(2);
+  });
+});
