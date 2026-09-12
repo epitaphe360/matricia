@@ -1,0 +1,1 @@
+import{describe,expect,it}from"vitest";import{getVolumeMessages}from"./messages";describe("volume messages",()=>{it("maintient la parité FR/AR",()=>expect(Object.keys(getVolumeMessages("fr")).sort()).toEqual(Object.keys(getVolumeMessages("ar")).sort()));it("localise le parcours arabe",()=>expect(getVolumeMessages("ar").title).toContain("المشتريات"))});

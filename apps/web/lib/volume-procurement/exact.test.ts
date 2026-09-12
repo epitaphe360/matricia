@@ -1,0 +1,1 @@
+import{describe,expect,it}from"vitest";import{sumExactUnits}from"./exact";describe("sumExactUnits",()=>{it("additionne six décimales sans float",()=>{expect(sumExactUnits(["0.100001","2.2","3.000009"])).toBe("5.30001")});it("préserve les grands entiers",()=>{expect(sumExactUnits(["9007199254740993","7"])).toBe("9007199254741000")})});
