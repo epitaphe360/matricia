@@ -1,0 +1,1 @@
+import{describe,expect,it}from"vitest";import{getMissionMessages}from"./messages";describe("mission localization",()=>{it("keeps key parity",()=>expect(Object.keys(getMissionMessages("ar"))).toEqual(Object.keys(getMissionMessages("fr"))));it("ships native Arabic",()=>expect(getMissionMessages("ar").description).toMatch(/[\u0600-\u06ff]/u))});
