@@ -1,4 +1,4 @@
-import type { BuilderDraft, BuilderWorkspace } from "./model";
+import type { BuilderDraft, BuilderWorkspace, CreatedQuestion, QuestionDraftInput } from "./model";
 
 export type BuilderError = "UNAUTHENTICATED" | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_RESPONSE" | "UNAVAILABLE" | "MISSING_QUESTIONNAIRE_WRITE_RPC";
 export type BuilderResult<T> = { status: "success"; value: T } | { status: "error"; reason: BuilderError };
@@ -13,6 +13,7 @@ export type ReleaseItemInput = {
 export interface CatalogBuilderRepository {
   loadWorkspace(libraryId: string | null): Promise<BuilderResult<BuilderWorkspace>>;
   persistQuestionnaireDraft(draft: BuilderDraft): Promise<BuilderResult<never>>;
+  createQuestion(input: QuestionDraftInput): Promise<BuilderResult<CreatedQuestion>>;
   createRelease(input: { libraryId: string; releaseKey: string; sourceBundleHash: string; requiresCentralApproval: boolean; expectedLibraryRowVersion: number } & CommandIdentity): Promise<BuilderResult<ReleaseDraft>>;
   addReleaseItem(input: ReleaseItemInput): Promise<BuilderResult<{ rowVersion: number }>>;
   submitRelease(input: { releaseId: string; expectedRowVersion: number } & CommandIdentity): Promise<BuilderResult<{ releaseId: string; status: "APPROVED" | "IN_REVIEW"; snapshotHash: string }>>;

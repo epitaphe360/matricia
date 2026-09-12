@@ -1,15 +1,15 @@
 "use client";
 
-import { useActionState, useEffect, useId, useRef, type FormEvent } from "react";
+import { useActionState, useId } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Locale } from "@/lib/i18n/locale";
-import { canonicalCommandPayload, purgeConfirmedCommandIdentity, resolveCommandIdentity, type CommandAction, type CommandIdentity } from "@/lib/catalogue-builder/command-identity";
 import type { CatalogEntityStatus } from "@/lib/catalogue-builder/model";
 import { addReleaseItemAction, createReleaseAction, submitReleaseAction, type BuilderActionState } from "./actions";
 import type { BuilderMessages } from "./messages";
+import { usePersistentCommandIdentity } from "./use-command-identity";
 
 const initialState: BuilderActionState = { status: "idle" };
 const objectTypes = ["LIBRARY", "CATEGORY", "SUBCATEGORY", "SERVICE", "SERVICE_SUBCATEGORY_LINK"] as const;
@@ -31,25 +31,6 @@ function ActionStatus({ state, messages, id }: { state: BuilderActionState; mess
     );
   }
   return <p id={id} role="status" aria-live="polite" className="min-h-6" />;
-}
-
-function usePersistentCommandIdentity(action: CommandAction, state: BuilderActionState, successfulOperation: "CREATED" | "ITEM_ADDED" | "SUBMITTED", fallback: CommandIdentity) {
-  const idempotencyRef = useRef<HTMLInputElement>(null);
-  const correlationRef = useRef<HTMLInputElement>(null);
-  const submittedIdempotencyKey = useRef(fallback.idempotencyKey);
-  const onSubmitCapture = (event: FormEvent<HTMLFormElement>) => {
-    const payload = canonicalCommandPayload(new FormData(event.currentTarget));
-    const identity = resolveCommandIdentity(window.sessionStorage, action, payload, fallback);
-    submittedIdempotencyKey.current = identity.idempotencyKey;
-    if (idempotencyRef.current) idempotencyRef.current.value = identity.idempotencyKey;
-    if (correlationRef.current) correlationRef.current.value = identity.correlationId;
-  };
-  useEffect(() => {
-    if (state.status === "success" && state.operation === successfulOperation) {
-      purgeConfirmedCommandIdentity(window.sessionStorage, action, submittedIdempotencyKey.current);
-    }
-  }, [action, fallback.idempotencyKey, state, successfulOperation]);
-  return [idempotencyRef, correlationRef, onSubmitCapture] as const;
 }
 
 function Confirmation({ name, children }: { name: string; children: string }) {
@@ -87,9 +68,9 @@ export function ReleaseWorkflow({ locale, library, service, messages, commandIde
   const [addState, addAction, adding] = useActionState(addReleaseItemAction, initialState);
   const [submitState, submitAction, submitting] = useActionState(submitReleaseAction, initialState);
   const prefix = useId();
-  const [createIdempotencyRef, createCorrelationRef, prepareCreate] = usePersistentCommandIdentity("CREATE_RELEASE", createState, "CREATED", commandIdentities.create);
-  const [addIdempotencyRef, addCorrelationRef, prepareAdd] = usePersistentCommandIdentity("ADD_RELEASE_ITEM", addState, "ITEM_ADDED", commandIdentities.add);
-  const [submitIdempotencyRef, submitCorrelationRef, prepareSubmit] = usePersistentCommandIdentity("SUBMIT_RELEASE", submitState, "SUBMITTED", commandIdentities.submit);
+  const [createIdempotencyRef, createCorrelationRef, prepareCreate] = usePersistentCommandIdentity("CREATE_RELEASE", createState.status === "success" && createState.operation === "CREATED", commandIdentities.create);
+  const [addIdempotencyRef, addCorrelationRef, prepareAdd] = usePersistentCommandIdentity("ADD_RELEASE_ITEM", addState.status === "success" && addState.operation === "ITEM_ADDED", commandIdentities.add);
+  const [submitIdempotencyRef, submitCorrelationRef, prepareSubmit] = usePersistentCommandIdentity("SUBMIT_RELEASE", submitState.status === "success" && submitState.operation === "SUBMITTED", commandIdentities.submit);
 
   return (
     <section aria-labelledby={`${prefix}-title`} className="space-y-5">

@@ -11,6 +11,11 @@ export type BuilderActionState =
   | { status: "success"; operation: "CREATED" | "ITEM_ADDED" | "SUBMITTED"; releaseId: string; rowVersion?: number; releaseStatus?: "APPROVED" | "IN_REVIEW" }
   | { status: "error"; reason: "VALIDATION" | "UNAUTHENTICATED" | "FORBIDDEN" | "UNAVAILABLE" };
 
+export type QuestionActionState =
+  | { status: "idle" }
+  | { status: "success"; questionId: string; versionId: string }
+  | { status: "error"; reason: "VALIDATION" | "UNAUTHENTICATED" | "FORBIDDEN" | "UNAVAILABLE" };
+
 const base = z.object({ locale: z.string().refine(isLocale), confirmed: z.literal("yes"), idempotencyKey: uuidSchema, correlationId: uuidSchema });
 const createSchema = base.extend({
   libraryId: uuidSchema, releaseKey: z.string().trim().regex(/^[A-Z][A-Z0-9_.-]{2,119}$/u),
@@ -23,8 +28,21 @@ const addSchema = base.extend({
   sortOrder: z.coerce.number().int().positive(), expectedRowVersion: z.coerce.number().int().positive(),
 }).strict();
 const submitSchema = base.extend({ releaseId: uuidSchema, expectedRowVersion: z.coerce.number().int().positive() }).strict();
+const questionSchema = base.extend({
+  libraryId: uuidSchema, serviceId: uuidSchema,
+  questionKey: z.string().trim().regex(/^[A-Z][A-Z0-9_.-]{1,119}$/u),
+  labelFr: z.string().trim().min(1).max(1_000), labelAr: z.string().trim().min(1).max(1_000),
+  helpFr: z.string().trim().max(2_000), helpAr: z.string().trim().max(2_000),
+  answerType: z.enum(["YES_NO", "SHORT_TEXT", "LONG_TEXT", "INTEGER", "DATE", "MONEY"]),
+  dataKey: z.string().trim().regex(/^[A-Za-z][A-Za-z0-9_.-]{1,159}$/u),
+  requiredByDefault: z.enum(["yes", "no"]), requiredForQuote: z.enum(["yes", "no"]),
+  sensitivity: z.enum(["PUBLIC", "BUSINESS", "CONFIDENTIAL", "RESTRICTED"]),
+  changeReason: z.string().trim().min(3).max(500),
+}).strict();
 
-function errorReason(reason: string): BuilderActionState {
+function errorReason(
+  reason: string,
+): Extract<BuilderActionState, { status: "error" }> {
   return { status: "error", reason: reason === "UNAUTHENTICATED" ? "UNAUTHENTICATED" : reason === "FORBIDDEN" ? "FORBIDDEN" : "UNAVAILABLE" };
 }
 
@@ -60,4 +78,31 @@ export async function submitReleaseAction(_state: BuilderActionState, formData: 
   if (result.status === "error") return errorReason(result.reason);
   revalidatePath(`/${parsed.data.locale}/administration/catalogue`);
   return { status: "success", operation: "SUBMITTED", releaseId: result.value.releaseId, releaseStatus: result.value.status };
+}
+
+export async function createQuestionAction(_state: QuestionActionState, formData: FormData): Promise<QuestionActionState> {
+  const parsed = questionSchema.safeParse(actionFields(formData));
+  if (!parsed.success) return { status: "error", reason: "VALIDATION" };
+  const repository = await createServerCatalogBuilderRepository();
+  const { locale } = parsed.data;
+  const result = await repository.createQuestion({
+    libraryId: parsed.data.libraryId,
+    serviceId: parsed.data.serviceId,
+    questionKey: parsed.data.questionKey,
+    labelFr: parsed.data.labelFr,
+    labelAr: parsed.data.labelAr,
+    helpFr: parsed.data.helpFr,
+    helpAr: parsed.data.helpAr,
+    answerType: parsed.data.answerType,
+    dataKey: parsed.data.dataKey,
+    requiredByDefault: parsed.data.requiredByDefault === "yes",
+    requiredForQuote: parsed.data.requiredForQuote === "yes",
+    sensitivity: parsed.data.sensitivity,
+    changeReason: parsed.data.changeReason,
+    idempotencyKey: parsed.data.idempotencyKey,
+    correlationId: parsed.data.correlationId,
+  });
+  if (result.status === "error") return errorReason(result.reason);
+  revalidatePath(`/${locale}/administration/catalogue`);
+  return { status: "success", questionId: result.value.questionId, versionId: result.value.versionId };
 }

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const repository = vi.hoisted(() => ({
+  createQuestion: vi.fn(),
   createRelease: vi.fn(),
   addReleaseItem: vi.fn(),
   submitRelease: vi.fn(),
@@ -12,7 +13,7 @@ vi.mock("../../../../lib/catalogue-builder/server-repository", () => ({
 }));
 vi.mock("next/cache", () => ({ revalidatePath }));
 
-import { addReleaseItemAction, createReleaseAction, submitReleaseAction } from "./actions";
+import { addReleaseItemAction, createQuestionAction, createReleaseAction, submitReleaseAction } from "./actions";
 
 const identity = {
   idempotencyKey: "11111111-1111-4111-8111-111111111111",
@@ -36,8 +37,37 @@ function createForm(extra: Record<string, string> = {}) {
 beforeEach(() => {
   vi.clearAllMocks();
   repository.createRelease.mockResolvedValue({ status: "success", value: { id: releaseId, rowVersion: 1 } });
+  repository.createQuestion.mockResolvedValue({ status: "success", value: { questionId: objectId, versionId, identityRowVersion: 1, versionRowVersion: 1, contentHash: "d".repeat(64) } });
   repository.addReleaseItem.mockResolvedValue({ status: "success", value: { rowVersion: 2 } });
   repository.submitRelease.mockResolvedValue({ status: "success", value: { releaseId, status: "APPROVED", snapshotHash: "b".repeat(64) } });
+});
+
+describe("catalogue question server action", () => {
+  function questionForm(extra: Record<string, string> = {}) {
+    return form({
+      locale: "ar", confirmed: "yes", ...identity, libraryId, serviceId: objectId, questionKey: "IT_SECURITY_MFA",
+      labelFr: "Le MFA est-il activé ?", labelAr: "هل المصادقة متعددة العوامل مفعلة؟", helpFr: "", helpAr: "",
+      answerType: "YES_NO", dataKey: "security.mfa.enabled", requiredByDefault: "yes", requiredForQuote: "no",
+      sensitivity: "BUSINESS", changeReason: "Création du contrôle MFA", ...extra,
+    });
+  }
+
+  it("creates a question with normalized booleans and exact command identity", async () => {
+    const result = await createQuestionAction({ status: "idle" }, questionForm());
+    expect(result).toEqual({ status: "success", questionId: objectId, versionId });
+    expect(repository.createQuestion).toHaveBeenCalledWith(expect.objectContaining({
+      libraryId, serviceId: objectId, requiredByDefault: true, requiredForQuote: false, ...identity,
+    }));
+    expect(repository.createQuestion.mock.calls[0]?.[0]).not.toHaveProperty("locale");
+    expect(repository.createQuestion.mock.calls[0]?.[0]).not.toHaveProperty("confirmed");
+    expect(revalidatePath).toHaveBeenCalledWith("/ar/administration/catalogue");
+  });
+
+  it("rejects an augmented question command before persistence", async () => {
+    const result = await createQuestionAction({ status: "idle" }, questionForm({ injected: "true" }));
+    expect(result).toEqual({ status: "error", reason: "VALIDATION" });
+    expect(repository.createQuestion).not.toHaveBeenCalled();
+  });
 });
 
 describe("catalogue release server actions", () => {

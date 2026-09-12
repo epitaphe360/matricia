@@ -4,7 +4,10 @@ export type BuilderMessages = {
   nav: string; back: string; language: string; eyebrow: string; title: string; description: string;
   selection: string; library: string; service: string; chooseLibrary: string; chooseService: string; open: string;
   noLibraries: string; noServices: string; unavailable: string; retry: string;
-  questionnaireGapTitle: string; questionnaireGap: string;
+  questionTitle: string; questionDescription: string; questionKey: string; dataKey: string; labelFr: string; labelAr: string; helpFr: string; helpAr: string;
+  answerType: string; sensitivity: string; required: string; requiredForQuote: string; changeReason: string; confirmQuestion: string; createQuestion: string; creatingQuestion: string; questionCreated: string;
+  answerTypes: Record<"YES_NO" | "SHORT_TEXT" | "LONG_TEXT" | "INTEGER" | "DATE" | "MONEY", string>;
+  sensitivities: Record<"PUBLIC" | "BUSINESS" | "CONFIDENTIAL" | "RESTRICTED", string>;
   releaseTitle: string; releaseDescription: string; selectedContext: string;
   createTitle: string; releaseKey: string; sourceHash: string; centralApproval: string; approvalYes: string; approvalNo: string;
   confirmCreate: string; create: string; creating: string;
@@ -23,7 +26,11 @@ const fr: BuilderMessages = {
   eyebrow: "Catalogue versionné", title: "Gestion des releases catalogue", description: "Préparez une release auditable à partir des identifiants et versions approuvés.",
   selection: "Contexte de travail", library: "Bibliothèque", service: "Service ciblé", chooseLibrary: "Choisir une bibliothèque", chooseService: "Choisir un service", open: "Ouvrir le contexte",
   noLibraries: "Aucune bibliothèque administrable n’est accessible.", noServices: "Aucun service accessible dans cette bibliothèque.", unavailable: "Le Builder ne peut pas charger ce contexte.", retry: "Réessayer",
-  questionnaireGapTitle: "Composition de questionnaires non disponible", questionnaireGap: "Le backend expose la lecture et la publication, mais aucune commande authentifiée ne permet encore de créer ou modifier un questionnaire, ses questions, sections ou règles. Aucune saisie ne sera simulée dans cette interface.",
+  questionTitle: "Créer une question versionnée", questionDescription: "Ajoutez une question réelle au service sélectionné. La version reste en brouillon jusqu’au workflow d’approbation.",
+  questionKey: "Clé de question", dataKey: "Clé de donnée", labelFr: "Libellé français", labelAr: "Libellé arabe", helpFr: "Aide française (facultative)", helpAr: "Aide arabe (facultative)",
+  answerType: "Type de réponse", sensitivity: "Sensibilité", required: "Obligatoire par défaut", requiredForQuote: "Obligatoire pour le devis", changeReason: "Motif du changement", confirmQuestion: "Je confirme les libellés FR/AR, le service ciblé et le niveau de sensibilité.", createQuestion: "Créer la question", creatingQuestion: "Création…", questionCreated: "Question DRAFT créée et auditée.",
+  answerTypes: { YES_NO: "Oui / Non", SHORT_TEXT: "Texte court", LONG_TEXT: "Texte long", INTEGER: "Nombre entier", DATE: "Date", MONEY: "Montant" },
+  sensitivities: { PUBLIC: "Public", BUSINESS: "Métier", CONFIDENTIAL: "Confidentiel", RESTRICTED: "Restreint" },
   releaseTitle: "Workflow de release", releaseDescription: "Les trois opérations ci-dessous appellent les commandes auditées existantes. Ajoutez uniquement des versions APPROVED et conservez le row version renvoyé après chaque étape.", selectedContext: "Contexte sélectionné",
   createTitle: "1. Créer le brouillon", releaseKey: "Clé de release", sourceHash: "Empreinte SHA-256 du bundle", centralApproval: "Approbation centrale requise", approvalYes: "Oui", approvalNo: "Non", confirmCreate: "Je confirme créer une release DRAFT pour cette bibliothèque.", create: "Créer la release", creating: "Création…",
   addTitle: "2. Ajouter un élément approuvé", releaseId: "Identifiant de release", objectType: "Type d’objet", objectId: "Identifiant de l’objet", versionId: "Identifiant de la version APPROVED", contentHash: "Empreinte SHA-256 du contenu", sortOrder: "Ordre", rowVersion: "Row version attendu", confirmAdd: "Je confirme l’identité, la version et l’empreinte de cet élément.", add: "Ajouter l’élément", adding: "Ajout…",
@@ -40,7 +47,11 @@ const ar: BuilderMessages = {
   eyebrow: "دليل بإصدارات", title: "إدارة إصدارات الدليل", description: "حضّر إصداراً قابلاً للتدقيق انطلاقاً من المعرفات والنسخ المعتمدة.",
   selection: "سياق العمل", library: "المكتبة", service: "الخدمة المستهدفة", chooseLibrary: "اختر مكتبة", chooseService: "اختر خدمة", open: "فتح السياق",
   noLibraries: "لا توجد مكتبة إدارية متاحة.", noServices: "لا توجد خدمة متاحة في هذه المكتبة.", unavailable: "تعذر تحميل سياق المنشئ.", retry: "إعادة المحاولة",
-  questionnaireGapTitle: "تكوين الاستبيانات غير متاح", questionnaireGap: "توفر الواجهة الخلفية القراءة والنشر، لكنها لا توفر بعد أمراً موثقاً لإنشاء أو تعديل الاستبيان أو أسئلته أو أقسامه أو قواعده. لن تتم محاكاة أي حفظ في هذه الواجهة.",
+  questionTitle: "إنشاء سؤال بإصدار", questionDescription: "أضف سؤالاً فعلياً إلى الخدمة المحددة. تبقى النسخة مسودة إلى حين إتمام مسار الاعتماد.",
+  questionKey: "مفتاح السؤال", dataKey: "مفتاح البيانات", labelFr: "النص الفرنسي", labelAr: "النص العربي", helpFr: "المساعدة الفرنسية (اختيارية)", helpAr: "المساعدة العربية (اختيارية)",
+  answerType: "نوع الإجابة", sensitivity: "درجة الحساسية", required: "إلزامي افتراضياً", requiredForQuote: "إلزامي لعرض السعر", changeReason: "سبب التغيير", confirmQuestion: "أؤكد النصين الفرنسي والعربي والخدمة المستهدفة ودرجة الحساسية.", createQuestion: "إنشاء السؤال", creatingQuestion: "جارٍ الإنشاء…", questionCreated: "تم إنشاء السؤال كمسودة وتدقيق العملية.",
+  answerTypes: { YES_NO: "نعم / لا", SHORT_TEXT: "نص قصير", LONG_TEXT: "نص طويل", INTEGER: "عدد صحيح", DATE: "تاريخ", MONEY: "مبلغ" },
+  sensitivities: { PUBLIC: "عام", BUSINESS: "مهني", CONFIDENTIAL: "سري", RESTRICTED: "مقيّد" },
   releaseTitle: "مسار إصدار الدليل", releaseDescription: "تستدعي العمليات الثلاث التالية الأوامر المدققة الموجودة. أضف نسخاً بحالة APPROVED فقط واحتفظ برقم الصف الناتج بعد كل خطوة.", selectedContext: "السياق المحدد",
   createTitle: "1. إنشاء المسودة", releaseKey: "مفتاح الإصدار", sourceHash: "بصمة SHA-256 للحزمة", centralApproval: "الموافقة المركزية مطلوبة", approvalYes: "نعم", approvalNo: "لا", confirmCreate: "أؤكد إنشاء إصدار DRAFT لهذه المكتبة.", create: "إنشاء الإصدار", creating: "جارٍ الإنشاء…",
   addTitle: "2. إضافة عنصر معتمد", releaseId: "معرف الإصدار", objectType: "نوع العنصر", objectId: "معرف العنصر", versionId: "معرف النسخة APPROVED", contentHash: "بصمة SHA-256 للمحتوى", sortOrder: "الترتيب", rowVersion: "رقم الصف المتوقع", confirmAdd: "أؤكد هوية العنصر ونسخته وبصمته.", add: "إضافة العنصر", adding: "جارٍ الإضافة…",

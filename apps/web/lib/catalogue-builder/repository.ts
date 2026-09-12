@@ -1,12 +1,17 @@
 import { z } from "zod";
 import type { BuilderResult, CatalogBuilderRepository, ReleaseDraft, ReleaseItemInput } from "./contracts";
-import { builderDraftSchema, catalogEntityStatusSchema, type BuilderDraft, type BuilderWorkspace, uuidSchema } from "./model";
+import { builderDraftSchema, catalogEntityStatusSchema, questionDraftInputSchema, type BuilderDraft, type BuilderWorkspace, uuidSchema } from "./model";
 
 const libraryRow = z.object({ id: uuidSchema, code: z.string().min(2).max(80), status: catalogEntityStatusSchema, row_version: z.number().int().positive(), current_release_id: uuidSchema.nullable() }).strict();
 const serviceRow = z.object({ id: uuidSchema, library_id: uuidSchema, code: z.string().min(2).max(80), slug: z.string().min(1).max(80), status: catalogEntityStatusSchema }).strict();
 const createdRelease = z.object({ outcome: z.literal("CATALOG_RELEASE_CREATED"), release_id: uuidSchema, status: z.literal("DRAFT"), library_row_version: z.number().int().positive() }).strict();
 const addedItem = z.object({ outcome: z.literal("CATALOG_RELEASE_ITEM_ADDED"), release_id: uuidSchema, release_row_version: z.number().int().positive() }).strict();
 const submittedRelease = z.object({ outcome: z.literal("CATALOG_RELEASE_SUBMITTED"), release_id: uuidSchema, status: z.enum(["APPROVED", "IN_REVIEW"]), snapshot_hash: z.string().regex(/^[0-9a-f]{64}$/u) }).strict();
+const createdQuestion = z.object({
+  outcome: z.literal("CATALOG_QUESTION_CREATED"), question_id: uuidSchema, library_id: uuidSchema, version_id: uuidSchema,
+  identity_row_version: z.number().int().positive(), version_row_version: z.number().int().positive(),
+  content_hash: z.string().regex(/^[0-9a-f]{64}$/u), command_id: uuidSchema,
+}).strict();
 
 type QueryResponse = { data: unknown; error: { code?: string } | null };
 export type BuilderRepositoryDependencies = {
@@ -56,6 +61,32 @@ export function createCatalogBuilderRepository(dependencies: BuilderRepositoryDe
     async persistQuestionnaireDraft(draft: BuilderDraft) {
       if (!builderDraftSchema.safeParse(draft).success) return { status: "error", reason: "INVALID_INPUT" };
       return { status: "error", reason: "MISSING_QUESTIONNAIRE_WRITE_RPC" };
+    },
+    async createQuestion(input) {
+      const parsedInput = questionDraftInputSchema.safeParse(input);
+      if (!parsedInput.success) return { status: "error", reason: "INVALID_INPUT" };
+      if (!await dependencies.authenticated()) return { status: "error", reason: "UNAUTHENTICATED" };
+      const value = parsedInput.data;
+      const response = await dependencies.rpc("create_catalog_question", {
+        p_library_id: value.libraryId,
+        p_question_key: value.questionKey,
+        p_scope: "SERVICE",
+        p_payload: {
+          label_fr: value.labelFr, label_ar: value.labelAr,
+          ...(value.helpFr ? { help_fr: value.helpFr } : {}), ...(value.helpAr ? { help_ar: value.helpAr } : {}),
+          answer_type: value.answerType, data_key: value.dataKey,
+          required_by_default: value.requiredByDefault, required_for_quote: value.requiredForQuote, required_for_publication: false,
+          options: [], validation_schema: value.answerType === "INTEGER" ? { precision: 18, scale: 0, rounding: "HALF_EVEN" } : {},
+          sensitivity: value.sensitivity, nullable: !value.requiredByDefault, weight: 0, maximum_score: 0,
+          source_service_id: value.serviceId,
+        },
+        p_change_reason: value.changeReason, p_idempotency_key: value.idempotencyKey, p_correlation_id: value.correlationId,
+      });
+      if (response.error) return failure(response.error);
+      const parsed = createdQuestion.safeParse(response.data);
+      return parsed.success && parsed.data.library_id === value.libraryId
+        ? { status: "success", value: { questionId: parsed.data.question_id, versionId: parsed.data.version_id, identityRowVersion: parsed.data.identity_row_version, versionRowVersion: parsed.data.version_row_version, contentHash: parsed.data.content_hash } }
+        : { status: "error", reason: "INVALID_RESPONSE" };
     },
     async createRelease(input): Promise<BuilderResult<ReleaseDraft>> {
       if (!await dependencies.authenticated()) return { status: "error", reason: "UNAUTHENTICATED" };

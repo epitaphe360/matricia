@@ -10,6 +10,7 @@ import { isLocale } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 import { getBuilderMessages } from "./messages";
 import { ReleaseWorkflow } from "./release-workflow";
+import { QuestionBuilder } from "./question-builder";
 
 export const dynamic = "force-dynamic";
 
@@ -82,16 +83,14 @@ export default async function CatalogueReleaseAdministrationPage({ params, searc
               </CardContent>
             </Card>
 
-            <Alert>
-              <AlertTitle>{messages.questionnaireGapTitle}</AlertTitle>
-              <AlertDescription><p>{messages.questionnaireGap}</p></AlertDescription>
-            </Alert>
-
-            {selectedLibrary && selectedService ? <ReleaseWorkflow locale={locale} library={selectedLibrary} service={selectedService} messages={messages} commandIdentities={{
-              create: { idempotencyKey: randomUUID(), correlationId: randomUUID() },
-              add: { idempotencyKey: randomUUID(), correlationId: randomUUID() },
-              submit: { idempotencyKey: randomUUID(), correlationId: randomUUID() },
-            }} /> : null}
+            {selectedLibrary && selectedService ? <>
+              <QuestionBuilder locale={locale} library={selectedLibrary} service={selectedService} messages={messages} commandIdentity={{ idempotencyKey: randomUUID(), correlationId: randomUUID() }} />
+              <ReleaseWorkflow locale={locale} library={selectedLibrary} service={selectedService} messages={messages} commandIdentities={{
+                create: { idempotencyKey: randomUUID(), correlationId: randomUUID() },
+                add: { idempotencyKey: randomUUID(), correlationId: randomUUID() },
+                submit: { idempotencyKey: randomUUID(), correlationId: randomUUID() },
+              }} />
+            </> : null}
           </>
         )}
       </div>

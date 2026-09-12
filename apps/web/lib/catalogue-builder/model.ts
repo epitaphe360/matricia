@@ -54,6 +54,26 @@ export type BuilderLibrary = { id: string; code: string; status: CatalogEntitySt
 export type BuilderService = { id: string; libraryId: string; code: string; slug: string; status: CatalogEntityStatus };
 export type BuilderWorkspace = { libraries: BuilderLibrary[]; services: BuilderService[]; questionnairePersistenceAvailable: false };
 
+export const questionDraftInputSchema = z.object({
+  libraryId: uuidSchema,
+  serviceId: uuidSchema,
+  questionKey: z.string().trim().regex(/^[A-Z][A-Z0-9_.-]{1,119}$/u),
+  labelFr: z.string().trim().min(1).max(1_000),
+  labelAr: z.string().trim().min(1).max(1_000),
+  helpFr: z.string().trim().max(2_000),
+  helpAr: z.string().trim().max(2_000),
+  answerType: z.enum(["YES_NO", "SHORT_TEXT", "LONG_TEXT", "INTEGER", "DATE", "MONEY"]),
+  dataKey: z.string().trim().regex(/^[A-Za-z][A-Za-z0-9_.-]{1,159}$/u),
+  requiredByDefault: z.boolean(),
+  requiredForQuote: z.boolean(),
+  sensitivity: z.enum(["PUBLIC", "BUSINESS", "CONFIDENTIAL", "RESTRICTED"]),
+  changeReason: z.string().trim().min(3).max(500),
+  idempotencyKey: uuidSchema,
+  correlationId: uuidSchema,
+}).strict();
+export type QuestionDraftInput = z.infer<typeof questionDraftInputSchema>;
+export type CreatedQuestion = { questionId: string; versionId: string; identityRowVersion: number; versionRowVersion: number; contentHash: string };
+
 export function parseBuilderDraft(value: unknown) {
   return builderDraftSchema.safeParse(value);
 }

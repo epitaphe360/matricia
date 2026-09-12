@@ -61,7 +61,9 @@ Projet distant Matricia contrôlé en environnement applicatif `development`. Le
 30. import baseline transactionnel et idempotent, commandes de hiérarchie/services,
     compatibilités legacy fail-closed et contrat strict des questions publiables.
 31. commandes Question Builder : création, nouvelle version de brouillon, duplication,
-    archivage/restauration, scope GLOBAL central AAL2, audit et Event Outbox.
+    archivage/restauration, scope GLOBAL central AAL2, audit et Event Outbox;
+32. interface Question Builder réelle : création DRAFT bilingue FR/AR et RTL par
+    service, sensibilité, exigences devis, identité idempotente persistée et retours accessibles.
 
 Preuves actuelles :
 
@@ -82,7 +84,7 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - `pnpm verify:phase00` : vert — catalogue 10/200/6000, 7 registres bootstrap, 68 fonctions, 8 exigences Marketing conformes à l’addendum et 63 agents.
 - `pnpm lint` : vert.
 - `pnpm typecheck` : vert.
-- Tests Web : vert — 19 fichiers, 141 tests.
+- Tests Web : vert — 19 fichiers, 146 tests.
 - Tests Worker : vert — 11 fichiers, 54 tests; typecheck strict vert.
 - `pnpm test:db` : vert pour `0001`..`0039` — 39 fichiers et 954 assertions, plus quatre scénarios génériques à deux connexions. Les scénarios P06 dédiés de révocation concurrente hiérarchie et de commandes services passent aussi sur Supabase development.
 - E2E catalogue authentifié réel : 4/4 en FR/AR à 360 px, navigation clavier,
@@ -107,14 +109,16 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   traductions restent volontairement `DRAFT/PENDING`. La suite globale atteint
   39 fichiers/954 assertions et les concurrences hiérarchie/services sont vertes.
   Les commandes serveur du Question Builder sont appliquées et testées; l’interface
-  Builder, les commandes Rule Builder, la qualité/similarité IA, les sessions et la charge 6k/50k
-  restent requis avant GREEN et visa indépendant.
+  de création de questions DRAFT est livrée en FR/AR RTL avec contrat strict. La
+  composition complète questionnaires/sections, les commandes Rule Builder, la
+  qualité/similarité IA, les sessions et la charge 6k/50k restent requises avant
+  GREEN et visa indépendant.
 - MAT-FUNC-001..068 et MARKETING-001..008 restent à implémenter et prouver progressivement.
 - Vercel et Railway ne sont pas configurés. Aucune production n’a été modifiée ou autorisée.
 
 ## Prochaine exécution
 
-1. Implémenter le parcours Builder P06 et les commandes de questionnaires/règles.
+1. Étendre le parcours Builder P06 aux questionnaires/sections et aux commandes de règles.
 2. Prouver qualité/similarité, sessions et charge catalogue 6k/50k.
 3. Obtenir un replay DB vierge CI et prouver ClamAV réel en staging.
 4. Étendre les contrats atomiques P01 au fil des domaines.

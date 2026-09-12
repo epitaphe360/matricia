@@ -59,6 +59,47 @@ describe("catalogue builder repository", () => {
     const result = await createCatalogBuilderRepository(dependencies()).createRelease({ libraryId: library.id, releaseKey: "IT.V2", sourceBundleHash: "a".repeat(64), requiresCentralApproval: false, expectedLibraryRowVersion: 4, ...commandIdentity });
     expect(result).toEqual({ status: "error", reason: "FORBIDDEN" });
   });
+  it("creates a versioned service question through the exact RPC contract", async () => {
+    const questionId = "55555555-5555-4555-8555-555555555555";
+    const versionId = "66666666-6666-4666-8666-666666666666";
+    const rpc = vi.fn(async () => ({
+      data: {
+        outcome: "CATALOG_QUESTION_CREATED", question_id: questionId, library_id: library.id, version_id: versionId,
+        identity_row_version: 1, version_row_version: 1, content_hash: "b".repeat(64), command_id: "77777777-7777-4777-8777-777777777777",
+      },
+      error: null,
+    }));
+    const result = await createCatalogBuilderRepository(dependencies({ rpc })).createQuestion({
+      libraryId: library.id, serviceId: "22222222-2222-4222-8222-222222222222", questionKey: "IT_SECURITY_MFA",
+      labelFr: "Le MFA est-il activé ?", labelAr: "هل المصادقة متعددة العوامل مفعلة؟", helpFr: "", helpAr: "",
+      answerType: "YES_NO", dataKey: "security.mfa.enabled", requiredByDefault: true, requiredForQuote: true,
+      sensitivity: "BUSINESS", changeReason: "Création du contrôle MFA", ...commandIdentity,
+    });
+    expect(result).toEqual({ status: "success", value: {
+      questionId, versionId, identityRowVersion: 1, versionRowVersion: 1, contentHash: "b".repeat(64),
+    } });
+    expect(rpc).toHaveBeenCalledWith("create_catalog_question", {
+      p_library_id: library.id, p_question_key: "IT_SECURITY_MFA", p_scope: "SERVICE",
+      p_payload: {
+        label_fr: "Le MFA est-il activé ?", label_ar: "هل المصادقة متعددة العوامل مفعلة؟",
+        answer_type: "YES_NO", data_key: "security.mfa.enabled", required_by_default: true, required_for_quote: true,
+        required_for_publication: false, options: [], validation_schema: {}, sensitivity: "BUSINESS", nullable: false,
+        weight: 0, maximum_score: 0, source_service_id: "22222222-2222-4222-8222-222222222222",
+      },
+      p_change_reason: "Création du contrôle MFA", p_idempotency_key: commandIdentity.idempotencyKey,
+      p_correlation_id: commandIdentity.correlationId,
+    });
+  });
+  it("fails closed on a malformed question response", async () => {
+    const rpc = vi.fn(async () => ({ data: { outcome: "CATALOG_QUESTION_CREATED", injected: true }, error: null }));
+    const result = await createCatalogBuilderRepository(dependencies({ rpc })).createQuestion({
+      libraryId: library.id, serviceId: "22222222-2222-4222-8222-222222222222", questionKey: "IT_SECURITY_MFA",
+      labelFr: "Le MFA est-il activé ?", labelAr: "هل المصادقة متعددة العوامل مفعلة؟", helpFr: "", helpAr: "",
+      answerType: "YES_NO", dataKey: "security.mfa.enabled", requiredByDefault: true, requiredForQuote: true,
+      sensitivity: "BUSINESS", changeReason: "Création du contrôle MFA", ...commandIdentity,
+    });
+    expect(result).toEqual({ status: "error", reason: "INVALID_RESPONSE" });
+  });
   it("forwards stable command identities and parses the release response", async () => {
     const rpc = vi.fn(async () => ({
       data: { outcome: "CATALOG_RELEASE_CREATED", release_id: "55555555-5555-4555-8555-555555555555", status: "DRAFT", library_row_version: 5 },
