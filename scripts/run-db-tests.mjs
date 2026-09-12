@@ -332,6 +332,7 @@ async function verifyFinancialConcurrency(databaseUrl, admin) {
   async function authenticated(transaction) {
     await transaction.unsafe('set local role authenticated');
     await transaction`select set_config('request.jwt.claim.sub',${fixture.actorId},true)`;
+    await transaction`select set_config('request.jwt.claims',${JSON.stringify({ sub: fixture.actorId, role: 'authenticated', aal: 'aal2' })},true)`;
   }
 
   async function invokeJournal(transaction) {
@@ -351,10 +352,11 @@ async function verifyFinancialConcurrency(databaseUrl, admin) {
   async function invokeCredit(transaction) {
     await authenticated(transaction);
     return transaction`
-      select public.append_credit_entry(
-        ${fixture.organizationId}::uuid,${fixture.walletId}::uuid,'GRANT',17,
-        'P03_TEST','two-connection-credit',${fixture.creditKey},null,${fixture.creditCorrelationId}::uuid
-      ) as id
+      select (public.issue_credits(
+        ${fixture.organizationId}::uuid,${fixture.walletId}::uuid,'ADMIN_GRANT',17,
+        '2027-09-11T12:00:00.000Z'::timestamptz,null,'two-connection-credit',0,
+        'P03_TEST','P03_CONCURRENCY',${fixture.creditKey},${fixture.creditCorrelationId}::uuid
+      )->>'entry_id')::bigint as id
     `;
   }
 
@@ -458,6 +460,10 @@ async function verifyFinancialConcurrency(databaseUrl, admin) {
         values (${fixture.membershipId}::uuid,'CLIENT_ACCOUNTING')
       `;
       await transaction`
+        insert into public.platform_user_roles (user_id,role_code)
+        values (${fixture.actorId}::uuid,'SUPER_ADMIN')
+      `;
+      await transaction`
         insert into public.financial_accounts (id,organization_id,code,name,account_type,currency) values
         (${fixture.debitAccountId}::uuid,${fixture.organizationId}::uuid,'P03-CASH','P03 Cash','ASSET','MAD'),
         (${fixture.creditAccountId}::uuid,${fixture.organizationId}::uuid,'P03-REVENUE','P03 Revenue','REVENUE','MAD')
@@ -486,8 +492,8 @@ async function verifyFinancialConcurrency(databaseUrl, admin) {
       select
         (select count(*)::integer from public.credit_ledger_entries where organization_id=${fixture.organizationId}::uuid and id=${creditEntryId}::bigint) as entries,
         (select balance from public.credit_wallet_balances where organization_id=${fixture.organizationId}::uuid and wallet_id=${fixture.walletId}::uuid) as balance,
-        (select count(*)::integer from public.audit_events where organization_id=${fixture.organizationId}::uuid and action='credit.entry.appended') as audits,
-        (select count(*)::integer from public.event_outbox where organization_id=${fixture.organizationId}::uuid and event_type='CreditLedgerEntryAppendedV1') as outbox
+        (select count(*)::integer from public.audit_events where organization_id=${fixture.organizationId}::uuid and action='credits.issued') as audits,
+        (select count(*)::integer from public.event_outbox where organization_id=${fixture.organizationId}::uuid and event_type='CreditsGrantedV1') as outbox
     `;
     if (creditEvidence[0].entries !== 1 || String(creditEvidence[0].balance) !== '17'
       || creditEvidence[0].audits !== 1 || creditEvidence[0].outbox !== 1) {
