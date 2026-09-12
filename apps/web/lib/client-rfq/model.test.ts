@@ -1,0 +1,2 @@
+import { describe,expect,it } from "vitest";import { moneyToMinor } from "./model";
+describe("client RFQ money",()=>{it.each([["0","0"],["12","1200"],["12,3","1230"],["999999999999999.99","99999999999999999"]])("convertit %s exactement en unités mineures",(input,expected)=>expect(moneyToMinor(input)).toBe(expected));it.each(["-1","1.234","1e3","abc",""])("refuse %s",input=>expect(moneyToMinor(input)).toBeNull());});

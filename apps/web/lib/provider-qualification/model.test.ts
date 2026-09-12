@@ -1,0 +1,9 @@
+import { describe,expect,it } from "vitest";
+import { providerCapacityInputSchema,providerDocumentInputSchema,providerProfileInputSchema } from "./model";
+const organizationId="11111111-1111-4111-8111-111111111111";const key="22222222-2222-4222-8222-222222222222";
+describe("provider qualification contracts",()=>{
+ it("accepts a bounded provider profile",()=>expect(providerProfileInputSchema.safeParse({organizationId,expectedRowVersion:0,activitySummary:"Conseil et intégration de systèmes",teamSize:5,yearsExperience:8,accountingContactEmail:"finance@example.ma",secondarySubcontractingAllowed:false,idempotencyKey:key}).success).toBe(true));
+ it("rejects incomplete profiles",()=>expect(providerProfileInputSchema.safeParse({organizationId,expectedRowVersion:-1,activitySummary:"short",teamSize:0,yearsExperience:-1,accountingContactEmail:"bad",secondarySubcontractingAllowed:false,idempotencyKey:key}).success).toBe(false));
+ it("enforces FULL and PAUSED capacity invariants",()=>{const base={organizationId,serviceId:null,leadTimeDays:2,reason:"Mise à jour hebdomadaire",idempotencyKey:key};expect(providerCapacityInputSchema.safeParse({...base,capacityStatus:"FULL",availableUnits:1}).success).toBe(false);expect(providerCapacityInputSchema.safeParse({...base,capacityStatus:"PAUSED",availableUnits:0}).success).toBe(false);expect(providerCapacityInputSchema.safeParse({...base,capacityStatus:"PAUSED",availableUnits:null}).success).toBe(true)});
+ it("rejects traversal and non-SHA256 proof metadata",()=>expect(providerDocumentInputSchema.safeParse({organizationId,documentKind:"INSURANCE",code:"INSURANCE_2026",issuerName:"Assureur",referenceNumber:"REF",issuedOn:"2026-01-01",expiresOn:"2027-01-01",storageObjectPath:"../private.pdf",contentHash:"abc",providerServiceIds:[],changeReason:"Renouvellement annuel",idempotencyKey:key}).success).toBe(false));
+});
