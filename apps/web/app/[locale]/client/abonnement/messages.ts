@@ -1,0 +1,41 @@
+import type { Locale } from "@/lib/i18n/locale";
+
+export function getSubscriptionMessages(locale: Locale) {
+  return locale === "ar" ? {
+    eyebrow: "اشتراك العميل",
+    title: "الخطة ودورات الفوترة",
+    description: "راجع النسخة الدقيقة للخطة وحالة الاستحقاقات والدورات المسجلة.",
+    trial: "تفعيل الاشتراك التجريبي الموثق",
+    current: "الاشتراك الحالي",
+    noSubscription: "لم يتم إنشاء اشتراك لهذه المؤسسة بعد.",
+    plans: "الخطط المتاحة",
+    monthly: "شهرياً",
+    annual: "سنوياً",
+    immediate: "ترقية فورية",
+    nextCycle: "تخفيض في الدورة القادمة",
+    change: "طلب تغيير الخطة",
+    cycles: "دورات الفوترة",
+    emptyCycles: "لا توجد دورة مدفوعة بعد.",
+    saved: "تم تسجيل الطلب بشكل آمن.",
+    error: "تعذر تنفيذ الطلب. تحقق من الصلاحيات والحالة الحالية.",
+    pending: "جارٍ التنفيذ…",
+  } : {
+    eyebrow: "Abonnement Client",
+    title: "Plan et cycles de facturation",
+    description: "Consultez la version exacte du plan, les droits et les cycles comptabilisés.",
+    trial: "Initialiser l’abonnement d’essai vérifié",
+    current: "Abonnement actuel",
+    noSubscription: "Aucun abonnement n’est encore créé pour cette organisation.",
+    plans: "Plans disponibles",
+    monthly: "par mois",
+    annual: "par an",
+    immediate: "Surclassement immédiat",
+    nextCycle: "Déclassement au prochain cycle",
+    change: "Demander le changement",
+    cycles: "Cycles de facturation",
+    emptyCycles: "Aucun cycle payé pour le moment.",
+    saved: "La demande a été enregistrée de façon sécurisée.",
+    error: "La demande a échoué. Vérifiez vos droits et l’état courant.",
+    pending: "Traitement…",
+  };
+}
