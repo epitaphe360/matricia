@@ -1,6 +1,6 @@
 # Matricia — Project State
 
-Dernière mise à jour : 2026-09-12 10:24 America/Toronto
+Dernière mise à jour : 2026-09-12 12:08 America/Toronto
 
 Phase de contrôle active : **PHASE 01 — contrats atomiques en cours**
 
@@ -22,7 +22,7 @@ Travaux engagés : **PHASES 01, 03, 05 et 06 — en cours; PHASES 02 et 04 sign�
 
 ## Supabase development/staging
 
-Projet distant Matricia contrôlé en environnement applicatif `development`. Les 97 migrations additives jusqu’à `20260912009900` sont appliquées à distance.
+Projet distant Matricia contrôlé en environnement applicatif `development`. Les 123 migrations additives jusqu’à `20260912012600` sont appliquées à distance; la version `20260912012300` est intentionnellement absente.
 
 1. extensions et référentiels versionnés;
 2. identité, organisations, memberships et RBAC;
@@ -117,12 +117,36 @@ Projet distant Matricia contrôlé en environnement applicatif `development`. Le
     badges sous décision humaine et favoris revalidés;
 59. récompenses/parrainage/ROI : règles et plafonds versionnés, ledger crédits,
     double contrôle AAL2, preuves durables, baselines approuvées et calculs exacts.
+60. IA assistée et qualité : analyses bornées et déterministes, revue humaine,
+    qualité/similarité bilingue, provenance, minimisation PII et rétention contrôlée;
+61. solutions et benchmark : bundles inter-bibliothèques versionnés selon les
+    niveaux `ESSENTIAL`, `STANDARD` et `ADVANCED`, benchmarks anonymisés sous
+    politique de confidentialité et registre de métriques faisant autorité;
+62. RFQ récurrentes : clonage avec provenance immuable, plans mensuels,
+    trimestriels ou annuels, snapshots publiés et génération bornée sans
+    invitation ni dépense autonome;
+63. digest franchise : synthèse FR/AR configurable sans PII, agrégats CRM/KPI,
+    jobs idempotents avec lease, retry/dead-letter et notification versionnée;
+64. durcissements P1/P2 issus de l'audit : budget de confidentialité benchmark
+    scellé contre les oracles par différence, autorisations par rôle et ACL à
+    privilège minimal, révocation fail-closed, verrous de concurrence partagés,
+    entrées d'assistance minimisées et absence d'expiration artificielle pour une
+    entrée vide.
+65. durcissements finaux `11900`–`12400` : valeur benchmark liée exactement à
+    sa preuve, sa version de registre et sa politique source; scope exact par
+    franchise dans les organisations multi-franchises; purge automatique bornée
+    des entrées d'assistance avec minimisation CIN/passeport; scope canonique
+    d'idempotence du digest et corrélation d'audit non-PII stable au replay.
+66. durcissements `12500`–`12600` : cycle autonome et borné de purge des entrées
+    d'assistance, contrôle strict des leases, retry/dead-letter et minimisation PII;
+    sélection du scheduler digest bornée avant composition, dernière configuration
+    seulement, ordre déterministe et absence de famine entre lots.
 
 Preuves actuelles :
 
-- migrations locales/distantes `20260910000100`..`20260912009900` appliquées sur development;
+- 123 migrations locales/distantes `20260910000100`..`20260912012600` appliquées sur development, avec `20260912012300` intentionnellement absente;
 - lint SQL public/private sans erreur de schéma lors du dernier contrôle distant;
-- `pnpm test:db` vert le 2026-09-12 pour les fichiers `0001`..`0073` : 73 fichiers, 1 950 assertions et quatre scénarios à deux connexions couvrant Outbox, journal, crédits et chaîne audit;
+- `pnpm test:db` vert le 2026-09-12 pour les fichiers `0001`..`0092` : 92 fichiers, 2 397 assertions et quatre scénarios à deux connexions couvrant Outbox, journal, crédits et chaîne audit;
 - tests négatifs RLS inter-tenant, immutabilité, équilibre/devise, crédits, idempotence, audit et Outbox.
 
 Docker local reste indisponible sur cet hôte; la reconstruction propre doit être prouvée par le job CI Supabase avant signature P03.
@@ -132,14 +156,14 @@ avec l'annotation `account is locked due to a billing issue`. Cette contrainte d
 compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut pas
 échec des migrations locales ou development.
 
-## Gates exécutés le 2026-09-11
+## Gates exécutés les 2026-09-11 et 2026-09-12
 
 - `pnpm verify:phase00` : vert — catalogue 10/200/6000, 7 registres bootstrap, 68 fonctions, 8 exigences Marketing conformes à l’addendum et 63 agents.
 - `pnpm lint` : vert.
 - `pnpm typecheck` : vert.
 - Tests Web : vert — 76 fichiers, 313 tests.
 - Tests Worker : vert — 11 fichiers, 54 tests; typecheck strict vert.
-- `pnpm test:db` : vert pour `0001`..`0073` — 73 fichiers et 1 950 assertions, plus quatre scénarios génériques à deux connexions. Sessions, portefeuille Client, réputation Provider et rewards/referral/ROI sont appliqués, durcis et couverts sur Supabase development.
+- `pnpm test:db` : vert pour `0001`..`0092` — 92 fichiers et 2 397 assertions, plus quatre scénarios génériques à deux connexions. Sessions, portefeuille Client, réputation Provider, rewards/referral/ROI, IA assistée/qualité, bundles/benchmarks, RFQ récurrentes et digest franchise sont appliqués, durcis et couverts sur Supabase development.
 - E2E catalogue authentifié réel : 4/4 en FR/AR à 360 px, navigation clavier,
   axe, recherche discriminante et RPC de publication/lecture réelles; crash/reaper
   `SCHEDULED` et `PUBLISHING` prouvés, zéro résidu actif ou artefact local.
@@ -163,6 +187,15 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   confidentialité feedback/Outbox historique, preuves réputation, audience/wallet,
   double contrôle Referral, baseline durable, portefeuille et anti-oracles sont fermés,
   sans finding P0/P1/P2 ouvert.
+- Le lot backend `10000`–`12600` intègre les durcissements P1/P2 d'audit sur
+  la confidentialité des benchmarks, les autorisations de l'assistance et du digest,
+  la minimisation PII, la concurrence des publications/générations et les ACL des
+  helpers. Les compléments `11900`–`12400` lient la valeur à sa provenance
+  benchmark, ferment le scope exact franchise et l'idempotence du digest, et
+  automatisent la purge PII avec corrélation d'audit stable. Les tests
+  `12500` et `12600` ajoutent l'exécution autonome de purge avec lease/retry et le
+  bornage du scheduler digest avant composition. Les tests `0074`..`0092`
+  couvrent ces correctifs dans le gate DB vert.
 - P01 ne couvre pas encore les contrats atomiques de toutes les phases.
 - P04 est GREEN : OTP, organisations, invitations courriel, rôles, sessions, mot de passe facultatif, MFA TOTP, AAL2 et saga d'audit Auth durable ont passé le visa indépendant sans P0/P1/P2.
 - P05 dispose des migrations appliquées `024`, `026` et `029`–`03550` : profils, documents privés, questionnaires, matrice/anomalies, scan serveur, activation et essai 30 jours. Interfaces, Worker, concurrence et E2E authentifiés sont prouvés. ClamAV staging réel et replay vierge restent requis; P05 demeure `IN_PROGRESS`.
@@ -179,14 +212,19 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   sur la commande réelle. La création de questionnaires, les sections suivantes
   et l’ajout gouverné de questions/règles aux snapshots sont appliqués et testés.
   Le gate de charge 6k/50k est implémenté et testé localement, mais sa preuve
-  distante reste requise. Les opérateurs avancés, la validation/simulation, la
-  qualité/similarité IA et les sessions restent requis avant GREEN et visa indépendant.
+  distante reste requise. Les opérateurs avancés, la validation/simulation, les
+  sessions et les fondations IA assistée de qualité/similarité sont appliqués et
+  couverts en base; leur intégration complète aux parcours et le visa indépendant
+  restent requis avant GREEN.
 - Les fondations et interfaces P07–P18 progressent en lots indépendants : RFQ/devis,
   contrats/missions Client et Sous-traitant, qualification/facturation Provider,
   litiges/réaffectation, achats groupés, franchise, abonnements, administration,
   diagnostics/opportunités, Boxes/crédits, Notifications, Marketing Autopilot,
   CRM/performance franchise et moteur fiscal Maroc sont branchés côté données et
-  disposent maintenant de routes Web FR/AR pour les trois derniers domaines. Les E2E multi-rôles,
+  disposent maintenant de routes Web FR/AR pour les trois derniers domaines. Les
+  fondations de bundles `ESSENTIAL`/`STANDARD`/`ADVANCED`, benchmark anonymisé,
+  clonage/récurrence RFQ et digest franchise sont également appliquées et testées.
+  Les E2E multi-rôles,
   audits indépendants et la traçabilité atomique restent requis avant GREEN.
 - La couverture MAT-FUNC-001..068 et MARKETING-001..008 reste partielle : les
   fondations de plusieurs domaines sont présentes, mais la traçabilité atomique,
@@ -199,7 +237,9 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 ## Prochaine exécution
 
 1. Intégrer et valider les interfaces Client RFQ/devis, qualification et facturation Sous-traitant, contrats/missions, litiges et command center.
-2. Étendre le parcours Builder P06 aux opérateurs avancés et prouver qualité/similarité, sessions et charge catalogue 6k/50k.
+2. Intégrer aux parcours P06/P07/P10 l'IA assistée, les opérateurs avancés, la
+   validation/simulation, les sessions, les bundles/benchmarks, la récurrence RFQ
+   et le digest franchise; prouver les E2E associés et la charge distante 6k/50k.
 3. Compléter la traçabilité atomique P01 et les parcours E2E/RLS des fondations P07–P17.
 4. Obtenir un replay DB vierge CI et prouver ClamAV réel en staging.
 5. Continuer P07..P19 selon `PLANS.md`, sans sauter de gate.

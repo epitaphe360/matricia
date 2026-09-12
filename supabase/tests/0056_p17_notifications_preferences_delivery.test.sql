@@ -14,7 +14,7 @@ select ok((select count(*)=2 and bool_and(has_function_privilege('service_role',
 select ok((select count(*)=11 from public.notification_preference_categories where status='ACTIVE'),'V1 categories are seeded');
 select ok((select mandatory from public.notification_preference_categories where code='SECURITY_CRITICAL'),'security alerts are mandatory');
 select ok((select mandatory from public.notification_preference_categories where code='BILLING_CRITICAL'),'billing alerts are mandatory');
-select ok((select count(*)=4 from public.notification_template_versions where status='ACTIVE'),'baseline templates have four active localized versions');
+select ok((select count(*)=4 from public.notification_template_versions where status='ACTIVE'and template_code in('SYSTEM_ALERT','MISSION_REMINDER')),'baseline templates retain their four active localized versions');
 select ok(not exists(select 1 from(select template_code,version,count(*)filter(where locale='fr-MA')fr,count(*)filter(where locale='ar-MA')ar from public.notification_template_versions group by template_code,version)x where fr<>1 or ar<>1),'every baseline template version has one FR and one AR rendering');
 select ok((select bool_and(subject_template<>''and body_template<>'')from public.notification_template_versions where locale='ar-MA'),'Arabic templates contain complete subject and body');
 select ok((select mandatory and priority='CRITICAL'and channels@>array['IN_APP','EMAIL']::text[]from public.notification_template_versions where template_code='SYSTEM_ALERT'and locale='fr-MA'and status='ACTIVE'),'critical system alert is mandatory on in-app and email');

@@ -21,15 +21,20 @@ select ok(has_column_privilege('authenticated','public.user_profiles','display_n
 select ok(not has_table_privilege('authenticated','public.user_profiles','UPDATE'),'authenticated has no whole-row profile update privilege');
 select ok(not has_table_privilege('service_role','public.organization_audit_activity','SELECT'),'service role cannot query tenant audit view directly');
 
-insert into public.event_outbox(aggregate_type,aggregate_id,event_type,correlation_id,payload,occurred_at,dead_lettered_at)
-values('acl_test','old-dead-letter','AclTestV1',extensions.gen_random_uuid(),'{}',statement_timestamp()-interval '30 days',statement_timestamp());
-create temporary table readiness_acl_observed(ok boolean);
-grant select,insert on readiness_acl_observed to service_role;
+create temporary table readiness_acl_observed(before_ok boolean,after_ok boolean);
+grant select,insert,update on readiness_acl_observed to service_role;
 set local role service_role;
 select set_config('request.jwt.claim.role','service_role',true);
-insert into readiness_acl_observed select database_ok and outbox_ok from public.readiness_status();
+insert into readiness_acl_observed(before_ok) select database_ok and outbox_ok from public.readiness_status();
 reset role;
-select ok((select ok from readiness_acl_observed),'dead-lettered events do not degrade readiness');
+
+insert into public.event_outbox(aggregate_type,aggregate_id,event_type,correlation_id,payload,occurred_at,dead_lettered_at)
+values('acl_test','old-dead-letter','AclTestV1',extensions.gen_random_uuid(),'{}',statement_timestamp()-interval '30 days',statement_timestamp());
+set local role service_role;
+select set_config('request.jwt.claim.role','service_role',true);
+update readiness_acl_observed set after_ok=(select database_ok and outbox_ok from public.readiness_status());
+reset role;
+select is((select after_ok from readiness_acl_observed),(select before_ok from readiness_acl_observed),'dead-lettered events do not degrade readiness');
 
 select * from finish();
 rollback;

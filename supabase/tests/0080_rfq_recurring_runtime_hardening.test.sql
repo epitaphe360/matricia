@@ -1,0 +1,63 @@
+begin;
+set local search_path=public,extensions;
+select plan(24);
+
+select ok(position('current_draft_version_id'in pg_get_functiondef('private.clone_request_core(uuid,date,uuid,text,boolean)'::regprocedure))=0,'clone core never falls back to catalogue drafts');
+select ok(position('service_row.status=''PUBLISHED'''in pg_get_functiondef('private.clone_request_core(uuid,date,uuid,text,boolean)'::regprocedure))>0 and position('service_version_row.status=''PUBLISHED'''in pg_get_functiondef('private.clone_request_core(uuid,date,uuid,text,boolean)'::regprocedure))>0,'clone requires published service identity and version');
+select ok(position('questionnaire_row.status=''PUBLISHED'''in pg_get_functiondef('private.clone_request_core(uuid,date,uuid,text,boolean)'::regprocedure))>0 and position('questionnaire_version_row.status=''PUBLISHED'''in pg_get_functiondef('private.clone_request_core(uuid,date,uuid,text,boolean)'::regprocedure))>0 and position('translation_review_status=''APPROVED'''in pg_get_functiondef('private.clone_request_core(uuid,date,uuid,text,boolean)'::regprocedure))>0,'clone requires active approved published questionnaire');
+select ok(position('current_draft_version_id'in pg_get_functiondef('public.create_recurring_service_plan(uuid,text,date,date,text,text,uuid)'::regprocedure))=0 and position('service_version_row.status=''PUBLISHED'''in pg_get_functiondef('public.create_recurring_service_plan(uuid,text,date,date,text,text,uuid)'::regprocedure))>0,'recurring plan uses published service versions only');
+select ok(position('service_version_row.recurring_eligible'in pg_get_functiondef('public.create_recurring_service_plan(uuid,text,date,date,text,text,uuid)'::regprocedure))>0,'non-recurring service is rejected server-side');
+select ok(position('iterations<24'in pg_get_functiondef('public.generate_recurring_service_requests(uuid,date,integer,text,uuid)'::regprocedure))>0 and position('iterations:=iterations+1'in pg_get_functiondef('public.generate_recurring_service_requests(uuid,date,integer,text,uuid)'::regprocedure))>0,'every scanned occurrence consumes the total iteration budget');
+select ok(position('current_date+366'in pg_get_functiondef('public.generate_recurring_service_requests(uuid,date,integer,text,uuid)'::regprocedure))>0 and position('p_max_occurrences not between 1 and 24'in pg_get_functiondef('public.generate_recurring_service_requests(uuid,date,integer,text,uuid)'::regprocedure))>0,'generation is bounded by horizon and occurrence count');
+select ok(position('pg_advisory_xact_lock'in pg_get_functiondef('public.generate_recurring_service_requests(uuid,date,integer,text,uuid)'::regprocedure))<position('select*into p'in pg_get_functiondef('public.generate_recurring_service_requests(uuid,date,integer,text,uuid)'::regprocedure)),'generation locks before plan read');
+select ok(position('for update'in pg_get_functiondef('public.generate_recurring_service_requests(uuid,date,integer,text,uuid)'::regprocedure))>0 and position('p.status<>''ACTIVE'''in pg_get_functiondef('public.generate_recurring_service_requests(uuid,date,integer,text,uuid)'::regprocedure))>0,'generation reloads and revalidates active state under lock');
+select ok(position('pg_advisory_xact_lock'in pg_get_functiondef('public.transition_recurring_service_plan(uuid,text,text,integer,text,uuid)'::regprocedure))<position('select*into p'in pg_get_functiondef('public.transition_recurring_service_plan(uuid,text,text,integer,text,uuid)'::regprocedure)),'transition shares the lock before plan read');
+select ok(position('begin_contract_command'in pg_get_functiondef('public.generate_recurring_service_requests(uuid,date,integer,text,uuid)'::regprocedure))<position('p.status<>''ACTIVE'''in pg_get_functiondef('public.generate_recurring_service_requests(uuid,date,integer,text,uuid)'::regprocedure)),'generation replay is checked before mutable status');
+select ok(position('begin_contract_command'in pg_get_functiondef('public.transition_recurring_service_plan(uuid,text,text,integer,text,uuid)'::regprocedure))<position('ns:=case'in pg_get_functiondef('public.transition_recurring_service_plan(uuid,text,text,integer,text,uuid)'::regprocedure)),'transition replay is checked before mutable transition state');
+
+insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)values
+('a8000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','rfq-runtime-owner@example.invalid','',now(),'{}','{}',now(),now()),
+('a8000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000000','authenticated','authenticated','rfq-runtime-other@example.invalid','',now(),'{}','{}',now(),now());
+insert into public.organizations(id,legal_name,display_name,status,created_by)values
+('b8000000-0000-0000-0000-000000000001','RFQ Runtime One','RFQ One','ACTIVE','a8000000-0000-0000-0000-000000000001'),
+('b8000000-0000-0000-0000-000000000002','RFQ Runtime Two','RFQ Two','ACTIVE','a8000000-0000-0000-0000-000000000002');
+insert into public.organization_memberships(organization_id,user_id,status,activated_at)values
+('b8000000-0000-0000-0000-000000000001','a8000000-0000-0000-0000-000000000001','ACTIVE',now()),
+('b8000000-0000-0000-0000-000000000002','a8000000-0000-0000-0000-000000000002','ACTIVE',now());
+insert into public.organization_member_roles(membership_id,role_code)select id,'CLIENT_ADMIN'from public.organization_memberships where user_id::text like'a8000000-%';
+
+insert into public.service_requests(id,client_organization_id,library_id,service_id,status,created_by)
+select 'c8000000-0000-0000-0000-000000000001','b8000000-0000-0000-0000-000000000001',cs.library_id,cs.id,'DRAFT','a8000000-0000-0000-0000-000000000001'from public.catalog_services cs join public.catalog_service_versions cv on cv.id=cs.current_published_version_id where cs.status='PUBLISHED'and cv.status='PUBLISHED'and not cv.recurring_eligible order by cs.code limit 1;
+insert into public.service_request_versions(id,request_id,client_organization_id,library_id,version_number,description,urgency,desired_date,budget_minor,currency_code,required_quote_data,required_fields_complete,catalog_snapshot_hash,questionnaire_snapshot_hash,change_reason,content_hash,created_by)
+select 'd8000000-0000-0000-0000-000000000001',r.id,r.client_organization_id,r.library_id,1,'Runtime recurring service request','NORMAL',current_date,1000,'MAD','{}',true,cv.content_hash,repeat('0',64),'Runtime fixture',repeat('a',64),'a8000000-0000-0000-0000-000000000001'from public.service_requests r join public.catalog_services cs on cs.id=r.service_id join public.catalog_service_versions cv on cv.id=cs.current_published_version_id where r.id='c8000000-0000-0000-0000-000000000001';
+update public.service_requests set current_version_id='d8000000-0000-0000-0000-000000000001'where id='c8000000-0000-0000-0000-000000000001';
+insert into public.recurring_service_plans(id,client_organization_id,template_request_id,status,created_by)values('e8000000-0000-0000-0000-000000000001','b8000000-0000-0000-0000-000000000001','c8000000-0000-0000-0000-000000000001','ACTIVE','a8000000-0000-0000-0000-000000000001');
+insert into public.recurring_service_plan_versions(id,plan_id,version_number,cadence,starts_on,ends_on,status,reason,created_by)values('e8000000-0000-0000-0000-000000000002','e8000000-0000-0000-0000-000000000001',1,'MONTHLY',current_date,current_date+60,'ACTIVE','Runtime fixture','a8000000-0000-0000-0000-000000000001');
+select ok(exists(select 1 from public.service_requests where id='c8000000-0000-0000-0000-000000000001'),'runtime fixture found a published non-recurring service');
+
+create temporary table rfq_runtime_observed(key text primary key,value text);
+grant insert,select on rfq_runtime_observed to authenticated;
+insert into rfq_runtime_observed values('plan_id','e8000000-0000-0000-0000-000000000001');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','a8000000-0000-0000-0000-000000000001',true);
+select set_config('request.jwt.claims','{"sub":"a8000000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal2"}',true);
+insert into rfq_runtime_observed values('clone_first',public.clone_service_request('c8000000-0000-0000-0000-000000000001',current_date+7,'Clone runtime sécurisé','runtime-clone-allow')->>'request_id');
+insert into rfq_runtime_observed values('clone_replay',public.clone_service_request('c8000000-0000-0000-0000-000000000001',current_date+7,'Clone runtime sécurisé','runtime-clone-allow')->>'request_id');
+insert into rfq_runtime_observed select 'generate_first',public.generate_recurring_service_requests(value::uuid,current_date,1,'runtime-generate-allow')->>'generated_count'from rfq_runtime_observed where key='plan_id';
+insert into rfq_runtime_observed select 'pause_outcome',public.transition_recurring_service_plan(value::uuid,'PAUSE','Pause runtime sûre',1,'runtime-plan-pause')->>'outcome'from rfq_runtime_observed where key='plan_id';
+insert into rfq_runtime_observed select 'generate_replay',public.generate_recurring_service_requests(value::uuid,current_date,1,'runtime-generate-allow')->>'generated_count'from rfq_runtime_observed where key='plan_id';
+reset role;
+
+select is((select value from rfq_runtime_observed where key='clone_first'),(select value from rfq_runtime_observed where key='clone_replay'),'clone replay returns the original result');
+select is((select count(*)from public.service_request_clone_provenance where source_request_id='c8000000-0000-0000-0000-000000000001'),1::bigint,'clone replay creates no duplicate');
+select is((select value from rfq_runtime_observed where key='generate_first'),'1','active plan generates one bounded occurrence');
+select is((select value from rfq_runtime_observed where key='generate_replay'),'1','generation replay survives later PAUSE and returns cached result');
+select is((select value from rfq_runtime_observed where key='pause_outcome'),'RECURRING_PLAN_PAUSED','plan transitions to PAUSED');
+select is((select count(*)from public.recurring_service_occurrences where plan_id=(select value::uuid from rfq_runtime_observed where key='plan_id')),1::bigint,'replay and pause race create no duplicate occurrence');
+select throws_ok($$set local role authenticated;select set_config('request.jwt.claim.sub','a8000000-0000-0000-0000-000000000001',true);select set_config('request.jwt.claims','{"sub":"a8000000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal2"}',true);select public.generate_recurring_service_requests((select value::uuid from rfq_runtime_observed where key='plan_id'),current_date,1,'runtime-generate-paused')$$,'55000','RECURRING_PLAN_NOT_ACTIVE','new generation is denied after PAUSE');
+select throws_ok($$set local role authenticated;select set_config('request.jwt.claim.sub','a8000000-0000-0000-0000-000000000002',true);select set_config('request.jwt.claims','{"sub":"a8000000-0000-0000-0000-000000000002","role":"authenticated","aal":"aal2"}',true);select public.clone_service_request('c8000000-0000-0000-0000-000000000001',current_date+7,'Cross tenant interdit','runtime-cross-tenant')$$,'42501','REQUEST_SCOPE_DENIED','cross-tenant clone is denied');
+select throws_ok($$set local role authenticated;select set_config('request.jwt.claim.sub','a8000000-0000-0000-0000-000000000001',true);select set_config('request.jwt.claims','{"sub":"a8000000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal2"}',true);select public.create_recurring_service_plan('c8000000-0000-0000-0000-000000000001','MONTHLY',current_date,current_date+60,'Non recurring denial','runtime-non-recurring')$$,'22023','SERVICE_NOT_RECURRING_ELIGIBLE','published non-recurring service is denied');
+select ok((select p.prosrc like'%RecurringServiceRequestsGeneratedV2%'and p.prosrc like'%autonomous_spend%'and p.prosrc like'%autonomous_invitations%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='generate_recurring_service_requests'),'bounded generation is audited/outboxed and creates no spend or invitations');
+select ok((select count(*)=4 and bool_and(p.prosecdef and p.proconfig::text like'%search_path=%')from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname=any(array['clone_service_request','create_recurring_service_plan','transition_recurring_service_plan','generate_recurring_service_requests'])),'all public commands retain fixed security-definer boundaries');
+
+select*from finish();rollback;
