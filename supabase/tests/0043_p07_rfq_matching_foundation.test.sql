@@ -1,0 +1,90 @@
+begin;set local search_path=public,extensions;select plan(26);
+grant usage on schema extensions to authenticated;
+grant execute on all functions in schema extensions to authenticated;
+
+select ok((select count(*)=5 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname in('create_service_request','mark_service_request_ready','run_service_request_matching','open_service_request_rfq','respond_to_rfq_invitation')and p.prosecdef and p.proconfig::text like '%search_path=pg_catalog%'),'five RFQ commands fix their security path');
+select ok(not has_function_privilege('anon','public.run_service_request_matching(uuid,text,integer,text,uuid)','EXECUTE')and not has_function_privilege('service_role','public.open_service_request_rfq(uuid,uuid,timestamptz,text,uuid)','EXECUTE'),'anonymous and service roles cannot execute user RFQ commands');
+select ok(not has_table_privilege('authenticated','public.service_requests','INSERT')and not has_table_privilege('authenticated','public.matching_candidates','INSERT')and not has_table_privilege('authenticated','public.rfq_providers','INSERT'),'authenticated users cannot bypass command authorization');
+select ok((select relrowsecurity from pg_class where oid='public.service_requests'::regclass)and(select relrowsecurity from pg_class where oid='public.matching_candidates'::regclass)and(select relrowsecurity from pg_class where oid='public.rfq_providers'::regclass),'tenant and offer-bound tables have RLS');
+
+insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)values
+('fb000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','p07-client@example.invalid','',now(),'{}','{}',now(),now()),
+('fb000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000000','authenticated','authenticated','p07-outsider@example.invalid','',now(),'{}','{}',now(),now()),
+('fb000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000000','authenticated','authenticated','p07-provider-a@example.invalid','',now(),'{}','{}',now(),now()),
+('fb000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000000','authenticated','authenticated','p07-provider-b@example.invalid','',now(),'{}','{}',now(),now()),
+('fb000000-0000-0000-0000-000000000005','00000000-0000-0000-0000-000000000000','authenticated','authenticated','p07-provider-c@example.invalid','',now(),'{}','{}',now(),now());
+insert into public.organizations(id,legal_name,display_name,status,created_by)values
+('fb100000-0000-0000-0000-000000000001','P07 Client Org','P07 Client Org','ACTIVE','fb000000-0000-0000-0000-000000000001'),
+('fb100000-0000-0000-0000-000000000002','P07 Provider A','P07 Provider A','ACTIVE','fb000000-0000-0000-0000-000000000003'),
+('fb100000-0000-0000-0000-000000000003','P07 Provider B','P07 Provider B','ACTIVE','fb000000-0000-0000-0000-000000000004'),
+('fb100000-0000-0000-0000-000000000004','P07 Provider C','P07 Provider C','ACTIVE','fb000000-0000-0000-0000-000000000005');
+insert into public.organization_memberships(id,organization_id,user_id,status)values
+('fb200000-0000-0000-0000-000000000001','fb100000-0000-0000-0000-000000000001','fb000000-0000-0000-0000-000000000001','ACTIVE'),
+('fb200000-0000-0000-0000-000000000002','fb100000-0000-0000-0000-000000000002','fb000000-0000-0000-0000-000000000003','ACTIVE'),
+('fb200000-0000-0000-0000-000000000003','fb100000-0000-0000-0000-000000000003','fb000000-0000-0000-0000-000000000004','ACTIVE'),
+('fb200000-0000-0000-0000-000000000004','fb100000-0000-0000-0000-000000000004','fb000000-0000-0000-0000-000000000005','ACTIVE');
+insert into public.organization_member_roles(membership_id,role_code)values
+('fb200000-0000-0000-0000-000000000001','CLIENT_BUYER'),('fb200000-0000-0000-0000-000000000002','PROVIDER_SALES'),('fb200000-0000-0000-0000-000000000003','PROVIDER_SALES'),('fb200000-0000-0000-0000-000000000004','PROVIDER_SALES');
+
+insert into public.catalog_libraries(id,code,slug,steward_organization_id,status,created_by)values('fb300000-0000-0000-0000-000000000001','P07_RFQ','p07-rfq','fb100000-0000-0000-0000-000000000001','DRAFT','fb000000-0000-0000-0000-000000000001');
+insert into public.catalog_categories(id,library_id,code,slug,status,created_by)values('fb310000-0000-0000-0000-000000000001','fb300000-0000-0000-0000-000000000001','P07_CAT','p07-cat','DRAFT','fb000000-0000-0000-0000-000000000001');
+insert into public.catalog_subcategories(id,library_id,category_id,code,slug,status,created_by)values('fb320000-0000-0000-0000-000000000001','fb300000-0000-0000-0000-000000000001','fb310000-0000-0000-0000-000000000001','P07_SUB','p07-sub','DRAFT','fb000000-0000-0000-0000-000000000001');
+insert into public.catalog_services(id,library_id,primary_subcategory_id,code,slug,status,created_by)values('fb330000-0000-0000-0000-000000000001','fb300000-0000-0000-0000-000000000001','fb320000-0000-0000-0000-000000000001','P07_SERVICE','p07-service','DRAFT','fb000000-0000-0000-0000-000000000001');
+insert into public.catalog_releases(id,library_id,release_key,status,source_bundle_hash,created_by)values('fb340000-0000-0000-0000-000000000001','fb300000-0000-0000-0000-000000000001','P07.RFQ.V1','DRAFT',repeat('1',64),'fb000000-0000-0000-0000-000000000001');
+insert into public.questionnaires(id,library_id,code,status,created_by)values('fb350000-0000-0000-0000-000000000001','fb300000-0000-0000-0000-000000000001','P07_RFQ_FORM','DRAFT','fb000000-0000-0000-0000-000000000001');
+insert into public.questionnaire_versions(id,questionnaire_id,library_id,catalog_release_id,version,status,title_fr,title_ar,description_fr,description_ar,audience,engine_version,policy_version,snapshot_hash,change_reason,created_by)values('fb360000-0000-0000-0000-000000000001','fb350000-0000-0000-0000-000000000001','fb300000-0000-0000-0000-000000000001','fb340000-0000-0000-0000-000000000001',1,'DRAFT','Demande test','طلب تجريبي','Formulaire de demande','نموذج الطلب','CLIENT','1.0.0','P07-1',repeat('2',64),'Fixture RFQ','fb000000-0000-0000-0000-000000000001');
+update public.questionnaires set current_draft_version_id='fb360000-0000-0000-0000-000000000001'where id='fb350000-0000-0000-0000-000000000001';
+
+insert into public.provider_match_profiles(provider_organization_id,company_verified,documents_valid,financial_status,quality_status,capacity_status,region_codes,partner_contract_signed)values
+('fb100000-0000-0000-0000-000000000002',true,true,'OK','OK','AVAILABLE',array['CASABLANCA'],true),
+('fb100000-0000-0000-0000-000000000003',true,true,'OK','OK','FULL',array['CASABLANCA'],true),
+('fb100000-0000-0000-0000-000000000004',true,true,'RESTRICTED','OK','AVAILABLE',array['CASABLANCA'],true);
+insert into public.provider_service_match_profiles(provider_organization_id,service_id,qualification_status,required_certifications_valid,service_fit_score,quality_score,historical_delay_score,experience_score,satisfaction_score)values
+('fb100000-0000-0000-0000-000000000002','fb330000-0000-0000-0000-000000000001','APPROVED',true,90,80,70,85,88),
+('fb100000-0000-0000-0000-000000000003','fb330000-0000-0000-0000-000000000001','APPROVED',true,95,90,90,90,90),
+('fb100000-0000-0000-0000-000000000004','fb330000-0000-0000-0000-000000000001','APPROVED',true,80,80,80,80,80);
+
+create temporary table p07_obs(key text primary key,value jsonb);grant select,insert on p07_obs to authenticated;
+set local role authenticated;select set_config('request.jwt.claims','{"sub":"fb000000-0000-0000-0000-000000000002","role":"authenticated","aal":"aal2"}',true);reset role;
+select throws_ok(format('%s',$$select public.create_service_request('fb100000-0000-0000-0000-000000000001','fb300000-0000-0000-0000-000000000001','fb330000-0000-0000-0000-000000000001','fb360000-0000-0000-0000-000000000001','{"description":"Tentative isolée interdite","urgency":"NORMAL","required_fields_complete":true,"catalog_snapshot_hash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","questionnaire_snapshot_hash":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","required_quote_data":{"region_code":"CASABLANCA"}}','Refus attendu','p07-outsider-001')$$),'42501'::char(5),'REQUEST_SCOPE_DENIED','outsider cannot create a client request');set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"fb000000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal2"}',true);
+insert into p07_obs values('incomplete',public.create_service_request('fb100000-0000-0000-0000-000000000001','fb300000-0000-0000-0000-000000000001','fb330000-0000-0000-0000-000000000001',null,'{"description":"Besoin incomplet à compléter","urgency":"NORMAL","required_fields_complete":false,"catalog_snapshot_hash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","questionnaire_snapshot_hash":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","required_quote_data":{}}','Création brouillon','p07-incomplete-001'));
+select is((select value->>'status'from p07_obs where key='incomplete'),'INFORMATION_REQUIRED','missing quote data remains blocked');
+reset role;select throws_ok(format('select public.mark_service_request_ready(%L,1,%L,%L)',(select value->>'request_id'from p07_obs where key='incomplete'),'Tentative incomplète','p07-ready-bad-001'),'23514'::char(5),'REQUEST_INFORMATION_INCOMPLETE','incomplete request cannot become ready');set local role authenticated;
+insert into p07_obs values('created',public.create_service_request('fb100000-0000-0000-0000-000000000001','fb300000-0000-0000-0000-000000000001','fb330000-0000-0000-0000-000000000001','fb360000-0000-0000-0000-000000000001','{"description":"Audit de sécurité complet demandé","urgency":"HIGH","desired_date":"2026-12-15","budget_minor":1250000,"currency_code":"MAD","required_fields_complete":true,"catalog_snapshot_hash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","questionnaire_snapshot_hash":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","required_quote_data":{"region_code":"CASABLANCA","deliverables":["rapport"]}}','Création demande complète','p07-create-001','fb700000-0000-0000-0000-000000000001'));
+insert into p07_obs values('replay',public.create_service_request('fb100000-0000-0000-0000-000000000001','fb300000-0000-0000-0000-000000000001','fb330000-0000-0000-0000-000000000001','fb360000-0000-0000-0000-000000000001','{"description":"Audit de sécurité complet demandé","urgency":"HIGH","desired_date":"2026-12-15","budget_minor":1250000,"currency_code":"MAD","required_fields_complete":true,"catalog_snapshot_hash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","questionnaire_snapshot_hash":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","required_quote_data":{"region_code":"CASABLANCA","deliverables":["rapport"]}}','Création demande complète','p07-create-001','fb700000-0000-0000-0000-000000000099'));
+select is((select value from p07_obs where key='created'),(select value from p07_obs where key='replay'),'request creation replay is durable');
+insert into p07_obs values('ready',public.mark_service_request_ready((select(value->>'request_id')::uuid from p07_obs where key='created'),1,'Confirmation client','p07-ready-001'));
+select is((select value->>'outcome'from p07_obs where key='ready'),'SERVICE_REQUEST_READY','complete versioned request becomes ready');
+insert into p07_obs values('matched',public.run_service_request_matching((select(value->>'request_id')::uuid from p07_obs where key='created'),'MATCH-V1',10,'p07-match-001'));
+insert into p07_obs values('match_replay',public.run_service_request_matching((select(value->>'request_id')::uuid from p07_obs where key='created'),'MATCH-V1',10,'p07-match-001'));
+reset role;
+select is((select value from p07_obs where key='matched'),(select value from p07_obs where key='match_replay'),'matching replay does not duplicate the run');
+select is((select(value->>'eligible_count')::integer from p07_obs where key='matched'),1,'only one provider passes every hard filter');
+select ok((select eligible and cardinality(exclusion_reasons)=0 and score_explanation->>'policy_version'='MATCH-V1'from public.matching_candidates where matching_run_id=(select(value->>'matching_run_id')::uuid from p07_obs where key='matched')and provider_organization_id='fb100000-0000-0000-0000-000000000002'),'eligible candidate has a versioned explanation');
+select ok((select not eligible and exclusion_reasons@>array['CAPACITY_UNAVAILABLE']from public.matching_candidates where matching_run_id=(select(value->>'matching_run_id')::uuid from p07_obs where key='matched')and provider_organization_id='fb100000-0000-0000-0000-000000000003'),'FULL capacity is an explicit hard exclusion');
+select ok((select not eligible and exclusion_reasons@>array['FINANCIAL_RESTRICTED']from public.matching_candidates where matching_run_id=(select(value->>'matching_run_id')::uuid from p07_obs where key='matched')and provider_organization_id='fb100000-0000-0000-0000-000000000004'),'financial restriction is an explicit hard exclusion');
+
+set local role authenticated;select set_config('request.jwt.claims','{"sub":"fb000000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal2"}',true);
+insert into p07_obs values('opened',public.open_service_request_rfq((select(value->>'request_id')::uuid from p07_obs where key='created'),(select(value->>'matching_run_id')::uuid from p07_obs where key='matched'),statement_timestamp()+interval '7 days','p07-open-001'));
+insert into p07_obs values('open_replay',public.open_service_request_rfq((select(value->>'request_id')::uuid from p07_obs where key='created'),(select(value->>'matching_run_id')::uuid from p07_obs where key='matched'),statement_timestamp()+interval '7 days','p07-open-001'));
+reset role;
+select is((select value from p07_obs where key='opened'),(select value from p07_obs where key='open_replay'),'opening replay does not duplicate invitations');
+select is((select(value->>'invited_count')::integer from p07_obs where key='opened'),1,'only the current eligible panel is invited');
+select ok((select competitor_offers_visible is null from(select confidentiality_settings->'competitor_offers_visible' competitor_offers_visible from public.rfqs where id=(select(value->>'rfq_id')::uuid from p07_obs where key='opened'))x)or(select confidentiality_settings->>'competitor_offers_visible'='false'from public.rfqs where id=(select(value->>'rfq_id')::uuid from p07_obs where key='opened')),'RFQ confidentiality forbids competitor-offer visibility');
+
+set local role authenticated;select set_config('request.jwt.claims','{"sub":"fb000000-0000-0000-0000-000000000004","role":"authenticated","aal":"aal2"}',true);
+select is((select count(*)::integer from public.service_requests),0,'excluded provider cannot see client request');select is((select count(*)::integer from public.rfq_providers),0,'excluded provider cannot see another provider invitation');
+select set_config('request.jwt.claims','{"sub":"fb000000-0000-0000-0000-000000000003","role":"authenticated","aal":"aal2"}',true);
+select is((select count(*)::integer from public.service_requests where id=(select(value->>'request_id')::uuid from p07_obs where key='created')),1,'invited provider can read its request context');
+reset role;select throws_ok(format('select public.respond_to_rfq_invitation(%L,%L,null,1,%L)',(select id::text from public.rfq_providers where rfq_id=(select(value->>'rfq_id')::uuid from p07_obs where key='opened')),'DECLINE','p07-decline-bad-001'),'22023'::char(5),'INVALID_INVITATION_DECISION','decline reason is mandatory');set local role authenticated;
+insert into p07_obs values('declined',public.respond_to_rfq_invitation((select id from public.rfq_providers where rfq_id=(select(value->>'rfq_id')::uuid from p07_obs where key='opened')),'DECLINE','Capacité réservée ailleurs',1,'p07-decline-001'));
+insert into p07_obs values('decline_replay',public.respond_to_rfq_invitation((select id from public.rfq_providers where rfq_id=(select(value->>'rfq_id')::uuid from p07_obs where key='opened')),'DECLINE','Capacité réservée ailleurs',1,'p07-decline-001'));
+reset role;
+select is((select value from p07_obs where key='declined'),(select value from p07_obs where key='decline_replay'),'provider refusal replay is idempotent');
+select ok((select status='DECLINED'and decline_reason='Capacité réservée ailleurs'from public.rfq_providers where rfq_id=(select(value->>'rfq_id')::uuid from p07_obs where key='opened')),'provider refusal and reason are retained');
+select is((select count(*)::integer from public.audit_events where action in('rfq.request.created','rfq.request.ready','rfq.matching.completed','rfq.opened')and organization_id='fb100000-0000-0000-0000-000000000001'),5,'two requests, readiness, matching and opening are audited once each');
+select is((select count(*)::integer from public.audit_events where action='rfq.invitation.declined'and organization_id='fb100000-0000-0000-0000-000000000002'),1,'provider refusal is audited once');
+select ok((select count(*)=1 from public.event_outbox where event_type='MATCHING_COMPLETED'and aggregate_id=(select value->>'matching_run_id'from p07_obs where key='matched'))and(select count(*)=1 from public.event_outbox where event_type='RFQ_OPENED'and aggregate_id=(select value->>'rfq_id'from p07_obs where key='opened'))and(select count(*)=1 from public.event_outbox where event_type='RFQ_INVITATION_DECLINED'),'matching, opening and refusal each emit one Outbox event');
+
+select * from finish();rollback;
