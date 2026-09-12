@@ -22,7 +22,7 @@ Travaux engagés : **PHASES 01, 03, 05 et 06 — en cours; PHASES 02 et 04 sign�
 
 ## Supabase development/staging
 
-Projet distant Matricia contrôlé en environnement applicatif `development`. Les 57 migrations additives jusqu’à `20260912005600` sont appliquées à distance.
+Projet distant Matricia contrôlé en environnement applicatif `development`. Les 58 migrations additives jusqu’à `20260912005700` sont appliquées à distance.
 
 1. extensions et référentiels versionnés;
 2. identité, organisations, memberships et RBAC;
@@ -67,11 +67,13 @@ Projet distant Matricia contrôlé en environnement applicatif `development`. Le
 33. commandes Rule Builder : création et nouvelle version DRAFT immuable,
     concurrence optimiste, hash canonique serveur, MFA sensible, audit et Event Outbox;
 34. interface Rule Builder FR/AR RTL : prédicat booléen déterministe, action typée,
-    priorité, sensibilité, confirmation et identité idempotente persistée.
+    priorité, sensibilité, confirmation et identité idempotente persistée;
+35. création Questionnaire Builder : version DRAFT bilingue liée à une release
+    éditable, première section immuable, idempotence, MFA sensible, audit et Outbox.
 
 Preuves actuelles :
 
-- migrations locales/distantes `20260910000100`..`20260912005600` appliquées sur development;
+- migrations locales/distantes `20260910000100`..`20260912005700` appliquées sur development;
 - lint SQL public/private sans erreur de schéma lors du dernier contrôle distant;
 - `pnpm test:db` vert le 2026-09-11 pour les fichiers `0001`..`0023` : 23 fichiers et 404 assertions; les quatre scénarios historiques à deux connexions couvrent Outbox, journal, crédits et chaîne audit;
 - tests négatifs RLS inter-tenant, immutabilité, équilibre/devise, crédits, idempotence, audit et Outbox.
@@ -90,7 +92,7 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - `pnpm typecheck` : vert.
 - Tests Web : vert — 19 fichiers, 150 tests.
 - Tests Worker : vert — 11 fichiers, 54 tests; typecheck strict vert.
-- `pnpm test:db` : vert pour `0001`..`0040` — 40 fichiers et 970 assertions, plus quatre scénarios génériques à deux connexions. Les scénarios P06 dédiés de révocation concurrente hiérarchie et de commandes services passent aussi sur Supabase development.
+- `pnpm test:db` : vert pour `0001`..`0041` — 41 fichiers et 981 assertions, plus quatre scénarios génériques à deux connexions. Les scénarios P06 dédiés de révocation concurrente hiérarchie et de commandes services passent aussi sur Supabase development.
 - E2E catalogue authentifié réel : 4/4 en FR/AR à 360 px, navigation clavier,
   axe, recherche discriminante et RPC de publication/lecture réelles; crash/reaper
   `SCHEDULED` et `PUBLISHING` prouvés, zéro résidu actif ou artefact local.
@@ -111,13 +113,14 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   est importé et vérifié : 10 bibliothèques, 40 catégories, 80 sous-catégories,
   200 services, 212 liens, 220 questionnaires et 6 000 questions; releases et
   traductions restent volontairement `DRAFT/PENDING`. La suite globale atteint
-  40 fichiers/970 assertions et les concurrences hiérarchie/services sont vertes.
+  41 fichiers/981 assertions et les concurrences hiérarchie/services sont vertes.
   Les commandes serveur du Question Builder sont appliquées et testées; l’interface
   de création de questions DRAFT est livrée en FR/AR RTL avec contrat strict. La
   création et le versionnage DRAFT des règles sont appliqués avec hash canonique,
   MFA sensible, audit et Outbox. La composition complète questionnaires/sections,
   l’interface Rule Builder booléenne est branchée sur la commande réelle. La
-  composition complète questionnaires/sections, les opérateurs avancés, la
+  création de questionnaires avec première section est appliquée. L’ajout des
+  questions/règles aux snapshots et les sections suivantes, les opérateurs avancés, la
   validation/simulation, la qualité/similarité IA, les sessions et la charge
   6k/50k restent requises avant GREEN et visa indépendant.
 - MAT-FUNC-001..068 et MARKETING-001..008 restent à implémenter et prouver progressivement.
