@@ -261,13 +261,14 @@ async function verifyOutboxConcurrency(databaseUrl, admin) {
 
 async function cleanupFinancialConcurrencyFixture(admin, organizationId, actorId, membershipId) {
   await admin.begin(async (transaction) => {
-    await transaction.unsafe('lock table public.event_outbox, public.audit_events, public.financial_entries, public.financial_journals, public.financial_accounts, public.credit_ledger_entries, public.credit_wallets in access exclusive mode');
+    await transaction.unsafe('lock table public.event_outbox, public.audit_events, public.financial_entries, public.financial_journals, public.financial_accounts, public.credit_lots, public.credit_ledger_entries, public.credit_wallets in access exclusive mode');
     await transaction.unsafe('alter table public.event_outbox disable trigger event_outbox_no_delete');
     await transaction.unsafe('alter table public.audit_events disable trigger audit_events_immutable');
     await transaction.unsafe('alter table public.financial_entries disable trigger financial_entries_immutable');
     await transaction.unsafe('alter table public.financial_entries disable trigger financial_journal_balanced');
     await transaction.unsafe('alter table public.financial_journals disable trigger financial_journals_immutable');
     await transaction.unsafe('alter table public.financial_accounts disable trigger financial_accounts_immutable');
+    await transaction.unsafe('alter table public.credit_lots disable trigger credit_lots_immutable');
     await transaction.unsafe('alter table public.credit_ledger_entries disable trigger credit_ledger_entries_immutable');
     await transaction.unsafe('alter table public.credit_wallets disable trigger credit_wallets_immutable');
     await transaction`delete from public.event_outbox where organization_id=${organizationId}::uuid`;
@@ -276,6 +277,7 @@ async function cleanupFinancialConcurrencyFixture(admin, organizationId, actorId
     await transaction`delete from public.financial_entries where organization_id=${organizationId}::uuid`;
     await transaction`delete from public.financial_journals where organization_id=${organizationId}::uuid`;
     await transaction`delete from public.financial_accounts where organization_id=${organizationId}::uuid`;
+    await transaction`delete from public.credit_lots where organization_id=${organizationId}::uuid`;
     await transaction`delete from public.credit_ledger_entries where organization_id=${organizationId}::uuid`;
     await transaction`delete from public.credit_wallets where organization_id=${organizationId}::uuid`;
     await transaction`delete from public.organization_member_roles where membership_id=${membershipId}::uuid`;
@@ -284,6 +286,7 @@ async function cleanupFinancialConcurrencyFixture(admin, organizationId, actorId
     await transaction`delete from auth.users where id=${actorId}::uuid`;
     await transaction.unsafe('alter table public.credit_wallets enable trigger credit_wallets_immutable');
     await transaction.unsafe('alter table public.credit_ledger_entries enable trigger credit_ledger_entries_immutable');
+    await transaction.unsafe('alter table public.credit_lots enable trigger credit_lots_immutable');
     await transaction.unsafe('alter table public.financial_accounts enable trigger financial_accounts_immutable');
     await transaction.unsafe('alter table public.financial_journals enable trigger financial_journals_immutable');
     await transaction.unsafe('alter table public.financial_entries enable trigger financial_journal_balanced');
