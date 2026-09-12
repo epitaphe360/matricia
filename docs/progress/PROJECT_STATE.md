@@ -1,6 +1,6 @@
 # Matricia — Project State
 
-Dernière mise à jour : 2026-09-11 21:48 America/Toronto
+Dernière mise à jour : 2026-09-12 06:55 America/Toronto
 
 Phase de contrôle active : **PHASE 01 — contrats atomiques en cours**
 
@@ -22,7 +22,7 @@ Travaux engagés : **PHASES 01, 03, 05 et 06 — en cours; PHASES 02 et 04 sign�
 
 ## Supabase development/staging
 
-Projet distant Matricia contrôlé en environnement applicatif `development`. Les 58 migrations additives jusqu’à `20260912005700` sont appliquées à distance.
+Projet distant Matricia contrôlé en environnement applicatif `development`. Les 77 migrations additives jusqu’à `20260912007700` sont appliquées à distance.
 
 1. extensions et référentiels versionnés;
 2. identité, organisations, memberships et RBAC;
@@ -70,12 +70,40 @@ Projet distant Matricia contrôlé en environnement applicatif `development`. Le
     priorité, sensibilité, confirmation et identité idempotente persistée;
 35. création Questionnaire Builder : version DRAFT bilingue liée à une release
     éditable, première section immuable, idempotence, MFA sensible, audit et Outbox.
+36. composition Questionnaire Builder : sections suivantes ordonnées, ajout de
+    questions et règles approuvées/publiées, concurrence optimiste, snapshot
+    canonique, MFA sensible, audit et Outbox.
+37. gate de charge catalogue GET-only, borné et fail-closed avec scénarios 6k/50k
+    et sortie de métriques nettoyée; harness local 6/6 vert, exécution distante à prouver.
+38. RFQ et matching explicable : demandes versionnées, éligibilité, invitations,
+    sélection idempotente, audit, Outbox et RLS restrictive;
+39. devis et comparaison : révisions exactes, comparaison normalisée sans float,
+    sélection d'une version précise, audit et isolation inter-tenant;
+40. contrats et missions : snapshots contractuels, signatures, jalons, livrables,
+    acceptation et transitions gouvernées;
+41. qualification Sous-traitant : capacités, preuves, décisions versionnées et
+    contrôle d'éligibilité;
+42. facturation Sous-traitant : factures, événements payables, règlements et
+    rapprochements adossés aux écritures immuables;
+43. litiges et réaffectation : preuves, médiation, décision et transfert contrôlé;
+44. achats groupés : pools, engagements, consommation et allocation fournisseur;
+45. gouvernance et finance franchise : territoires, mandats, exception IT,
+    allocations et distributions immuables;
+46. abonnements : plans versionnés, cycles, essais et transitions idempotentes;
+47. command center Administration : supervision, approbations et commandes
+    opérationnelles à privilège minimal.
+48. diagnostics/opportunités : résultats et scores exacts, snapshots, anomalies,
+    recommandations, recomputation et transitions contrôlées vers RFQ;
+49. Boxes/crédits : avantages versionnés, wallets sûrs, lots FIFO expirables,
+    réservation/libération/consommation et suppression de l'auto-attribution;
+50. notifications : templates FR/AR versionnés, préférences immédiat/digest,
+    alertes critiques obligatoires, inbox, déduplication, retry et dead-letter.
 
 Preuves actuelles :
 
-- migrations locales/distantes `20260910000100`..`20260912005700` appliquées sur development;
+- migrations locales/distantes `20260910000100`..`20260912007700` appliquées sur development;
 - lint SQL public/private sans erreur de schéma lors du dernier contrôle distant;
-- `pnpm test:db` vert le 2026-09-11 pour les fichiers `0001`..`0023` : 23 fichiers et 404 assertions; les quatre scénarios historiques à deux connexions couvrent Outbox, journal, crédits et chaîne audit;
+- `pnpm test:db` vert le 2026-09-12 pour les fichiers `0001`..`0057` : 57 fichiers, 1 439 assertions et quatre scénarios à deux connexions couvrant Outbox, journal, crédits et chaîne audit;
 - tests négatifs RLS inter-tenant, immutabilité, équilibre/devise, crédits, idempotence, audit et Outbox.
 
 Docker local reste indisponible sur cet hôte; la reconstruction propre doit être prouvée par le job CI Supabase avant signature P03.
@@ -90,9 +118,9 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - `pnpm verify:phase00` : vert — catalogue 10/200/6000, 7 registres bootstrap, 68 fonctions, 8 exigences Marketing conformes à l’addendum et 63 agents.
 - `pnpm lint` : vert.
 - `pnpm typecheck` : vert.
-- Tests Web : vert — 19 fichiers, 150 tests.
+- Tests Web : vert — 65 fichiers, 279 tests.
 - Tests Worker : vert — 11 fichiers, 54 tests; typecheck strict vert.
-- `pnpm test:db` : vert pour `0001`..`0041` — 41 fichiers et 981 assertions, plus quatre scénarios génériques à deux connexions. Les scénarios P06 dédiés de révocation concurrente hiérarchie et de commandes services passent aussi sur Supabase development.
+- `pnpm test:db` : vert pour `0001`..`0057` — 57 fichiers et 1 439 assertions, plus quatre scénarios génériques à deux connexions. Diagnostics, Boxes/crédits et Notifications sont appliqués et couverts sur Supabase development.
 - E2E catalogue authentifié réel : 4/4 en FR/AR à 360 px, navigation clavier,
   axe, recherche discriminante et RPC de publication/lecture réelles; crash/reaper
   `SCHEDULED` et `PUBLISHING` prouvés, zéro résidu actif ou artefact local.
@@ -117,19 +145,27 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   Les commandes serveur du Question Builder sont appliquées et testées; l’interface
   de création de questions DRAFT est livrée en FR/AR RTL avec contrat strict. La
   création et le versionnage DRAFT des règles sont appliqués avec hash canonique,
-  MFA sensible, audit et Outbox. La composition complète questionnaires/sections,
-  l’interface Rule Builder booléenne est branchée sur la commande réelle. La
-  création de questionnaires avec première section est appliquée. L’ajout des
-  questions/règles aux snapshots et les sections suivantes, les opérateurs avancés, la
-  validation/simulation, la qualité/similarité IA, les sessions et la charge
-  6k/50k restent requises avant GREEN et visa indépendant.
-- MAT-FUNC-001..068 et MARKETING-001..008 restent à implémenter et prouver progressivement.
+  MFA sensible, audit et Outbox. L’interface Rule Builder booléenne est branchée
+  sur la commande réelle. La création de questionnaires, les sections suivantes
+  et l’ajout gouverné de questions/règles aux snapshots sont appliqués et testés.
+  Le gate de charge 6k/50k est implémenté et testé localement, mais sa preuve
+  distante reste requise. Les opérateurs avancés, la validation/simulation, la
+  qualité/similarité IA et les sessions restent requis avant GREEN et visa indépendant.
+- Les fondations et interfaces P07–P17 progressent en lots indépendants : RFQ/devis,
+  contrats/missions Client et Sous-traitant, qualification/facturation Provider,
+  litiges/réaffectation, achats groupés, franchise, abonnements, administration,
+  diagnostics/opportunités, Boxes/crédits et Notifications sont branchés. Les E2E multi-rôles,
+  audits indépendants et la traçabilité atomique restent requis avant GREEN.
+- La couverture MAT-FUNC-001..068 et MARKETING-001..008 reste partielle : les
+  fondations de plusieurs domaines sont présentes, mais la traçabilité atomique,
+  les parcours E2E et les audits indépendants restent requis avant de déclarer
+  chaque exigence `VERIFIED`.
 - Vercel et Railway ne sont pas configurés. Aucune production n’a été modifiée ou autorisée.
 
 ## Prochaine exécution
 
-1. Étendre le parcours Builder P06 aux questionnaires/sections et aux opérateurs de règles avancés.
-2. Prouver qualité/similarité, sessions et charge catalogue 6k/50k.
-3. Obtenir un replay DB vierge CI et prouver ClamAV réel en staging.
-4. Étendre les contrats atomiques P01 au fil des domaines.
+1. Intégrer et valider les interfaces Client RFQ/devis, qualification et facturation Sous-traitant, contrats/missions, litiges et command center.
+2. Étendre le parcours Builder P06 aux opérateurs avancés et prouver qualité/similarité, sessions et charge catalogue 6k/50k.
+3. Compléter la traçabilité atomique P01 et les parcours E2E/RLS des fondations P07–P17.
+4. Obtenir un replay DB vierge CI et prouver ClamAV réel en staging.
 5. Continuer P07..P19 selon `PLANS.md`, sans sauter de gate.
