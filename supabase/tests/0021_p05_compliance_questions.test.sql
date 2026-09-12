@@ -5,7 +5,9 @@ select plan(24);
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at) values
 ('b2100000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','p05-question-owner@example.invalid','',now(),'{}','{}',now(),now()),
 ('b2100000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000000','authenticated','authenticated','p05-question-central@example.invalid','',now(),'{}','{}',now(),now()),
-('b2100000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000000','authenticated','authenticated','p05-question-outsider@example.invalid','',now(),'{}','{}',now(),now());
+('b2100000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000000','authenticated','authenticated','p05-question-outsider@example.invalid','',now(),'{}','{}',now(),now()),
+('b2100000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000000','authenticated','authenticated','p05-question-questioner@example.invalid','',now(),'{}','{}',now(),now()),
+('b2100000-0000-0000-0000-000000000005','00000000-0000-0000-0000-000000000000','authenticated','authenticated','p05-question-reviewer@example.invalid','',now(),'{}','{}',now(),now());
 insert into public.organizations(id,legal_name,display_name,status,created_by) values
 ('b2110000-0000-0000-0000-000000000001','P05 Questions SARL','P05 Questions','PENDING','b2100000-0000-0000-0000-000000000001'),
 ('b2110000-0000-0000-0000-000000000002','P05 Other SARL','P05 Other','ACTIVE','b2100000-0000-0000-0000-000000000003');
@@ -15,12 +17,15 @@ insert into public.organization_memberships(id,organization_id,user_id,status,ac
 insert into public.organization_member_roles(membership_id,role_code) values
 ('b2120000-0000-0000-0000-000000000001','CLIENT_OWNER'),
 ('b2120000-0000-0000-0000-000000000002','CLIENT_OWNER');
-insert into public.platform_user_roles(user_id,role_code) values('b2100000-0000-0000-0000-000000000002','COMPLIANCE_MANAGER');
+insert into public.platform_user_roles(user_id,role_code) values
+('b2100000-0000-0000-0000-000000000002','COMPLIANCE_MANAGER'),
+('b2100000-0000-0000-0000-000000000004','COMPLIANCE_MANAGER'),
+('b2100000-0000-0000-0000-000000000005','COMPLIANCE_MANAGER');
 insert into public.organization_identifiers(organization_id,identifier_type,normalized_value,verification_status,is_active) values
 ('b2110000-0000-0000-0000-000000000001','ICE','P05QICE001','UNVERIFIED',true),
 ('b2110000-0000-0000-0000-000000000001','IF','P05QIF001','UNVERIFIED',true),
 ('b2110000-0000-0000-0000-000000000001','RC','P05QRC001','UNVERIFIED',true);
-insert into public.client_compliance_cases(id,organization_id,status,created_by) values('b2130000-0000-0000-0000-000000000001','b2110000-0000-0000-0000-000000000001','PROFILE_IN_PROGRESS','b2100000-0000-0000-0000-000000000001');
+insert into public.client_compliance_cases(id,organization_id,status,created_by,submitted_by) values('b2130000-0000-0000-0000-000000000001','b2110000-0000-0000-0000-000000000001','PROFILE_IN_PROGRESS','b2100000-0000-0000-0000-000000000001','b2100000-0000-0000-0000-000000000001');
 insert into public.client_profile_versions(compliance_case_id,organization_id,version,profile_data,organization_snapshot,source_organization_row_version,created_by) values
 ('b2130000-0000-0000-0000-000000000001','b2110000-0000-0000-0000-000000000001',1,'{}','{}',1,'b2100000-0000-0000-0000-000000000001');
 update public.client_compliance_cases set current_profile_version=1 where id='b2130000-0000-0000-0000-000000000001';
@@ -36,6 +41,10 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub','b2100000-0000-0000-0000-000000000002',true);
 select set_config('request.jwt.claims','{"sub":"b2100000-0000-0000-0000-000000000002","role":"authenticated","aal":"aal2"}',true);
 insert into p05_question_observed values('evaluation',public.evaluate_client_compliance('b2130000-0000-0000-0000-000000000001','p05-question-evaluate-1')::text);
+reset role;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','b2100000-0000-0000-0000-000000000004',true);
+select set_config('request.jwt.claims','{"sub":"b2100000-0000-0000-0000-000000000004","role":"authenticated","aal":"aal2"}',true);
 insert into p05_question_observed values('question_id',public.create_client_compliance_question(
   (select id from public.client_administrative_anomalies where compliance_case_id='b2130000-0000-0000-0000-000000000001' and anomaly_code='ICE_NOT_VERIFIED'),
   'Veuillez fournir un justificatif ICE lisible.','يرجى تقديم وثيقة واضحة لمعرف ICE.','REGISTRATION_DOCUMENT',transaction_timestamp()+interval '5 days','p05-question-create-1'
@@ -78,17 +87,17 @@ reset role;
 select is((select value::bigint from p05_question_observed where key='outsider_responses'),0::bigint,'RLS hides response history from another tenant');
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub','b2100000-0000-0000-0000-000000000002',true);
-select set_config('request.jwt.claims','{"sub":"b2100000-0000-0000-0000-000000000002","role":"authenticated","aal":"aal2"}',true);
+select set_config('request.jwt.claim.sub','b2100000-0000-0000-0000-000000000005',true);
+select set_config('request.jwt.claims','{"sub":"b2100000-0000-0000-0000-000000000005","role":"authenticated","aal":"aal2"}',true);
 reset role;
 select throws_ok(
-  $$set local role authenticated; select set_config('request.jwt.claim.sub','b2100000-0000-0000-0000-000000000002',true); select set_config('request.jwt.claims','{"sub":"b2100000-0000-0000-0000-000000000002","role":"authenticated","aal":"aal2"}',true); select public.accept_client_compliance_response((select value::uuid from p05_question_observed where key='question_id'),null,'p05-question-null-decision')$$,
+  $$set local role authenticated; select set_config('request.jwt.claim.sub','b2100000-0000-0000-0000-000000000005',true); select set_config('request.jwt.claims','{"sub":"b2100000-0000-0000-0000-000000000005","role":"authenticated","aal":"aal2"}',true); select public.accept_client_compliance_response((select value::uuid from p05_question_observed where key='question_id'),null,'p05-question-null-decision')$$,
   '22023','INVALID_COMPLIANCE_DECISION','a null review decision has no side effect'
 );
 reset role;
 set local role authenticated;
-select set_config('request.jwt.claim.sub','b2100000-0000-0000-0000-000000000002',true);
-select set_config('request.jwt.claims','{"sub":"b2100000-0000-0000-0000-000000000002","role":"authenticated","aal":"aal2"}',true);
+select set_config('request.jwt.claim.sub','b2100000-0000-0000-0000-000000000005',true);
+select set_config('request.jwt.claims','{"sub":"b2100000-0000-0000-0000-000000000005","role":"authenticated","aal":"aal2"}',true);
 insert into p05_question_observed values('accept',public.accept_client_compliance_response((select value::uuid from p05_question_observed where key='question_id'),true,'p05-question-accept-1')::text);
 insert into p05_question_observed values('accept_retry',public.accept_client_compliance_response((select value::uuid from p05_question_observed where key='question_id'),true,'p05-question-accept-1')::text);
 reset role;

@@ -1,6 +1,6 @@
 begin;
 set local search_path=public,extensions;
-select plan(16);
+select plan(17);
 
 select ok(
   has_function_privilege('authenticated','public.list_admin_operations_projection(integer)','EXECUTE')
@@ -43,6 +43,7 @@ insert into public.platform_user_roles(user_id,role_code)values
 update public.platform_user_roles set revoked_at=now() where user_id='a9600000-0000-4000-8000-000000000006';
 
 select throws_ok($$set local role authenticated;select set_config('request.jwt.claim.sub','a9600000-0000-4000-8000-000000000006',true);select set_config('request.jwt.claims','{"sub":"a9600000-0000-4000-8000-000000000006","role":"authenticated","aal":"aal2"}',true);select public.list_admin_operations_projection(10)$$,'42501','ADMIN_OPERATIONS_PROJECTION_DENIED','revoked platform role is denied at runtime');
+select throws_ok($$set local role authenticated;select set_config('request.jwt.claim.sub','a9600000-0000-4000-8000-000000000003',true);select set_config('request.jwt.claims','{"sub":"a9600000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal1"}',true);select public.list_admin_operations_projection(10)$$,'42501','ADMIN_OPERATIONS_PROJECTION_DENIED','active central role at AAL1 is denied at runtime');
 select ok((select p.prosrc like '%has_platform_role%' from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='list_admin_operations_projection'),'projection delegates platform authorization to the canonical revocation-aware guard');
 insert into public.event_outbox(organization_id,aggregate_type,aggregate_id,event_type,correlation_id,payload,attempt_count,last_error_code)
 values('b9600000-0000-4000-8000-000000000001','security_fixture','hidden-id','SecurityFixtureV1','f9600000-0000-4000-8000-000000000001','{"recipient_user_id":"hidden","secret":"hidden"}',1,'unsafe free form detail');

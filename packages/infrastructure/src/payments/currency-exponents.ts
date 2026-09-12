@@ -1,4 +1,4 @@
-import { PaymentGatewayError, type PaymentGatewayCode } from "./contracts.js";
+import { PaymentGatewayError, type PaymentGatewayCode } from "./contracts";
 
 const supportedCurrencyExponents = new Map<string, number>([
   ["MAD", 2],

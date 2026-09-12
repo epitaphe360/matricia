@@ -5,8 +5,8 @@ import {
   type PaymentIntentRequest,
   type PaymentWebhookVerifier,
   type VerifiedPaymentEvent,
-} from "./contracts.js";
-import { sha256Hex, signWebhook, verifyPaymentWebhook } from "./webhook.js";
+} from "./contracts";
+import { sha256Hex, signWebhook, verifyPaymentWebhook } from "./webhook";
 
 export class DemoPaymentGateway implements PaymentGateway, PaymentWebhookVerifier {
   readonly code = "DEMO" as const;

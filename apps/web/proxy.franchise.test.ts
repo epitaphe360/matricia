@@ -24,17 +24,19 @@ function request(pathname: string) {
 beforeEach(() => getUser.mockReset());
 
 describe("proxy franchise routing", () => {
-  it.each(["/fr/franchise", "/ar/franchise/digest"])(
-    "redirige la route franchise non authentifiée %s",
-    async (pathname) => {
-      getUser.mockResolvedValue({ data: { user: null } });
-      const response = await refreshSupabaseSession(request(pathname));
-      expect(response.status).toBe(307);
-      expect(response.headers.get("location")).toBe(
-        `https://matricia.example.invalid/${pathname.startsWith("/ar/") ? "ar" : "fr"}/connexion`,
-      );
-    },
-  );
+  it("laisse la page franchise publique accessible sans session", async () => {
+    getUser.mockResolvedValue({ data: { user: null } });
+    const response = await refreshSupabaseSession(request("/fr/franchise"));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("redirige le digest franchise privé sans session", async () => {
+    getUser.mockResolvedValue({ data: { user: null } });
+    const response = await refreshSupabaseSession(request("/ar/franchise/digest"));
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe("https://matricia.example.invalid/ar/connexion");
+  });
 
   it("laisse passer une route franchise authentifiée et fixe la locale", async () => {
     getUser.mockResolvedValue({ data: { user: { id: "authenticated-user" } } });

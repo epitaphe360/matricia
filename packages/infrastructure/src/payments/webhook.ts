@@ -1,4 +1,4 @@
-import { PaymentGatewayError, type PaymentGatewayCode, type VerifiedPaymentEvent } from "./contracts.js";
+import { PaymentGatewayError, type PaymentGatewayCode, type VerifiedPaymentEvent } from "./contracts";
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder("utf-8", { fatal: true });

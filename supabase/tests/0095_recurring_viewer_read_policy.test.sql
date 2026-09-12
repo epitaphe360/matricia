@@ -44,28 +44,38 @@ values('e9500000-0000-0000-0000-000000000002','e9500000-0000-0000-0000-000000000
 insert into public.recurring_service_occurrences(id,plan_id,plan_version_id,client_organization_id,scheduled_on,generated_request_id,generated_request_version_id)
 values('e9500000-0000-0000-0000-000000000003','e9500000-0000-0000-0000-000000000001','e9500000-0000-0000-0000-000000000002','b9500000-0000-0000-0000-000000000001',current_date,'c9500000-0000-0000-0000-000000000001','d9500000-0000-0000-0000-000000000001');
 
+create temporary table p95_observed(key text primary key,value bigint not null);
+grant select,insert on p95_observed to authenticated;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','a9500000-0000-0000-0000-000000000001',true);
 select set_config('request.jwt.claims','{"sub":"a9500000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal2"}',true);
-select is((select count(*) from public.recurring_service_plans where id='e9500000-0000-0000-0000-000000000001'),1::bigint,'CLIENT_VIEWER can read its tenant recurring plan');
-select is((select count(*) from public.recurring_service_plan_versions where plan_id='e9500000-0000-0000-0000-000000000001'),1::bigint,'CLIENT_VIEWER can read its tenant plan version');
-select is((select count(*) from public.recurring_service_occurrences where plan_id='e9500000-0000-0000-0000-000000000001'),1::bigint,'CLIENT_VIEWER can read its tenant occurrences');
+insert into p95_observed values
+('tenant_plan',(select count(*) from public.recurring_service_plans where id='e9500000-0000-0000-0000-000000000001')),
+('tenant_version',(select count(*) from public.recurring_service_plan_versions where plan_id='e9500000-0000-0000-0000-000000000001')),
+('tenant_occurrence',(select count(*) from public.recurring_service_occurrences where plan_id='e9500000-0000-0000-0000-000000000001'));
+reset role;
+
+select is((select value from p95_observed where key='tenant_plan'),1::bigint,'CLIENT_VIEWER can read its tenant recurring plan');
+select is((select value from p95_observed where key='tenant_version'),1::bigint,'CLIENT_VIEWER can read its tenant plan version');
+select is((select value from p95_observed where key='tenant_occurrence'),1::bigint,'CLIENT_VIEWER can read its tenant occurrences');
 select throws_ok(
-  $$select public.transition_recurring_service_plan('e9500000-0000-0000-0000-000000000001','PAUSE','Viewer mutation denied',1,'viewer-transition-denied-95','f9500000-0000-0000-0000-000000000001')$$,
-  '42501'::char(5),'RECURRING_PLAN_SCOPE_DENIED',
-  'CLIENT_VIEWER cannot mutate a recurring plan'
+  $$set local role authenticated; select set_config('request.jwt.claim.sub','a9500000-0000-0000-0000-000000000001',true); select set_config('request.jwt.claims','{"sub":"a9500000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal2"}',true); select public.transition_recurring_service_plan('e9500000-0000-0000-0000-000000000001','PAUSE','Viewer mutation denied',1,'viewer-transition-denied-95','f9500000-0000-0000-0000-000000000001')$$,
+  '42501'::char(5),'RECURRING_PLAN_SCOPE_DENIED','CLIENT_VIEWER cannot mutate a recurring plan'
 );
 select throws_ok(
-  $$select public.clone_service_request('c9500000-0000-0000-0000-000000000001',current_date+7,'Viewer clone denied','viewer-clone-denied-95','f9500000-0000-0000-0000-000000000002')$$,
-  '42501'::char(5),'REQUEST_SCOPE_DENIED',
-  'CLIENT_VIEWER cannot clone a service request'
+  $$set local role authenticated; select set_config('request.jwt.claim.sub','a9500000-0000-0000-0000-000000000001',true); select set_config('request.jwt.claims','{"sub":"a9500000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal2"}',true); select public.clone_service_request('c9500000-0000-0000-0000-000000000001',current_date+7,'Viewer clone denied','viewer-clone-denied-95','f9500000-0000-0000-0000-000000000002')$$,
+  '42501'::char(5),'REQUEST_SCOPE_DENIED','CLIENT_VIEWER cannot clone a service request'
 );
 
+set local role authenticated;
 select set_config('request.jwt.claim.sub','a9500000-0000-0000-0000-000000000002',true);
 select set_config('request.jwt.claims','{"sub":"a9500000-0000-0000-0000-000000000002","role":"authenticated","aal":"aal2"}',true);
-select is((select count(*) from public.recurring_service_plans where id='e9500000-0000-0000-0000-000000000001'),0::bigint,'cross-tenant viewer cannot read the recurring plan');
-select is((select count(*) from public.recurring_service_occurrences where plan_id='e9500000-0000-0000-0000-000000000001'),0::bigint,'cross-tenant viewer cannot read occurrences');
+insert into p95_observed values
+('outsider_plan',(select count(*) from public.recurring_service_plans where id='e9500000-0000-0000-0000-000000000001')),
+('outsider_occurrence',(select count(*) from public.recurring_service_occurrences where plan_id='e9500000-0000-0000-0000-000000000001'));
 reset role;
+select is((select value from p95_observed where key='outsider_plan'),0::bigint,'cross-tenant viewer cannot read the recurring plan');
+select is((select value from p95_observed where key='outsider_occurrence'),0::bigint,'cross-tenant viewer cannot read occurrences');
 
 select * from finish();
 rollback;

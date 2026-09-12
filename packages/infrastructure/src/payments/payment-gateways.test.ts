@@ -1,9 +1,9 @@
 import { createHash, generateKeyPairSync, sign } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
-import { CmiPaymentGateway } from "./cmi-gateway.js";
-import { PaymentGatewayError, type PaymentIntentRequest } from "./contracts.js";
-import { createPaymentGateway } from "./gateway-factory.js";
-import { PayPalPaymentGateway } from "./paypal-gateway.js";
+import { CmiPaymentGateway } from "./cmi-gateway";
+import { PaymentGatewayError, type PaymentIntentRequest } from "./contracts";
+import { createPaymentGateway } from "./gateway-factory";
+import { PayPalPaymentGateway } from "./paypal-gateway";
 
 const request: PaymentIntentRequest = {
   organizationId: "11111111-1111-4111-8111-111111111111",

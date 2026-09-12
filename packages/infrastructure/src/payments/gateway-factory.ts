@@ -1,7 +1,7 @@
-import { CmiPaymentGateway } from "./cmi-gateway.js";
-import { PaymentGatewayError, type PaymentGatewayCode } from "./contracts.js";
-import { DemoPaymentGateway } from "./demo-gateway.js";
-import { FetchPayPalOrderClient, PayPalPaymentGateway } from "./paypal-gateway.js";
+import { CmiPaymentGateway } from "./cmi-gateway";
+import { PaymentGatewayError, type PaymentGatewayCode } from "./contracts";
+import { DemoPaymentGateway } from "./demo-gateway";
+import { FetchPayPalOrderClient, PayPalPaymentGateway } from "./paypal-gateway";
 
 export type PaymentRuntimeConfig = {
   provider: PaymentGatewayCode;

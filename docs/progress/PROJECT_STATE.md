@@ -400,3 +400,33 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   development ni sur aucun environnement distant.
 - Aucun environnement, secret ou donnée de production n'a été lu ou modifié dans
   ce checkpoint.
+
+## Checkpoint de clôture technique V1 — 2026-09-12
+
+- Supabase development est synchronisé jusqu'à la migration additive `20260912015500`;
+  le dry-run final retourne `upToDate=true`. Les migrations 153 à 155 refusent les
+  rôles plateforme révoqués, imposent AAL2 pour la projection Operations et calculent
+  l'éligibilité RFQ depuis les preuves Provider versionnées, temporelles et propres au
+  service. Aucun environnement de production n'a été modifié.
+- Gate PostgreSQL/RLS globale : 100 fichiers, 2 507 assertions et 4 scénarios de
+  concurrence PASS. Le réaudit sécurité indépendant final ne relève aucun P0/P1/P2.
+- Gates monorepo : lint PASS, TypeScript strict PASS, tests unitaires/intégration PASS
+  (Web 115 fichiers/436 tests; Worker 11 fichiers/54 tests), build Next.js/Worker PASS,
+  `release:validate` structurel PASS et aucun marqueur incomplet détecté.
+- E2E additionnels V1 : 20/20 PASS, zéro skip, avec fixtures development neutralisées;
+  FR/AR, RTL/LTR, 360 px et desktop, axe WCAG A/AA, clavier/focus, reflow, refus anon et
+  séparation Client/Sous-traitant/Franchisé. Les crashes Litiges et Notifications
+  découverts pendant ces E2E ont été corrigés sans élargir les droits RLS.
+- Command Center localise désormais les codes métier en FR/AR, priorise la file du jour
+  et conserve la revue humaine. Diagnostics raccorde Assistance et Évolution sans copie
+  métier hardcodée. Le module de paiement se construit sous Turbopack avec ses imports
+  TypeScript résolus depuis les sources.
+- Limites de déclaration : les gates techniques de ce checkpoint sont vertes, mais la
+  matrice atomique reste honnêtement à 1 `PROVEN` et 67 `PARTIAL`; le registre formel
+  `REQUIREMENTS_COVERAGE.md` reste à 0/76 `VERIFIED` et P01 demeure ouverte jusqu'aux
+  contrats atomiques, preuves et visas indépendants exhaustifs. Ce checkpoint ne
+  revendique donc pas une V1 Gold Master terminée à 100 %.
+- Risques externes restant à fermer avant release staging signée : replay vierge CI
+  actuellement empêché par le runner GitHub/facturation, ClamAV réel en staging, audit
+  manuel lecteur d'écran, déclencheur périodique service-role du scheduler et preuves
+  atomiques/signoffs des exigences restantes. Aucun déploiement production n'est autorisé.

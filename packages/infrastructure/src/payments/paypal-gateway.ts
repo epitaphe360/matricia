@@ -10,9 +10,9 @@ import {
   type PaymentIntentRequest,
   type PaymentWebhookVerifier,
   type VerifiedPaymentEvent,
-} from "./contracts.js";
-import { sha256Hex } from "./webhook.js";
-import { assertGatewayCurrency, isSupportedTwoDecimalCurrency } from "./currency-exponents.js";
+} from "./contracts";
+import { sha256Hex } from "./webhook";
+import { assertGatewayCurrency, isSupportedTwoDecimalCurrency } from "./currency-exponents";
 
 export type PayPalOrderClient = {
   createOrder(input: {
