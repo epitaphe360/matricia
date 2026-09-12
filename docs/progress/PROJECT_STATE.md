@@ -1,6 +1,6 @@
 # Matricia — Project State
 
-Dernière mise à jour : 2026-09-12 07:16 America/Toronto
+Dernière mise à jour : 2026-09-12 08:44 America/Toronto
 
 Phase de contrôle active : **PHASE 01 — contrats atomiques en cours**
 
@@ -22,7 +22,7 @@ Travaux engagés : **PHASES 01, 03, 05 et 06 — en cours; PHASES 02 et 04 sign�
 
 ## Supabase development/staging
 
-Projet distant Matricia contrôlé en environnement applicatif `development`. Les 81 migrations additives jusqu’à `20260912008100` sont appliquées à distance.
+Projet distant Matricia contrôlé en environnement applicatif `development`. Les 87 migrations additives jusqu’à `20260912008900` sont appliquées à distance.
 
 1. extensions et référentiels versionnés;
 2. identité, organisations, memberships et RBAC;
@@ -104,12 +104,17 @@ Projet distant Matricia contrôlé en environnement applicatif `development`. Le
     KPI versionnés, scores exacts et alertes explicables sans sanction automatique;
 53. moteur fiscal Maroc : catégories FR/AR, règles datées/versionnées sans taux
     hardcodé, validation/approbation, calcul exact et raccord facturation compatible.
+54. moteur Question/Rule avancé : AST AND/OR/NOT borné, quinze opérateurs,
+    détection des cycles, actions typées, scoring exact et simulation reproductible.
+55. durcissements indépendamment réaudités : AUTOPILOT et consentement owner-only,
+    PII CRM isolées, ownership CRM intra-tenant, KPI bornés/uniques et réponses
+    numériques canoniques évaluées de manière identique aux raccourcis.
 
 Preuves actuelles :
 
-- migrations locales/distantes `20260910000100`..`20260912008100` appliquées sur development;
+- migrations locales/distantes `20260910000100`..`20260912008900` appliquées sur development;
 - lint SQL public/private sans erreur de schéma lors du dernier contrôle distant;
-- `pnpm test:db` vert le 2026-09-12 pour les fichiers `0001`..`0060` : 60 fichiers, 1 555 assertions et quatre scénarios à deux connexions couvrant Outbox, journal, crédits et chaîne audit;
+- `pnpm test:db` vert le 2026-09-12 pour les fichiers `0001`..`0063` : 63 fichiers, 1 624 assertions et quatre scénarios à deux connexions couvrant Outbox, journal, crédits et chaîne audit;
 - tests négatifs RLS inter-tenant, immutabilité, équilibre/devise, crédits, idempotence, audit et Outbox.
 
 Docker local reste indisponible sur cet hôte; la reconstruction propre doit être prouvée par le job CI Supabase avant signature P03.
@@ -124,9 +129,9 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - `pnpm verify:phase00` : vert — catalogue 10/200/6000, 7 registres bootstrap, 68 fonctions, 8 exigences Marketing conformes à l’addendum et 63 agents.
 - `pnpm lint` : vert.
 - `pnpm typecheck` : vert.
-- Tests Web : vert — 65 fichiers, 279 tests.
+- Tests Web : vert — 76 fichiers, 313 tests.
 - Tests Worker : vert — 11 fichiers, 54 tests; typecheck strict vert.
-- `pnpm test:db` : vert pour `0001`..`0060` — 60 fichiers et 1 555 assertions, plus quatre scénarios génériques à deux connexions. Marketing Autopilot, CRM/performance franchise et moteur fiscal Maroc sont appliqués et couverts sur Supabase development.
+- `pnpm test:db` : vert pour `0001`..`0063` — 63 fichiers et 1 624 assertions, plus quatre scénarios génériques à deux connexions. Marketing Autopilot, CRM/performance franchise, moteur fiscal Maroc et moteur Question/Rule avancé sont appliqués, durcis et couverts sur Supabase development.
 - E2E catalogue authentifié réel : 4/4 en FR/AR à 360 px, navigation clavier,
   axe, recherche discriminante et RPC de publication/lecture réelles; crash/reaper
   `SCHEDULED` et `PUBLISHING` prouvés, zéro résidu actif ou artefact local.
@@ -139,6 +144,9 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - Les réaudits P00/P01 ont identifié puis fait corriger les métriques d’inventaire, la force des validateurs, le signoff positif et le context-pack structuré. Le réaudit final indépendant au commit `32cfd89` est PASS; P00 est fermée GREEN.
 - Le second réaudit P03 a détecté des droits `TRUNCATE` runtime hérités, un seed absent et la prise en compte des dead-letters en readiness. La migration additive 018, le test ACL et `supabase/seed.sql` corrigent ces écarts; seul le replay CI vierge et le nouveau visa restent requis.
 - Les réaudits P02 ont imposé redaction PII, readiness réelle, Worker exécutable, TypeScript renforcé et palette navy/bleu vif. Ces écarts sont corrigés et le visa indépendant final au commit `d92d8f0` est PASS; P02 est fermée GREEN.
+- Le réaudit indépendant du lot Marketing/CRM/Fiscalité/Rule Engine a fermé 7/7
+  findings : trois P1 d’autorisation/isolation/évaluation canonique et quatre P2
+  d’intégrité KPI, ownership CRM, accessibilité et localisation FR/AR.
 - P01 ne couvre pas encore les contrats atomiques de toutes les phases.
 - P04 est GREEN : OTP, organisations, invitations courriel, rôles, sessions, mot de passe facultatif, MFA TOTP, AAL2 et saga d'audit Auth durable ont passé le visa indépendant sans P0/P1/P2.
 - P05 dispose des migrations appliquées `024`, `026` et `029`–`03550` : profils, documents privés, questionnaires, matrice/anomalies, scan serveur, activation et essai 30 jours. Interfaces, Worker, concurrence et E2E authentifiés sont prouvés. ClamAV staging réel et replay vierge restent requis; P05 demeure `IN_PROGRESS`.
@@ -161,7 +169,8 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   contrats/missions Client et Sous-traitant, qualification/facturation Provider,
   litiges/réaffectation, achats groupés, franchise, abonnements, administration,
   diagnostics/opportunités, Boxes/crédits, Notifications, Marketing Autopilot,
-  CRM/performance franchise et moteur fiscal Maroc sont branchés côté données. Les E2E multi-rôles,
+  CRM/performance franchise et moteur fiscal Maroc sont branchés côté données et
+  disposent maintenant de routes Web FR/AR pour les trois derniers domaines. Les E2E multi-rôles,
   audits indépendants et la traçabilité atomique restent requis avant GREEN.
 - La couverture MAT-FUNC-001..068 et MARKETING-001..008 reste partielle : les
   fondations de plusieurs domaines sont présentes, mais la traçabilité atomique,

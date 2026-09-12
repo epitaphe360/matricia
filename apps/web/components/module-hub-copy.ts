@@ -14,8 +14,11 @@ export const moduleHubCopy = {
       ["Facturation Sous-traitant", "sous-traitant/facturation"],
       ["Missions Sous-traitant", "sous-traitant/missions"],
       ["Gouvernance Franchise", "franchise/gouvernance"],
+      ["CRM et performance Franchise", "franchise/performance"],
       ["Notifications", "notifications"],
       ["Command Center", "administration/command-center"],
+      ["Marketing Autopilot", "administration/marketing-autopilot"],
+      ["Fiscalité Maroc", "administration/fiscalite-maroc"],
     ],
   },
   ar: {
@@ -33,8 +36,11 @@ export const moduleHubCopy = {
       ["فواتير مقدم الخدمات", "sous-traitant/facturation"],
       ["مهام مقدم الخدمات", "sous-traitant/missions"],
       ["حوكمة الامتياز", "franchise/gouvernance"],
+      ["إدارة علاقات وأداء الامتياز", "franchise/performance"],
       ["الإشعارات", "notifications"],
       ["مركز القيادة", "administration/command-center"],
+      ["التسويق الآلي", "administration/marketing-autopilot"],
+      ["الضرائب بالمغرب", "administration/fiscalite-maroc"],
     ],
   },
 } as const;
