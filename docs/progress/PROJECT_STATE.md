@@ -22,7 +22,7 @@ Travaux engagés : **PHASES 01, 03, 05 et 06 — en cours; PHASES 02 et 04 sign�
 
 ## Supabase development/staging
 
-Projet distant Matricia contrôlé en environnement applicatif `development`. Le socle de 123 migrations additives jusqu’à `20260912012600` est appliqué à distance; la version `20260912012300` est intentionnellement absente. Pour le lot local `12700`–`13400`, seules les migrations `12800` et `12900` sont confirmées appliquées à distance. La migration `12700` reste locale sans statut distant revendiqué dans ce checkpoint; `13000`–`13400` restent locales et non appliquées, la liaison Supabase requise étant indisponible.
+Projet distant Matricia contrôlé en environnement applicatif `development`; la CLI Supabase est liée au projet vérifié. Après dry-run propre, les migrations `20260912013000`, `13100`, `13200`, `13300`, `13400`, `13600`, `13700`, `13900`, `14000`, `14100` et `14200` sont confirmées appliquées avec succès à distance. Les statuts déjà confirmés de `12800` et `12900` restent acquis; aucun statut supplémentaire n'est revendiqué ici.
 
 1. extensions et référentiels versionnés;
 2. identité, organisations, memberships et RBAC;
@@ -279,8 +279,9 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   récurrences, éligibilité Provider à la réaffectation, activation de paiement,
   consommation des avantages après livraison, agrégats Admin des achats groupés et
   alignement des rôles RPC d'assistance. Seules `12800` et `12900` sont confirmées
-  appliquées à distance. `13000`–`13400` sont bloquées par l'absence de liaison
-  Supabase; aucun déploiement de production n'a été tenté. Le statut distant de
+  appliquées à distance. `13000`–`13400` sont désormais également confirmées
+  appliquées sur Supabase Matricia development après dry-run propre et liaison CLI
+  vérifiée; aucun déploiement de production n'a été tenté. Le statut distant de
   `12700` n'est pas revendiqué dans ce checkpoint.
 - Le paiement de démonstration dispose d'intentions et d'un webhook idempotent; le
   secret local reste exclusivement dans `.env.local`, ignoré par Git. L'assistance
@@ -289,9 +290,8 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   de développement demandé. Le présent checkpoint ne déclare donc aucun nouveau
   module GREEN ni aucune exigence supplémentaire `VERIFIED`; les résultats de tests
   antérieurs consignés ci-dessus restent historiques et ne valent pas visa de ce lot.
-- Prochaine action : rétablir une liaison Supabase development sûre pour appliquer
-  et vérifier `13000`–`13400`, confirmer séparément le statut distant de `12700`, puis
-  exécuter les gates globaux, E2E multi-rôles FR/AR/RTL et audits indépendants.
+- Prochaine action : confirmer séparément le statut distant de `12700`, puis exécuter
+  les gates globaux, E2E multi-rôles FR/AR/RTL et audits indépendants.
 
 ## Checkpoint local d'intégration 2026-09-12
 
@@ -348,7 +348,8 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   migrations additives locales `20260912013700` et `20260912013900` est PASS : la
   projection est minimisée, AAL2 est vérifié côté PostgreSQL et Server Actions, et
   les preuves quatre-yeux sont durables et fail-closed. Ces migrations ne sont ni
-  appliquées ni testées en base, faute de cible Supabase locale disponible.
+  désormais confirmées appliquées sur Supabase Matricia development après dry-run
+  propre. Le présent checkpoint ne remplace pas les tests SQL/RLS de fin de cycle.
 - Admin Finance conserve les montants en unités mineures exactes et les
   rapprochements idempotents. Admin Providers conserve les preuves, décisions
   versionnées et écritures financières via les RPC métier. Gouvernance expose les
@@ -364,3 +365,19 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - Les tests globaux, SQL/RLS et E2E restent volontairement différés à la fin du
   développement. Aucun changement de production, liaison distante ou secret ne
   fait partie de ce checkpoint.
+
+## Checkpoint local Messagerie, Relances et Analytique 2026-09-12
+
+- La messagerie interne sécurisée, les relances Franchise et l'analytique agrégée
+  d'abandon des questionnaires disposent de routes FR/AR raccordées à la navigation
+  selon les memberships et rôles strictement autorisés par leurs repositories/RLS.
+- Les migrations `20260912014000`, `20260912014100` et `20260912014200` sont
+  confirmées appliquées sur Supabase Matricia development, CLI liée, après dry-run
+  propre. Les migrations `13600`, `13700` et `13900` sont également confirmées
+  appliquées dans le même environnement.
+- Les relances conservent consentement, heures calmes, plafonds versionnés,
+  séparation de l'approbateur et traitement Worker. L'analytique reste agrégée et
+  soumise au seuil de confidentialité; la messagerie demeure limitée aux
+  participants autorisés des objets métier.
+- Aucun test E2E ou global supplémentaire n'est exécuté dans ce lot et aucune
+  production n'est modifiée.
