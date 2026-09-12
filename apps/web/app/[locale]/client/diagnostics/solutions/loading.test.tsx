@@ -1,0 +1,2 @@
+import{renderToStaticMarkup}from"react-dom/server";import{describe,expect,it}from"vitest";import LoadingSolutions from"./loading";
+describe("solutions accessibility",()=>{it("announces loading while hiding only decoration",()=>{const html=renderToStaticMarkup(<LoadingSolutions/>);expect(html).toContain('role="status"');expect(html).toContain('class="sr-only"');expect(html).toContain('aria-hidden="true"');expect(html).not.toMatch(/(?:min-w|max-w|w)-\[(?:[4-9]\d\d|\d{4,})px\]/)})});

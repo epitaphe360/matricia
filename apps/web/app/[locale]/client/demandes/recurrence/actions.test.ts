@@ -1,0 +1,15 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+const mocks = vi.hoisted(() => ({ clone: vi.fn(), createPlan: vi.fn(), transition: vi.fn(), generate: vi.fn(), revalidate: vi.fn() }));
+vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidate }));
+vi.mock("@/lib/client-recurring/server-repository", () => ({ createServerClientRecurringRepository: async () => ({ clone: mocks.clone, createPlan: mocks.createPlan, transition: mocks.transition, generate: mocks.generate }) }));
+vi.mock("@/lib/client-recurring/model", async () => await import("../../../../../lib/client-recurring/model"));
+import { cloneRequestAction, createPlanAction, generateOccurrencesAction, transitionPlanAction, type RecurringActionState } from "./actions";
+const idle: RecurringActionState = { status: "idle" }, id = (n: number) => `${String(n).padStart(8, "0")}-0000-4000-8000-000000000000`;
+function base() { const form = new FormData(); form.set("locale", "fr"); form.set("idempotencyKey", id(1)); form.set("correlationId", id(2)); return form; }
+beforeEach(() => { Object.values(mocks).forEach((mock) => mock.mockReset()); });
+describe("client recurring actions", () => {
+  it("valide et transmet un clonage nullable", async () => { mocks.clone.mockResolvedValue({ status: "success", value: { requestId: id(3), requestVersionId: id(4), status: "DRAFT" } }); const form = base(); form.set("sourceRequestId", id(5)); form.set("desiredDate", ""); form.set("reason", "Commande similaire"); await expect(cloneRequestAction(idle, form)).resolves.toEqual({ status: "success", operation: "CLONED", requestId: id(3) }); expect(mocks.clone).toHaveBeenCalledWith(expect.objectContaining({ sourceRequestId: id(5), desiredDate: null, idempotencyKey: id(1), correlationId: id(2) })); });
+  it("refuse une cadence hors contrat sans appeler le serveur", async () => { const form = base(); form.set("templateRequestId", id(5)); form.set("cadence", "WEEKLY"); form.set("startsOn", "2026-10-01"); form.set("endsOn", ""); form.set("reason", "Chaque semaine"); await expect(createPlanAction(idle, form)).resolves.toEqual({ status: "error", reason: "VALIDATION" }); expect(mocks.createPlan).not.toHaveBeenCalled(); });
+  it("transmet action et row_version puis expose un conflit", async () => { mocks.transition.mockResolvedValue({ status: "error", reason: "CONFLICT" }); const form = base(); form.set("planId", id(6)); form.set("action", "END"); form.set("expectedRowVersion", "3"); form.set("reason", "Fin du contrat"); await expect(transitionPlanAction(idle, form)).resolves.toEqual({ status: "error", reason: "CONFLICT" }); expect(mocks.transition).toHaveBeenCalledWith(expect.objectContaining({ action: "END", expectedRowVersion: 3 })); });
+  it("borne à 24 avant tout appel serveur", async () => { const form = base(); form.set("planId", id(6)); form.set("throughDate", "2027-01-01"); form.set("maxOccurrences", "25"); await expect(generateOccurrencesAction(idle, form)).resolves.toEqual({ status: "error", reason: "VALIDATION" }); expect(mocks.generate).not.toHaveBeenCalled(); });
+});

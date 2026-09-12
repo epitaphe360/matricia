@@ -230,8 +230,8 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   fondations de plusieurs domaines sont présentes, mais la traçabilité atomique,
   les parcours E2E et les audits indépendants restent requis avant de déclarer
   chaque exigence `VERIFIED`.
-- Le registre atomique strict compte actuellement 1 exigence `PROVEN`, 56
-  `PARTIAL`, 11 `MISSING` et 0 `BLOCKED`; il contient exactement 68 IDs uniques.
+- Le registre atomique strict compte actuellement 1 exigence `PROVEN`, 67
+  `PARTIAL`, 0 `MISSING` et 0 `BLOCKED`; il contient exactement 68 IDs uniques.
 - Vercel et Railway ne sont pas configurés. Aucune production n’a été modifiée ou autorisée.
 
 ## Prochaine exécution
@@ -243,3 +243,17 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 3. Compléter la traçabilité atomique P01 et les parcours E2E/RLS des fondations P07–P17.
 4. Obtenir un replay DB vierge CI et prouver ClamAV réel en staging.
 5. Continuer P07..P19 selon `PLANS.md`, sans sauter de gate.
+
+## Checkpoint UI 2026-09-12
+
+- Assistance diagnostique bornee, decisions de solutions, benchmarks anonymises,
+  RFQ recurrentes et digest franchise disposent maintenant de routes Web FR/AR,
+  RTL, responsive 360 px et d''actions branchees sur les RPC finales.
+- Les decisions humaines restent obligatoires; aucune invitation, depense ou action
+  metier critique autonome n''est declenchee par ces interfaces.
+- Les montants de solutions restent en unites mineures exactes et sont affiches avec
+  `BigInt`, sans conversion flottante.
+- Gate Web apres integration : lint vert, TypeScript strict vert, build Next.js vert,
+  94 fichiers de tests et 365 tests verts.
+- Restent requis avant GREEN : E2E authentifie multi-role FR/AR a 360 px, audit
+  independant, charge distante 6k/50k et preuves SQL/RLS contractuelles associees.

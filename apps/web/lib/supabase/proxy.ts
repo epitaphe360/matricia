@@ -27,6 +27,7 @@ export async function refreshSupabaseSession(request: NextRequest) {
     "invitations",
     "securite",
     "client",
+    "franchise",
     "administration",
   ];
   const isProtected = protectedPrefixes.some((prefix) =>
