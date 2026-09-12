@@ -1,0 +1,27 @@
+import { z } from "zod";
+
+const uuid = z.string().uuid();
+const exactMinor = z.string().regex(/^-?(0|[1-9]\d*)$/);
+const positiveMinor = z.string().regex(/^[1-9]\d*$/);
+const hash = z.string().regex(/^[0-9a-f]{64}$/);
+const idempotencyKey = z.string().uuid();
+
+export const decideGovernanceSchema = z.object({ approvalRequestId: uuid, decision: z.enum(["APPROVE", "REJECT"]), reason: z.string().trim().min(3).max(1000), rowVersion: z.coerce.number().int().positive(), idempotencyKey });
+export const acceptInvitationSchema = z.object({ invitationId: uuid, invitationToken: z.string().trim().min(24).max(512), rowVersion: z.coerce.number().int().positive(), idempotencyKey });
+export const entryFeeSchema = z.object({ bookId: uuid, mode: z.enum(["EXEMPT", "UPFRONT", "INSTALLMENT", "REVENUE_WITHHOLDING"]), principalMinor: exactMinor, depositMinor: exactMinor, withholdingBps: z.string(), installmentCount: z.string(), startsOn: z.string().date(), dueOn: z.string().date(), idempotencyKey }).superRefine((v, ctx) => { const principal = BigInt(v.principalMinor), deposit = BigInt(v.depositMinor); if (principal < BigInt(0) || deposit < BigInt(0) || deposit > principal) ctx.addIssue({ code: "custom", message: "INVALID_EXACT_AMOUNT" }); if (v.mode === "EXEMPT" && (principal !== BigInt(0) || deposit !== BigInt(0))) ctx.addIssue({ code: "custom", message: "IT_MUST_BE_EXEMPT" }); if (v.mode === "UPFRONT" && (principal <= BigInt(0) || deposit !== principal)) ctx.addIssue({ code: "custom", message: "INVALID_UPFRONT" }); if (v.mode === "INSTALLMENT" && !/^[1-6]$/.test(v.installmentCount)) ctx.addIssue({ code: "custom", message: "INVALID_INSTALLMENTS" }); if (v.mode === "REVENUE_WITHHOLDING" && !/^(?:[1-9]\d{0,3}|10000)$/.test(v.withholdingBps)) ctx.addIssue({ code: "custom", message: "INVALID_WITHHOLDING" }); });
+export const closePeriodSchema = z.object({ bookId: uuid, periodStart: z.string().date(), periodEnd: z.string().date(), ruleVersionId: uuid, cutoffAt: z.string().datetime({ offset: true }), reason: z.string().trim().min(10).max(1000), idempotencyKey });
+export const payoutSchema = z.object({ bookId: uuid, beneficiaryCode: z.enum(["HATIM_AHMITECH", "FRANCHISEE", "NEOXA_JALIL", "ASMA_MATRICIA"]), amountMinor: positiveMinor, journalId: uuid, reference: z.string().trim().min(3).max(200), proofHash: hash, idempotencyKey });
+
+export type FranchiseDashboard = {
+  canApprove: boolean;
+  canManageFinance: boolean;
+  franchises: Array<{ id: string; libraryCode: string; libraryNameFr: string; libraryNameAr: string; organizationId: string; type: "IT" | "STANDARD"; operatorCode: string; territoryCode: string; status: string; rowVersion: number; mandate: null | { id: string; version: number; status: string; entryFeeMinor: string; entryFeeMode: string; franchiseeShareBps: number; neoxaShareBps: number; asmaShareBps: number; effectiveFrom: string } }>;
+  approvals: Array<{ id: string; franchiseId: string; requestType: string; status: string; reason: string; rowVersion: number }>;
+  invitations: Array<{ id: string; franchiseId: string; email: string; status: string; expiresAt: string; rowVersion: number }>;
+  rules: Array<{ id: string; franchiseType: "IT" | "STANDARD"; version: number; entryFeeRequired: boolean; franchiseeShareBps: number; neoxaShareBps: number; asmaShareBps: number; effectiveFrom: string }>;
+  books: Array<{ id: string; libraryId: string; organizationId: string; type: "IT" | "STANDARD"; operatorCode: string; currency: string; ruleVersionId: string; status: string; entryFee: null | { mode: string; principalMinor: string; depositMinor: string; startsOn: string; dueOn: string }; latestClosure: null | { id: string; version: number; periodStart: string; periodEnd: string; revenueMinor: string; costsMinor: string; profitMinor: string }; allocations: Array<{ beneficiaryCode: string; shareBps: number; amountMinor: string }>; balances: Array<{ beneficiaryCode: string; amountMinor: string }> }>;
+};
+
+export function formatMinor(value: string, currency: string, locale: "fr" | "ar") { const minor = BigInt(value), negative = minor < BigInt(0), absolute = negative ? -minor : minor, major = absolute / BigInt(100), cents = (absolute % BigInt(100)).toString().padStart(2, "0"); return `${negative ? "−" : ""}${major.toLocaleString(locale === "ar" ? "ar-MA" : "fr-MA")},${cents}\u00a0${currency}`; }
+export function formatBps(value: number) { const whole = Math.trunc(value / 100), decimals = String(value % 100).padStart(2, "0"); return decimals === "00" ? `${whole}\u00a0%` : `${whole},${decimals}\u00a0%`; }
+export function sumExact(values: string[]) { return values.reduce((total, value) => total + BigInt(value), BigInt(0)).toString(); }
