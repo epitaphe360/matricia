@@ -1,6 +1,6 @@
 # Matricia — Project State
 
-Dernière mise à jour : 2026-09-12 12:08 America/Toronto
+Dernière mise à jour : 2026-09-12 15:01 America/Toronto
 
 Phase de contrôle active : **PHASE 01 — contrats atomiques en cours**
 
@@ -22,7 +22,7 @@ Travaux engagés : **PHASES 01, 03, 05 et 06 — en cours; PHASES 02 et 04 sign�
 
 ## Supabase development/staging
 
-Projet distant Matricia contrôlé en environnement applicatif `development`. Les 123 migrations additives jusqu’à `20260912012600` sont appliquées à distance; la version `20260912012300` est intentionnellement absente.
+Projet distant Matricia contrôlé en environnement applicatif `development`. Le socle de 123 migrations additives jusqu’à `20260912012600` est appliqué à distance; la version `20260912012300` est intentionnellement absente. Pour le lot local `12700`–`13400`, seules les migrations `12800` et `12900` sont confirmées appliquées à distance. La migration `12700` reste locale sans statut distant revendiqué dans ce checkpoint; `13000`–`13400` restent locales et non appliquées, la liaison Supabase requise étant indisponible.
 
 1. extensions et référentiels versionnés;
 2. identité, organisations, memberships et RBAC;
@@ -257,3 +257,38 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   94 fichiers de tests et 365 tests verts.
 - Restent requis avant GREEN : E2E authentifie multi-role FR/AR a 360 px, audit
   independant, charge distante 6k/50k et preuves SQL/RLS contractuelles associees.
+
+## Checkpoint local intégré 2026-09-12
+
+- Le lot fonctionnel Web V1 raccorde désormais les parcours RFQ/devis et comparaison,
+  contrats/missions et réceptions, qualification/facturation/réputation Sous-traitant,
+  litiges/réaffectation, achats groupés Client/Admin, abonnements et paiement de
+  démonstration, diagnostics/opportunités et assistance, portefeuille et crédits,
+  récompenses/parrainage/ROI, notifications, ainsi que gouvernance et finance
+  franchise. La navigation partagée n'expose que les routes fonctionnelles selon
+  l'espace et le rôle, avec libellés FR/AR et direction RTL.
+- Les décisions sensibles restent humaines et autorisées côté serveur : versions,
+  signatures, avenants, jalons, preuves, réception et acceptation sont conservés
+  dans les snapshots contractuels; les écritures financières et de crédits passent
+  par les RPC/ledgers immuables, avec montants exacts en unités mineures.
+- La règle franchise IT est exposée sans droit d'entrée et avec distribution 50 %
+  Hatim Ahmitech / 50 % Jalil-NEOXA / 0 % Mme Asma-Matricia. Les autres franchises
+  utilisent la règle versionnée 50 % / 25 % / 25 % sur base distribuable.
+- Les migrations `20260912012700` à `20260912013400` sont présentes localement :
+  autorisation RPC Question/Rule, portée des références documentaires, lecture des
+  récurrences, éligibilité Provider à la réaffectation, activation de paiement,
+  consommation des avantages après livraison, agrégats Admin des achats groupés et
+  alignement des rôles RPC d'assistance. Seules `12800` et `12900` sont confirmées
+  appliquées à distance. `13000`–`13400` sont bloquées par l'absence de liaison
+  Supabase; aucun déploiement de production n'a été tenté. Le statut distant de
+  `12700` n'est pas revendiqué dans ce checkpoint.
+- Le paiement de démonstration dispose d'intentions et d'un webhook idempotent; le
+  secret local reste exclusivement dans `.env.local`, ignoré par Git. L'assistance
+  minimise les PII avant RPC et conserve provenance, version et revue humaine.
+- Les tests globaux, SQL/RLS et E2E sont volontairement différés à la fin du cycle
+  de développement demandé. Le présent checkpoint ne déclare donc aucun nouveau
+  module GREEN ni aucune exigence supplémentaire `VERIFIED`; les résultats de tests
+  antérieurs consignés ci-dessus restent historiques et ne valent pas visa de ce lot.
+- Prochaine action : rétablir une liaison Supabase development sûre pour appliquer
+  et vérifier `13000`–`13400`, confirmer séparément le statut distant de `12700`, puis
+  exécuter les gates globaux, E2E multi-rôles FR/AR/RTL et audits indépendants.

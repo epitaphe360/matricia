@@ -6,6 +6,7 @@ export const requestStatus = z.enum(["DRAFT", "INFORMATION_REQUIRED", "READY", "
 export const planStatus = z.enum(["ACTIVE", "PAUSED", "ENDED"]);
 export const cadence = z.enum(["MONTHLY", "QUARTERLY", "ANNUALLY"]);
 export const transitionAction = z.enum(["PAUSE", "RESUME", "END"]);
+export const clientRecurringRole = z.enum(["CLIENT_OWNER", "CLIENT_ADMIN", "CLIENT_BUYER", "CLIENT_VIEWER"]);
 export const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/u);
 export const commandKey = z.string().min(8).max(200);
 export const reason = z.string().trim().min(3).max(500);
@@ -47,6 +48,7 @@ export const generateInput = z.object({
 
 export type RecurringRequest = {
   id: string;
+  canManage: boolean;
   status: z.infer<typeof requestStatus>;
   description: string;
   desiredDate: string | null;
@@ -57,6 +59,7 @@ export type RecurringRequest = {
 export type RecurringOccurrence = { id: string; scheduledOn: string; generatedRequestId: string; createdAt: string };
 export type RecurringPlan = {
   id: string;
+  canManage: boolean;
   templateRequestId: string;
   status: z.infer<typeof planStatus>;
   rowVersion: number;
@@ -68,5 +71,5 @@ export type RecurringPlan = {
   updatedAt: string;
   occurrences: RecurringOccurrence[];
 };
-export type RecurringDashboard = { requests: RecurringRequest[]; plans: RecurringPlan[] };
-
+export type ClientRecurringRole = z.infer<typeof clientRecurringRole>;
+export type RecurringDashboard = { access: { activeRole: ClientRecurringRole; canManage: boolean }; requests: RecurringRequest[]; plans: RecurringPlan[] };

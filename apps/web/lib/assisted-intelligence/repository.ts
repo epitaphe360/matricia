@@ -21,6 +21,14 @@ export type AssistanceSource = {
   requests(): Promise<Query>;
   suggestions(requestIds: string[]): Promise<Query>;
   decisions(suggestionIds: string[]): Promise<Query>;
+  sessions(organizationIds: string[]): Promise<Query>;
+  questionnaireQuestions(questionnaireVersionIds: string[]): Promise<Query>;
+  questions(questionVersionIds: string[]): Promise<Query>;
+  recommendations(organizationIds: string[]): Promise<Query>;
+  services(serviceIds: string[]): Promise<Query>;
+  serviceVersions(serviceVersionIds: string[]): Promise<Query>;
+  anomalies(organizationIds: string[]): Promise<Query>;
+  reassessments(organizationIds: string[]): Promise<Query>;
   rpc(name: string, input: Record<string, unknown>): Promise<Query>;
 };
 
@@ -47,13 +55,21 @@ const suggestionRow = z.object({
   related_target_id: uuid.nullable(),
   score_basis_points: z.number().int().min(0).max(10000),
   explanation_code: z.string(),
-  explanation: z.object({ human_review_required: z.literal(true), evidence: z.record(z.string(), z.unknown()) }).passthrough(),
+  explanation: z.object({ model_version: z.number().int().positive(), human_review_required: z.literal(true), evidence: z.record(z.string(), z.unknown()) }).passthrough(),
   proposed_payload: z.record(z.string(), z.unknown()),
   status: z.enum(["PROPOSED", "ACCEPTED", "REJECTED"]),
   created_at: z.string(),
   decided_at: z.string().nullable(),
 }).strict();
 const decisionRow = z.object({ id: uuid, suggestion_id: uuid, decision: z.enum(["ACCEPTED", "REJECTED"]), rationale: z.string(), decided_at: z.string() }).strict();
+const sessionRow = z.object({ organization_id: uuid, questionnaire_version_id: uuid }).strict();
+const questionnaireQuestionRow = z.object({ questionnaire_version_id: uuid, question_version_id: uuid }).strict();
+const questionRow = z.object({ id: uuid, label_fr: z.string().min(1), label_ar: z.string().min(1), data_key: z.string().min(1) }).strict();
+const recommendationRow = z.object({ organization_id: uuid, service_id: uuid.nullable() }).strict();
+const serviceRow = z.object({ id: uuid, current_published_version_id: uuid.nullable() }).strict();
+const serviceVersionRow = z.object({ id: uuid, service_id: uuid, name_fr: z.string().min(1), name_ar: z.string().min(1), code: z.string().min(1) }).strict();
+const anomalyRow = z.object({ id: uuid, organization_id: uuid, anomaly_code: z.string().min(1), title_fr: z.string().min(1), title_ar: z.string().min(1), status: z.string().min(1) }).strict();
+const reassessmentRow = z.object({ id: uuid, organization_id: uuid, changed_keys: z.array(z.string()), status: z.enum(["PENDING", "COMPLETED", "DISMISSED"]), created_at: z.string().datetime({ offset: true }) }).strict();
 
 const analysisOutput = z.object({
   outcome: z.literal("ASSISTANCE_PROPOSED"),
@@ -125,6 +141,18 @@ export function createAssistedIntelligenceRepository(source: AssistanceSource): 
       if (!suggestionRows) return failure("UNAVAILABLE");
       const decisionRows = rows(decisionRow, await source.decisions(suggestionRows.map((item) => item.id)));
       if (!decisionRows) return failure("UNAVAILABLE");
+      const [sessionRows, recommendationRows, anomalyRows, reassessmentRows] = await Promise.all([
+        source.sessions(organizationIds), source.recommendations(organizationIds), source.anomalies(organizationIds), source.reassessments(organizationIds),
+      ]).then(([sessionQuery, recommendationQuery, anomalyQuery, reassessmentQuery]) => [rows(sessionRow, sessionQuery), rows(recommendationRow, recommendationQuery), rows(anomalyRow, anomalyQuery), rows(reassessmentRow, reassessmentQuery)] as const);
+      if (!sessionRows || !recommendationRows || !anomalyRows || !reassessmentRows) return failure("UNAVAILABLE");
+      const questionnaireVersionIds = [...new Set(sessionRows.map((item) => item.questionnaire_version_id))];
+      const questionLinks = rows(questionnaireQuestionRow, await source.questionnaireQuestions(questionnaireVersionIds));
+      if (!questionLinks) return failure("UNAVAILABLE");
+      const questionRows = rows(questionRow, await source.questions([...new Set(questionLinks.map((item) => item.question_version_id))]));
+      const serviceRows = rows(serviceRow, await source.services([...new Set(recommendationRows.flatMap((item) => item.service_id ? [item.service_id] : []))]));
+      if (!questionRows || !serviceRows) return failure("UNAVAILABLE");
+      const serviceVersionRows = rows(serviceVersionRow, await source.serviceVersions(serviceRows.flatMap((item) => item.current_published_version_id ? [item.current_published_version_id] : [])));
+      if (!serviceVersionRows) return failure("UNAVAILABLE");
       const membershipByOrganization = new Map(memberships.map((item) => [item.organization_id, item.id]));
       const activeRoles = new Map<string, Set<string>>();
       for (const role of roles) {
@@ -161,6 +189,7 @@ export function createAssistedIntelligenceRepository(source: AssistanceSource): 
           relatedTargetId: item.related_target_id,
           scoreBasisPoints: item.score_basis_points,
           explanationCode: item.explanation_code,
+          modelVersion: item.explanation.model_version,
           humanReviewRequired: item.explanation.human_review_required,
           evidence: item.explanation.evidence,
           proposedPayload: item.proposed_payload,
@@ -169,6 +198,10 @@ export function createAssistedIntelligenceRepository(source: AssistanceSource): 
           decidedAt: item.decided_at,
         })),
         decisions: decisionRows.map((item) => ({ id: item.id, suggestionId: item.suggestion_id, decision: item.decision, rationale: item.rationale, decidedAt: item.decided_at })),
+        questionCandidates: questionRows.slice(0, 50).flatMap((item) => { const link = questionLinks.find((candidate) => candidate.question_version_id === item.id); const session = link ? sessionRows.find((candidate) => candidate.questionnaire_version_id === link.questionnaire_version_id) : null; return session ? [{ id: item.id, organizationId: session.organization_id, labelFr: item.label_fr, labelAr: item.label_ar, detail: item.data_key }] : []; }),
+        serviceCandidates: serviceVersionRows.slice(0, 50).flatMap((item) => { const recommendation = recommendationRows.find((candidate) => candidate.service_id === item.service_id); return recommendation ? [{ id: item.id, organizationId: recommendation.organization_id, labelFr: item.name_fr, labelAr: item.name_ar, detail: item.code }] : []; }),
+        anomalyCandidates: anomalyRows.slice(0, 50).map((item) => ({ id: item.id, organizationId: item.organization_id, labelFr: item.title_fr, labelAr: item.title_ar, detail: `${item.anomaly_code} · ${item.status}` })),
+        reassessmentCandidates: reassessmentRows.filter((item) => item.status === "PENDING").slice(0, 50).map((item) => ({ id: item.id, organizationId: item.organization_id, labelFr: `Profil à réévaluer · ${item.changed_keys.join(", ")}`, labelAr: `ملف يحتاج لإعادة التقييم · ${item.changed_keys.join(", ")}`, detail: new Date(item.created_at).toISOString().slice(0, 10) })),
       };
       return dashboard.organizations.length ? { status: "success", value: dashboard } : failure("FORBIDDEN");
     },

@@ -13,6 +13,7 @@ import { ReleaseWorkflow } from "./release-workflow";
 import { QuestionBuilder } from "./question-builder";
 import { RuleBuilder } from "./rule-builder";
 import { QuestionnaireBuilder } from "./questionnaire-builder";
+import { getRuleValidationMessages } from "./validation/messages";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,7 @@ export default async function CatalogueReleaseAdministrationPage({ params, searc
   const result = await repository.loadWorkspace(libraryId);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
   const messages = getBuilderMessages(locale);
+  const validationMessages = getRuleValidationMessages(locale);
   const alternate = locale === "fr" ? "ar" : "fr";
 
   const selectedLibrary = result.status === "success" ? result.value.libraries.find((item) => item.id === libraryId) : undefined;
@@ -49,6 +51,7 @@ export default async function CatalogueReleaseAdministrationPage({ params, searc
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{messages.eyebrow}</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight">{messages.title}</h1>
             <p className="mt-3 max-w-3xl leading-7 text-muted-foreground">{messages.description}</p>
+            <Link href={`/${locale}/administration/catalogue/validation`} className={cn(buttonVariants({ variant: "outline" }), "mt-4 min-h-11")}>{validationMessages.title}</Link>
           </div>
         </header>
 

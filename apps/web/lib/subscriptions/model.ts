@@ -19,6 +19,9 @@ export type SubscriptionPlan = {
   currency: string;
   monthlyPriceMinor: string;
   annualPriceMinor: string;
+  monthlyCreditGrant: string;
+  validFrom: string;
+  validTo: string | null;
 };
 
 export type SubscriptionSummary = {
@@ -28,12 +31,21 @@ export type SubscriptionSummary = {
   pendingPlanVersionId: string | null;
   billingInterval: string | null;
   currentPeriodEnd: string | null;
+  pendingChangeEffectiveAt: string | null;
+  rowVersion: string;
   cycles: Array<{
     id: string;
     cycleNumber: number;
     currency: string;
     amountMinor: string;
     periodEnd: string;
+  }>;
+  transitions: Array<{
+    id: string;
+    fromStatus: string | null;
+    toStatus: string;
+    reasonCode: string;
+    occurredAt: string;
   }>;
 };
 
@@ -42,6 +54,7 @@ export type SubscriptionDashboard = {
   organizationName: string;
   plans: SubscriptionPlan[];
   subscription: SubscriptionSummary | null;
+  capabilities: { canStartTrial: boolean; canChangePlan: boolean };
 };
 
 export function formatMinor(value: string, currency: string, locale: "fr" | "ar") {
@@ -49,5 +62,11 @@ export function formatMinor(value: string, currency: string, locale: "fr" | "ar"
   const hundred = BigInt(100);
   const major = amount / hundred;
   const minor = (amount % hundred).toString().padStart(2, "0");
-  return `${major.toLocaleString(locale === "ar" ? "ar-MA" : "fr-MA")},${minor} ${currency}`;
+  const tag = locale === "ar" ? "ar-MA" : "fr-MA";
+  const integer = new Intl.NumberFormat(tag, { maximumFractionDigits: 0 }).format(major);
+  return new Intl.NumberFormat(tag, { style: "currency", currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).formatToParts(0).map((part) => part.type === "integer" ? integer : part.type === "fraction" ? minor : part.value).join("");
+}
+
+export function planChangeMode(currentMonthlyMinor: string, targetMonthlyMinor: string): "UPGRADE_IMMEDIATE" | "DOWNGRADE_NEXT_CYCLE" {
+  return BigInt(targetMonthlyMinor) > BigInt(currentMonthlyMinor) ? "UPGRADE_IMMEDIATE" : "DOWNGRADE_NEXT_CYCLE";
 }

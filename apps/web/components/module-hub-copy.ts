@@ -1,46 +1,8 @@
-export const moduleHubCopy = {
-  fr: {
-    title: "Espaces opérationnels",
-    description: "Accédez aux modules autorisés pour vos rôles. Chaque espace applique ses contrôles serveur et RLS.",
-    links: [
-      ["Diagnostics et opportunités", "client/diagnostics"],
-      ["Demandes et devis", "client/demandes"],
-      ["Contrats et missions", "client/missions"],
-      ["Litiges et réaffectation", "client/litiges"],
-      ["Abonnement", "client/abonnement"],
-      ["Boxes et crédits", "client/credits"],
-      ["Achats groupés", "client/achats-groupes"],
-      ["Qualification Sous-traitant", "sous-traitant/qualification"],
-      ["Facturation Sous-traitant", "sous-traitant/facturation"],
-      ["Missions Sous-traitant", "sous-traitant/missions"],
-      ["Gouvernance Franchise", "franchise/gouvernance"],
-      ["CRM et performance Franchise", "franchise/performance"],
-      ["Notifications", "notifications"],
-      ["Command Center", "administration/command-center"],
-      ["Marketing Autopilot", "administration/marketing-autopilot"],
-      ["Fiscalité Maroc", "administration/fiscalite-maroc"],
-    ],
-  },
-  ar: {
-    title: "مساحات العمليات",
-    description: "ادخل إلى الوحدات المسموح بها لأدوارك. تطبق كل مساحة صلاحيات الخادم وسياسات RLS.",
-    links: [
-      ["التشخيصات والفرص", "client/diagnostics"],
-      ["الطلبات والعروض", "client/demandes"],
-      ["العقود والمهام", "client/missions"],
-      ["النزاعات وإعادة الإسناد", "client/litiges"],
-      ["الاشتراك", "client/abonnement"],
-      ["الصناديق والاعتمادات", "client/credits"],
-      ["المشتريات المجمعة", "client/achats-groupes"],
-      ["تأهيل مقدم الخدمات", "sous-traitant/qualification"],
-      ["فواتير مقدم الخدمات", "sous-traitant/facturation"],
-      ["مهام مقدم الخدمات", "sous-traitant/missions"],
-      ["حوكمة الامتياز", "franchise/gouvernance"],
-      ["إدارة علاقات وأداء الامتياز", "franchise/performance"],
-      ["الإشعارات", "notifications"],
-      ["مركز القيادة", "administration/command-center"],
-      ["التسويق الآلي", "administration/marketing-autopilot"],
-      ["الضرائب بالمغرب", "administration/fiscalite-maroc"],
-    ],
-  },
-} as const;
+const routes=[
+ "client/diagnostics","client/demandes","client/missions","client/litiges","client/abonnement","client/credits","client/achats-groupes","client/portefeuille","client/recompenses","client/favoris","sous-traitant/qualification","sous-traitant/facturation","sous-traitant/missions","sous-traitant/reputation","franchise/gouvernance","franchise/performance","notifications","administration/achats-groupes","administration/command-center","administration/marketing-autopilot","administration/fiscalite-maroc",
+]as const;
+function withLegacyMap<const T extends Record<string,string>>(labels:T,legacyLabels:readonly string[]){const legacy=routes.map((route,index)=>[legacyLabels[index]??route,route]as const);return Object.assign(labels,{map:legacy.map.bind(legacy)})}
+export const moduleHubCopy={
+ fr:{title:"Espaces opérationnels",description:"Accédez uniquement aux modules ouverts par vos rôles actifs. Chaque destination applique aussi ses contrôles serveur et RLS.",unavailable:"La navigation autorisée ne peut pas être chargée.",empty:"Aucun module opérationnel n’est associé à vos rôles actifs.",spaces:{client:"Espace Client",provider:"Espace Sous-traitant",franchise:"Espace Franchise",admin:"Administration",universal:"Services partagés"},links:withLegacyMap({portfolio:"Portefeuille, projets et budgets",rewards:"Récompenses, parrainage et ROI",favorites:"Sous-traitants favoris",providerReputation:"Réputation Sous-traitant",clientVolume:"Achats groupés Client",adminVolume:"Achats groupés — supervision",subscription:"Abonnement",notifications:"Notifications",disputes:"Litiges",rfq:"Demandes, RFQ et devis",clientMissions:"Contrats et missions Client",providerMissions:"Missions Sous-traitant",diagnostics:"Diagnostics et opportunités",franchiseGovernance:"Gouvernance Franchise"},routes)},
+ ar:{title:"مساحات العمليات",description:"ادخل فقط إلى الوحدات التي تتيحها أدوارك النشطة. تطبق كل وجهة أيضاً صلاحيات الخادم وسياسات RLS.",unavailable:"تعذر تحميل التنقل المسموح به.",empty:"لا توجد وحدة تشغيلية مرتبطة بأدوارك النشطة.",spaces:{client:"فضاء العميل",provider:"فضاء مقدم الخدمات",franchise:"فضاء الامتياز",admin:"الإدارة",universal:"الخدمات المشتركة"},links:withLegacyMap({portfolio:"المحفظة والمشاريع والميزانيات",rewards:"المكافآت والإحالة والعائد",favorites:"مقدمو الخدمات المفضلون",providerReputation:"سمعة مقدم الخدمات",clientVolume:"المشتريات المجمعة للعميل",adminVolume:"الإشراف على المشتريات المجمعة",subscription:"الاشتراك",notifications:"الإشعارات",disputes:"النزاعات",rfq:"الطلبات وطلبات العروض والعروض",clientMissions:"عقود ومهام العميل",providerMissions:"مهام مقدم الخدمات",diagnostics:"التشخيصات والفرص",franchiseGovernance:"حوكمة الامتياز"},routes)},
+}as const;

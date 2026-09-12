@@ -24,3 +24,7 @@ export function getServerEnvironment() {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   });
 }
+
+export function getDemoPaymentWebhookSecret() {
+  return z.string().min(32).parse(process.env.PAYMENT_WEBHOOK_SECRET_DEMO);
+}

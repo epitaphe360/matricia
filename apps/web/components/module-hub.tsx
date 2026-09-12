@@ -1,21 +1,25 @@
-import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
-import type { Locale } from "@/lib/i18n/locale";
-import { cn } from "@/lib/utils";
-import { moduleHubCopy } from "./module-hub-copy";
+import Link from"next/link";import{z}from"zod";import{Card,CardContent,CardDescription,CardHeader,CardTitle}from"@/components/ui/card";import{buttonVariants}from"@/components/ui/button";import type{Locale}from"@/lib/i18n/locale";import{getSupabaseServerClient}from"@/lib/supabase/server";import{cn}from"@/lib/utils";import{moduleHubCopy}from"./module-hub-copy";
 
-export function ModuleHub({ locale }: { locale: Locale }) {
-  const messages = moduleHubCopy[locale];
-  return <Card>
-    <CardHeader>
-      <CardTitle>{messages.title}</CardTitle>
-      <CardDescription>{messages.description}</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <nav aria-label={messages.title} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {messages.links.map(([label, path]) => <Link key={path} href={`/${locale}/${path}`} className={cn(buttonVariants({ variant: "outline" }), "min-h-11 justify-start whitespace-normal text-start")}>{label}</Link>)}
-      </nav>
-    </CardContent>
-  </Card>;
-}
+type Space="client"|"provider"|"franchise"|"admin"|"universal";type LinkKey=Exclude<keyof typeof moduleHubCopy.fr.links,"map">;
+type ModuleLink={key:LinkKey;path:string;space:Space;roles?:readonly string[];platformRoles?:readonly string[];requiresMembership?:boolean};
+const CLIENT_ALL=["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_BUYER","CLIENT_ACCOUNTING","CLIENT_MEMBER","CLIENT_VIEWER"]as const;
+const MODULES:readonly ModuleLink[]=[
+ {key:"portfolio",path:"client/portefeuille",space:"client",roles:CLIENT_ALL},
+ {key:"rewards",path:"client/recompenses",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_ACCOUNTING"]},
+ {key:"favorites",path:"client/favoris",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_BUYER","CLIENT_VIEWER"]},
+ {key:"clientVolume",path:"client/achats-groupes",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_BUYER"]},
+ {key:"subscription",path:"client/abonnement",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_ACCOUNTING","CLIENT_VIEWER"]},
+ {key:"disputes",path:"client/litiges",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN"]},
+ {key:"rfq",path:"client/demandes",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_BUYER","CLIENT_VIEWER"]},
+ {key:"clientMissions",path:"client/missions",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN"]},
+ {key:"diagnostics",path:"client/diagnostics",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_BUYER","CLIENT_VIEWER"]},
+ {key:"providerReputation",path:"sous-traitant/reputation",space:"provider",roles:["PROVIDER_OWNER","PROVIDER_MANAGER","PROVIDER_SALES","PROVIDER_VIEWER"]},
+ {key:"providerMissions",path:"sous-traitant/missions",space:"provider",roles:["PROVIDER_OWNER","PROVIDER_MANAGER","PROVIDER_TECHNICIAN"]},
+ {key:"franchiseGovernance",path:"franchise/gouvernance",space:"franchise",roles:["FRANCHISE_OWNER","FRANCHISE_MANAGER","FRANCHISE_EXPERT","FRANCHISE_PROVIDER_MANAGER","FRANCHISE_ACCOUNTING","FRANCHISE_VIEWER"],platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER","READ_ONLY_AUDITOR"]},
+ {key:"adminVolume",path:"administration/achats-groupes",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER"]},
+ {key:"notifications",path:"notifications",space:"universal",requiresMembership:true},
+];
+const membershipRows=z.array(z.object({id:z.string().uuid()})),roleRows=z.array(z.object({role_code:z.string(),revoked_at:z.string().nullable()})),platformRows=z.array(z.object({role_code:z.string()}));
+
+export async function ModuleHub({locale}:{locale:Locale}){const messages=moduleHubCopy[locale],client=await getSupabaseServerClient(),{data:auth}=await client.auth.getUser();if(!auth.user)return null;const membershipsQuery=await client.from("organization_memberships").select("id").eq("user_id",auth.user.id).eq("status","ACTIVE").limit(100);const memberships=membershipRows.safeParse(membershipsQuery.data);if(membershipsQuery.error||!memberships.success)return <NavigationState messages={messages} error/>;const[rolesQuery,platformQuery]=await Promise.all([memberships.data.length?client.from("organization_member_roles").select("role_code,revoked_at").in("membership_id",memberships.data.map(item=>item.id)).is("revoked_at",null).limit(300):Promise.resolve({data:[],error:null}),client.from("platform_user_roles").select("role_code").eq("user_id",auth.user.id).is("revoked_at",null).limit(20)]),roles=roleRows.safeParse(rolesQuery.data),platform=platformRows.safeParse(platformQuery.data);if(rolesQuery.error||platformQuery.error||!roles.success||!platform.success)return <NavigationState messages={messages} error/>;const activeRoles=new Set(roles.data.map(item=>item.role_code)),activePlatformRoles=new Set(platform.data.map(item=>item.role_code)),visible=MODULES.filter(item=>(item.requiresMembership&&memberships.data.length>0)||(item.roles?.some(role=>activeRoles.has(role))??false)||(item.platformRoles?.some(role=>activePlatformRoles.has(role))??false)),spaces=(["client","provider","franchise","admin","universal"]as const).filter(space=>visible.some(item=>item.space===space));return <Card dir={locale==="ar"?"rtl":"ltr"}><CardHeader><CardTitle>{messages.title}</CardTitle><CardDescription>{messages.description}</CardDescription></CardHeader><CardContent>{spaces.length===0?<p className="text-muted-foreground">{messages.empty}</p>:<nav aria-label={messages.title} className="space-y-5">{spaces.map(space=><section key={space} aria-labelledby={`module-space-${space}`}><h3 id={`module-space-${space}`} className="mb-2 text-sm font-semibold text-muted-foreground">{messages.spaces[space]}</h3><ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{visible.filter(item=>item.space===space).map(item=><li key={item.path}><Link href={`/${locale}/${item.path}`} className={cn(buttonVariants({variant:"outline"}),"min-h-11 w-full justify-start whitespace-normal text-start")}>{messages.links[item.key]}</Link></li>)}</ul></section>)}</nav>}</CardContent></Card>}
+function NavigationState({messages,error}:{messages:typeof moduleHubCopy.fr|typeof moduleHubCopy.ar;error:boolean}){return <Card><CardHeader><CardTitle>{messages.title}</CardTitle><CardDescription>{messages.description}</CardDescription></CardHeader><CardContent><p role={error?"alert":undefined} className={error?"text-sm text-destructive":"text-sm text-muted-foreground"}>{error?messages.unavailable:messages.empty}</p></CardContent></Card>}

@@ -52,6 +52,7 @@ export type AssistanceSuggestion = {
   relatedTargetId: string | null;
   scoreBasisPoints: number;
   explanationCode: string;
+  modelVersion: number;
   humanReviewRequired: true;
   evidence: Record<string, unknown>;
   proposedPayload: Record<string, unknown>;
@@ -68,12 +69,24 @@ export type AssistanceDecisionRecord = {
   decidedAt: string;
 };
 
+export type AssistanceCandidate = {
+  id: string;
+  organizationId: string;
+  labelFr: string;
+  labelAr: string;
+  detail: string;
+};
+
 export type AssistanceDashboard = {
   organizations: AssistanceOrganization[];
   model: AssistanceModel | null;
   requests: AssistanceRequest[];
   suggestions: AssistanceSuggestion[];
   decisions: AssistanceDecisionRecord[];
+  serviceCandidates: AssistanceCandidate[];
+  questionCandidates: AssistanceCandidate[];
+  anomalyCandidates: AssistanceCandidate[];
+  reassessmentCandidates: AssistanceCandidate[];
 };
 
 export type AnalysisOutcome = {

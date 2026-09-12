@@ -5,6 +5,7 @@ export const sha256 = z.string().regex(/^[0-9a-f]{64}$/);
 export const commandKey = z.string().uuid();
 export const consentPurpose = z.enum(["SOCIAL_PUBLISHING", "MARKETING_ANALYTICS", "PERSONAL_DATA_CONTENT"]);
 export const campaignMode = z.enum(["MANUAL", "ASSISTED", "AUTOPILOT"]);
+export const marketingFeedback = z.enum(["KEEP", "INCREASE_FREQUENCY", "REDUCE_FREQUENCY", "CHANGE_TEMPLATE", "CHANGE_SERVICE_FOCUS", "PAUSE_CAMPAIGN"]);
 
 export const consentInput = z.object({ organizationId: uuid, purpose: consentPurpose, decision: z.enum(["GRANTED", "WITHDRAWN"]), policyVersion: z.string().trim().min(1).max(100), evidenceHash: sha256, idempotencyKey: commandKey });
 export const campaignInput = z.object({ organizationId: uuid, brandKitVersionId: uuid, mode: campaignMode, titleFr: z.string().trim().min(3).max(200), titleAr: z.string().trim().min(2).max(200), frequencyMaxWeekly: z.coerce.number().int().min(1).max(50), riskThreshold: z.coerce.number().int().min(0).max(100), audienceSnapshot: z.record(z.string(), z.unknown()), sourceSnapshot: z.record(z.string(), z.unknown()), idempotencyKey: commandKey });
@@ -19,7 +20,7 @@ export type MarketingDashboard = {
   campaigns: Array<{ id: string; organizationId: string; mode: z.infer<typeof campaignMode>; titleFr: string; titleAr: string; status: string; frequencyMaxWeekly: number; riskThreshold: number; rowVersion: number; approvedAt: string | null }>;
   contents: Array<{ id: string; campaignId: string; channel: "LINKEDIN" | "FACEBOOK" | "INSTAGRAM" | "REEL"; versionId: string; language: "FR" | "AR"; hook: string; body: string; cta: string; hashtags: string[]; riskScore: number; status: string; expiresAt: string | null }>;
   calendar: Array<{ id: string; campaignId: string; contentVersionId: string; scheduledAt: string; status: string }>;
-  performance: Array<{ campaignId: string; published: string; impressions: string; clicks: string; leads: string; attributedValueMinor: string; marketingCostMinor: string; feedback: string }>;
+  performance: Array<{ campaignId: string; generated: string; published: string; failed: string; impressions: string; clicks: string; leads: string; diagnostics: string; opportunities: string; rfqs: string; contracts: string; attributedValueMinor: string; marketingCostMinor: string; feedback: z.infer<typeof marketingFeedback> }>;
 };
 
 export function parseJsonObject(value: string) { try { const parsed: unknown = JSON.parse(value); return z.record(z.string(), z.unknown()).safeParse(parsed); } catch { return { success: false as const }; } }
