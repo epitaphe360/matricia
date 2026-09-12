@@ -22,7 +22,7 @@ Travaux engagés : **PHASES 01, 03, 05 et 06 — en cours; PHASES 02 et 04 sign�
 
 ## Supabase development/staging
 
-Projet distant Matricia contrôlé en environnement applicatif `development`. Les 55 migrations additives jusqu’à `20260911005400` sont appliquées à distance.
+Projet distant Matricia contrôlé en environnement applicatif `development`. Les 57 migrations additives jusqu’à `20260912005600` sont appliquées à distance.
 
 1. extensions et référentiels versionnés;
 2. identité, organisations, memberships et RBAC;
@@ -63,11 +63,13 @@ Projet distant Matricia contrôlé en environnement applicatif `development`. Le
 31. commandes Question Builder : création, nouvelle version de brouillon, duplication,
     archivage/restauration, scope GLOBAL central AAL2, audit et Event Outbox;
 32. interface Question Builder réelle : création DRAFT bilingue FR/AR et RTL par
-    service, sensibilité, exigences devis, identité idempotente persistée et retours accessibles.
+    service, sensibilité, exigences devis, identité idempotente persistée et retours accessibles;
+33. commandes Rule Builder : création et nouvelle version DRAFT immuable,
+    concurrence optimiste, hash canonique serveur, MFA sensible, audit et Event Outbox.
 
 Preuves actuelles :
 
-- migrations locales/distantes `20260910000100`..`20260911005400` appliquées sur development;
+- migrations locales/distantes `20260910000100`..`20260912005600` appliquées sur development;
 - lint SQL public/private sans erreur de schéma lors du dernier contrôle distant;
 - `pnpm test:db` vert le 2026-09-11 pour les fichiers `0001`..`0023` : 23 fichiers et 404 assertions; les quatre scénarios historiques à deux connexions couvrent Outbox, journal, crédits et chaîne audit;
 - tests négatifs RLS inter-tenant, immutabilité, équilibre/devise, crédits, idempotence, audit et Outbox.
@@ -86,7 +88,7 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - `pnpm typecheck` : vert.
 - Tests Web : vert — 19 fichiers, 146 tests.
 - Tests Worker : vert — 11 fichiers, 54 tests; typecheck strict vert.
-- `pnpm test:db` : vert pour `0001`..`0039` — 39 fichiers et 954 assertions, plus quatre scénarios génériques à deux connexions. Les scénarios P06 dédiés de révocation concurrente hiérarchie et de commandes services passent aussi sur Supabase development.
+- `pnpm test:db` : vert pour `0001`..`0040` — 40 fichiers et 970 assertions, plus quatre scénarios génériques à deux connexions. Les scénarios P06 dédiés de révocation concurrente hiérarchie et de commandes services passent aussi sur Supabase development.
 - E2E catalogue authentifié réel : 4/4 en FR/AR à 360 px, navigation clavier,
   axe, recherche discriminante et RPC de publication/lecture réelles; crash/reaper
   `SCHEDULED` et `PUBLISHING` prouvés, zéro résidu actif ou artefact local.
@@ -107,18 +109,19 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   est importé et vérifié : 10 bibliothèques, 40 catégories, 80 sous-catégories,
   200 services, 212 liens, 220 questionnaires et 6 000 questions; releases et
   traductions restent volontairement `DRAFT/PENDING`. La suite globale atteint
-  39 fichiers/954 assertions et les concurrences hiérarchie/services sont vertes.
+  40 fichiers/970 assertions et les concurrences hiérarchie/services sont vertes.
   Les commandes serveur du Question Builder sont appliquées et testées; l’interface
   de création de questions DRAFT est livrée en FR/AR RTL avec contrat strict. La
-  composition complète questionnaires/sections, les commandes Rule Builder, la
-  qualité/similarité IA, les sessions et la charge 6k/50k restent requises avant
-  GREEN et visa indépendant.
+  création et le versionnage DRAFT des règles sont appliqués avec hash canonique,
+  MFA sensible, audit et Outbox. La composition complète questionnaires/sections,
+  l’interface Rule Builder, la validation/simulation, la qualité/similarité IA,
+  les sessions et la charge 6k/50k restent requises avant GREEN et visa indépendant.
 - MAT-FUNC-001..068 et MARKETING-001..008 restent à implémenter et prouver progressivement.
 - Vercel et Railway ne sont pas configurés. Aucune production n’a été modifiée ou autorisée.
 
 ## Prochaine exécution
 
-1. Étendre le parcours Builder P06 aux questionnaires/sections et aux commandes de règles.
+1. Étendre le parcours Builder P06 aux questionnaires/sections et à l’interface de règles.
 2. Prouver qualité/similarité, sessions et charge catalogue 6k/50k.
 3. Obtenir un replay DB vierge CI et prouver ClamAV réel en staging.
 4. Étendre les contrats atomiques P01 au fil des domaines.
