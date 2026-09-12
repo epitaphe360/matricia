@@ -1,6 +1,6 @@
 # Matricia — Project State
 
-Dernière mise à jour : 2026-09-12 15:01 America/Toronto
+Dernière mise à jour : 2026-09-12 15:12 America/Toronto
 
 Phase de contrôle active : **PHASE 01 — contrats atomiques en cours**
 
@@ -292,3 +292,20 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - Prochaine action : rétablir une liaison Supabase development sûre pour appliquer
   et vérifier `13000`–`13400`, confirmer séparément le statut distant de `12700`, puis
   exécuter les gates globaux, E2E multi-rôles FR/AR/RTL et audits indépendants.
+
+## Checkpoint local d'intégration 2026-09-12
+
+- Le module Catalogue/Publications expose l'historique des releases versionnées et
+  le rollback gouverné, avec contrôle AAL2 pour l'action sensible, audit serveur,
+  libellés FR/AR et RTL. La navigation partagée publie son lien uniquement pour les
+  rôles plateforme `SUPER_ADMIN`, `MATRICIA_ADMIN` et `LIBRARY_MANAGER`, alignés sur
+  l'autorisation du dépôt serveur.
+- Le module CRM/Performance Franchise expose les activités et événements de pipeline
+  immuables ainsi que les snapshots KPI versionnés. Les montants et valeurs `bigint`
+  ou `numeric` restent des chaînes exactes; les objectifs et alertes demeurent en
+  lecture seule tant qu'aucune RPC de mutation autorisée n'existe.
+- Contrôle d'intégration Web : `pnpm --filter @matricia/web typecheck` vert et
+  `pnpm --filter @matricia/web lint` vert. L'horodatage des expirations de crédits est
+  isolé dans un module `server-only` pour préserver la pureté du rendu React.
+- Aucun test global, SQL/RLS ou E2E n'a été lancé dans ce checkpoint, conformément au
+  différé de fin de développement. Aucun changement de production ou secret n'est inclus.

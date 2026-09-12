@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createServerCreditsRepository } from "@/lib/credits-wallet/server-repository";
 import { isLocale } from "@/lib/i18n/locale";
+import { getServerTimestamp } from "@/lib/time/server-clock";
 import { BenefitAction } from "./benefit-action";
 import { messages } from "./messages";
 import { RedemptionActions } from "./redemption-actions";
@@ -18,7 +19,7 @@ export default async function Credits({ params }: { params: Promise<{ locale: st
 
   const data = result.value;
   const m = messages(locale);
-  const today = Date.now();
+  const today = getServerTimestamp();
 
   return <main className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6"><div className="mx-auto max-w-6xl space-y-7">
     <header><h1 className="text-3xl font-semibold">{m.title}</h1><p className="mt-2 max-w-3xl text-muted-foreground">{m.intro}</p></header>

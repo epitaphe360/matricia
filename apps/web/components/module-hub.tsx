@@ -17,6 +17,7 @@ const MODULES:readonly ModuleLink[]=[
  {key:"providerMissions",path:"sous-traitant/missions",space:"provider",roles:["PROVIDER_OWNER","PROVIDER_MANAGER","PROVIDER_TECHNICIAN"]},
  {key:"franchiseGovernance",path:"franchise/gouvernance",space:"franchise",roles:["FRANCHISE_OWNER","FRANCHISE_MANAGER","FRANCHISE_EXPERT","FRANCHISE_PROVIDER_MANAGER","FRANCHISE_ACCOUNTING","FRANCHISE_VIEWER"],platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER","READ_ONLY_AUDITOR"]},
  {key:"adminVolume",path:"administration/achats-groupes",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER"]},
+ {key:"cataloguePublications",path:"administration/catalogue/publications",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","LIBRARY_MANAGER"]},
  {key:"notifications",path:"notifications",space:"universal",requiresMembership:true},
 ];
 const membershipRows=z.array(z.object({id:z.string().uuid()})),roleRows=z.array(z.object({role_code:z.string(),revoked_at:z.string().nullable()})),platformRows=z.array(z.object({role_code:z.string()}));
