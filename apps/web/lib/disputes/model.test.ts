@@ -1,0 +1,2 @@
+import{describe,expect,it}from"vitest";import{evidenceItem,moneyToMinor}from"./model";
+describe("dispute value objects",()=>{it("converts exact minor money without float",()=>{expect(moneyToMinor("1250,09")).toBe("125009");expect(moneyToMinor("1.999")).toBeNull()});it("requires immutable evidence hash",()=>{expect(()=>evidenceItem("preuve", "bad","BOTH_PARTIES")).toThrow();expect(evidenceItem("preuve", "a".repeat(64),"CLIENT_ONLY").visibility).toBe("CLIENT_ONLY")})});

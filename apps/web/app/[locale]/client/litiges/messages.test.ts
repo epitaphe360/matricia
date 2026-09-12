@@ -1,0 +1,2 @@
+import{describe,expect,it}from"vitest";import{getDisputeMessages}from"./messages";
+describe("dispute translations",()=>{it("ships distinct French and Arabic critical copy",()=>{expect(getDisputeMessages("fr").title).not.toBe(getDisputeMessages("ar").title);expect(getDisputeMessages("ar").immutable).toContain("الدليل")});it("covers every workflow status",()=>{expect(Object.keys(getDisputeMessages("fr").statuses)).toHaveLength(6)})});
