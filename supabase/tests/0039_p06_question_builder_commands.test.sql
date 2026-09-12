@@ -1,0 +1,80 @@
+begin;
+set local search_path=public,extensions;
+select plan(28);
+
+select ok((select count(*)=4 and bool_and(p.prosecdef and p.proconfig::text like '%search_path=pg_catalog%')from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname in('create_catalog_question','save_catalog_question_draft','duplicate_catalog_question','set_catalog_question_archived')),'four Question Builder RPCs are security definer with fixed paths');
+select ok(not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname in('create_catalog_question','save_catalog_question_draft','duplicate_catalog_question','set_catalog_question_archived')and(has_function_privilege('anon',p.oid,'EXECUTE')or has_function_privilege('service_role',p.oid,'EXECUTE'))),'anon and service_role cannot execute Question Builder commands');
+select ok((select count(*)=4 and bool_and(has_function_privilege('authenticated',p.oid,'EXECUTE'))from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname in('create_catalog_question','save_catalog_question_draft','duplicate_catalog_question','set_catalog_question_archived')),'authenticated receives only explicit RPC execution');
+select ok(not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private'and p.proname in('assert_question_builder_payload','assert_question_builder_payload_v1','insert_question_builder_version','guard_question_archive_published_pointer')and(has_function_privilege('anon',p.oid,'EXECUTE')or has_function_privilege('authenticated',p.oid,'EXECUTE')or has_function_privilege('service_role',p.oid,'EXECUTE'))),'Question Builder helpers remain private');
+select ok(not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname in('duplicate_catalog_question_v1','set_catalog_question_archived_v1')and(has_function_privilege('anon',p.oid,'EXECUTE')or has_function_privilege('authenticated',p.oid,'EXECUTE')or has_function_privilege('service_role',p.oid,'EXECUTE'))),'superseded RPC implementations are private to the hardened wrappers');
+select ok(not has_table_privilege('authenticated','public.question_bank_questions','INSERT')and not has_table_privilege('authenticated','public.question_versions','INSERT'),'direct question writes remain unavailable');
+select throws_ok($$select private.assert_question_builder_payload('f5120000-0000-0000-0000-000000000001','LIBRARY',null)$$,'22023'::char(5),'INVALID_CATALOG_QUESTION','null Builder payload fails closed');
+
+insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)values
+('f5100000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','p06-question-admin@example.invalid','',now(),'{}','{}',now(),now()),
+('f5100000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000000','authenticated','authenticated','p06-question-outsider@example.invalid','',now(),'{}','{}',now(),now());
+insert into public.platform_user_roles(user_id,role_code)values('f5100000-0000-0000-0000-000000000001','MATRICIA_ADMIN');
+insert into public.organizations(id,legal_name,display_name,status,created_by)values('f5110000-0000-0000-0000-000000000001','P06 Question Steward','P06 Question Steward','ACTIVE','f5100000-0000-0000-0000-000000000001');
+insert into public.catalog_libraries(id,code,slug,steward_organization_id,status,created_by)values('f5120000-0000-0000-0000-000000000001','P06_QUESTION','p06-question','f5110000-0000-0000-0000-000000000001','DRAFT','f5100000-0000-0000-0000-000000000001');
+insert into public.catalog_categories(id,library_id,code,slug,status,created_by)values('f5130000-0000-0000-0000-000000000001','f5120000-0000-0000-0000-000000000001','P06_QUESTION_CAT','p06-question-cat','DRAFT','f5100000-0000-0000-0000-000000000001');
+insert into public.catalog_subcategories(id,library_id,category_id,code,slug,status,created_by)values('f5140000-0000-0000-0000-000000000001','f5120000-0000-0000-0000-000000000001','f5130000-0000-0000-0000-000000000001','P06_QUESTION_SUB','p06-question-sub','DRAFT','f5100000-0000-0000-0000-000000000001');
+insert into public.catalog_services(id,library_id,primary_subcategory_id,code,slug,status,created_by)values('f5150000-0000-0000-0000-000000000001','f5120000-0000-0000-0000-000000000001','f5140000-0000-0000-0000-000000000001','P06_QUESTION_SERVICE','p06-question-service','DRAFT','f5100000-0000-0000-0000-000000000001');
+
+create temporary table p06_question_payload(value jsonb);create temporary table p06_question_observed(key text primary key,value jsonb);
+insert into p06_question_payload values(jsonb_build_object('label_fr','Quel est votre objectif ?','label_ar','ما هو هدفك؟','help_fr','Décrivez le résultat attendu','help_ar','صف النتيجة المتوقعة','answer_type','LONG_TEXT','data_key','rfq.builder.objective','required_by_default',true,'required_for_quote',true,'required_for_publication',false,'options','[]'::jsonb,'validation_schema','{"minLength":3}'::jsonb,'sensitivity','BUSINESS','nullable',false,'weight',1,'maximum_score',10,'source_service_id','f5150000-0000-0000-0000-000000000001'));
+grant select on p06_question_payload to authenticated;grant select,insert,update on p06_question_observed to authenticated;grant usage on schema extensions to authenticated;
+
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"f5100000-0000-0000-0000-000000000002","role":"authenticated","aal":"aal2"}',true);
+select throws_ok($$select public.create_catalog_question('f5120000-0000-0000-0000-000000000001','P06_HIDDEN','SERVICE',(select value from p06_question_payload),'Création refusée','question-hidden')$$,'42501'::char(5),'CATALOG_SCOPE_DENIED','authorization precedes service-reference validation');
+select set_config('request.jwt.claims','{"sub":"f5100000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal2"}',true);
+insert into p06_question_observed values('created',public.create_catalog_question('f5120000-0000-0000-0000-000000000001','P06_BUILDER_OBJECTIVE','SERVICE',(select value from p06_question_payload),'Création question Builder','question-create-0001','f5160000-0000-0000-0000-000000000001'));
+insert into p06_question_observed values('replay',public.create_catalog_question('f5120000-0000-0000-0000-000000000001','P06_BUILDER_OBJECTIVE','SERVICE',(select value from p06_question_payload),'Création question Builder','question-create-0001','f5160000-0000-0000-0000-000000000099'));
+select is((select value from p06_question_observed where key='created'),(select value from p06_question_observed where key='replay'),'create replay returns the durable response');
+select throws_ok($$select public.create_catalog_question('f5120000-0000-0000-0000-000000000001','P06_BUILDER_CHANGED','SERVICE',(select value from p06_question_payload),'Création question Builder','question-create-0001')$$,'22000'::char(5),'IDEMPOTENCY_PAYLOAD_MISMATCH','create rejects changed idempotency payload');
+reset role;
+
+select is((select value->>'outcome'from p06_question_observed where key='created'),'CATALOG_QUESTION_CREATED','create returns its typed outcome');
+select ok((select q.library_id='f5120000-0000-0000-0000-000000000001'and q.scope='SERVICE'and q.status='DRAFT'and q.current_draft_version_id=(select(value->>'version_id')::uuid from p06_question_observed where key='created')from public.question_bank_questions q where q.id=(select(value->>'question_id')::uuid from p06_question_observed where key='created')),'identity is library-scoped and points to its draft');
+select ok((select label_ar='ما هو هدفك؟'and answer_type='LONG_TEXT'and source_service_id='f5150000-0000-0000-0000-000000000001'and translation_review_status='PENDING'and content_hash~'^[0-9a-f]{64}$'from public.question_versions where id=(select(value->>'version_id')::uuid from p06_question_observed where key='created')),'version persists typed FR/AR metadata and service scope');
+select ok((select count(*)=1 from public.audit_events where action='catalog.question.created'and resource_id=(select value->>'question_id'from p06_question_observed where key='created'))and(select count(*)=1 from public.event_outbox where event_type='CatalogQuestionCreatedV1'and aggregate_id=(select value->>'question_id'from p06_question_observed where key='created')),'create emits one audit and one Outbox event');
+
+set local role authenticated;select set_config('request.jwt.claims','{"sub":"f5100000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal2"}',true);
+insert into p06_question_observed values('saved',public.save_catalog_question_draft((select(value->>'question_id')::uuid from p06_question_observed where key='created'),(select(value->>'version_id')::uuid from p06_question_observed where key='created'),'SERVICE',(select value||'{"label_fr":"Quel résultat précis attendez-vous ?"}'::jsonb from p06_question_payload),'Révision du libellé',1,1,'question-save-0001'));
+reset role;
+select is((select value->>'version_number'from p06_question_observed where key='saved'),'2','save creates immutable version two');
+select ok((select row_version=2 and current_draft_version_id=(select(value->>'version_id')::uuid from p06_question_observed where key='saved')from public.question_bank_questions where id=(select(value->>'question_id')::uuid from p06_question_observed where key='created')),'save advances the optimistic identity pointer');
+select is((select label_fr from public.question_versions where id=(select(value->>'version_id')::uuid from p06_question_observed where key='saved')),'Quel résultat précis attendez-vous ?','save persists the revised payload');
+
+set local role authenticated;select set_config('request.jwt.claims','{"sub":"f5100000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal2"}',true);
+insert into p06_question_observed values('duplicated',public.duplicate_catalog_question((select(value->>'question_id')::uuid from p06_question_observed where key='created'),(select(value->>'version_id')::uuid from p06_question_observed where key='saved'),'P06_BUILDER_OBJECTIVE_COPY','rfq.builder.objective_copy','Duplication contrôlée','question-duplicate-0001'));
+reset role;
+select ok((select source_question_id=(select(value->>'question_id')::uuid from p06_question_observed where key='created')and status='DRAFT'from public.question_bank_questions where id=(select(value->>'question_id')::uuid from p06_question_observed where key='duplicated')),'duplicate preserves explicit lineage');
+select is((select data_key from public.question_versions where id=(select(value->>'version_id')::uuid from p06_question_observed where key='duplicated')),'rfq.builder.objective_copy','duplicate requires a distinct data key');
+
+set local role authenticated;select set_config('request.jwt.claims','{"sub":"f5100000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal2"}',true);
+insert into p06_question_observed values('archived',public.set_catalog_question_archived((select(value->>'question_id')::uuid from p06_question_observed where key='duplicated'),1,true,'Archivage contrôlé','question-archive-0001'));
+insert into p06_question_observed values('restored',public.set_catalog_question_archived((select(value->>'question_id')::uuid from p06_question_observed where key='duplicated'),2,false,'Restauration contrôlée','question-restore-0001'));
+reset role;
+select is((select value->>'outcome'from p06_question_observed where key='archived'),'CATALOG_QUESTION_ARCHIVED','draft question archives without physical deletion');
+select is((select value->>'outcome'from p06_question_observed where key='restored'),'CATALOG_QUESTION_RESTORED','archived question restores as draft');
+select ok((select status='DRAFT'and archived_at is null and row_version=3 from public.question_bank_questions where id=(select(value->>'question_id')::uuid from p06_question_observed where key='duplicated')),'restore preserves history and advances row version');
+select ok((select count(*)=2 from public.audit_events where resource_id=(select value->>'question_id'from p06_question_observed where key='duplicated')and action in('catalog.question.archived','catalog.question.restored'))and(select count(*)=2 from public.event_outbox where aggregate_id=(select value->>'question_id'from p06_question_observed where key='duplicated')and event_type in('CatalogQuestionArchivedV1','CatalogQuestionRestoredV1')),'archive and restore are audited and emitted');
+
+set local role authenticated;select set_config('request.jwt.claims','{"sub":"f5100000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal2"}',true);
+insert into p06_question_observed values('choice',public.create_catalog_question('f5120000-0000-0000-0000-000000000001','P06_DRAFT_CHOICE','LIBRARY',jsonb_build_object('label_fr','Choisissez','label_ar','اختر','answer_type','SINGLE_CHOICE','data_key','builder.choice','required_by_default',false,'required_for_quote',false,'required_for_publication',false,'options','[]'::jsonb,'validation_schema','{}'::jsonb,'sensitivity','BUSINESS','nullable',false,'weight',0,'maximum_score',0),'Brouillon incomplet autorisé','question-choice-0001'));
+select set_config('request.jwt.claims','{"sub":"f5100000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal1"}',true);
+select throws_ok($$select public.create_catalog_question('f5120000-0000-0000-0000-000000000001','P06_SECRET','LIBRARY',jsonb_build_object('label_fr','Secret','label_ar','سري','answer_type','LONG_TEXT','data_key','builder.secret','required_by_default',false,'required_for_quote',false,'required_for_publication',false,'options','[]'::jsonb,'validation_schema','{}'::jsonb,'sensitivity','CONFIDENTIAL','nullable',false,'weight',0,'maximum_score',0),'Question sensible','question-secret-0001')$$,'42501'::char(5),'CATALOG_SENSITIVE_MFA_REQUIRED','confidential authoring requires AAL2');
+reset role;
+select ok((select status='DRAFT'and options='[]'::jsonb from public.question_versions where id=(select(value->>'version_id')::uuid from p06_question_observed where key='choice')),'choice metadata may remain incomplete only as a draft');
+select ok(not private.is_valid_question_metadata((select v from public.question_versions v where id=(select(value->>'version_id')::uuid from p06_question_observed where key='choice'))),'strict publication validation rejects the incomplete choice');
+
+set local role authenticated;select set_config('request.jwt.claims','{"sub":"f5100000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal2"}',true);
+insert into p06_question_observed values('global',public.create_catalog_question('f5120000-0000-0000-0000-000000000001','P06_GLOBAL','GLOBAL',jsonb_build_object('label_fr','Question globale','label_ar','سؤال عام','answer_type','LONG_TEXT','data_key','builder.global','required_by_default',false,'required_for_quote',false,'required_for_publication',false,'options','[]'::jsonb,'validation_schema','{}'::jsonb,'sensitivity','BUSINESS','nullable',false,'weight',0,'maximum_score',0),'Création globale contrôlée','question-global-0001'));
+select set_config('request.jwt.claims','{"sub":"f5100000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal1"}',true);
+select throws_ok(format($sql$select public.duplicate_catalog_question(%L::uuid,%L::uuid,'P06_GLOBAL_COPY','builder.global_copy','Duplication globale','question-global-copy')$sql$,(select value->>'question_id'from p06_question_observed where key='global'),(select value->>'version_id'from p06_question_observed where key='global')),'42501'::char(5),'CENTRAL_MFA_REQUIRED','GLOBAL duplication remains central AAL2 only');
+select throws_ok(format($sql$select public.set_catalog_question_archived(%L::uuid,1,true,'Archivage global','question-global-archive')$sql$,(select value->>'question_id'from p06_question_observed where key='global')),'42501'::char(5),'CENTRAL_MFA_REQUIRED','GLOBAL archive remains central AAL2 only');
+reset role;
+
+select * from finish();
+rollback;

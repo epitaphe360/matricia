@@ -1,6 +1,6 @@
 # Matricia — Project State
 
-Dernière mise à jour : 2026-09-11 18:30 America/Toronto
+Dernière mise à jour : 2026-09-11 21:48 America/Toronto
 
 Phase de contrôle active : **PHASE 01 — contrats atomiques en cours**
 
@@ -22,7 +22,7 @@ Travaux engagés : **PHASES 01, 03, 05 et 06 — en cours; PHASES 02 et 04 sign�
 
 ## Supabase development/staging
 
-Projet distant Matricia contrôlé en environnement applicatif `development`. Les 51 migrations additives jusqu’à `20260911005000` sont appliquées à distance.
+Projet distant Matricia contrôlé en environnement applicatif `development`. Les 55 migrations additives jusqu’à `20260911005400` sont appliquées à distance.
 
 1. extensions et référentiels versionnés;
 2. identité, organisations, memberships et RBAC;
@@ -60,10 +60,12 @@ Projet distant Matricia contrôlé en environnement applicatif `development`. Le
     MFA fail-closed, items scellés et récupération rollback contrôlée.
 30. import baseline transactionnel et idempotent, commandes de hiérarchie/services,
     compatibilités legacy fail-closed et contrat strict des questions publiables.
+31. commandes Question Builder : création, nouvelle version de brouillon, duplication,
+    archivage/restauration, scope GLOBAL central AAL2, audit et Event Outbox.
 
 Preuves actuelles :
 
-- migrations locales/distantes `20260910000100`..`20260911005000` appliquées sur development;
+- migrations locales/distantes `20260910000100`..`20260911005400` appliquées sur development;
 - lint SQL public/private sans erreur de schéma lors du dernier contrôle distant;
 - `pnpm test:db` vert le 2026-09-11 pour les fichiers `0001`..`0023` : 23 fichiers et 404 assertions; les quatre scénarios historiques à deux connexions couvrent Outbox, journal, crédits et chaîne audit;
 - tests négatifs RLS inter-tenant, immutabilité, équilibre/devise, crédits, idempotence, audit et Outbox.
@@ -82,7 +84,7 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - `pnpm typecheck` : vert.
 - Tests Web : vert — 19 fichiers, 141 tests.
 - Tests Worker : vert — 11 fichiers, 54 tests; typecheck strict vert.
-- `pnpm test:db` : vert pour `0001`..`0038` — 38 fichiers et 926 assertions, plus quatre scénarios génériques à deux connexions. Les scénarios P06 dédiés de révocation concurrente hiérarchie et de commandes services passent aussi sur Supabase development.
+- `pnpm test:db` : vert pour `0001`..`0039` — 39 fichiers et 954 assertions, plus quatre scénarios génériques à deux connexions. Les scénarios P06 dédiés de révocation concurrente hiérarchie et de commandes services passent aussi sur Supabase development.
 - E2E catalogue authentifié réel : 4/4 en FR/AR à 360 px, navigation clavier,
   axe, recherche discriminante et RPC de publication/lecture réelles; crash/reaper
   `SCHEDULED` et `PUBLISHING` prouvés, zéro résidu actif ou artefact local.
@@ -103,8 +105,9 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   est importé et vérifié : 10 bibliothèques, 40 catégories, 80 sous-catégories,
   200 services, 212 liens, 220 questionnaires et 6 000 questions; releases et
   traductions restent volontairement `DRAFT/PENDING`. La suite globale atteint
-  38 fichiers/926 assertions et les concurrences hiérarchie/services sont vertes.
-  Le parcours Builder, la qualité/similarité IA, les sessions et la charge 6k/50k
+  39 fichiers/954 assertions et les concurrences hiérarchie/services sont vertes.
+  Les commandes serveur du Question Builder sont appliquées et testées; l’interface
+  Builder, les commandes Rule Builder, la qualité/similarité IA, les sessions et la charge 6k/50k
   restent requis avant GREEN et visa indépendant.
 - MAT-FUNC-001..068 et MARKETING-001..008 restent à implémenter et prouver progressivement.
 - Vercel et Railway ne sont pas configurés. Aucune production n’a été modifiée ou autorisée.
