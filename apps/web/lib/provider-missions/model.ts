@@ -1,0 +1,58 @@
+import { z } from "zod";
+
+const uuid = z.string().uuid();
+const safeVersion = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
+const exactMinor = z.union([z.string().regex(/^\d+$/), z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER)]).transform(String);
+const secureLocation = z.string().trim().min(3).max(1000).refine((value) => {
+  if (value.includes("..") || value.includes("\\") || /[\u0000-\u001f]/.test(value)) return false;
+  if (/^https:\/\//i.test(value)) {
+    try { return new URL(value).protocol === "https:"; } catch { return false; }
+  }
+  return /^[a-zA-Z0-9][a-zA-Z0-9/_\-.]+$/.test(value) && !value.startsWith("/");
+}, "INVALID_PROOF_LOCATION");
+
+export const deliverySubmissionSchema = z.object({
+  deliverableId: uuid,
+  description: z.string().trim().min(3).max(4000),
+  linksText: z.string().max(6000).default(""),
+  proofType: z.enum(["DOCUMENT", "IMAGE", "URL", "CHECKLIST", "OTHER"]),
+  proofLocation: secureLocation,
+  proofNote: z.string().trim().max(500).default(""),
+  idempotencyKey: uuid,
+}).transform((value, context) => {
+  const links = value.linksText.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+  if (links.length > 10 || links.some((item) => { try { return new URL(item).protocol !== "https:"; } catch { return true; } })) {
+    context.addIssue({ code: "custom", path: ["linksText"], message: "INVALID_HTTPS_LINKS" });
+    return z.NEVER;
+  }
+  return { ...value, links };
+});
+
+export type ProviderMissionDashboard = {
+  organizationId: string;
+  organizationName: string;
+  missions: Array<{
+    id: string; contractId: string; status: string; startedAt: string | null; completedAt: string | null;
+    contract: { currentVersion: number; priceMinor: string; currency: string; contentHash: string } | null;
+    milestones: Array<{ id: string; key: string; title: string; status: string; dueAt: string | null }>;
+    deliverables: Array<{ id: string; key: string; label: string; proofRequired: boolean; status: string; currentVersion: number; versions: Array<{ id: string; version: number; description: string; submittedAt: string; contentHash: string; proofCount: number }> }>;
+  }>;
+};
+
+export const providerMissionRows = {
+  membership: z.object({ organization_id: uuid, organizations: z.object({ display_name: z.string().min(1) }) }),
+  mission: z.object({ id: uuid, contract_id: uuid, status: z.string(), started_at: z.string().nullable(), completed_at: z.string().nullable() }),
+  milestone: z.object({ id: uuid, mission_id: uuid, milestone_key: z.string(), title_fr: z.string(), title_ar: z.string(), status: z.string(), due_at: z.string().nullable() }),
+  deliverable: z.object({ id: uuid, mission_id: uuid, deliverable_key: z.string(), label_fr: z.string(), label_ar: z.string(), proof_required: z.boolean(), status: z.string(), current_version: safeVersion }),
+  version: z.object({ id: uuid, deliverable_id: uuid, version: safeVersion, description: z.string(), submitted_at: z.string(), content_hash: z.string().regex(/^[0-9a-f]{64}$/) }),
+  proof: z.object({ delivery_version_id: uuid }),
+  contract: z.object({ id: uuid, current_version: z.number().int().positive() }),
+  contractVersion: z.object({ contract_id: uuid, version: z.number().int().positive(), price_minor: exactMinor, currency: z.string().regex(/^[A-Z]{3}$/), content_hash: z.string().regex(/^[0-9a-f]{64}$/) }),
+};
+
+export function formatExactMinor(value: string, currency: string, locale: "fr" | "ar") {
+  const amount = BigInt(value), hundred = BigInt(100), whole = amount / hundred, fraction = (amount % hundred).toString().padStart(2, "0");
+  const tag = locale === "ar" ? "ar-MA" : "fr-MA";
+  const integer = new Intl.NumberFormat(tag, { maximumFractionDigits: 0 }).format(whole);
+  return new Intl.NumberFormat(tag, { style: "currency", currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).formatToParts(0).map((part) => part.type === "integer" ? integer : part.type === "fraction" ? fraction : part.value).join("");
+}

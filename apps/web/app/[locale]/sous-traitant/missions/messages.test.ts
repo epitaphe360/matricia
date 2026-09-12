@@ -1,0 +1,1 @@
+import{describe,expect,it}from"vitest";import{getProviderMissionMessages}from"./messages";describe("provider mission messages",()=>{it("provides complete FR and AR dictionaries",()=>expect(Object.keys(getProviderMissionMessages("ar"))).toEqual(Object.keys(getProviderMissionMessages("fr"))))});
