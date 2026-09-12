@@ -1,0 +1,1 @@
+import{describe,expect,it}from"vitest";import{getNotificationMessages}from"./messages";describe("notification messages",()=>{it("keeps FR and AR dictionaries aligned",()=>expect(Object.keys(getNotificationMessages("ar"))).toEqual(Object.keys(getNotificationMessages("fr"))))});
