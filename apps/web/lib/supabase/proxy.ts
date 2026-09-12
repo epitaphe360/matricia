@@ -3,11 +3,30 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getPublicEnvironment } from "@/lib/env";
 import { normalizeLocale } from "@/lib/i18n/locale";
 
+const PUBLIC_EXACT_SEGMENTS = new Set(["", "a-propos", "contact", "franchise"]);
+
+function isPublicPath(pathname: string, locale: string): boolean {
+  if (pathname === "/") return true;
+  const localeRoot = `/${locale}`;
+  if (pathname === localeRoot || pathname === `${localeRoot}/`) return true;
+  const localizedPath = pathname.startsWith(`${localeRoot}/`) ? pathname.slice(localeRoot.length + 1).replace(/\/$/u, "") : null;
+  if (localizedPath === null) return false;
+  return PUBLIC_EXACT_SEGMENTS.has(localizedPath)
+    || localizedPath === "services"
+    || localizedPath.startsWith("services/");
+}
+
+function withLocaleCookie(response: NextResponse, request: NextRequest, locale: string): NextResponse {
+  response.cookies.set("matricia_locale", locale, { sameSite: "lax", secure: request.nextUrl.protocol === "https:", path: "/" });
+  return response;
+}
+
 export async function refreshSupabaseSession(request: NextRequest) {
   const locale = normalizeLocale(request.nextUrl.pathname.split("/")[1]);
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-matricia-locale", locale);
   let response = NextResponse.next({ request: { headers: requestHeaders } });
+  if (isPublicPath(request.nextUrl.pathname, locale)) return withLocaleCookie(response, request, locale);
   const environment = getPublicEnvironment();
   const supabase = createServerClient(environment.NEXT_PUBLIC_SUPABASE_URL, environment.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
     cookies: {
@@ -27,8 +46,11 @@ export async function refreshSupabaseSession(request: NextRequest) {
     "invitations",
     "securite",
     "client",
+    "sous-traitant",
     "franchise",
     "administration",
+    "catalogue",
+    "notifications",
   ];
   const isProtected = protectedPrefixes.some((prefix) =>
     request.nextUrl.pathname === `/${locale}/${prefix}`
@@ -36,6 +58,5 @@ export async function refreshSupabaseSession(request: NextRequest) {
   );
   if (!user && isProtected) return NextResponse.redirect(new URL(`/${locale}/connexion`, request.url));
   if (user && isLogin) return NextResponse.redirect(new URL(`/${locale}/tableau-de-bord`, request.url));
-  response.cookies.set("matricia_locale", locale, { sameSite: "lax", secure: request.nextUrl.protocol === "https:", path: "/" });
-  return response;
+  return withLocaleCookie(response, request, locale);
 }

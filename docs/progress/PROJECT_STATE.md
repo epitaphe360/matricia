@@ -1,6 +1,6 @@
 # Matricia — Project State
 
-Dernière mise à jour : 2026-09-12 15:12 America/Toronto
+Dernière mise à jour : 2026-09-12 15:50 America/Toronto
 
 Phase de contrôle active : **PHASE 01 — contrats atomiques en cours**
 
@@ -309,3 +309,30 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   isolé dans un module `server-only` pour préserver la pureté du rendu React.
 - Aucun test global, SQL/RLS ou E2E n'a été lancé dans ce checkpoint, conformément au
   différé de fin de développement. Aucun changement de production ou secret n'est inclus.
+
+## Checkpoint local Public et SEO 2026-09-12
+
+- Les routes publiques FR/AR réelles couvrent désormais l'accueil, Services,
+  Franchise, À propos et Contact sous un layout commun. Header, footer, navigation
+  clavier, reflow 360 px, direction RTL et bascule de langue sont partagés; Contact
+  propose uniquement des CTA fonctionnels vers Services et Connexion, sans faux
+  formulaire ni collecte publique de données personnelles.
+- Le proxy évite le refresh Supabase uniquement pour les chemins publics allowlistés.
+  Connexion conserve le contrôle de session; Catalogue authentifié, Client,
+  Sous-traitant, Franchise métier, Administration, Notifications, Organisation et
+  Sécurité restent fail-closed. Le chemin public `/franchise` n'ouvre aucune de ses
+  sous-routes métier.
+- Aucune RPC catalogue exécutable par `anon` n'existe : la vitrine utilise donc une
+  projection statique bornée au manifeste vérifié `1.0.0`, soit 10 bibliothèques et
+  200 services. Les 6 000 questions et tous les brouillons restent exclus.
+- Chaque route publique possède ses métadonnées FR/AR, canonical, hreflang, Open
+  Graph et Twitter. `robots.txt` utilise une allowlist publique et interdit les
+  espaces privés/auth; le sitemap contient exactement 10 URL localisées. Connexion
+  est `noindex`; le manifeste et la carte sociale sont présents.
+- Le même lot finalise l'évolution versionnée des diagnostics et l'historique des
+  allocations de facturation Sous-traitant. Les montants et reliquats restent des
+  chaînes entières exactes, sans conversion flottante ni mutation de ledger.
+- Gates d'intégration : `pnpm --filter @matricia/web typecheck` vert,
+  `pnpm --filter @matricia/web lint` vert et `git diff --check` vert. Aucun E2E n'a
+  été lancé; la revue visuelle réelle à 360 px et la validation crawler de la carte
+  sociale restent à effectuer en fin de développement.

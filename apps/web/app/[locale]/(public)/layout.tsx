@@ -1,0 +1,24 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { PublicFooter } from "@/components/public-site/public-footer";
+import { PublicNavigation } from "@/components/public-site/public-navigation";
+import { isLocale } from "@/lib/i18n/locale";
+import { localizedRouteMetadata } from "@/lib/seo/metadata";
+import { getPublicMessages } from "./messages";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) return {};
+  const copy = getPublicMessages(locale).home;
+  return localizedRouteMetadata(locale, "", copy.title, copy.description);
+}
+
+export default async function PublicLayout({ children, params }: Readonly<{ children: React.ReactNode; params: Promise<{ locale: string }> }>) {
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+  return <div dir={locale === "ar" ? "rtl" : "ltr"} className="flex min-h-dvh flex-col bg-background text-foreground">
+    <PublicNavigation locale={locale}/>
+    <div className="flex-1">{children}</div>
+    <PublicFooter locale={locale}/>
+  </div>;
+}
