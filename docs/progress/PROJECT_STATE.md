@@ -1,6 +1,6 @@
 # Matricia — Project State
 
-Dernière mise à jour : 2026-09-12 08:44 America/Toronto
+Dernière mise à jour : 2026-09-12 10:24 America/Toronto
 
 Phase de contrôle active : **PHASE 01 — contrats atomiques en cours**
 
@@ -22,7 +22,7 @@ Travaux engagés : **PHASES 01, 03, 05 et 06 — en cours; PHASES 02 et 04 sign�
 
 ## Supabase development/staging
 
-Projet distant Matricia contrôlé en environnement applicatif `development`. Les 87 migrations additives jusqu’à `20260912008900` sont appliquées à distance.
+Projet distant Matricia contrôlé en environnement applicatif `development`. Les 97 migrations additives jusqu’à `20260912009900` sont appliquées à distance.
 
 1. extensions et référentiels versionnés;
 2. identité, organisations, memberships et RBAC;
@@ -109,12 +109,20 @@ Projet distant Matricia contrôlé en environnement applicatif `development`. Le
 55. durcissements indépendamment réaudités : AUTOPILOT et consentement owner-only,
     PII CRM isolées, ownership CRM intra-tenant, KPI bornés/uniques et réponses
     numériques canoniques évaluées de manière identique aux raccourcis.
+56. sessions questionnaires : snapshot immuable, reprise, soumission reproductible,
+    abandon/expiration, réponses privées et évaluation par le moteur avancé;
+57. portefeuille Client : projets, tâches, budgets annuels exacts, centres de coûts,
+    allocations tenant-bound et calendrier central;
+58. Provider : feedback réellement anonymisé, réputation versionnée à six dimensions,
+    badges sous décision humaine et favoris revalidés;
+59. récompenses/parrainage/ROI : règles et plafonds versionnés, ledger crédits,
+    double contrôle AAL2, preuves durables, baselines approuvées et calculs exacts.
 
 Preuves actuelles :
 
-- migrations locales/distantes `20260910000100`..`20260912008900` appliquées sur development;
+- migrations locales/distantes `20260910000100`..`20260912009900` appliquées sur development;
 - lint SQL public/private sans erreur de schéma lors du dernier contrôle distant;
-- `pnpm test:db` vert le 2026-09-12 pour les fichiers `0001`..`0063` : 63 fichiers, 1 624 assertions et quatre scénarios à deux connexions couvrant Outbox, journal, crédits et chaîne audit;
+- `pnpm test:db` vert le 2026-09-12 pour les fichiers `0001`..`0073` : 73 fichiers, 1 950 assertions et quatre scénarios à deux connexions couvrant Outbox, journal, crédits et chaîne audit;
 - tests négatifs RLS inter-tenant, immutabilité, équilibre/devise, crédits, idempotence, audit et Outbox.
 
 Docker local reste indisponible sur cet hôte; la reconstruction propre doit être prouvée par le job CI Supabase avant signature P03.
@@ -131,11 +139,15 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - `pnpm typecheck` : vert.
 - Tests Web : vert — 76 fichiers, 313 tests.
 - Tests Worker : vert — 11 fichiers, 54 tests; typecheck strict vert.
-- `pnpm test:db` : vert pour `0001`..`0063` — 63 fichiers et 1 624 assertions, plus quatre scénarios génériques à deux connexions. Marketing Autopilot, CRM/performance franchise, moteur fiscal Maroc et moteur Question/Rule avancé sont appliqués, durcis et couverts sur Supabase development.
+- `pnpm test:db` : vert pour `0001`..`0073` — 73 fichiers et 1 950 assertions, plus quatre scénarios génériques à deux connexions. Sessions, portefeuille Client, réputation Provider et rewards/referral/ROI sont appliqués, durcis et couverts sur Supabase development.
 - E2E catalogue authentifié réel : 4/4 en FR/AR à 360 px, navigation clavier,
   axe, recherche discriminante et RPC de publication/lecture réelles; crash/reaper
   `SCHEDULED` et `PUBLISHING` prouvés, zéro résidu actif ou artefact local.
 - E2E P05 authentifiés : 28/28 exactement, zéro skip/flaky/unexpected, FR/AR, 360 px et desktop; cleanup distant vérifié et preuve sanitizée persistée.
+- E2E des nouvelles routes Marketing, CRM franchise et Fiscalité : 12/12
+  scénarios anonymes réels, FR/AR, mobile 360 px et desktop, RTL/LTR, clavier,
+  absence d’overflow et axe; les ALLOW/DENY authentifiés restent à prouver avec
+  des fixtures dédiées Franchise Manager et administrateur fiscal AAL2.
 - `pnpm build` : vert — routes identité, organisation, invitations, rôles, sécurité et santé compilées.
 - `pnpm release:validate` : vert — uniquement gates structurels et absence de placeholders dans le périmètre contrôlé; ce n’est pas une signature de release.
 
@@ -147,6 +159,10 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - Le réaudit indépendant du lot Marketing/CRM/Fiscalité/Rule Engine a fermé 7/7
   findings : trois P1 d’autorisation/isolation/évaluation canonique et quatre P2
   d’intégrité KPI, ownership CRM, accessibilité et localisation FR/AR.
+- Le signoff sécurité indépendant du lot backend `09000`–`09900` est GREEN :
+  confidentialité feedback/Outbox historique, preuves réputation, audience/wallet,
+  double contrôle Referral, baseline durable, portefeuille et anti-oracles sont fermés,
+  sans finding P0/P1/P2 ouvert.
 - P01 ne couvre pas encore les contrats atomiques de toutes les phases.
 - P04 est GREEN : OTP, organisations, invitations courriel, rôles, sessions, mot de passe facultatif, MFA TOTP, AAL2 et saga d'audit Auth durable ont passé le visa indépendant sans P0/P1/P2.
 - P05 dispose des migrations appliquées `024`, `026` et `029`–`03550` : profils, documents privés, questionnaires, matrice/anomalies, scan serveur, activation et essai 30 jours. Interfaces, Worker, concurrence et E2E authentifiés sont prouvés. ClamAV staging réel et replay vierge restent requis; P05 demeure `IN_PROGRESS`.
@@ -176,6 +192,8 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   fondations de plusieurs domaines sont présentes, mais la traçabilité atomique,
   les parcours E2E et les audits indépendants restent requis avant de déclarer
   chaque exigence `VERIFIED`.
+- Le registre atomique strict compte actuellement 1 exigence `PROVEN`, 56
+  `PARTIAL`, 11 `MISSING` et 0 `BLOCKED`; il contient exactement 68 IDs uniques.
 - Vercel et Railway ne sont pas configurés. Aucune production n’a été modifiée ou autorisée.
 
 ## Prochaine exécution
