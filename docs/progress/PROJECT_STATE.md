@@ -340,12 +340,15 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 ## Checkpoint local Administration V1 2026-09-12
 
 - La navigation partagée expose désormais, uniquement selon les rôles plateforme
-  autorisés par chaque dépôt serveur, les consoles Sous-traitants/Facturation,
-  Finance, Gouvernance Franchise/Litiges et
+  autorisés par chaque dépôt serveur, les consoles Clients/Conformité,
+  Sous-traitants/Facturation, Finance, Gouvernance Franchise/Litiges et
   Notifications/Audit/Outbox.
-- Admin Clients et la migration locale `20260912013700` sont retenus hors de ce
-  checkpoint après verdict indépendant NO-GO; aucun lien de navigation ne les
-  expose tant que la remédiation et une nouvelle revue ne sont pas terminées.
+- Admin Clients applique la séparation quatre-yeux aux décisions de conformité,
+  revues documentaires et acceptations de réponses. Le réaudit statique des
+  migrations additives locales `20260912013700` et `20260912013900` est PASS : la
+  projection est minimisée, AAL2 est vérifié côté PostgreSQL et Server Actions, et
+  les preuves quatre-yeux sont durables et fail-closed. Ces migrations ne sont ni
+  appliquées ni testées en base, faute de cible Supabase locale disponible.
 - Admin Finance conserve les montants en unités mineures exactes et les
   rapprochements idempotents. Admin Providers conserve les preuves, décisions
   versionnées et écritures financières via les RPC métier. Gouvernance expose les

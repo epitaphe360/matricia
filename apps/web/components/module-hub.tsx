@@ -18,6 +18,7 @@ const MODULES:readonly ModuleLink[]=[
  {key:"franchiseGovernance",path:"franchise/gouvernance",space:"franchise",roles:["FRANCHISE_OWNER","FRANCHISE_MANAGER","FRANCHISE_EXPERT","FRANCHISE_PROVIDER_MANAGER","FRANCHISE_ACCOUNTING","FRANCHISE_VIEWER"],platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER","READ_ONLY_AUDITOR"]},
  {key:"adminVolume",path:"administration/achats-groupes",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER"]},
  {key:"cataloguePublications",path:"administration/catalogue/publications",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","LIBRARY_MANAGER"]},
+ {key:"adminClients",path:"administration/clients",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","COMPLIANCE_MANAGER","READ_ONLY_AUDITOR"]},
  {key:"adminProviders",path:"administration/providers",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","COMPLIANCE_MANAGER","FINANCE_MANAGER","READ_ONLY_AUDITOR"]},
  {key:"adminFinance",path:"administration/finance",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER"]},
  {key:"adminGovernance",path:"administration/gouvernance-franchise",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER","LIBRARY_MANAGER","DISPUTE_MANAGER","READ_ONLY_AUDITOR"]},
