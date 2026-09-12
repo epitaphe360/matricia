@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { BuilderResult, CatalogBuilderRepository, ReleaseDraft, ReleaseItemInput } from "./contracts";
-import { builderDraftSchema, catalogEntityStatusSchema, questionDraftInputSchema, type BuilderDraft, type BuilderWorkspace, uuidSchema } from "./model";
+import { builderDraftSchema, catalogEntityStatusSchema, questionDraftInputSchema, ruleDraftInputSchema, type BuilderDraft, type BuilderWorkspace, uuidSchema } from "./model";
 
 const libraryRow = z.object({ id: uuidSchema, code: z.string().min(2).max(80), status: catalogEntityStatusSchema, row_version: z.number().int().positive(), current_release_id: uuidSchema.nullable() }).strict();
 const serviceRow = z.object({ id: uuidSchema, library_id: uuidSchema, code: z.string().min(2).max(80), slug: z.string().min(1).max(80), status: catalogEntityStatusSchema }).strict();
@@ -11,6 +11,11 @@ const createdQuestion = z.object({
   outcome: z.literal("CATALOG_QUESTION_CREATED"), question_id: uuidSchema, library_id: uuidSchema, version_id: uuidSchema,
   identity_row_version: z.number().int().positive(), version_row_version: z.number().int().positive(),
   content_hash: z.string().regex(/^[0-9a-f]{64}$/u), command_id: uuidSchema,
+}).strict();
+const createdRule = z.object({
+  outcome: z.literal("CATALOG_RULE_CREATED"), rule_id: uuidSchema, library_id: uuidSchema, version_id: uuidSchema,
+  identity_row_version: z.number().int().positive(), version_row_version: z.number().int().positive(),
+  compiled_hash: z.string().regex(/^[0-9a-f]{64}$/u), command_id: uuidSchema,
 }).strict();
 
 type QueryResponse = { data: unknown; error: { code?: string } | null };
@@ -86,6 +91,26 @@ export function createCatalogBuilderRepository(dependencies: BuilderRepositoryDe
       const parsed = createdQuestion.safeParse(response.data);
       return parsed.success && parsed.data.library_id === value.libraryId
         ? { status: "success", value: { questionId: parsed.data.question_id, versionId: parsed.data.version_id, identityRowVersion: parsed.data.identity_row_version, versionRowVersion: parsed.data.version_row_version, contentHash: parsed.data.content_hash } }
+        : { status: "error", reason: "INVALID_RESPONSE" };
+    },
+    async createRule(input) {
+      const parsedInput = ruleDraftInputSchema.safeParse(input);
+      if (!parsedInput.success) return { status: "error", reason: "INVALID_INPUT" };
+      if (!await dependencies.authenticated()) return { status: "error", reason: "UNAUTHENTICATED" };
+      const value = parsedInput.data;
+      const response = await dependencies.rpc("create_catalog_rule", {
+        p_library_id: value.libraryId, p_rule_key: value.ruleKey,
+        p_payload: {
+          condition_ast: { kind: "PREDICATE", operator: "EQ", questionKey: value.questionKey, operand: value.expectedBoolean },
+          actions: [{ type: value.actionType, target: value.actionTarget }],
+          dependency_graph: { [value.questionKey]: [value.ruleKey] }, priority: value.priority, sensitive: value.sensitive,
+        },
+        p_change_reason: value.changeReason, p_idempotency_key: value.idempotencyKey, p_correlation_id: value.correlationId,
+      });
+      if (response.error) return failure(response.error);
+      const parsed = createdRule.safeParse(response.data);
+      return parsed.success && parsed.data.library_id === value.libraryId
+        ? { status: "success", value: { ruleId: parsed.data.rule_id, versionId: parsed.data.version_id, identityRowVersion: parsed.data.identity_row_version, versionRowVersion: parsed.data.version_row_version, compiledHash: parsed.data.compiled_hash } }
         : { status: "error", reason: "INVALID_RESPONSE" };
     },
     async createRelease(input): Promise<BuilderResult<ReleaseDraft>> {

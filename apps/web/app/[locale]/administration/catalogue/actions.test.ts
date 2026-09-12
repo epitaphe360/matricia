@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const repository = vi.hoisted(() => ({
   createQuestion: vi.fn(),
+  createRule: vi.fn(),
   createRelease: vi.fn(),
   addReleaseItem: vi.fn(),
   submitRelease: vi.fn(),
@@ -13,7 +14,7 @@ vi.mock("../../../../lib/catalogue-builder/server-repository", () => ({
 }));
 vi.mock("next/cache", () => ({ revalidatePath }));
 
-import { addReleaseItemAction, createQuestionAction, createReleaseAction, submitReleaseAction } from "./actions";
+import { addReleaseItemAction, createQuestionAction, createReleaseAction, createRuleAction, submitReleaseAction } from "./actions";
 
 const identity = {
   idempotencyKey: "11111111-1111-4111-8111-111111111111",
@@ -38,8 +39,25 @@ beforeEach(() => {
   vi.clearAllMocks();
   repository.createRelease.mockResolvedValue({ status: "success", value: { id: releaseId, rowVersion: 1 } });
   repository.createQuestion.mockResolvedValue({ status: "success", value: { questionId: objectId, versionId, identityRowVersion: 1, versionRowVersion: 1, contentHash: "d".repeat(64) } });
+  repository.createRule.mockResolvedValue({ status: "success", value: { ruleId: objectId, versionId, identityRowVersion: 1, versionRowVersion: 1, compiledHash: "e".repeat(64) } });
   repository.addReleaseItem.mockResolvedValue({ status: "success", value: { rowVersion: 2 } });
   repository.submitRelease.mockResolvedValue({ status: "success", value: { releaseId, status: "APPROVED", snapshotHash: "b".repeat(64) } });
+});
+
+describe("catalogue rule server action", () => {
+  function ruleForm(extra: Record<string, string> = {}) {
+    return form({ locale: "fr", confirmed: "yes", ...identity, libraryId, ruleKey: "MFA_REQUIRED", questionKey: "HAS_MFA", expectedBoolean: "no", actionType: "CREATE_RISK", actionTarget: "MFA_MISSING", priority: "20", sensitive: "yes", changeReason: "Création de la règle MFA", ...extra });
+  }
+  it("creates a typed boolean rule without transport fields", async () => {
+    const result = await createRuleAction({ status: "idle" }, ruleForm());
+    expect(result).toEqual({ status: "success", ruleId: objectId, versionId });
+    expect(repository.createRule).toHaveBeenCalledWith({ libraryId, ruleKey: "MFA_REQUIRED", questionKey: "HAS_MFA", expectedBoolean: false, actionType: "CREATE_RISK", actionTarget: "MFA_MISSING", priority: 20, sensitive: true, changeReason: "Création de la règle MFA", ...identity });
+    expect(revalidatePath).toHaveBeenCalledWith("/fr/administration/catalogue");
+  });
+  it("rejects augmented rule input before persistence", async () => {
+    expect(await createRuleAction({ status: "idle" }, ruleForm({ injected: "true" }))).toEqual({ status: "error", reason: "VALIDATION" });
+    expect(repository.createRule).not.toHaveBeenCalled();
+  });
 });
 
 describe("catalogue question server action", () => {

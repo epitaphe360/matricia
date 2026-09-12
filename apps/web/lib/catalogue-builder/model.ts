@@ -74,6 +74,22 @@ export const questionDraftInputSchema = z.object({
 export type QuestionDraftInput = z.infer<typeof questionDraftInputSchema>;
 export type CreatedQuestion = { questionId: string; versionId: string; identityRowVersion: number; versionRowVersion: number; contentHash: string };
 
+export const ruleDraftInputSchema = z.object({
+  libraryId: uuidSchema,
+  ruleKey: z.string().trim().regex(/^[A-Z][A-Z0-9_.-]{1,119}$/u),
+  questionKey: z.string().trim().regex(/^[A-Z][A-Z0-9_.-]{1,119}$/u),
+  expectedBoolean: z.boolean(),
+  actionType: z.enum(["BLOCK_PUBLICATION", "BLOCK_RFQ", "REQUIRE_QUESTION", "SHOW_QUESTION", "HIDE_QUESTION", "CREATE_ANOMALY", "CREATE_RISK", "CREATE_RECOMMENDATION", "REQUIRE_HUMAN_REVIEW"]),
+  actionTarget: z.string().trim().regex(/^[A-Z][A-Z0-9_.:-]{1,127}$/u),
+  priority: z.number().int().min(0).max(100_000),
+  sensitive: z.boolean(),
+  changeReason: z.string().trim().min(3).max(500),
+  idempotencyKey: uuidSchema,
+  correlationId: uuidSchema,
+}).strict();
+export type RuleDraftInput = z.infer<typeof ruleDraftInputSchema>;
+export type CreatedRule = { ruleId: string; versionId: string; identityRowVersion: number; versionRowVersion: number; compiledHash: string };
+
 export function parseBuilderDraft(value: unknown) {
   return builderDraftSchema.safeParse(value);
 }

@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { getBuilderMessages } from "./messages";
 import { ReleaseWorkflow } from "./release-workflow";
 import { QuestionBuilder } from "./question-builder";
+import { RuleBuilder } from "./rule-builder";
 
 export const dynamic = "force-dynamic";
 
@@ -85,6 +86,7 @@ export default async function CatalogueReleaseAdministrationPage({ params, searc
 
             {selectedLibrary && selectedService ? <>
               <QuestionBuilder locale={locale} library={selectedLibrary} service={selectedService} messages={messages} commandIdentity={{ idempotencyKey: randomUUID(), correlationId: randomUUID() }} />
+              <RuleBuilder locale={locale} library={selectedLibrary} messages={messages} commandIdentity={{ idempotencyKey: randomUUID(), correlationId: randomUUID() }} />
               <ReleaseWorkflow locale={locale} library={selectedLibrary} service={selectedService} messages={messages} commandIdentities={{
                 create: { idempotencyKey: randomUUID(), correlationId: randomUUID() },
                 add: { idempotencyKey: randomUUID(), correlationId: randomUUID() },

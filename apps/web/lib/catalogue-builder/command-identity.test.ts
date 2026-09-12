@@ -30,6 +30,11 @@ describe("catalogue command identity persistence", () => {
     expect(resolveCommandIdentity(storage, "CREATE_QUESTION", "[[\"questionKey\",\"MFA\"]]", first, 100)).toEqual(first);
     expect(resolveCommandIdentity(storage, "CREATE_RELEASE", "[[\"questionKey\",\"MFA\"]]", second, 200)).toEqual(second);
   });
+  it("isolates Rule Builder identities from question creation", () => {
+    const storage = memoryStorage();
+    expect(resolveCommandIdentity(storage, "CREATE_RULE", "[[\"ruleKey\",\"MFA\"]]", first, 100)).toEqual(first);
+    expect(resolveCommandIdentity(storage, "CREATE_QUESTION", "[[\"ruleKey\",\"MFA\"]]", second, 200)).toEqual(second);
+  });
   it("rejects malformed, stale, future and cross-action entries", () => {
     const storage = memoryStorage();
     resolveCommandIdentity(storage, "CREATE_RELEASE", "[[\"key\",\"A\"]]", first, 100);

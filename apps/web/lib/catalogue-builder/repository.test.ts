@@ -100,6 +100,14 @@ describe("catalogue builder repository", () => {
     });
     expect(result).toEqual({ status: "error", reason: "INVALID_RESPONSE" });
   });
+  it("creates a deterministic boolean rule through the exact RPC contract", async () => {
+    const ruleId = "88888888-8888-4888-8888-888888888888";
+    const versionId = "99999999-9999-4999-8999-999999999999";
+    const rpc = vi.fn(async () => ({ data: { outcome: "CATALOG_RULE_CREATED", rule_id: ruleId, library_id: library.id, version_id: versionId, identity_row_version: 1, version_row_version: 1, compiled_hash: "e".repeat(64), command_id: "77777777-7777-4777-8777-777777777777" }, error: null }));
+    const result = await createCatalogBuilderRepository(dependencies({ rpc })).createRule({ libraryId: library.id, ruleKey: "MFA_REQUIRED", questionKey: "HAS_MFA", expectedBoolean: false, actionType: "CREATE_RISK", actionTarget: "MFA_MISSING", priority: 20, sensitive: true, changeReason: "Création de la règle MFA", ...commandIdentity });
+    expect(result).toEqual({ status: "success", value: { ruleId, versionId, identityRowVersion: 1, versionRowVersion: 1, compiledHash: "e".repeat(64) } });
+    expect(rpc).toHaveBeenCalledWith("create_catalog_rule", { p_library_id: library.id, p_rule_key: "MFA_REQUIRED", p_payload: { condition_ast: { kind: "PREDICATE", operator: "EQ", questionKey: "HAS_MFA", operand: false }, actions: [{ type: "CREATE_RISK", target: "MFA_MISSING" }], dependency_graph: { HAS_MFA: ["MFA_REQUIRED"] }, priority: 20, sensitive: true }, p_change_reason: "Création de la règle MFA", p_idempotency_key: commandIdentity.idempotencyKey, p_correlation_id: commandIdentity.correlationId });
+  });
   it("forwards stable command identities and parses the release response", async () => {
     const rpc = vi.fn(async () => ({
       data: { outcome: "CATALOG_RELEASE_CREATED", release_id: "55555555-5555-4555-8555-555555555555", status: "DRAFT", library_row_version: 5 },

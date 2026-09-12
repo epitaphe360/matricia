@@ -16,6 +16,11 @@ export type QuestionActionState =
   | { status: "success"; questionId: string; versionId: string }
   | { status: "error"; reason: "VALIDATION" | "UNAUTHENTICATED" | "FORBIDDEN" | "UNAVAILABLE" };
 
+export type RuleActionState =
+  | { status: "idle" }
+  | { status: "success"; ruleId: string; versionId: string }
+  | { status: "error"; reason: "VALIDATION" | "UNAUTHENTICATED" | "FORBIDDEN" | "UNAVAILABLE" };
+
 const base = z.object({ locale: z.string().refine(isLocale), confirmed: z.literal("yes"), idempotencyKey: uuidSchema, correlationId: uuidSchema });
 const createSchema = base.extend({
   libraryId: uuidSchema, releaseKey: z.string().trim().regex(/^[A-Z][A-Z0-9_.-]{2,119}$/u),
@@ -38,6 +43,13 @@ const questionSchema = base.extend({
   requiredByDefault: z.enum(["yes", "no"]), requiredForQuote: z.enum(["yes", "no"]),
   sensitivity: z.enum(["PUBLIC", "BUSINESS", "CONFIDENTIAL", "RESTRICTED"]),
   changeReason: z.string().trim().min(3).max(500),
+}).strict();
+const ruleSchema = base.extend({
+  libraryId: uuidSchema, ruleKey: z.string().trim().regex(/^[A-Z][A-Z0-9_.-]{1,119}$/u),
+  questionKey: z.string().trim().regex(/^[A-Z][A-Z0-9_.-]{1,119}$/u), expectedBoolean: z.enum(["yes", "no"]),
+  actionType: z.enum(["BLOCK_PUBLICATION", "BLOCK_RFQ", "REQUIRE_QUESTION", "SHOW_QUESTION", "HIDE_QUESTION", "CREATE_ANOMALY", "CREATE_RISK", "CREATE_RECOMMENDATION", "REQUIRE_HUMAN_REVIEW"]),
+  actionTarget: z.string().trim().regex(/^[A-Z][A-Z0-9_.:-]{1,127}$/u), priority: z.coerce.number().int().min(0).max(100_000),
+  sensitive: z.enum(["yes", "no"]), changeReason: z.string().trim().min(3).max(500),
 }).strict();
 
 function errorReason(
@@ -105,4 +117,18 @@ export async function createQuestionAction(_state: QuestionActionState, formData
   if (result.status === "error") return errorReason(result.reason);
   revalidatePath(`/${locale}/administration/catalogue`);
   return { status: "success", questionId: result.value.questionId, versionId: result.value.versionId };
+}
+
+export async function createRuleAction(_state: RuleActionState, formData: FormData): Promise<RuleActionState> {
+  const parsed = ruleSchema.safeParse(actionFields(formData));
+  if (!parsed.success) return { status: "error", reason: "VALIDATION" };
+  const result = await (await createServerCatalogBuilderRepository()).createRule({
+    libraryId: parsed.data.libraryId, ruleKey: parsed.data.ruleKey, questionKey: parsed.data.questionKey,
+    expectedBoolean: parsed.data.expectedBoolean === "yes", actionType: parsed.data.actionType, actionTarget: parsed.data.actionTarget,
+    priority: parsed.data.priority, sensitive: parsed.data.sensitive === "yes", changeReason: parsed.data.changeReason,
+    idempotencyKey: parsed.data.idempotencyKey, correlationId: parsed.data.correlationId,
+  });
+  if (result.status === "error") return errorReason(result.reason);
+  revalidatePath(`/${parsed.data.locale}/administration/catalogue`);
+  return { status: "success", ruleId: result.value.ruleId, versionId: result.value.versionId };
 }
