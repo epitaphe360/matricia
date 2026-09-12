@@ -1,0 +1,10 @@
+begin;
+select plan(6);
+select ok(to_regprocedure('private.enforce_rfq_invitation_current_eligibility()') is not null,'current invitation eligibility guard exists');
+select ok((select count(*)=1 from pg_trigger where tgrelid='public.rfq_providers'::regclass and tgname='rfq_provider_current_eligibility_guard'and not tgisinternal),'guard runs for every RFQ provider insertion');
+select ok((select p.prosecdef and p.proconfig::text like '%search_path=%' from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private'and p.proname='enforce_rfq_invitation_current_eligibility'),'guard has a fixed security-definer boundary');
+select ok(not has_function_privilege('anon','private.enforce_rfq_invitation_current_eligibility()','EXECUTE')and not has_function_privilege('authenticated','private.enforce_rfq_invitation_current_eligibility()','EXECUTE')and not has_function_privilege('service_role','private.enforce_rfq_invitation_current_eligibility()','EXECUTE'),'guard cannot be invoked directly by API roles');
+select ok((select p.prosrc like '%region_code%'and p.prosrc like '%any(profile.region_codes)%'and p.prosrc like '%capacity_status in(''AVAILABLE'',''LIMITED'')%'and p.prosrc like '%qualification_status=''APPROVED''%' from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private'and p.proname='enforce_rfq_invitation_current_eligibility'),'guard revalidates region, capacity and qualification from current profiles');
+select ok((select p.prosrc like '%mask_direct_contacts%'and p.prosrc like '%provider_organization_id=request_row.client_organization_id%'and p.prosrc like '%matching_run_id=rfq_row.matching_run_id%' from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private'and p.proname='enforce_rfq_invitation_current_eligibility'),'guard binds candidate, rejects self-match and requires contact masking');
+select * from finish();
+rollback;
