@@ -381,3 +381,22 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   participants autorisés des objets métier.
 - Aucun test E2E ou global supplémentaire n'est exécuté dans ce lot et aucune
   production n'est modifiée.
+
+## Checkpoint Paiements CMI/PayPal 2026-09-12
+
+- Les migrations `20260912014300`, `20260912014400` et `20260912014500` sont
+  confirmées appliquées sur Supabase Matricia development. Elles couvrent les
+  intentions et webhooks CMI/PayPal, le journal financier équilibré, la correction
+  d'ambiguïté du numéro de cycle et l'ACL de lecture minimale du `service_role`.
+- Le test SQL/RLS `0097_real_payment_gateways.test.sql` est PASS avec 20 assertions.
+  Le harness PostgreSQL confirme également les 4 scénarios de concurrence : Outbox,
+  journal financier idempotent, crédits idempotents et chaîne d'audit concurrente.
+- Les parcours CMI et PayPal sont raccordés à l'interface réelle. CMI utilise une
+  confirmation POST signée; PayPal enchaîne approbation, capture serveur idempotente
+  puis activation exclusivement après webhook `PAYMENT.CAPTURE.COMPLETED` vérifié.
+  Aucun secret n'est exposé au navigateur ou aux logs.
+- La migration `20260912013800_admin_operations_projection.sql` est désormais
+  préparée localement pour réaudit, mais n'est pas appliquée sur l'environnement
+  development ni sur aucun environnement distant.
+- Aucun environnement, secret ou donnée de production n'a été lu ou modifié dans
+  ce checkpoint.

@@ -24,6 +24,21 @@ export type SubscriptionPlan = {
   validTo: string | null;
 };
 
+export type HistoricalSubscriptionPlan = SubscriptionPlan & {
+  status: "ACTIVE" | "RETIRED";
+  coreAllocationBasisPoints: number;
+  benefitPoolAllocationBasisPoints: number;
+  limitsSnapshot: Record<string, unknown>;
+  boxVersionReference: string | null;
+  contentHash: string;
+  entitlements: Array<{
+    code: string;
+    enabled: boolean;
+    quotaValue: string | null;
+    configuration: Record<string, unknown>;
+  }>;
+};
+
 export type SubscriptionSummary = {
   id: string;
   status: string;
@@ -33,12 +48,16 @@ export type SubscriptionSummary = {
   currentPeriodEnd: string | null;
   pendingChangeEffectiveAt: string | null;
   rowVersion: string;
+  currentPlan: HistoricalSubscriptionPlan | null;
+  pendingPlan: HistoricalSubscriptionPlan | null;
   cycles: Array<{
     id: string;
     cycleNumber: number;
     currency: string;
     amountMinor: string;
+    periodStart: string;
     periodEnd: string;
+    plan: HistoricalSubscriptionPlan;
   }>;
   transitions: Array<{
     id: string;

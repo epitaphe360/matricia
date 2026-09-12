@@ -14,8 +14,8 @@ export function SubscriptionPanel({ dashboard, locale, messages, keys }: { dashb
   const [trialState, trialAction, trialPending] = useActionState(ensureTrialAction, idle);
   const [changeState, changeAction, changePending] = useActionState(changePlanAction, idle);
   const subscription = dashboard.subscription;
-  const currentPlan = dashboard.plans.find((plan) => plan.id === subscription?.planVersionId) ?? null;
-  const pendingPlan = dashboard.plans.find((plan) => plan.id === subscription?.pendingPlanVersionId) ?? null;
+  const currentPlan = subscription?.currentPlan ?? null;
+  const pendingPlan = subscription?.pendingPlan ?? null;
 
   return <div className="space-y-6">
     <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-6" aria-labelledby="subscription-current">
@@ -29,7 +29,7 @@ export function SubscriptionPanel({ dashboard, locale, messages, keys }: { dashb
       {!dashboard.capabilities.canChangePlan&&subscription?<p className="mt-4 text-sm text-muted-foreground">{messages.noPermission}</p>:null}
     </section>
 
-    <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-6" aria-labelledby="subscription-cycles"><h2 id="subscription-cycles" className="text-xl font-semibold">{messages.cycles}</h2>{subscription?.cycles.length?<ul className="mt-4 space-y-2">{subscription.cycles.map((cycle)=><li key={cycle.id} className="grid gap-1 rounded-lg border p-3 sm:grid-cols-3"><span dir="ltr">#{cycle.cycleNumber}</span><span dir="ltr">{formatMinor(cycle.amountMinor,cycle.currency,locale)}</span><time dateTime={cycle.periodEnd} dir="ltr">{cycle.periodEnd}</time></li>)}</ul>:<p className="mt-4 text-sm text-muted-foreground">{messages.emptyCycles}</p>}</section>
+    <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-6" aria-labelledby="subscription-cycles"><h2 id="subscription-cycles" className="text-xl font-semibold">{messages.cycles}</h2>{subscription?.cycles.length?<ul className="mt-4 space-y-2">{subscription.cycles.map((cycle)=><li key={cycle.id} className="grid gap-1 rounded-lg border p-3 sm:grid-cols-4"><span dir="ltr">#{cycle.cycleNumber}</span><span>{messages.cyclePlan}: <strong dir="ltr">{cycle.plan.code} · v{cycle.plan.version}</strong></span><span dir="ltr">{formatMinor(cycle.amountMinor,cycle.currency,locale)}</span><time dateTime={cycle.periodEnd} dir="ltr">{cycle.periodEnd}</time></li>)}</ul>:<p className="mt-4 text-sm text-muted-foreground">{messages.emptyCycles}</p>}</section>
 
     <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-6" aria-labelledby="subscription-history"><h2 id="subscription-history" className="text-xl font-semibold">{messages.history}</h2>{subscription?.transitions.length?<ol className="mt-4 space-y-2">{subscription.transitions.map((event)=><li key={event.id} className="rounded-lg border p-3"><div className="flex flex-wrap items-center gap-2"><span dir="ltr">{event.fromStatus??"∅"}</span><span aria-hidden="true">→</span><strong dir="ltr">{event.toStatus}</strong></div><p className="mt-1 text-sm text-muted-foreground"><span dir="ltr">{event.reasonCode}</span> · <time dateTime={event.occurredAt} dir="ltr">{event.occurredAt}</time></p></li>)}</ol>:<p className="mt-4 text-sm text-muted-foreground">{messages.emptyHistory}</p>}</section>
   </div>;

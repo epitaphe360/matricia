@@ -30,14 +30,73 @@ const subscriptionSchema = z.object({
   pending_change_effective_at: z.string().nullable(),
   row_version: exactInteger,
 });
+const historicalPlanSchema = z.object({
+  id: uuid,
+  plan_id: uuid,
+  code: z.enum(["PREMIUM", "GOLD", "PLATINUM"]),
+  version: z.number().int().positive(),
+  status: z.enum(["ACTIVE", "RETIRED"]),
+  currency: z.string().regex(/^[A-Z]{3}$/),
+  monthly_price_minor: exactInteger,
+  annual_price_minor: exactInteger,
+  monthly_credit_grant: exactInteger,
+  core_allocation_basis_points: z.number().int().min(0).max(10_000),
+  benefit_pool_allocation_basis_points: z.number().int().min(0).max(10_000),
+  limits_snapshot: z.record(z.unknown()),
+  box_version_reference: z.string().nullable(),
+  valid_from: z.string(),
+  valid_to: z.string().nullable(),
+  content_hash: z.string().regex(/^[0-9a-f]{64}$/),
+  entitlements: z.array(z.object({
+    code: z.string(),
+    enabled: z.boolean(),
+    quota_value: exactInteger.nullable(),
+    configuration: z.record(z.unknown()),
+  })),
+});
 const cycleSchema = z.object({
   id: uuid,
   cycle_number: z.number().int().positive(),
   currency: z.string().regex(/^[A-Z]{3}$/),
   amount_minor: exactInteger,
+  period_start: z.string(),
   period_end: z.string(),
+  plan: historicalPlanSchema,
+});
+const historicalProjectionSchema = z.object({
+  subscription_id: uuid,
+  organization_id: uuid,
+  current_plan: historicalPlanSchema.nullable(),
+  pending_plan: historicalPlanSchema.nullable(),
+  cycles: z.array(cycleSchema).max(24),
 });
 const transitionSchema = z.object({ id: exactInteger, from_status: z.string().nullable(), to_status: z.string(), reason_code: z.string(), occurred_at: z.string() });
+
+function mapHistoricalPlan(plan: z.infer<typeof historicalPlanSchema>) {
+  return {
+    id: plan.id,
+    code: plan.code,
+    version: plan.version,
+    status: plan.status,
+    currency: plan.currency,
+    monthlyPriceMinor: plan.monthly_price_minor,
+    annualPriceMinor: plan.annual_price_minor,
+    monthlyCreditGrant: plan.monthly_credit_grant,
+    coreAllocationBasisPoints: plan.core_allocation_basis_points,
+    benefitPoolAllocationBasisPoints: plan.benefit_pool_allocation_basis_points,
+    limitsSnapshot: plan.limits_snapshot,
+    boxVersionReference: plan.box_version_reference,
+    validFrom: plan.valid_from,
+    validTo: plan.valid_to,
+    contentHash: plan.content_hash,
+    entitlements: plan.entitlements.map((entitlement) => ({
+      code: entitlement.code,
+      enabled: entitlement.enabled,
+      quotaValue: entitlement.quota_value,
+      configuration: entitlement.configuration,
+    })),
+  };
+}
 
 export async function loadSubscriptionDashboard(): Promise<
   | { status: "success"; dashboard: SubscriptionDashboard }
@@ -78,14 +137,14 @@ export async function loadSubscriptionDashboard(): Promise<
   const subscription = subscriptionResult.data ? subscriptionSchema.safeParse(subscriptionResult.data) : null;
   if (!plans.success || (subscription && !subscription.success)) return { status: "error", reason: "INVALID_RESPONSE" };
   const subscriptionValue = subscription?.data ?? null;
-  const [cyclesResult, transitionsResult] = subscriptionValue ? await Promise.all([
-    client.from("subscription_cycles").select("id,cycle_number,currency,amount_minor::text,period_end").eq("subscription_id", subscriptionValue.id).order("cycle_number", { ascending: false }).limit(24),
+  const [projectionResult, transitionsResult] = subscriptionValue ? await Promise.all([
+    client.rpc("get_client_subscription_historical_plan_projection", { p_subscription_id: subscriptionValue.id, p_cycle_limit: 24 }),
     client.from("subscription_state_events").select("id::text,from_status,to_status,reason_code,occurred_at").eq("subscription_id", subscriptionValue.id).order("occurred_at", { ascending: false }).limit(50),
-  ]) : [{ data: [], error: null }, { data: [], error: null }];
-  if (cyclesResult.error || transitionsResult.error) return { status: "error", reason: "QUERY_FAILED" };
-  const cycles = z.array(cycleSchema).safeParse(cyclesResult.data);
+  ]) : [{ data: null, error: null }, { data: [], error: null }];
+  if (projectionResult.error || transitionsResult.error) return { status: "error", reason: "QUERY_FAILED" };
+  const projection = subscriptionValue ? historicalProjectionSchema.safeParse(projectionResult.data) : null;
   const transitions = z.array(transitionSchema).safeParse(transitionsResult.data);
-  if (!cycles.success || !transitions.success) return { status: "error", reason: "INVALID_RESPONSE" };
+  if ((projection && !projection.success) || !transitions.success) return { status: "error", reason: "INVALID_RESPONSE" };
   const roles = parsedMembership.data.organization_member_roles.map((role) => role.role_code);
   return {
     status: "success",
@@ -113,13 +172,17 @@ export async function loadSubscriptionDashboard(): Promise<
         currentPeriodEnd: subscriptionValue.current_period_end,
         pendingChangeEffectiveAt: subscriptionValue.pending_change_effective_at,
         rowVersion: subscriptionValue.row_version,
-        cycles: cycles.data.map((cycle) => ({
+        currentPlan: projection?.success && projection.data.current_plan ? mapHistoricalPlan(projection.data.current_plan) : null,
+        pendingPlan: projection?.success && projection.data.pending_plan ? mapHistoricalPlan(projection.data.pending_plan) : null,
+        cycles: projection?.success ? projection.data.cycles.map((cycle) => ({
           id: cycle.id,
           cycleNumber: cycle.cycle_number,
           currency: cycle.currency,
           amountMinor: cycle.amount_minor,
+          periodStart: cycle.period_start,
           periodEnd: cycle.period_end,
-        })),
+          plan: mapHistoricalPlan(cycle.plan),
+        })) : [],
         transitions: transitions.data.map((event) => ({ id: event.id, fromStatus: event.from_status, toStatus: event.to_status, reasonCode: event.reason_code, occurredAt: event.occurred_at })),
       } : null,
     },
