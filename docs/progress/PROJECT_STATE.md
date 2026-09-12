@@ -1,6 +1,6 @@
 # Matricia — Project State
 
-Dernière mise à jour : 2026-09-12 06:55 America/Toronto
+Dernière mise à jour : 2026-09-12 07:16 America/Toronto
 
 Phase de contrôle active : **PHASE 01 — contrats atomiques en cours**
 
@@ -22,7 +22,7 @@ Travaux engagés : **PHASES 01, 03, 05 et 06 — en cours; PHASES 02 et 04 sign�
 
 ## Supabase development/staging
 
-Projet distant Matricia contrôlé en environnement applicatif `development`. Les 77 migrations additives jusqu’à `20260912007700` sont appliquées à distance.
+Projet distant Matricia contrôlé en environnement applicatif `development`. Les 81 migrations additives jusqu’à `20260912008100` sont appliquées à distance.
 
 1. extensions et référentiels versionnés;
 2. identité, organisations, memberships et RBAC;
@@ -98,12 +98,18 @@ Projet distant Matricia contrôlé en environnement applicatif `development`. Le
     réservation/libération/consommation et suppression de l'auto-attribution;
 50. notifications : templates FR/AR versionnés, préférences immédiat/digest,
     alertes critiques obligatoires, inbox, déduplication, retry et dead-letter.
+51. Marketing Autopilot : consentements append-only, Brand Kit et contenus FR/AR
+    versionnés, approbation humaine, orchestration Outbox, fréquence, attribution et KPI;
+52. CRM/performance franchise : pipeline, activités immuables, objectifs et snapshots
+    KPI versionnés, scores exacts et alertes explicables sans sanction automatique;
+53. moteur fiscal Maroc : catégories FR/AR, règles datées/versionnées sans taux
+    hardcodé, validation/approbation, calcul exact et raccord facturation compatible.
 
 Preuves actuelles :
 
-- migrations locales/distantes `20260910000100`..`20260912007700` appliquées sur development;
+- migrations locales/distantes `20260910000100`..`20260912008100` appliquées sur development;
 - lint SQL public/private sans erreur de schéma lors du dernier contrôle distant;
-- `pnpm test:db` vert le 2026-09-12 pour les fichiers `0001`..`0057` : 57 fichiers, 1 439 assertions et quatre scénarios à deux connexions couvrant Outbox, journal, crédits et chaîne audit;
+- `pnpm test:db` vert le 2026-09-12 pour les fichiers `0001`..`0060` : 60 fichiers, 1 555 assertions et quatre scénarios à deux connexions couvrant Outbox, journal, crédits et chaîne audit;
 - tests négatifs RLS inter-tenant, immutabilité, équilibre/devise, crédits, idempotence, audit et Outbox.
 
 Docker local reste indisponible sur cet hôte; la reconstruction propre doit être prouvée par le job CI Supabase avant signature P03.
@@ -120,7 +126,7 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - `pnpm typecheck` : vert.
 - Tests Web : vert — 65 fichiers, 279 tests.
 - Tests Worker : vert — 11 fichiers, 54 tests; typecheck strict vert.
-- `pnpm test:db` : vert pour `0001`..`0057` — 57 fichiers et 1 439 assertions, plus quatre scénarios génériques à deux connexions. Diagnostics, Boxes/crédits et Notifications sont appliqués et couverts sur Supabase development.
+- `pnpm test:db` : vert pour `0001`..`0060` — 60 fichiers et 1 555 assertions, plus quatre scénarios génériques à deux connexions. Marketing Autopilot, CRM/performance franchise et moteur fiscal Maroc sont appliqués et couverts sur Supabase development.
 - E2E catalogue authentifié réel : 4/4 en FR/AR à 360 px, navigation clavier,
   axe, recherche discriminante et RPC de publication/lecture réelles; crash/reaper
   `SCHEDULED` et `PUBLISHING` prouvés, zéro résidu actif ou artefact local.
@@ -151,10 +157,11 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   Le gate de charge 6k/50k est implémenté et testé localement, mais sa preuve
   distante reste requise. Les opérateurs avancés, la validation/simulation, la
   qualité/similarité IA et les sessions restent requis avant GREEN et visa indépendant.
-- Les fondations et interfaces P07–P17 progressent en lots indépendants : RFQ/devis,
+- Les fondations et interfaces P07–P18 progressent en lots indépendants : RFQ/devis,
   contrats/missions Client et Sous-traitant, qualification/facturation Provider,
   litiges/réaffectation, achats groupés, franchise, abonnements, administration,
-  diagnostics/opportunités, Boxes/crédits et Notifications sont branchés. Les E2E multi-rôles,
+  diagnostics/opportunités, Boxes/crédits, Notifications, Marketing Autopilot,
+  CRM/performance franchise et moteur fiscal Maroc sont branchés côté données. Les E2E multi-rôles,
   audits indépendants et la traçabilité atomique restent requis avant GREEN.
 - La couverture MAT-FUNC-001..068 et MARKETING-001..008 reste partielle : les
   fondations de plusieurs domaines sont présentes, mais la traçabilité atomique,
