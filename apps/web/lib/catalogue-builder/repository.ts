@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { BuilderResult, CatalogBuilderRepository, ReleaseDraft, ReleaseItemInput } from "./contracts";
-import { builderDraftSchema, catalogEntityStatusSchema, questionDraftInputSchema, ruleDraftInputSchema, type BuilderDraft, type BuilderWorkspace, uuidSchema } from "./model";
+import { builderDraftSchema, catalogEntityStatusSchema, questionnaireDraftInputSchema, questionDraftInputSchema, ruleDraftInputSchema, type BuilderDraft, type BuilderWorkspace, uuidSchema } from "./model";
 
 const libraryRow = z.object({ id: uuidSchema, code: z.string().min(2).max(80), status: catalogEntityStatusSchema, row_version: z.number().int().positive(), current_release_id: uuidSchema.nullable() }).strict();
 const serviceRow = z.object({ id: uuidSchema, library_id: uuidSchema, code: z.string().min(2).max(80), slug: z.string().min(1).max(80), status: catalogEntityStatusSchema }).strict();
@@ -16,6 +16,11 @@ const createdRule = z.object({
   outcome: z.literal("CATALOG_RULE_CREATED"), rule_id: uuidSchema, library_id: uuidSchema, version_id: uuidSchema,
   identity_row_version: z.number().int().positive(), version_row_version: z.number().int().positive(),
   compiled_hash: z.string().regex(/^[0-9a-f]{64}$/u), command_id: uuidSchema,
+}).strict();
+const createdQuestionnaire = z.object({
+  outcome: z.literal("CATALOG_QUESTIONNAIRE_CREATED"), questionnaire_id: uuidSchema, library_id: uuidSchema,
+  version_id: uuidSchema, section_id: uuidSchema, identity_row_version: z.number().int().positive(), version_row_version: z.number().int().positive(),
+  snapshot_hash: z.string().regex(/^[0-9a-f]{64}$/u), command_id: uuidSchema,
 }).strict();
 
 type QueryResponse = { data: unknown; error: { code?: string } | null };
@@ -111,6 +116,25 @@ export function createCatalogBuilderRepository(dependencies: BuilderRepositoryDe
       const parsed = createdRule.safeParse(response.data);
       return parsed.success && parsed.data.library_id === value.libraryId
         ? { status: "success", value: { ruleId: parsed.data.rule_id, versionId: parsed.data.version_id, identityRowVersion: parsed.data.identity_row_version, versionRowVersion: parsed.data.version_row_version, compiledHash: parsed.data.compiled_hash } }
+        : { status: "error", reason: "INVALID_RESPONSE" };
+    },
+    async createQuestionnaire(input) {
+      const parsedInput = questionnaireDraftInputSchema.safeParse(input);
+      if (!parsedInput.success) return { status: "error", reason: "INVALID_INPUT" };
+      if (!await dependencies.authenticated()) return { status: "error", reason: "UNAUTHENTICATED" };
+      const value = parsedInput.data;
+      const response = await dependencies.rpc("create_catalog_questionnaire", {
+        p_library_id: value.libraryId, p_catalog_release_id: value.catalogReleaseId, p_code: value.code,
+        p_payload: { title_fr: value.titleFr, title_ar: value.titleAr, description_fr: value.descriptionFr, description_ar: value.descriptionAr,
+          audience: value.audience, engine_version: value.engineVersion, policy_version: value.policyVersion, sensitive: value.sensitive,
+          section_key: value.sectionKey, section_label_fr: value.sectionLabelFr, section_label_ar: value.sectionLabelAr,
+          ...(value.sectionHelpFr ? { section_help_fr: value.sectionHelpFr } : {}), ...(value.sectionHelpAr ? { section_help_ar: value.sectionHelpAr } : {}) },
+        p_change_reason: value.changeReason, p_idempotency_key: value.idempotencyKey, p_correlation_id: value.correlationId,
+      });
+      if (response.error) return failure(response.error);
+      const parsed = createdQuestionnaire.safeParse(response.data);
+      return parsed.success && parsed.data.library_id === value.libraryId
+        ? { status: "success", value: { questionnaireId: parsed.data.questionnaire_id, versionId: parsed.data.version_id, sectionId: parsed.data.section_id, identityRowVersion: parsed.data.identity_row_version, versionRowVersion: parsed.data.version_row_version, snapshotHash: parsed.data.snapshot_hash } }
         : { status: "error", reason: "INVALID_RESPONSE" };
     },
     async createRelease(input): Promise<BuilderResult<ReleaseDraft>> {

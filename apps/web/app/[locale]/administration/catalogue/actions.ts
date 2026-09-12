@@ -20,6 +20,10 @@ export type RuleActionState =
   | { status: "idle" }
   | { status: "success"; ruleId: string; versionId: string }
   | { status: "error"; reason: "VALIDATION" | "UNAUTHENTICATED" | "FORBIDDEN" | "UNAVAILABLE" };
+export type QuestionnaireActionState =
+  | { status: "idle" }
+  | { status: "success"; questionnaireId: string; versionId: string; sectionId: string }
+  | { status: "error"; reason: "VALIDATION" | "UNAUTHENTICATED" | "FORBIDDEN" | "UNAVAILABLE" };
 
 const base = z.object({ locale: z.string().refine(isLocale), confirmed: z.literal("yes"), idempotencyKey: uuidSchema, correlationId: uuidSchema });
 const createSchema = base.extend({
@@ -50,6 +54,15 @@ const ruleSchema = base.extend({
   actionType: z.enum(["BLOCK_PUBLICATION", "BLOCK_RFQ", "REQUIRE_QUESTION", "SHOW_QUESTION", "HIDE_QUESTION", "CREATE_ANOMALY", "CREATE_RISK", "CREATE_RECOMMENDATION", "REQUIRE_HUMAN_REVIEW"]),
   actionTarget: z.string().trim().regex(/^[A-Z][A-Z0-9_.:-]{1,127}$/u), priority: z.coerce.number().int().min(0).max(100_000),
   sensitive: z.enum(["yes", "no"]), changeReason: z.string().trim().min(3).max(500),
+}).strict();
+const questionnaireSchema = base.extend({
+  libraryId: uuidSchema, catalogReleaseId: uuidSchema, code: z.string().trim().regex(/^[A-Z][A-Z0-9_-]{1,79}$/u),
+  titleFr: z.string().trim().min(2).max(240), titleAr: z.string().trim().min(2).max(240),
+  descriptionFr: z.string().trim().min(3).max(4_000), descriptionAr: z.string().trim().min(3).max(4_000),
+  audience: z.enum(["CLIENT", "PROVIDER", "FRANCHISE", "INTERNAL"]), engineVersion: z.string().trim().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/u),
+  policyVersion: z.string().trim().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/u), sensitive: z.enum(["yes", "no"]),
+  sectionKey: z.string().trim().regex(/^[A-Z][A-Z0-9_-]{1,79}$/u), sectionLabelFr: z.string().trim().min(1).max(240), sectionLabelAr: z.string().trim().min(1).max(240),
+  sectionHelpFr: z.string().trim().max(2_000), sectionHelpAr: z.string().trim().max(2_000), changeReason: z.string().trim().min(3).max(500),
 }).strict();
 
 function errorReason(
@@ -131,4 +144,20 @@ export async function createRuleAction(_state: RuleActionState, formData: FormDa
   if (result.status === "error") return errorReason(result.reason);
   revalidatePath(`/${parsed.data.locale}/administration/catalogue`);
   return { status: "success", ruleId: result.value.ruleId, versionId: result.value.versionId };
+}
+
+export async function createQuestionnaireAction(_state: QuestionnaireActionState, formData: FormData): Promise<QuestionnaireActionState> {
+  const parsed = questionnaireSchema.safeParse(actionFields(formData));
+  if (!parsed.success) return { status: "error", reason: "VALIDATION" };
+  const result = await (await createServerCatalogBuilderRepository()).createQuestionnaire({
+    libraryId: parsed.data.libraryId, catalogReleaseId: parsed.data.catalogReleaseId, code: parsed.data.code,
+    titleFr: parsed.data.titleFr, titleAr: parsed.data.titleAr, descriptionFr: parsed.data.descriptionFr, descriptionAr: parsed.data.descriptionAr,
+    audience: parsed.data.audience, engineVersion: parsed.data.engineVersion, policyVersion: parsed.data.policyVersion, sensitive: parsed.data.sensitive === "yes",
+    sectionKey: parsed.data.sectionKey, sectionLabelFr: parsed.data.sectionLabelFr, sectionLabelAr: parsed.data.sectionLabelAr,
+    sectionHelpFr: parsed.data.sectionHelpFr, sectionHelpAr: parsed.data.sectionHelpAr, changeReason: parsed.data.changeReason,
+    idempotencyKey: parsed.data.idempotencyKey, correlationId: parsed.data.correlationId,
+  });
+  if (result.status === "error") return errorReason(result.reason);
+  revalidatePath(`/${parsed.data.locale}/administration/catalogue`);
+  return { status: "success", questionnaireId: result.value.questionnaireId, versionId: result.value.versionId, sectionId: result.value.sectionId };
 }

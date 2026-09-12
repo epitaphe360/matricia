@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const repository = vi.hoisted(() => ({
   createQuestion: vi.fn(),
   createRule: vi.fn(),
+  createQuestionnaire: vi.fn(),
   createRelease: vi.fn(),
   addReleaseItem: vi.fn(),
   submitRelease: vi.fn(),
@@ -14,7 +15,7 @@ vi.mock("../../../../lib/catalogue-builder/server-repository", () => ({
 }));
 vi.mock("next/cache", () => ({ revalidatePath }));
 
-import { addReleaseItemAction, createQuestionAction, createReleaseAction, createRuleAction, submitReleaseAction } from "./actions";
+import { addReleaseItemAction, createQuestionAction, createQuestionnaireAction, createReleaseAction, createRuleAction, submitReleaseAction } from "./actions";
 
 const identity = {
   idempotencyKey: "11111111-1111-4111-8111-111111111111",
@@ -40,8 +41,23 @@ beforeEach(() => {
   repository.createRelease.mockResolvedValue({ status: "success", value: { id: releaseId, rowVersion: 1 } });
   repository.createQuestion.mockResolvedValue({ status: "success", value: { questionId: objectId, versionId, identityRowVersion: 1, versionRowVersion: 1, contentHash: "d".repeat(64) } });
   repository.createRule.mockResolvedValue({ status: "success", value: { ruleId: objectId, versionId, identityRowVersion: 1, versionRowVersion: 1, compiledHash: "e".repeat(64) } });
+  repository.createQuestionnaire.mockResolvedValue({ status: "success", value: { questionnaireId: objectId, versionId, sectionId: releaseId, identityRowVersion: 1, versionRowVersion: 1, snapshotHash: "f".repeat(64) } });
   repository.addReleaseItem.mockResolvedValue({ status: "success", value: { rowVersion: 2 } });
   repository.submitRelease.mockResolvedValue({ status: "success", value: { releaseId, status: "APPROVED", snapshotHash: "b".repeat(64) } });
+});
+
+describe("catalogue questionnaire server action", () => {
+  function questionnaireForm(extra: Record<string, string> = {}) { return form({ locale: "ar", confirmed: "yes", ...identity, libraryId, catalogReleaseId: releaseId, code: "SECURITY", titleFr: "Diagnostic sécurité", titleAr: "تشخيص الأمان", descriptionFr: "Questionnaire initial de sécurité", descriptionAr: "استبيان الأمان الأولي", audience: "CLIENT", engineVersion: "1.0.0", policyVersion: "P06-1", sensitive: "no", sectionKey: "GENERAL", sectionLabelFr: "Général", sectionLabelAr: "عام", sectionHelpFr: "", sectionHelpAr: "", changeReason: "Création questionnaire", ...extra }); }
+  it("creates a bilingual governed questionnaire with strict normalized input", async () => {
+    expect(await createQuestionnaireAction({ status: "idle" }, questionnaireForm())).toEqual({ status: "success", questionnaireId: objectId, versionId, sectionId: releaseId });
+    expect(repository.createQuestionnaire).toHaveBeenCalledWith(expect.objectContaining({ libraryId, catalogReleaseId: releaseId, audience: "CLIENT", sensitive: false, ...identity }));
+    expect(repository.createQuestionnaire.mock.calls[0]?.[0]).not.toHaveProperty("locale");
+    expect(revalidatePath).toHaveBeenCalledWith("/ar/administration/catalogue");
+  });
+  it("rejects unknown questionnaire fields before persistence", async () => {
+    expect(await createQuestionnaireAction({ status: "idle" }, questionnaireForm({ injected: "true" }))).toEqual({ status: "error", reason: "VALIDATION" });
+    expect(repository.createQuestionnaire).not.toHaveBeenCalled();
+  });
 });
 
 describe("catalogue rule server action", () => {

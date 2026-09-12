@@ -90,6 +90,20 @@ export const ruleDraftInputSchema = z.object({
 export type RuleDraftInput = z.infer<typeof ruleDraftInputSchema>;
 export type CreatedRule = { ruleId: string; versionId: string; identityRowVersion: number; versionRowVersion: number; compiledHash: string };
 
+export const questionnaireDraftInputSchema = z.object({
+  libraryId: uuidSchema, catalogReleaseId: uuidSchema, code: z.string().trim().regex(/^[A-Z][A-Z0-9_-]{1,79}$/u),
+  titleFr: z.string().trim().min(2).max(240), titleAr: z.string().trim().min(2).max(240),
+  descriptionFr: z.string().trim().min(3).max(4_000), descriptionAr: z.string().trim().min(3).max(4_000),
+  audience: z.enum(["CLIENT", "PROVIDER", "FRANCHISE", "INTERNAL"]),
+  engineVersion: z.string().trim().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/u), policyVersion: z.string().trim().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/u),
+  sensitive: z.boolean(), sectionKey: z.string().trim().regex(/^[A-Z][A-Z0-9_-]{1,79}$/u),
+  sectionLabelFr: z.string().trim().min(1).max(240), sectionLabelAr: z.string().trim().min(1).max(240),
+  sectionHelpFr: z.string().trim().max(2_000), sectionHelpAr: z.string().trim().max(2_000),
+  changeReason: z.string().trim().min(3).max(500), idempotencyKey: uuidSchema, correlationId: uuidSchema,
+}).strict();
+export type QuestionnaireDraftInput = z.infer<typeof questionnaireDraftInputSchema>;
+export type CreatedQuestionnaire = { questionnaireId: string; versionId: string; sectionId: string; identityRowVersion: number; versionRowVersion: number; snapshotHash: string };
+
 export function parseBuilderDraft(value: unknown) {
   return builderDraftSchema.safeParse(value);
 }

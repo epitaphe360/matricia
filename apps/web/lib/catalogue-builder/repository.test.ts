@@ -108,6 +108,13 @@ describe("catalogue builder repository", () => {
     expect(result).toEqual({ status: "success", value: { ruleId, versionId, identityRowVersion: 1, versionRowVersion: 1, compiledHash: "e".repeat(64) } });
     expect(rpc).toHaveBeenCalledWith("create_catalog_rule", { p_library_id: library.id, p_rule_key: "MFA_REQUIRED", p_payload: { condition_ast: { kind: "PREDICATE", operator: "EQ", questionKey: "HAS_MFA", operand: false }, actions: [{ type: "CREATE_RISK", target: "MFA_MISSING" }], dependency_graph: { HAS_MFA: ["MFA_REQUIRED"] }, priority: 20, sensitive: true }, p_change_reason: "Création de la règle MFA", p_idempotency_key: commandIdentity.idempotencyKey, p_correlation_id: commandIdentity.correlationId });
   });
+  it("creates a bilingual questionnaire and first section through the exact RPC", async () => {
+    const questionnaireId="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", versionId="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", sectionId="cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+    const rpc=vi.fn(async()=>({data:{outcome:"CATALOG_QUESTIONNAIRE_CREATED",questionnaire_id:questionnaireId,library_id:library.id,version_id:versionId,section_id:sectionId,identity_row_version:1,version_row_version:1,snapshot_hash:"f".repeat(64),command_id:"77777777-7777-4777-8777-777777777777"},error:null}));
+    const result=await createCatalogBuilderRepository(dependencies({rpc})).createQuestionnaire({libraryId:library.id,catalogReleaseId:"55555555-5555-4555-8555-555555555555",code:"SECURITY",titleFr:"Diagnostic sécurité",titleAr:"تشخيص الأمان",descriptionFr:"Questionnaire initial de sécurité",descriptionAr:"استبيان الأمان الأولي",audience:"CLIENT",engineVersion:"1.0.0",policyVersion:"P06-1",sensitive:false,sectionKey:"GENERAL",sectionLabelFr:"Général",sectionLabelAr:"عام",sectionHelpFr:"",sectionHelpAr:"",changeReason:"Création questionnaire",...commandIdentity});
+    expect(result).toEqual({status:"success",value:{questionnaireId,versionId,sectionId,identityRowVersion:1,versionRowVersion:1,snapshotHash:"f".repeat(64)}});
+    expect(rpc).toHaveBeenCalledWith("create_catalog_questionnaire",expect.objectContaining({p_library_id:library.id,p_code:"SECURITY",p_idempotency_key:commandIdentity.idempotencyKey}));
+  });
   it("forwards stable command identities and parses the release response", async () => {
     const rpc = vi.fn(async () => ({
       data: { outcome: "CATALOG_RELEASE_CREATED", release_id: "55555555-5555-4555-8555-555555555555", status: "DRAFT", library_row_version: 5 },

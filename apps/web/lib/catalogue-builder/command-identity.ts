@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { uuidSchema } from "./model";
 
-export const commandActions = ["CREATE_RELEASE", "ADD_RELEASE_ITEM", "SUBMIT_RELEASE", "CREATE_QUESTION", "CREATE_RULE"] as const;
+export const commandActions = ["CREATE_RELEASE", "ADD_RELEASE_ITEM", "SUBMIT_RELEASE", "CREATE_QUESTION", "CREATE_RULE", "CREATE_QUESTIONNAIRE"] as const;
 export type CommandAction = (typeof commandActions)[number];
 export type CommandIdentity = { idempotencyKey: string; correlationId: string };
 
