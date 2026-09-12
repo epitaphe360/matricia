@@ -336,3 +336,28 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   `pnpm --filter @matricia/web lint` vert et `git diff --check` vert. Aucun E2E n'a
   été lancé; la revue visuelle réelle à 360 px et la validation crawler de la carte
   sociale restent à effectuer en fin de développement.
+
+## Checkpoint local Administration V1 2026-09-12
+
+- La navigation partagée expose désormais, uniquement selon les rôles plateforme
+  autorisés par chaque dépôt serveur, les consoles Sous-traitants/Facturation,
+  Finance, Gouvernance Franchise/Litiges et
+  Notifications/Audit/Outbox.
+- Admin Clients et la migration locale `20260912013700` sont retenus hors de ce
+  checkpoint après verdict indépendant NO-GO; aucun lien de navigation ne les
+  expose tant que la remédiation et une nouvelle revue ne sont pas terminées.
+- Admin Finance conserve les montants en unités mineures exactes et les
+  rapprochements idempotents. Admin Providers conserve les preuves, décisions
+  versionnées et écritures financières via les RPC métier. Gouvernance expose les
+  territoires, mandats, distributions et réaffectations, dont la règle IT exacte.
+- Admin Operations expose en lecture seule un journal d'audit expurgé aux seuls
+  rôles `SUPER_ADMIN`, `MATRICIA_ADMIN` et `READ_ONLY_AUDITOR`. Aucun payload,
+  metadata, IP, user-agent ou identifiant utilisateur/organisation n'est chargé.
+  Aucun retry, replay ou traitement de dead-letter n'est proposé.
+- La migration 138 de projection agrégée Outbox/livraisons a été refusée par le
+  contrôle de sécurité faute d'une autorisation utilisateur explicite pour
+  l'élargissement `SECURITY DEFINER`; elle n'a pas été créée ni appliquée. Ces
+  données restent fail-closed dans l'interface et aucune RLS n'a été assouplie.
+- Les tests globaux, SQL/RLS et E2E restent volontairement différés à la fin du
+  développement. Aucun changement de production, liaison distante ou secret ne
+  fait partie de ce checkpoint.
