@@ -473,3 +473,22 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   revendique pas une V1 Gold Master terminée à 100 %.
 - Aucun environnement, secret ou donnée de production n'a été lu ou modifié; aucun
   déploiement production n'est autorisé par ce checkpoint.
+
+## Checkpoint V4.1 incremental upgrade - 2026-09-13
+
+- Baseline V4 preserved on branch `upgrade/v4.1`; implementation used only additive
+  migrations 16300 through 17000 plus corrective 16901. Supabase development is
+  synchronized and the final linked dry-run returns `upToDate=true`.
+- P0: cash flows A/B/C, electronic signature, privacy/CNDP, procurement/AP, AI FinOps,
+  actual Box margins, bank-account antifraud and Matricia own payments are implemented.
+- P1: treasury, suppliers, third parties, contract lifecycle, probative communications,
+  dispute governance, security/resilience, restore evidence, jobs/DLQ, organization exit,
+  catalogue findings, franchise controls, marketing safety and Admin V4.1 are implemented.
+- Gates: DB/RLS 116 files and 2915 assertions PASS; 4 concurrency scenarios PASS;
+  Web 128 files/489 tests PASS; Worker 11 files/54 tests PASS; 20/20 V4.1 E2E PASS;
+  lint, strict TypeScript, build and structural validators PASS.
+- Next.js is 16.3.3; the final production dependency audit reports no known
+  vulnerabilities. `.env.local` remains ignored and untracked.
+- Technical development/staging status is GREEN. Catalogue human review, CNDP/legal
+  formalities, real provider certification, production restore/security drills and
+  production authorization remain `REQUIRED_NOT_COMPLETED`. No production change occurred.

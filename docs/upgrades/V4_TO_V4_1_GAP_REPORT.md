@@ -93,3 +93,17 @@ Ordre recommandé : F01, F02, L01 et P01 en parallèle sur migrations réservée
 - 20 E2E V4.1 verts, baseline V4 intégralement vert, migration replay/clean clone et dry-run linked `upToDate` après application development.
 - Rapports requis encore à produire : `V4_1_MIGRATION_REPORT.md`, `V4_1_SECURITY_REPORT.md`, `V4_1_FINANCE_RECONCILIATION_REPORT.md`, `V4_1_PRIVACY_REGISTER.md`, `V4_1_RELEASE_CHECKLIST.md`.
 - Toute formalité externe restant humaine doit être marquée `REQUIRED_NOT_COMPLETED`; aucune fausse déclaration de conformité et aucune production sans autorisation explicite.
+
+## Closure delta - 2026-09-13
+
+All P0 code gaps and the prioritized P1 code gaps listed above were implemented with
+additive migrations 16300 through 17000, including corrective migration 16901.
+The full evidence is recorded in the five V4.1 reports beside this file.
+
+- Technical status: PRESENT for sections 1 through 22.
+- E2E status: PRESENT, 20/20 scenarios PASS.
+- Database non-regression: PASS, 116 files and 2915 assertions.
+- Catalogue content status: CONTENT_REVIEW_REQUIRED; no catalogue data was regenerated.
+- External legal, CNDP, signature certification, restore and production evidence:
+  REQUIRED_NOT_COMPLETED.
+- Production deployment: NOT_AUTHORIZED.
