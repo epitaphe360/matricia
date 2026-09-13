@@ -17,11 +17,15 @@ const dashboard={organizations:[{id:id(1),name:"Provider"}],organizationId:id(1)
 const identities={[id(3)]:{decision:id(8),revision:id(9),submit:id(10),correlation:id(11)}};
 
 describe("QuotePanel fiscal fail-closed",()=>{
-  it("affiche l'erreur et ne rend aucun formulaire quand la catégorie du snapshot manque",()=>{
-    const html=renderToStaticMarkup(<QuotePanel dashboard={dashboard} locale="fr" m={getProviderQuoteMessages("fr")} identities={identities}/>);
+  it("garde un devis DRAFT soumissible sans règle active mais interdit une nouvelle révision",()=>{
+    const withoutActiveRule={...dashboard,taxRules:[]};
+    const messages=getProviderQuoteMessages("fr");
+    const html=renderToStaticMarkup(<QuotePanel dashboard={withoutActiveRule} locale="fr" m={messages} identities={identities}/>);
     expect(html).toContain("catégorie fiscale du besoin");
     expect(html).toContain('role="alert"');
-    expect(html).not.toContain("<form");
+    expect(html).toContain(messages.submit);
+    expect(html.match(/<form/g)).toHaveLength(1);
+    expect(html).not.toContain('name="solutionFr"');
     expect(html).not.toContain("STANDARD_SERVICE");
   });
   it("autorise le reflow des montants bigint tout en conservant leur direction LTR",()=>{
