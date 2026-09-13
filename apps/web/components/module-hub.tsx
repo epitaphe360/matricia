@@ -5,6 +5,7 @@ type ModuleLink={key:LinkKey;path:string;space:Space;roles?:readonly string[];pl
 const CLIENT_ALL=["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_BUYER","CLIENT_ACCOUNTING","CLIENT_MEMBER","CLIENT_VIEWER"]as const;
 const MODULES:readonly ModuleLink[]=[
  {key:"portfolio",path:"client/portefeuille",space:"client",roles:CLIENT_ALL},
+ {key:"portfolio",path:"client/documents",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN"]},
  {key:"rewards",path:"client/recompenses",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_ACCOUNTING"]},
  {key:"favorites",path:"client/favoris",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_BUYER","CLIENT_VIEWER"]},
  {key:"clientVolume",path:"client/achats-groupes",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_BUYER"]},

@@ -524,3 +524,19 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   lint, TypeScript strict, build et absence de placeholders PASS.
 - Aucun environnement de production n'a été modifié. Prochain lot : coffre documentaire
   transversal et réutilisation contrôlée conformité/RFQ/contrat/mission.
+
+## Checkpoint MAT-FUNC-012/021/025 — coffre documentaire transversal — 2026-09-13
+
+- Migration additive `20260913017300_secure_client_document_reuse.sql` appliquée
+  uniquement sur Supabase development/staging; dry-run final `upToDate=true`.
+- Les documents Client vérifiés, scannés CLEAN et non expirés peuvent être liés
+  sans copie binaire à une demande, une version contractuelle ou une mission de la
+  même organisation. Les liaisons et révocations sont immuables, AAL2,
+  idempotentes, auditées et publiées via Event Outbox.
+- L'interface Client FR/AR `/client/documents` permet de créer et révoquer les
+  liaisons; elle est responsive, accessible au clavier et exposée uniquement aux
+  rôles Client Owner/Admin.
+- Gates : DB/RLS 119 fichiers, 2 961 assertions et 4 scénarios de concurrence PASS;
+  lint, TypeScript strict, build et synchronisation Supabase PASS.
+- Aucun environnement de production n'a été modifié. Prochain lot : audit ciblé
+  puis fermeture des écarts UI encore réels dans CRM, récompenses, IA et règles.
