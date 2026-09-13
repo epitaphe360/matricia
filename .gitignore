@@ -29,6 +29,7 @@ dist/
 # local tools and deployment state
 .vercel/
 supabase/.temp/
+supabase/.branches/
 /outputs/
 /work/
 .worktrees/

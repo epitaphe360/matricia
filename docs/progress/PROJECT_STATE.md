@@ -658,3 +658,22 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - Gates : DB/RLS 128 fichiers, 3 051 assertions et 4 scénarios de concurrence PASS;
   Web 130 fichiers/502 tests PASS; lint, TypeScript strict et build PASS.
   Aucun environnement de production n'a été modifié.
+
+## Checkpoint gouvernance Marketing et reprise worker — 2026-09-13
+
+- Les migrations additives `20260913018300_marketing_schedule_rule_commands.sql`
+  et `20260913018400_marketing_worker_lease_policy_hardening.sql` sont appliquées
+  uniquement sur Supabase development; replay local complet 001–184 PASS.
+- Les règles de calendrier sont versionnées, validées par timezone IANA et créneaux
+  stricts, activées par verrou optimiste et protégées par idempotence, audit et Outbox.
+  L'approbation globale ASSISTED est réservée au rôle `CLIENT_OWNER`.
+- Le worker récupère les claims expirés avec une lease de cinq minutes. Les blocages
+  de politique créent une exception dédupliquée, un audit et un événement Outbox.
+  Les dix familles de conformité sont obligatoires et les scopes sociaux sont bornés
+  au provider et au canal avant toute publication.
+- L'interface Marketing FR/AR RTL expose comptes sociaux, versions de règles,
+  calendrier, publications et exceptions, avec création, activation et approbation
+  globale branchées aux commandes serveur.
+- Gates : DB/RLS 130 fichiers, 3 079 assertions et 4 scénarios de concurrence PASS;
+  Web 130 fichiers/507 tests PASS; lint, TypeScript strict et build PASS.
+  Aucun environnement de production n'a été modifié.

@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Locale } from "@/lib/i18n/locale";
 import { formatMinor, type MarketingDashboard } from "@/lib/marketing-autopilot/model";
 import { approveCampaign, createCampaign, recordConsent, scheduleCampaign, type MarketingActionState } from "./actions";
+import { CalendarManagement } from "./calendar-management";
 import type { MarketingMessages } from "./messages";
 
 const idle: MarketingActionState = { status: "idle" };
@@ -25,6 +26,7 @@ export function MarketingPanel({ dashboard, locale, m, keys }: { dashboard: Mark
     <section aria-labelledby={`${root}-safe`} className="rounded-2xl border border-primary/30 bg-primary/5 p-4 shadow-sm sm:p-6"><h2 id={`${root}-safe`} className="text-xl font-semibold">{m.safety}</h2><p className="mt-2 leading-7">{m.safetyText}</p></section>
     <div className="grid gap-5 xl:grid-cols-2"><ConsentForm dashboard={dashboard} locale={locale} m={m} keyValue={keys.consent}/><CampaignForm dashboard={dashboard} locale={locale} m={m} keyValue={keys.campaign}/></div>
     <ContentReview dashboard={dashboard} m={m}/>
+    <CalendarManagement dashboard={dashboard} locale={locale} m={m} keys={keys}/>
     <div className="grid gap-5 xl:grid-cols-2"><Approvals dashboard={dashboard} locale={locale} m={m} keys={keys}/><Schedules dashboard={dashboard} locale={locale} m={m} keys={keys}/></div>
     <CampaignList dashboard={dashboard} locale={locale} m={m}/>
   </div>;

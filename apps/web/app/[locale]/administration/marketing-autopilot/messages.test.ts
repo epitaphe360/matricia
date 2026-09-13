@@ -20,5 +20,6 @@ describe("marketing business labels", () => {
     expect(codes.feedback.PAUSE_CAMPAIGN).toBe("إيقاف الحملة مؤقتاً");
     expect(codes.feedback.REDUCE_FREQUENCY).toBe("خفض التواتر");
     expect(codes.feedback.CHANGE_SERVICE_FOCUS).toBe("تغيير الخدمة ذات الأولوية");
+    expect(getMarketingMessages("ar").approveAssistedCalendar).toBe("الموافقة الشاملة على التقويم المساعد");
   });
 });
