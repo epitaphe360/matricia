@@ -15,6 +15,8 @@ const missionRow = z.object({ id, contract_id: id, contract_version_id: id, stat
 const milestoneRow = z.object({ id, mission_id: id, milestone_key: z.string(), title_fr: z.string(), title_ar: z.string(), status: z.string(), due_at: z.string().nullable() });
 const deliverableRow = z.object({ id, mission_id: id, deliverable_key: z.string(), label_fr: z.string(), label_ar: z.string(), status: z.string(), current_version: z.number().int().nonnegative() });
 const criterionRow = z.object({ deliverable_id: id, criterion_key: z.string(), status: z.string() });
+const deliveryVersionRow = z.object({ id, deliverable_id: id, version: z.number().int().positive() });
+const deliveryProofRow = z.object({ delivery_version_id: id, scan_status: z.enum(["PENDING","CLEAN","INFECTED","ERROR"]) });
 
 type LoadResult = { status: "success"; dashboard: ContractMissionDashboard } | { status: "error"; reason: "UNAUTHENTICATED" | "NO_CLIENT_ORGANIZATION" | "QUERY_FAILED" | "INVALID_RESPONSE" };
 function rows<T>(schema: z.ZodType<T>, value: unknown, max: number) {
@@ -59,10 +61,18 @@ export async function loadContractMissions(locale: "fr" | "ar"): Promise<LoadRes
   if (!items.success || !milestones.success || !deliverables.success) return { status: "error", reason: "INVALID_RESPONSE" };
 
   const deliverableIds = deliverables.data.map((deliverable) => deliverable.id);
-  const criteriaResult = deliverableIds.length ? await client.from("acceptance_checklists").select("deliverable_id,criterion_key,status").in("deliverable_id", deliverableIds).limit(1000) : { data: [], error: null };
-  if (criteriaResult.error) return { status: "error", reason: "QUERY_FAILED" };
-  const criteria = rows(criterionRow, criteriaResult.data, 1000);
-  if (!criteria.success) return { status: "error", reason: "INVALID_RESPONSE" };
+  const [criteriaResult,deliveryVersionsResult] = await Promise.all([
+    deliverableIds.length ? client.from("acceptance_checklists").select("deliverable_id,criterion_key,status").in("deliverable_id", deliverableIds).limit(1000) : Promise.resolve({ data: [], error: null }),
+    deliverableIds.length ? client.from("delivery_versions").select("id,deliverable_id,version").in("deliverable_id", deliverableIds).limit(1000) : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (criteriaResult.error||deliveryVersionsResult.error) return { status: "error", reason: "QUERY_FAILED" };
+  const criteria = rows(criterionRow, criteriaResult.data, 1000),deliveryVersions=rows(deliveryVersionRow,deliveryVersionsResult.data,1000);
+  if (!criteria.success||!deliveryVersions.success) return { status: "error", reason: "INVALID_RESPONSE" };
+  const deliveryVersionIds=deliveryVersions.data.map((version)=>version.id);
+  const deliveryProofsResult=deliveryVersionIds.length?await client.from("delivery_proofs").select("delivery_version_id,scan_status").in("delivery_version_id",deliveryVersionIds).limit(2000):{data:[],error:null};
+  if(deliveryProofsResult.error)return{status:"error",reason:"QUERY_FAILED"};
+  const deliveryProofs=rows(deliveryProofRow,deliveryProofsResult.data,2000);
+  if(!deliveryProofs.success)return{status:"error",reason:"INVALID_RESPONSE"};
   if (missions.data.some((mission) => !versions.data.some((version) => version.id === mission.contract_version_id && version.contract_id === mission.contract_id))) return { status: "error", reason: "INVALID_RESPONSE" };
 
   const localizedItems = (contractVersionId: string) => items.data.filter((item) => item.contract_version_id === contractVersionId).map((item) => ({ id: item.id, key: item.item_key, type: item.item_type as ContractItemType, label: locale === "ar" ? item.label_ar : item.label_fr, sortOrder: item.sort_order }));
@@ -106,7 +116,7 @@ export async function loadContractMissions(locale: "fr" | "ar"): Promise<LoadRes
         startedAt: mission.started_at,
         completedAt: mission.completed_at,
         milestones: milestones.data.filter((milestone) => milestone.mission_id === mission.id).map((milestone) => ({ id: milestone.id, key: milestone.milestone_key, title: locale === "ar" ? milestone.title_ar : milestone.title_fr, status: milestone.status, dueAt: milestone.due_at })),
-        deliverables: deliverables.data.filter((deliverable) => deliverable.mission_id === mission.id).map((deliverable) => ({ id: deliverable.id, key: deliverable.deliverable_key, label: locale === "ar" ? deliverable.label_ar : deliverable.label_fr, status: deliverable.status, currentVersion: deliverable.current_version, criteria: criteria.data.filter((criterion) => criterion.deliverable_id === deliverable.id).map((criterion) => ({ key: criterion.criterion_key, status: criterion.status })) })),
+        deliverables: deliverables.data.filter((deliverable) => deliverable.mission_id === mission.id).map((deliverable) => {const current=deliveryVersions.data.find((version)=>version.deliverable_id===deliverable.id&&version.version===deliverable.current_version);const proofs=current?deliveryProofs.data.filter((proof)=>proof.delivery_version_id===current.id):[];const proofScanStatus=proofs.length===0?"NONE":proofs.every((proof)=>proof.scan_status==="CLEAN")?"CLEAN":proofs.some((proof)=>proof.scan_status==="INFECTED")?"INFECTED":proofs.some((proof)=>proof.scan_status==="ERROR")?"ERROR":"PENDING";return { id: deliverable.id, key: deliverable.deliverable_key, label: locale === "ar" ? deliverable.label_ar : deliverable.label_fr, status: deliverable.status, currentVersion: deliverable.current_version, proofScanStatus, criteria: criteria.data.filter((criterion) => criterion.deliverable_id === deliverable.id).map((criterion) => ({ key: criterion.criterion_key, status: criterion.status })) };}),
       }];
     }),
   } };

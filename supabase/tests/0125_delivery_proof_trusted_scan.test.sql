@@ -1,0 +1,13 @@
+begin;select plan(11);
+select has_column('public','delivery_proofs','scan_status','proof exposes scan state');
+select has_column('public','delivery_proofs','current_scan_result_id','proof points to immutable verdict');
+select has_table('private','delivery_proof_scan_results','private scan evidence exists');
+select has_function('public','get_delivery_proof_scan_job',array['uuid'],'least privilege scan job exists');
+select has_function('public','record_delivery_proof_scan_result',array['uuid','text','text','text','text','text','uuid'],'trusted result RPC exists');
+select is_definer('public','record_delivery_proof_scan_result',array['uuid','text','text','text','text','text','uuid'],'scan result is security definer');
+select isnt_empty($$select 1 from pg_get_functiondef('public.record_delivery_proof_scan_result(uuid,text,text,text,text,text,uuid)'::regprocedure)d where d like'%auth.role() is distinct from ''service_role''%'and d like'%SCAN_EVIDENCE_HASH_MISMATCH%'$$,'only trusted scanner and matching digest accepted');
+select isnt_empty($$select 1 from pg_get_functiondef('private.require_clean_delivery_proofs()'::regprocedure)d where d like'%CLEAN_DELIVERY_PROOF_SCAN_REQUIRED%'$$,'human decision requires clean current proofs');
+select isnt_empty($$select 1 from pg_trigger where tgrelid='public.deliverables'::regclass and tgname='deliverable_clean_proofs_before_decision'$$,'decision guard is installed');
+select isnt_empty($$select 1 from pg_trigger where tgrelid='private.delivery_proof_scan_results'::regclass and not tgisinternal$$,'scan evidence is immutable');
+select has_index('public','delivery_proofs','delivery_proofs_pending_scan_idx','scanner queue is indexed');
+select*from finish();rollback;

@@ -1,0 +1,10 @@
+begin;select plan(8);
+select has_function('public','claim_next_social_publication_job_v41',array['text','uuid'],'worker claim RPC exists');
+select has_function('public','record_social_publication_worker_result_v41',array['uuid','text','text','text','text','uuid'],'worker result RPC exists');
+select is_definer('public','claim_next_social_publication_job_v41',array['text','uuid'],'worker claim is definer');
+select isnt_empty($$select 1 from pg_get_functiondef('public.claim_next_social_publication_job_v41(text,uuid)'::regprocedure)d where d like'%auth.role() is distinct from ''service_role''%'and d like'%for update skip locked%'and d like'%marketing_publication_ready_v41%'$$,'claim is service-only, concurrent and policy gated');
+select isnt_empty($$select 1 from pg_get_functiondef('public.record_social_publication_worker_result_v41(uuid,text,text,text,text,uuid)'::regprocedure)d where d like'%MARKETING_PUBLICATION_BLOCKED%'and d like'%marketing_publication_journal%'$$,'success is rechecked and journaled');
+select isnt_empty($$select 1 from pg_get_functiondef('public.record_social_publication_worker_result_v41(uuid,text,text,text,text,uuid)'::regprocedure)d where d like'%RETRY_SCHEDULED%'and d like'%available_at=clock_timestamp()+make_interval%'$$,'retry uses bounded backoff');
+select function_privs_are('public','claim_next_social_publication_job_v41',array['text','uuid'],'service_role',array['EXECUTE'],'only service role executes claim');
+select function_privs_are('public','record_social_publication_worker_result_v41',array['uuid','text','text','text','text','uuid'],'service_role',array['EXECUTE'],'only service role executes result');
+select*from finish();rollback;

@@ -613,3 +613,31 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   avant d'être persistée ou comptée comme réponse.
 - Gates ciblés : 10 assertions SQL/RLS PASS; Web 128 fichiers/491 tests PASS;
   lint, TypeScript strict et build PASS. Aucun environnement de production modifié.
+
+## Checkpoint livrables scannés et Marketing Autopilot exécutable — 2026-09-13
+
+- Les migrations additives `20260913017900_delivery_proof_trusted_scan.sql` et
+  `20260913018000_marketing_publication_worker.sql` sont appliquées uniquement
+  sur Supabase development/staging.
+- Les preuves de livrable conservent désormais leur empreinte SHA-256 réelle,
+  reçoivent un verdict immuable d'un scanner `service_role`, et aucun livrable
+  ne peut être accepté ou rejeté tant que les preuves de sa version courante ne
+  sont pas toutes `CLEAN`. L'UI Client expose ce blocage en FR/AR.
+- Le Marketing Autopilot dispose d'un worker protégé par `CRON_SECRET`, d'un
+  mode sandbox sans réseau et d'adaptateurs réels LinkedIn et Meta
+  Facebook/Instagram/Reels. Les credentials ne transitent que par une référence
+  `env://`; consentement, autorisation de marque, kill-switch et contenu sont
+  revérifiés au claim puis avant journalisation. Retry borné, idempotence, audit
+  et Event Outbox sont actifs.
+- Gates : DB/RLS 126 fichiers, 3 030 assertions et 4 scénarios de concurrence
+  PASS; monorepo 129 fichiers Web/495 tests, 11 fichiers Worker/54 tests et
+  packages partagés PASS; lint, TypeScript strict et builds PASS; aucun
+  placeholder applicatif; catalogue 10 bibliothèques/200 services/6 000
+  questions valide.
+- E2E authentifiés development : V1 critique 20 PASS, questionnaires/diagnostics
+  4 PASS, portefeuille 4 PASS, Action Center 8 PASS, devis Provider 4 PASS,
+  catalogue 5 PASS avec 1 scénario explicitement ignoré par le runner. Tous les
+  jeux de données temporaires ont été neutralisés.
+- Aucun environnement de production n'a été modifié. Les activations live des
+  providers sociaux restent désactivées jusqu'à configuration des credentials
+  acquis et autorisation opérationnelle explicite.

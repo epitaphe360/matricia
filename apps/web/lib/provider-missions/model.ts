@@ -17,6 +17,7 @@ export const deliverySubmissionSchema = z.object({
   linksText: z.string().max(6000).default(""),
   proofType: z.enum(["DOCUMENT", "IMAGE", "URL", "CHECKLIST", "OTHER"]),
   proofLocation: secureLocation,
+  evidenceHash: z.string().trim().toLowerCase().regex(/^[0-9a-f]{64}$/),
   proofNote: z.string().trim().max(500).default(""),
   idempotencyKey: uuid,
 }).transform((value, context) => {
@@ -35,7 +36,7 @@ export type ProviderMissionDashboard = {
     id: string; contractId: string; status: string; startedAt: string | null; completedAt: string | null;
     contract: { currentVersion: number; priceMinor: string; currency: string; contentHash: string } | null;
     milestones: Array<{ id: string; key: string; title: string; status: string; dueAt: string | null }>;
-    deliverables: Array<{ id: string; key: string; label: string; proofRequired: boolean; status: string; currentVersion: number; versions: Array<{ id: string; version: number; description: string; submittedAt: string; contentHash: string; proofCount: number }> }>;
+    deliverables: Array<{ id:string; key:string; label:string; proofRequired:boolean; status:string; currentVersion:number; versions:Array<{id:string;version:number;description:string;submittedAt:string;contentHash:string;proofCount:number;proofScanStatus:"NONE"|"PENDING"|"CLEAN"|"INFECTED"|"ERROR"}> }>;
   }>;
 };
 
@@ -45,7 +46,7 @@ export const providerMissionRows = {
   milestone: z.object({ id: uuid, mission_id: uuid, milestone_key: z.string(), title_fr: z.string(), title_ar: z.string(), status: z.string(), due_at: z.string().nullable() }),
   deliverable: z.object({ id: uuid, mission_id: uuid, deliverable_key: z.string(), label_fr: z.string(), label_ar: z.string(), proof_required: z.boolean(), status: z.string(), current_version: safeVersion }),
   version: z.object({ id: uuid, deliverable_id: uuid, version: safeVersion, description: z.string(), submitted_at: z.string(), content_hash: z.string().regex(/^[0-9a-f]{64}$/) }),
-  proof: z.object({ delivery_version_id: uuid }),
+  proof: z.object({ delivery_version_id: uuid, scan_status: z.enum(["PENDING","CLEAN","INFECTED","ERROR"]) }),
   contract: z.object({ id: uuid, current_version: z.number().int().positive() }),
   contractVersion: z.object({ contract_id: uuid, version: z.number().int().positive(), price_minor: exactMinor, currency: z.string().regex(/^[A-Z]{3}$/), content_hash: z.string().regex(/^[0-9a-f]{64}$/) }),
 };
