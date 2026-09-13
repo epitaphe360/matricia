@@ -1,6 +1,6 @@
 # Audit ciblé — couverture d’implémentation V1
 
-Date de contrôle : 2026-09-12. Autorité : Gold Master V4 FINAL, section 28 (`MAT-FUNC-001..068`). Le catalogue des 6 000 questions n’a pas été chargé.
+Date de contrôle initial : 2026-09-12. Dernière révision indépendante : 2026-09-13. Autorité : Gold Master V4 FINAL, section 28 (`MAT-FUNC-001..068`). Le catalogue des 6 000 questions n’a pas été chargé.
 
 ## Méthode et verdict
 
@@ -9,7 +9,13 @@ Date de contrôle : 2026-09-12. Autorité : Gold Master V4 FINAL, section 28 (`M
 - `MISSING` : aucune implémentation spécifique convaincante trouvée; un schéma générique, une spécification ou un composant UI isolé ne suffit pas.
 - `BLOCKED` : écart dépendant d’un élément externe non créable dans le dépôt.
 
-Résultat honnête : **1 PROVEN, 67 PARTIAL, 0 MISSING, 0 BLOCKED**. Ce rapport refuse donc toute déclaration globale `MAT-FUNC-001..068 = VERIFIED`. La preuve d’exécution disponible est `docs/progress/PROJECT_STATE.md` (DB : 92 fichiers/2 397 assertions + 4 scénarios de concurrence; Web : 76 fichiers/313 tests), mais ce résultat global ne remplace pas les E2E et signoffs par exigence.
+Résultat honnête révisé : **1 PROVEN, 67 PARTIAL, 0 MISSING, 0 BLOCKED**. Ce rapport refuse donc toute déclaration globale `MAT-FUNC-001..068 = VERIFIED`. Les preuves globales ou transversales ne remplacent jamais un E2E de mutation métier et un signoff indépendant par exigence.
+
+Preuves nouvelles intégrées sans promotion automatique :
+
+- `docs/traceability/evidence/P21_QUESTIONNAIRES_DIAGNOSTICS_E2E_2026-09-12.md` : 4/4 FR/AR, RTL, 360 px/desktop, axe et isolation visuelle pour MAT-FUNC-002–005, 008–010, 041–046; MAT-FUNC-043 et 047 n’y exécutent explicitement aucune mutation métier.
+- `docs/traceability/evidence/P22_CLIENT_PORTFOLIO_E2E_2026-09-12.md` : 4/4 FR/AR, RTL, 360 px/desktop, axe et isolation pour MAT-FUNC-011, 012, 021, 051 et 053.
+- Ces deux preuves renforcent aussi MAT-FUNC-054, 059 et 061, sans couvrir l’ensemble des parcours critiques V1 ni fournir un visa indépendant atomique.
 
 ## Matrice des 68 exigences
 

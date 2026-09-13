@@ -37,6 +37,13 @@ export const providerDocumentInputSchema = z.object({
 });
 
 export type ProviderProfile = { companyStatus: string; overallStatus: string; activitySummary: string; teamSize: number; yearsExperience: number; secondarySubcontractingAllowed: boolean; accountingContactEmail: string | null; partnerContractStatus: string; rowVersion: number };
-export type ProviderService = { id: string; serviceId: string; code: string; requestStatus: string; qualificationId: string | null; qualificationStatus: string; capacityStatus: string; availableUnits: number | null; leadTimeDays: number | null };
+export type ProviderServiceEligibility = {
+  eligible: boolean;
+  reasons: string[];
+  decisionVersion: number | null;
+  ruleVersion: string | null;
+  checkedAt: string | null;
+};
+export type ProviderService = { id: string; serviceId: string; code: string; requestStatus: string; qualificationId: string | null; qualificationStatus: string; capacityStatus: string; availableUnits: number | null; leadTimeDays: number | null; eligibility: ProviderServiceEligibility };
 export type ProviderDocument = { id: string; kind: string; code: string; version: number; status: string; expiresOn: string | null };
 export type ProviderDashboard = { organizationId: string; organizationName: string; profile: ProviderProfile | null; services: ProviderService[]; documents: ProviderDocument[]; catalogServices: Array<{ id: string; code: string }> };

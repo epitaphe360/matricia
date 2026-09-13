@@ -1,0 +1,17 @@
+begin;set local search_path=public,extensions;select plan(15);
+select has_table('public','contract_amendment_signatures','Amendment signatures exist');
+select has_column('public','contract_amendments','activated_contract_version_id','Activated version is linked');
+select has_function('public','submit_contract_amendment_for_signature',array['uuid','text','text','uuid'],'Submission command exists');
+select has_function('public','sign_and_activate_contract_amendment',array['uuid','uuid','text','text','jsonb','text','uuid'],'Signature activation command exists');
+select ok((select relrowsecurity from pg_class where oid='public.contract_amendment_signatures'::regclass),'Signature evidence uses RLS');
+select ok(not has_table_privilege('authenticated','public.contract_amendment_signatures','INSERT')and not has_table_privilege('authenticated','public.contract_amendments','UPDATE'),'Direct mutation remains denied');
+select ok(has_function_privilege('authenticated','public.sign_and_activate_contract_amendment(uuid,uuid,text,text,jsonb,text,uuid)','EXECUTE')and not has_function_privilege('anon','public.sign_and_activate_contract_amendment(uuid,uuid,text,text,jsonb,text,uuid)','EXECUTE'),'Activation command is authenticated-only');
+select ok((select pg_get_functiondef(p.oid)like'%aal2%'and pg_get_functiondef(p.oid)like'%begin_contract_command%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='sign_and_activate_contract_amendment'),'Signature requires AAL2 and idempotency');
+select ok((select pg_get_functiondef(p.oid)like'%signature_count=2%'and pg_get_functiondef(p.oid)like'%CONTRACT_AMENDMENT_ACTIVATED%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='sign_and_activate_contract_amendment'),'Two signatures activate the amendment');
+select ok((select pg_get_functiondef(p.oid)like'%insert into public.contract_versions%'and pg_get_functiondef(p.oid)like'%current_version=new_version%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='sign_and_activate_contract_amendment'),'Activation creates and selects a new version');
+select ok((select pg_get_functiondef(p.oid)like'%contract_parties%'and pg_get_functiondef(p.oid)like'%contract_items%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='sign_and_activate_contract_amendment'),'Snapshot parties and items are copied');
+select ok((select pg_get_functiondef(p.oid)like'%update public.missions%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='sign_and_activate_contract_amendment'),'Active mission is rebound to the new immutable version');
+select ok((select pg_get_functiondef(p.oid)like'%audit_events%'and pg_get_functiondef(p.oid)like'%event_outbox%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='sign_and_activate_contract_amendment'),'Activation is audited and emits Outbox');
+select ok((select count(*)=1 from pg_trigger where tgname='amendment_signatures_immutable'and not tgisinternal),'Signature evidence is immutable');
+select ok((select pg_get_functiondef(p.oid)like'%IMMUTABLE_CONTRACT_AMENDMENT_CONTENT%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private'and p.proname='guard_contract_amendment_lifecycle'),'Amendment content remains immutable');
+select*from finish();rollback;

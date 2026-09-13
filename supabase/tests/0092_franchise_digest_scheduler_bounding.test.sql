@@ -18,10 +18,11 @@ insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_co
 ('a9200000-0000-4000-8000-000000000004','00000000-0000-0000-0000-000000000000','authenticated','authenticated','valid-3-92@example.invalid','',now(),'{}','{}',now(),now()),
 ('a9200000-0000-4000-8000-000000000005','00000000-0000-0000-0000-000000000000','authenticated','authenticated','invalid-f2-92@example.invalid','',now(),'{}','{}',now(),now());
 insert into public.organizations(id,legal_name,display_name,status,created_by)values('b9200000-0000-4000-8000-000000000001','Scheduler Volume P92 SARL','Scheduler Volume P92','ACTIVE','a9200000-0000-4000-8000-000000000001');
+insert into public.catalog_libraries(id,code,slug,steward_organization_id,status,created_by)values('f9200000-0000-4000-8000-000000000010','FRANCHISE_SCHEDULER','franchise-scheduler','b9200000-0000-4000-8000-000000000001','DRAFT','a9200000-0000-4000-8000-000000000001');
 insert into public.organization_memberships(id,organization_id,user_id,status,activated_at)select ('c9200000-0000-4000-8000-00000000000'||n)::uuid,'b9200000-0000-4000-8000-000000000001',('a9200000-0000-4000-8000-00000000000'||n)::uuid,'ACTIVE',now()from generate_series(1,5)n;
 insert into public.franchises(id,library_id,operator_organization_id,franchise_type,operator_code,territory_code,status,created_by)values
-('00000000-0000-4000-8000-000000000092',(select id from public.catalog_libraries order by code limit 1),'b9200000-0000-4000-8000-000000000001','STANDARD','FRANCHISEE','P92_F1','ACTIVE','a9200000-0000-4000-8000-000000000001'),
-('00000000-0000-4000-8000-000000000093',(select id from public.catalog_libraries order by code limit 1),'b9200000-0000-4000-8000-000000000001','STANDARD','FRANCHISEE','P92_F2','ACTIVE','a9200000-0000-4000-8000-000000000001');
+('00000000-0000-4000-8000-000000000092','f9200000-0000-4000-8000-000000000010','b9200000-0000-4000-8000-000000000001','STANDARD','FRANCHISEE','P92_F1','ACTIVE','a9200000-0000-4000-8000-000000000001'),
+('00000000-0000-4000-8000-000000000093','f9200000-0000-4000-8000-000000000010','b9200000-0000-4000-8000-000000000001','STANDARD','FRANCHISEE','P92_F2','ACTIVE','a9200000-0000-4000-8000-000000000001');
 insert into public.organization_member_roles(membership_id,role_code,franchise_id)values
 ('c9200000-0000-4000-8000-000000000001','FRANCHISE_MANAGER','00000000-0000-4000-8000-000000000092'),
 ('c9200000-0000-4000-8000-000000000002','FRANCHISE_VIEWER','00000000-0000-4000-8000-000000000092'),

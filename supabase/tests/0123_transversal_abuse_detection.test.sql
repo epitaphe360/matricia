@@ -1,0 +1,15 @@
+begin;
+select plan(12);
+select has_table('public','abuse_rule_versions','versioned abuse rules exist');
+select has_table('public','abuse_signal_events','redacted abuse signals exist');
+select has_table('public','abuse_review_cases','abuse review cases exist');
+select has_table('public','abuse_case_decisions','immutable abuse decisions exist');
+select has_function('public','create_abuse_rule_version',array['text','text','integer','integer','integer','integer','jsonb','boolean','text','uuid'],'rule creation RPC exists');
+select has_function('public','evaluate_abuse_signal',array['uuid','text','text','text','integer','jsonb','text','uuid'],'signal evaluation RPC exists');
+select has_function('public','decide_abuse_case',array['uuid','integer','text','text','text','text','uuid'],'case decision RPC exists');
+select is_definer('public','evaluate_abuse_signal',array['uuid','text','text','text','integer','jsonb','text','uuid'],'signal evaluation is security definer');
+select has_index('public','abuse_signal_events','abuse_signals_window_idx','abuse signal window index exists');
+select isnt_empty($$select 1 from pg_get_functiondef('public.evaluate_abuse_signal(uuid,text,text,text,integer,jsonb,text,uuid)'::regprocedure)d where d like'%AbuseRiskDetectedV1%'$$,'risk event uses Outbox');
+select isnt_empty($$select 1 from pg_trigger where tgrelid='public.abuse_signal_events'::regclass and not tgisinternal$$,'signals immutable');
+select isnt_empty($$select 1 from pg_policies where schemaname='public'and tablename='abuse_review_cases'$$,'case queue has RLS policy');
+select * from finish();rollback;

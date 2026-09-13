@@ -1,0 +1,4 @@
+export const diagnosticToolMessages = {
+  fr: { tools: "Outils de diagnostic", assistance: "Assistance à la décision", assistanceHelp: "Analysez services, questions et anomalies avec un moteur versionné. Chaque suggestion exige une décision humaine motivée.", openAssistance: "Ouvrir l’assistance", evolution: "Évolution de la santé", evolutionHelp: "Comparez les snapshots immuables et les écarts exacts entre diagnostics successifs.", openEvolution: "Voir l’évolution" },
+  ar: { tools: "أدوات التشخيص", assistance: "المساعدة في اتخاذ القرار", assistanceHelp: "حلّل الخدمات والأسئلة والاختلالات بمحرك ذي إصدار محدد. كل اقتراح يتطلب قرارا بشريا معللا.", openAssistance: "فتح المساعدة", evolution: "تطور الصحة", evolutionHelp: "قارن اللقطات غير القابلة للتعديل والفروق الدقيقة بين التشخيصات.", openEvolution: "عرض التطور" },
+} as const;

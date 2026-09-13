@@ -18,6 +18,7 @@ import { createSupabaseOutboxRepository } from "./outbox-repository";
 import { pollOutboxOnce } from "./poller";
 import { readWorkerRuntimeConfig } from "./worker-config";
 import { buildWorkerReadiness, createWorkerCycle } from "./worker-cycle";
+import { createFranchiseFollowupScheduler } from "./franchise-followups";
 
 async function start(): Promise<void> {
   const config = readWorkerRuntimeConfig(process.env);
@@ -35,6 +36,7 @@ async function start(): Promise<void> {
     log: createDocumentScanLogger((record) => process.stderr.write(`${record}\n`)),
   }));
   const antivirusHealth = createClamAvTcpHealthCheck(readClamAvTcpConfig(process.env));
+  const runFranchiseFollowups = createFranchiseFollowupScheduler(serviceClient, workerId);
 
   const dispatcher = createWorkerDispatcher({
     documentScanConsumer,
@@ -73,8 +75,11 @@ async function start(): Promise<void> {
   });
   server.listen(config.port);
   void cycle.run();
+  void runFranchiseFollowups().catch(() => log("error", { requestId: randomUUID(), correlationId: randomUUID(), event: "franchise.followup.scheduler", outcome: "failure", actorId: workerId, errorCode: "FRANCHISE_FOLLOWUP_CYCLE_FAILED" }));
   const timer = setInterval(() => void cycle.run(), 5_000);
   timer.unref();
+  const followupTimer = setInterval(() => void runFranchiseFollowups().catch(() => log("error", { requestId: randomUUID(), correlationId: randomUUID(), event: "franchise.followup.scheduler", outcome: "failure", actorId: workerId, errorCode: "FRANCHISE_FOLLOWUP_CYCLE_FAILED" })), 30_000);
+  followupTimer.unref();
 }
 
 void start().catch(() => {

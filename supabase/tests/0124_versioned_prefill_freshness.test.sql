@@ -1,0 +1,10 @@
+begin;select plan(10);
+select has_table('public','prefill_policy_versions','prefill policies exist');select has_table('public','prefill_fact_versions','prefill facts exist');
+select has_function('public','record_prefill_fact',array['uuid','text','text','uuid','jsonb','text','timestamp with time zone','text','uuid'],'fact recording RPC exists');
+select has_function('public','questionnaire_prefill_suggestions',array['uuid'],'questionnaire suggestions RPC exists');
+select is_definer('public','questionnaire_prefill_suggestions',array['uuid'],'suggestions are security definer');
+select results_eq($$select count(*)::bigint from public.prefill_policy_versions where status='ACTIVE'$$,array[5::bigint],'five baseline freshness policies');
+select isnt_empty($$select 1 from pg_get_functiondef('public.questionnaire_prefill_suggestions(uuid)'::regprocedure)d where d like'%actor_user_id=auth.uid()%'and d like'%fresh_until>clock_timestamp()%'$$,'suggestions are owner scoped and fresh');
+select isnt_empty($$select 1 from pg_trigger where tgrelid='public.prefill_fact_versions'::regclass and not tgisinternal$$,'fact history immutable');
+select isnt_empty($$select 1 from pg_policies where schemaname='public'and tablename='prefill_fact_versions'$$,'facts use RLS');
+select has_index('public','prefill_fact_versions','prefill_facts_current_idx','fresh fact lookup indexed');select*from finish();rollback;

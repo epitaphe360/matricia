@@ -1,0 +1,17 @@
+begin;set local search_path=public,extensions;select plan(15);
+select has_table('public','client_document_bindings','Document bindings exist');
+select has_table('public','client_document_binding_revocations','Append-only revocations exist');
+select has_function('public','link_verified_client_document',array['uuid','text','uuid','text','text','uuid'],'Link command exists');
+select has_function('public','revoke_client_document_binding',array['uuid','text','text','uuid'],'Revoke command exists');
+select ok((select relrowsecurity from pg_class where oid='public.client_document_bindings'::regclass),'Bindings use RLS');
+select ok((select relrowsecurity from pg_class where oid='public.client_document_binding_revocations'::regclass),'Revocations use RLS');
+select ok(not has_table_privilege('authenticated','public.client_document_bindings','INSERT')and not has_table_privilege('authenticated','public.client_document_bindings','UPDATE'),'Direct binding mutation is denied');
+select ok(has_function_privilege('authenticated','public.link_verified_client_document(uuid,text,uuid,text,text,uuid)','EXECUTE')and not has_function_privilege('anon','public.link_verified_client_document(uuid,text,uuid,text,text,uuid)','EXECUTE'),'Link command is authenticated-only');
+select ok((select pg_get_functiondef(p.oid)like'%aal2%'and pg_get_functiondef(p.oid)like'%begin_contract_command%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='link_verified_client_document'),'Link requires AAL2 and idempotency');
+select ok((select pg_get_functiondef(p.oid)like'%scan_status%''CLEAN''%'and pg_get_functiondef(p.oid)like'%expires_on%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='link_verified_client_document'),'Only clean non-expired documents are reusable');
+select ok((select pg_get_functiondef(p.oid)like'%CLIENT_DOCUMENT_TARGET_OUTSIDE_TENANT%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='link_verified_client_document'),'Cross-tenant targets fail closed');
+select ok((select pg_get_functiondef(p.oid)like'%audit_events%'and pg_get_functiondef(p.oid)like'%event_outbox%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='link_verified_client_document'),'Link is audited and emits Outbox');
+select ok((select count(*)=2 from pg_trigger where not tgisinternal and tgname in('client_document_bindings_immutable','client_document_binding_revocations_immutable')),'Bindings and revocations are immutable');
+select ok((select pg_get_functiondef(p.oid)like'%SERVICE_REQUEST%'and pg_get_functiondef(p.oid)like'%CONTRACT_VERSION%'and pg_get_functiondef(p.oid)like'%MISSION%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private'and p.proname='client_document_target_organization'),'All target domains are validated');
+select ok((select pg_get_functiondef(p.oid)like'%audit_events%'and pg_get_functiondef(p.oid)like'%event_outbox%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='revoke_client_document_binding'),'Revocation is audited and emits Outbox');
+select*from finish();rollback;

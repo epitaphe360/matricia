@@ -1,0 +1,10 @@
+begin;select plan(8);
+select has_function('public','get_unified_financial_value_center_v1',array['uuid','integer'],'unified financial center RPC exists');
+select function_privs_are('public','get_unified_financial_value_center_v1',array['uuid','integer'],'anon',array[]::text[],'anonymous denied');
+select function_privs_are('public','get_unified_financial_value_center_v1',array['uuid','integer'],'authenticated',array['EXECUTE'],'authenticated receives guarded RPC');
+select isnt_empty($$select 1 from pg_get_functiondef('public.get_unified_financial_value_center_v1(uuid,integer)'::regprocedure)d where d like '%financial_center_access%'and d like '%FINANCIAL_CENTER_DENIED%'$$,'tenant authorization is server-side');
+select isnt_empty($$select 1 from pg_get_functiondef('public.get_unified_financial_value_center_v1(uuid,integer)'::regprocedure)d where d like '%financial_entries%'and d like '%provider_invoices%'and d like '%client_cost_allocations%'$$,'ledger, invoices and cost centers are unified without merging ledgers');
+select isnt_empty($$select 1 from pg_get_functiondef('public.get_unified_financial_value_center_v1(uuid,integer)'::regprocedure)d where d like '%savings_measurements%'and d like '%recommendation_roi_snapshots%'and d like '%measurement_baselines%'$$,'savings and ROI derive from authoritative immutable registries');
+select isnt_empty($$select 1 from pg_get_functiondef('public.get_unified_financial_value_center_v1(uuid,integer)'::regprocedure)d where d like '%::text%'and d like '%minor_units_only%'$$,'exact amounts are serialized without floating point');
+select extensions.throws_ok($$select public.get_unified_financial_value_center_v1('00000000-0000-0000-0000-000000000000',100)$$,'42501'::char(5),'FINANCIAL_CENTER_DENIED','unauthenticated request is denied');
+select*from finish();rollback;

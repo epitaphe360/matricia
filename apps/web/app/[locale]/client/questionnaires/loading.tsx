@@ -1,0 +1,1 @@
+export default function QuestionnaireLoading() { return <main className="min-h-dvh bg-muted/40 px-4 py-8" aria-busy="true"><div className="mx-auto max-w-7xl space-y-5"><div className="h-10 w-64 animate-pulse rounded bg-muted" /><div className="h-28 animate-pulse rounded-2xl border bg-card" /><div className="h-64 animate-pulse rounded-2xl border bg-card" /></div></main>; }

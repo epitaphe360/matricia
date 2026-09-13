@@ -1,10 +1,12 @@
 import { z } from "zod";
 import type { ClientRecurringRepository, RecurringFailure, RecurringResult } from "./contracts";
-import { cadence, cloneInput, createPlanInput, generateInput, isoDate, planStatus, recurringUuid, requestStatus, transitionPlanInput, type RecurringDashboard } from "./model";
+import { cadence, clientRecurringRole, cloneInput, createPlanInput, generateInput, isoDate, planStatus, recurringUuid, requestStatus, transitionPlanInput, type RecurringDashboard } from "./model";
 
 type Query = { data: unknown; error: { code?: string; message?: string } | null };
 export type ClientRecurringSource = {
   user(): Promise<string | null>;
+  memberships(userId: string): Promise<Query>;
+  roles(membershipIds: string[]): Promise<Query>;
   requests(): Promise<Query>;
   requestVersions(ids: string[]): Promise<Query>;
   plans(): Promise<Query>;
@@ -13,11 +15,13 @@ export type ClientRecurringSource = {
   rpc(name: string, input: Record<string, unknown>): Promise<Query>;
 };
 
-const requestRow = z.object({ id: recurringUuid, current_version_id: recurringUuid.nullable(), status: requestStatus, created_at: z.string() }).strict();
+const requestRow = z.object({ id: recurringUuid, client_organization_id: recurringUuid, current_version_id: recurringUuid.nullable(), status: requestStatus, created_at: z.string() }).strict();
 const requestVersionRow = z.object({ id: recurringUuid, request_id: recurringUuid, version_number: z.number().int().positive(), description: z.string().min(1), desired_date: isoDate.nullable() }).strict();
-const planRow = z.object({ id: recurringUuid, template_request_id: recurringUuid, status: planStatus, current_version: z.number().int().positive(), row_version: z.number().int().positive(), updated_at: z.string() }).strict();
+const planRow = z.object({ id: recurringUuid, client_organization_id: recurringUuid, template_request_id: recurringUuid, status: planStatus, current_version: z.number().int().positive(), row_version: z.number().int().positive(), updated_at: z.string() }).strict();
 const planVersionRow = z.object({ id: recurringUuid, plan_id: recurringUuid, version_number: z.number().int().positive(), cadence, starts_on: isoDate, ends_on: isoDate.nullable(), status: planStatus, reason: z.string().min(3).max(500) }).strict();
 const occurrenceRow = z.object({ id: recurringUuid, plan_id: recurringUuid, scheduled_on: isoDate, generated_request_id: recurringUuid, created_at: z.string() }).strict();
+const membershipRow = z.object({ id: recurringUuid, organization_id: recurringUuid }).strict();
+const roleRow = z.object({ membership_id: recurringUuid, role_code: clientRecurringRole, revoked_at: z.string().nullable() }).strict();
 const cloned = z.object({ outcome: z.literal("SERVICE_REQUEST_CLONED"), request_id: recurringUuid, request_version_id: recurringUuid, status: z.literal("DRAFT") }).passthrough();
 const created = z.object({ outcome: z.literal("RECURRING_PLAN_CREATED"), plan_id: recurringUuid, plan_version_id: recurringUuid, status: z.literal("ACTIVE") }).passthrough();
 const transitioned = z.object({ outcome: z.enum(["RECURRING_PLAN_ACTIVE", "RECURRING_PLAN_PAUSED", "RECURRING_PLAN_ENDED"]), plan_id: recurringUuid, plan_version_id: recurringUuid, status: planStatus, row_version: z.number().int().positive() }).passthrough();
@@ -40,7 +44,19 @@ function parseRows<T>(schema: z.ZodType<T>, query: Query, max: number): Recurrin
 export function createClientRecurringRepository(source: ClientRecurringSource): ClientRecurringRepository {
   return {
     async load() {
-      if (!await source.user()) return { status: "error", reason: "UNAUTHENTICATED" };
+      const userId = await source.user();
+      if (!userId) return { status: "error", reason: "UNAUTHENTICATED" };
+      const memberships = parseRows(membershipRow, await source.memberships(userId), 100);
+      if (memberships.status === "error") return memberships;
+      const roles = parseRows(roleRow, await source.roles(memberships.value.map((item) => item.id)), 300);
+      if (roles.status === "error") return roles;
+      const activeRoles = new Set(roles.value.filter((role) => role.revoked_at === null).map((role) => role.role_code));
+      const organizationByMembership = new Map(memberships.value.map((membership) => [membership.id, membership.organization_id]));
+      const writableOrganizations = new Set(roles.value.filter((role) => role.revoked_at === null && role.role_code !== "CLIENT_VIEWER").map((role) => organizationByMembership.get(role.membership_id)).filter((organizationId): organizationId is string => Boolean(organizationId)));
+      const roleOrder = ["CLIENT_OWNER", "CLIENT_ADMIN", "CLIENT_BUYER", "CLIENT_VIEWER"] as const;
+      const activeRole = roleOrder.find((role) => activeRoles.has(role));
+      if (!activeRole) return { status: "error", reason: "FORBIDDEN" };
+      const canManage = writableOrganizations.size > 0;
       const [requestsQuery, plansQuery] = await Promise.all([source.requests(), source.plans()]);
       const requests = parseRows(requestRow, requestsQuery, 200), plans = parseRows(planRow, plansQuery, 100);
       if (requests.status === "error") return requests;
@@ -53,8 +69,9 @@ export function createClientRecurringRepository(source: ClientRecurringSource): 
       const requestVersions = new Map(versions.value.map((item) => [item.id, item]));
       const currentPlanVersions = new Map(planVersions.value.map((item) => [`${item.plan_id}:${item.version_number}`, item]));
       const dashboard: RecurringDashboard = {
-        requests: requests.value.flatMap((item) => { const version = item.current_version_id ? requestVersions.get(item.current_version_id) : undefined; return version ? [{ id: item.id, status: item.status, description: version.description, desiredDate: version.desired_date, versionNumber: version.version_number, createdAt: item.created_at }] : []; }),
-        plans: plans.value.flatMap((item) => { const version = currentPlanVersions.get(`${item.id}:${item.current_version}`); return version ? [{ id: item.id, templateRequestId: item.template_request_id, status: item.status, rowVersion: item.row_version, currentVersion: item.current_version, cadence: version.cadence, startsOn: version.starts_on, endsOn: version.ends_on, reason: version.reason, updatedAt: item.updated_at, occurrences: occurrences.value.filter((entry) => entry.plan_id === item.id).map((entry) => ({ id: entry.id, scheduledOn: entry.scheduled_on, generatedRequestId: entry.generated_request_id, createdAt: entry.created_at })) }] : []; }),
+        access: { activeRole, canManage },
+        requests: requests.value.flatMap((item) => { const version = item.current_version_id ? requestVersions.get(item.current_version_id) : undefined; return version ? [{ id: item.id, canManage: writableOrganizations.has(item.client_organization_id), status: item.status, description: version.description, desiredDate: version.desired_date, versionNumber: version.version_number, createdAt: item.created_at }] : []; }),
+        plans: plans.value.flatMap((item) => { const version = currentPlanVersions.get(`${item.id}:${item.current_version}`); return version ? [{ id: item.id, canManage: writableOrganizations.has(item.client_organization_id), templateRequestId: item.template_request_id, status: item.status, rowVersion: item.row_version, currentVersion: item.current_version, cadence: version.cadence, startsOn: version.starts_on, endsOn: version.ends_on, reason: version.reason, updatedAt: item.updated_at, occurrences: occurrences.value.filter((entry) => entry.plan_id === item.id).map((entry) => ({ id: entry.id, scheduledOn: entry.scheduled_on, generatedRequestId: entry.generated_request_id, createdAt: entry.created_at })) }] : []; }),
       };
       return { status: "success", value: dashboard };
     },
@@ -86,4 +103,3 @@ export function createClientRecurringRepository(source: ClientRecurringSource): 
     },
   };
 }
-

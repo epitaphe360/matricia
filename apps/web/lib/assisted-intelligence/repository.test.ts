@@ -14,6 +14,14 @@ function source(overrides: Partial<AssistanceSource> = {}): AssistanceSource {
     async requests() { return ok([]); },
     async suggestions() { return ok([]); },
     async decisions() { return ok([]); },
+    async sessions() { return ok([]); },
+    async questionnaireQuestions() { return ok([]); },
+    async questions() { return ok([]); },
+    async recommendations() { return ok([]); },
+    async services() { return ok([]); },
+    async serviceVersions() { return ok([]); },
+    async anomalies() { return ok([]); },
+    async reassessments() { return ok([]); },
     async rpc() { return ok({}); },
     ...overrides,
   };
@@ -27,11 +35,14 @@ describe("assisted intelligence repository", () => {
   });
 
   it("branche l’analyse sur le contrat RPC final et valide sa sortie", async () => {
-    const rpc = vi.fn(async () => ok({ outcome: "ASSISTANCE_PROPOSED", request_id: id(8), suggestion_count: 2, model_version_id: id(4), human_confirmation_required: true }));
+    const rpc = vi.fn(async (name: string) => name === "discover_assistance_scope"
+      ? ok({ outcome: "ASSISTANCE_SCOPE_DISCOVERED", algorithm: "TOKEN_OVERLAP_V1", service_candidates: [{ service_version_id: id(9), service_id: id(10), score_basis_points: 7500 }], question_candidates: [{ question_version_id: id(11), service_id: id(10), required_for_quote: true, score_basis_points: 10_000 }], human_confirmation_required: true })
+      : ok({ outcome: "ASSISTANCE_PROPOSED", request_id: id(8), suggestion_count: 2, model_version_id: id(4), human_confirmation_required: true }));
     const repository = createAssistedIntelligenceRepository(source({ rpc }));
     const result = await repository.analyze({ organizationId: id(3), context: "NEED_TEXT", inputText: "Sauvegarde distante", serviceVersionIds: [id(5)], questionVersionIds: [], knownDataKeys: [], modelVersionId: id(4), profileReassessmentId: null, idempotencyKey: id(6), correlationId: id(7) });
     expect(result).toMatchObject({ status: "success", value: { suggestionCount: 2, humanConfirmationRequired: true } });
-    expect(rpc).toHaveBeenCalledWith("run_assisted_analysis", expect.objectContaining({ p_candidate_service_version_ids: [id(5)], p_context_type: "NEED_TEXT" }));
+    expect(rpc).toHaveBeenCalledWith("discover_assistance_scope", expect.objectContaining({ p_limit: 20 }));
+    expect(rpc).toHaveBeenCalledWith("run_assisted_analysis", expect.objectContaining({ p_candidate_service_version_ids: [id(5), id(9)], p_candidate_question_version_ids: [id(11)], p_context_type: "NEED_TEXT" }));
   });
 
   it("prouve qu’une décision ne déclenche aucune action métier", async () => {

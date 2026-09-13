@@ -8,7 +8,7 @@ import { getAssistanceMessages } from "./messages";
 import type { AssistanceDashboard } from "@/lib/assisted-intelligence/contracts";
 
 const id = (n: number) => `${String(n).padStart(8, "0")}-0000-4000-8000-000000000000`;
-const dashboard: AssistanceDashboard = { organizations: [{ id: id(1), name: "Atlas", canAnalyze: true, canDecide: true }], model: { id: id(2), version: 1, algorithm: "TOKEN_OVERLAP_V1" }, requests: [], decisions: [], suggestions: [{ id: id(3), requestId: id(4), organizationId: id(1), kind: "SERVICE_CANDIDATE", targetType: "SERVICE_VERSION", targetId: id(5), relatedTargetId: null, scoreBasisPoints: 7500, explanationCode: "TOKEN_OVERLAP", humanReviewRequired: true, evidence: { algorithm: "TOKEN_OVERLAP_V1" }, proposedPayload: {}, status: "PROPOSED", createdAt: "2026-09-12T00:00:00Z", decidedAt: null }] };
+const dashboard: AssistanceDashboard = { organizations: [{ id: id(1), name: "Atlas", canAnalyze: true, canDecide: true }], model: { id: id(2), version: 1, algorithm: "TOKEN_OVERLAP_V1" }, requests: [], decisions: [], serviceCandidates: [], questionCandidates: [], anomalyCandidates: [], reassessmentCandidates: [], suggestions: [{ id: id(3), requestId: id(4), organizationId: id(1), kind: "SERVICE_CANDIDATE", targetType: "SERVICE_VERSION", targetId: id(5), relatedTargetId: null, scoreBasisPoints: 7500, explanationCode: "TOKEN_OVERLAP", modelVersion: 1, humanReviewRequired: true, evidence: { algorithm: "TOKEN_OVERLAP_V1" }, proposedPayload: {}, status: "PROPOSED", createdAt: "2026-09-12T00:00:00Z", decidedAt: null }] };
 const keys = { analysis: id(6), similarity: id(7), decisions: { [id(3)]: id(8) } };
 
 describe("AssistancePanel", () => {

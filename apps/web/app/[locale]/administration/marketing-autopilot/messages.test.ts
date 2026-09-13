@@ -7,7 +7,7 @@ describe("marketing business labels", () => {
     expect(Object.keys(codes.purposes)).toHaveLength(3);
     expect(Object.keys(codes.modes)).toHaveLength(3);
     expect(Object.keys(codes.channels)).toHaveLength(4);
-    expect(Object.keys(codes.feedback)).toHaveLength(4);
+    expect(Object.keys(codes.feedback)).toHaveLength(6);
     expect(codes.purposes.SOCIAL_PUBLISHING).toBe("Publication sur les réseaux sociaux");
     expect(codes.statuses.VALIDATED_BY_RULES).toBe("Validé par les règles");
   });
@@ -18,5 +18,8 @@ describe("marketing business labels", () => {
     expect(codes.channels.REEL).toBe("فيديو قصير");
     expect(codes.languages.FR).toBe("الفرنسية");
     expect(codes.feedback.PAUSE_CAMPAIGN).toBe("إيقاف الحملة مؤقتاً");
+    expect(codes.feedback.REDUCE_FREQUENCY).toBe("خفض التواتر");
+    expect(codes.feedback.CHANGE_SERVICE_FOCUS).toBe("تغيير الخدمة ذات الأولوية");
+    expect(getMarketingMessages("ar").approveAssistedCalendar).toBe("الموافقة الشاملة على التقويم المساعد");
   });
 });

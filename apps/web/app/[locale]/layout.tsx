@@ -1,5 +1,13 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { directionFor, isLocale } from "@/lib/i18n/locale";
+import { seoCopy } from "@/lib/seo/metadata";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) return {};
+  return { title: { default: "Matricia", template: "%s | Matricia" }, description: seoCopy[locale].description, robots: { index: false, follow: false, noarchive: true } };
+}
 
 export default async function LocaleLayout({ children, params }: Readonly<{ children: React.ReactNode; params: Promise<{ locale: string }> }>) {
   const { locale } = await params;

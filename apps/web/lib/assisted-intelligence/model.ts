@@ -54,10 +54,33 @@ export function parseUuidLines(value: string): string[] | null {
   return boundedUuidList.safeParse(entries).success ? entries : null;
 }
 
+export function parseUuidValues(values: FormDataEntryValue[]): string[] | null {
+  const entries = [...new Set(values.map(String).map((item) => item.trim()).filter(Boolean))];
+  return boundedUuidList.safeParse(entries).success ? entries : null;
+}
+
 export function parseKnownKeys(value: string): string[] | null {
   const entries = [...new Set(value.split(/[\s,;]+/u).map((item) => item.trim()).filter(Boolean))];
   const result = z.array(knownKey).max(100).safeParse(entries);
   return result.success ? result.data : null;
+}
+
+const piiPatterns: ReadonlyArray<[RegExp, string]> = [
+  [/(ICE\s*[#:=\-]*)(\d[\d -]{13,20}\d)/giu, "$1[ICE]"],
+  [/((?:IF|IDENTIFIANT\s+FISCAL)\s*[#:=\-]*)(\d[\d -]{4,12}\d)/giu, "$1[IF]"],
+  [/(CNSS\s*[#:=\-]*)(\d[\d -]{4,15}\d)/giu, "$1[CNSS]"],
+  [/([\p{L}\d._%+-]+)@([\p{L}\d.-]+\.[\p{L}]{2,})/giu, "[EMAIL]"],
+  [/[+]?\d[\d ()-]{7,}\d/gu, "[PHONE]"],
+  [/((?:NOM|NAME|CONTACT|REPRÉSENTANT|REPRÉSENTANTE|RESPONSABLE|الاسم)\s*[#:=\-]+)[\p{L}][\p{L}' -]{1,100}/giu, "$1[NAME]"],
+  [/((?:ADRESSE|ADDRESS|العنوان)\s*[#:=\-]+)[^;\r\n]{3,180}/giu, "$1[ADDRESS]"],
+];
+
+/** Client-side privacy barrier; the database repeats and authoritatively enforces minimisation. */
+export function minimizeAssistanceInput(value: string | null): string | null {
+  if (value === null) return null;
+  let minimized = value.trim().slice(0, 1000);
+  for (const [pattern, replacement] of piiPatterns) minimized = minimized.replace(pattern, replacement);
+  return minimized || null;
 }
 
 export function isAssistanceContext(value: string): value is AssistanceContext {
