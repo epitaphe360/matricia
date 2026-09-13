@@ -5,6 +5,7 @@ type Row = Record<string, unknown>;
 const rows = (value: unknown): Row[] => Array.isArray(value) ? value as Row[] : [];
 const text = (row: Row, key: string) => String(row[key] ?? "");
 const nullable = (row: Row, key: string) => row[key] == null ? null : String(row[key]);
+const nested = (row: Row, key: string): Row => { const value=row[key]; return Array.isArray(value) ? (value[0] as Row ?? {}) : value && typeof value === "object" ? value as Row : {}; };
 
 export async function loadClientPortfolio(): Promise<RepoResult<Portfolio>> {
   const client = await getSupabaseServerClient();
@@ -20,21 +21,36 @@ export async function loadClientPortfolio(): Promise<RepoResult<Portfolio>> {
     client.from("organization_member_roles").select("membership_id,role_code,revoked_at").in("membership_id", membershipIds).is("revoked_at", null).limit(500),
     client.from("organizations").select("id,display_name").in("id", organizationIds).limit(100),
     client.from("client_sites").select("id,organization_id,code,current_version,status").in("organization_id", organizationIds).eq("status", "ACTIVE").limit(500),
-    client.from("client_site_versions").select("site_id,version,name_fr,name_ar").in("organization_id", organizationIds).limit(1000),
+    client.from("client_site_versions").select("site_id,organization_id,version,name_fr,name_ar").in("organization_id", organizationIds).limit(1000),
     client.from("client_projects").select("id,organization_id,project_code,site_id,status,current_version,row_version,progress_basis_points,started_on,target_end_on").in("organization_id", organizationIds).order("updated_at", { ascending: false }).limit(1000),
-    client.from("client_project_versions").select("project_id,version,name_fr,name_ar,description_fr,description_ar").in("organization_id", organizationIds).limit(2000),
+    client.from("client_project_versions").select("project_id,organization_id,version,name_fr,name_ar,description_fr,description_ar").in("organization_id", organizationIds).limit(2000),
     client.from("client_project_tasks").select("id,project_id,organization_id,task_key,task_type,status,due_at,current_version,row_version").in("organization_id", organizationIds).order("due_at", { ascending: true }).limit(2000),
-    client.from("client_project_task_versions").select("task_id,version,title_fr,title_ar").in("organization_id", organizationIds).limit(4000),
+    client.from("client_project_task_versions").select("task_id,organization_id,version,title_fr,title_ar").in("organization_id", organizationIds).limit(4000),
     client.from("client_annual_budgets").select("id,organization_id,fiscal_year,currency,library_id,site_id,project_id,current_version,status").in("organization_id", organizationIds).order("fiscal_year", { ascending: false }).limit(1000),
-    client.from("client_annual_budget_versions").select("budget_id,version,amount_minor,approved_amount_minor").in("organization_id", organizationIds).limit(2000),
+    client.from("client_annual_budget_versions").select("budget_id,organization_id,version,amount_minor,approved_amount_minor").in("organization_id", organizationIds).limit(2000),
     client.from("client_cost_centers").select("id,organization_id,code,status,current_version").in("organization_id", organizationIds).limit(1000),
-    client.from("client_cost_center_versions").select("cost_center_id,version,name_fr,name_ar").in("organization_id", organizationIds).limit(2000),
+    client.from("client_cost_center_versions").select("cost_center_id,organization_id,version,name_fr,name_ar").in("organization_id", organizationIds).limit(2000),
     client.from("client_cost_allocations").select("id,organization_id,cost_center_id,budget_id,project_id,allocation_type,amount_minor,currency,created_at").in("organization_id", organizationIds).order("created_at", { ascending: false }).limit(2000),
     client.from("client_central_calendar").select("organization_id,project_id,item_id,source_kind,event_type,title_fr,title_ar,starts_at,ends_at,status").in("organization_id", organizationIds).order("starts_at", { ascending: true }).limit(2000),
-    client.from("catalog_libraries").select("id,name_fr,name_ar").eq("status", "ACTIVE").limit(20)
+    client.from("catalog_libraries").select("id,current_published_version_id,published:catalog_library_versions!catalog_libraries_published_fk(id,library_id,status,name_fr,name_ar)").eq("status", "PUBLISHED").not("current_published_version_id", "is", null).limit(20)
   ]);
   const all = [roles, organizations, sites, siteVersions, projects, projectVersions, tasks, taskVersions, budgets, budgetVersions, costCenters, costCenterVersions, allocations, calendar, libraries];
   if (all.some(result => result.error)) return { status: "error", reason: "UNAVAILABLE" };
+  const versionedTenantResults = [siteVersions, projectVersions, taskVersions, budgetVersions, costCenterVersions];
+  if (versionedTenantResults.some(result => rows(result.data).some(row => !organizationIds.includes(text(row, "organization_id"))))) {
+    return { status: "error", reason: "UNAVAILABLE" };
+  }
+  const libraryRows = rows(libraries.data);
+  if (libraryRows.some(row => {
+    const published = nested(row, "published");
+    return !text(row, "id")
+      || !text(row, "current_published_version_id")
+      || text(published, "id") !== text(row, "current_published_version_id")
+      || text(published, "library_id") !== text(row, "id")
+      || text(published, "status") !== "PUBLISHED"
+      || !text(published, "name_fr").trim()
+      || !text(published, "name_ar").trim();
+  })) return { status: "error", reason: "UNAVAILABLE" };
   const roleRows = rows(roles.data);
   const membershipOrg = new Map(membershipRows.map(row => [text(row, "id"), text(row, "organization_id")]));
   const byOrg = new Map<string, Set<string>>();
@@ -50,7 +66,7 @@ export async function loadClientPortfolio(): Promise<RepoResult<Portfolio>> {
     costCenters: rows(costCenters.data).map(row => { const id=text(row,"id"), version=Number(row.current_version), v=current(centerVersionRows,"cost_center_id",id,version); return { id, organizationId:text(row,"organization_id"), code:text(row,"code"), status:text(row,"status"), version, nameFr:v?text(v,"name_fr"):text(row,"code"), nameAr:v?text(v,"name_ar"):text(row,"code") }; }),
     allocations: rows(allocations.data).map(row => ({ id:text(row,"id"), organizationId:text(row,"organization_id"), costCenterId:text(row,"cost_center_id"), budgetId:text(row,"budget_id"), projectId:nullable(row,"project_id"), type:text(row,"allocation_type"), amountMinor:text(row,"amount_minor"), currency:text(row,"currency"), createdAt:text(row,"created_at") })),
     calendar: rows(calendar.data).map(row => ({ organizationId:text(row,"organization_id"), projectId:nullable(row,"project_id"), itemId:text(row,"item_id"), sourceKind:text(row,"source_kind"), eventType:text(row,"event_type"), titleFr:text(row,"title_fr"), titleAr:text(row,"title_ar"), startsAt:text(row,"starts_at"), endsAt:nullable(row,"ends_at"), status:text(row,"status") })),
-    libraries: rows(libraries.data).map(row => ({ id:text(row,"id"), nameFr:text(row,"name_fr"), nameAr:text(row,"name_ar") }))
+    libraries: libraryRows.map(row => { const published=nested(row,"published"); return { id:text(row,"id"), nameFr:text(published,"name_fr"), nameAr:text(published,"name_ar") }; })
   } };
 }
 
