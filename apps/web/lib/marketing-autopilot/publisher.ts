@@ -3,13 +3,13 @@ import { z } from "zod";
 const contentSchema=z.object({language:z.enum(["FR","AR"]),hook:z.string().max(300),body:z.string().max(6000),cta:z.string().max(300),hashtags:z.array(z.string()).max(30),landing_url:z.string().url(),media_url:z.string().url().nullable().optional()});
 export const publicationJobSchema=z.object({outcome:z.literal("JOB_CLAIMED"),job_id:z.string().uuid(),attempt:z.number().int().positive(),provider:z.enum(["LINKEDIN","META"]),channel:z.enum(["LINKEDIN","FACEBOOK","INSTAGRAM","REEL"]),credential_reference:z.string().regex(/^env:\/\/[A-Z][A-Z0-9_]{7,99}$/),content:contentSchema});
 export type PublicationJob=z.infer<typeof publicationJobSchema>;
-export type PublicationResult={outcome:"PUBLISHED";providerPublicationId:string}|{outcome:"RETRYABLE_FAILURE"|"PERMANENT_FAILURE";errorCode:string};
+export type PublicationResult={outcome:"PUBLISHED";providerPublicationId:string}|{outcome:"SANDBOXED"}|{outcome:"RETRYABLE_FAILURE"|"PERMANENT_FAILURE";errorCode:string};
 type Runtime={mode:"sandbox"|"live";liveEnabled:boolean;environment:Record<string,string|undefined>;fetch:typeof fetch};
 const linkedInCredential=z.object({accessToken:z.string().min(20),authorUrn:z.string().regex(/^urn:li:(?:person|organization):[A-Za-z0-9_-]+$/),apiVersion:z.string().regex(/^20\d{4}$/)});
 const metaCredential=z.object({accessToken:z.string().min(20),targetId:z.string().regex(/^\d{3,40}$/),graphVersion:z.string().regex(/^v\d{2,3}\.\d$/)});
 
 export async function publishScheduledSocial(job:PublicationJob,runtime:Runtime):Promise<PublicationResult>{
-  if(runtime.mode==="sandbox")return{outcome:"PUBLISHED",providerPublicationId:`sandbox:${job.provider.toLowerCase()}:${job.job_id}`};
+  if(runtime.mode==="sandbox")return{outcome:"SANDBOXED"};
   if(!runtime.liveEnabled)return{outcome:"PERMANENT_FAILURE",errorCode:"LIVE_PUBLISHING_DISABLED"};
   const variable=job.credential_reference.slice(6),raw=runtime.environment[variable];
   if(!raw)return{outcome:"PERMANENT_FAILURE",errorCode:"CREDENTIAL_REFERENCE_UNRESOLVED"};

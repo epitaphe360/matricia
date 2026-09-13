@@ -641,3 +641,20 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - Aucun environnement de production n'a été modifié. Les activations live des
   providers sociaux restent désactivées jusqu'à configuration des credentials
   acquis et autorisation opérationnelle explicite.
+
+## Checkpoint calendrier Marketing et intégrité sandbox — 2026-09-13
+
+- Les migrations additives `20260913018100_marketing_calendar_scheduler.sql` et
+  `20260913018200_marketing_scheduling_sandbox_integrity.sql` sont appliquées
+  uniquement sur Supabase development; le dry-run final confirme la cible à jour.
+- Le calendrier M+1 est généré de façon idempotente le 25 pour les règles actives.
+  En mode AUTOPILOT, seuls les contenus approuvés, non expirés, consentis et sans
+  exception bloquante sont planifiés; ASSISTED reste soumis à validation humaine.
+- La planification manuelle rattache chaque publication au calendrier versionné
+  obligatoire et sérialise la limite hebdomadaire. Le mode sandbox produit
+  `SANDBOXED` et ne crée plus aucune preuve de publication réelle.
+- Les endpoints cron protégés par `CRON_SECRET` acceptent GET/POST; la
+  configuration Vercel programme le calendrier mensuel et le worker de publication.
+- Gates : DB/RLS 128 fichiers, 3 051 assertions et 4 scénarios de concurrence PASS;
+  Web 130 fichiers/502 tests PASS; lint, TypeScript strict et build PASS.
+  Aucun environnement de production n'a été modifié.
