@@ -1,0 +1,13 @@
+begin;set local search_path=public,extensions;select plan(11);
+select has_table('public','content_clone_provenance','Clone provenance exists');
+select has_table('public','contract_clause_set_versions','Clause-set versions exist');
+select has_function('public','clone_catalog_questionnaire',array['uuid','uuid','text','text','text','uuid'],'Questionnaire clone exists');
+select has_function('public','clone_contract_clause_set',array['uuid','text','uuid','text','text','text','uuid'],'Clause clone exists');
+select has_function('public','clone_service_checklist',array['uuid','uuid','uuid','text','text','uuid'],'Checklist clone exists');
+select ok((select relrowsecurity from pg_class where oid='public.content_clone_provenance'::regclass),'Provenance uses RLS');
+select ok(not has_table_privilege('authenticated','public.content_clone_provenance','INSERT'),'Direct provenance insertion is denied');
+select ok((select pg_get_functiondef(p.oid)like'%questionnaire_sections%'and pg_get_functiondef(p.oid)like'%questionnaire_version_questions%'and pg_get_functiondef(p.oid)like'%questionnaire_version_rules%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='clone_catalog_questionnaire'),'Questionnaire composition is fully cloned');
+select ok((select pg_get_functiondef(p.oid)like'%content_clone_provenance%'and pg_get_functiondef(p.oid)like'%event_outbox%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='clone_contract_clause_set'),'Clause clone records provenance and Outbox');
+select ok((select pg_get_functiondef(p.oid)like'%service_checklist_templates%'and pg_get_functiondef(p.oid)like'%content_clone_provenance%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='clone_service_checklist'),'Checklist clone records provenance');
+select ok((select count(*)=2 from pg_trigger where not tgisinternal and tgname like'clone_%_immutable'),'Clone provenance and content versions are immutable');
+select*from finish();rollback;

@@ -553,3 +553,15 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   l'interface ne modifie aucun solde directement.
 - Gates : DB/RLS 120 fichiers, 2 968 assertions et 4 scénarios de concurrence PASS;
   lint, TypeScript strict et build PASS. Aucun environnement de production modifié.
+
+## Checkpoint clonage gouverné avec provenance — 2026-09-13
+
+- Migration additive `20260913017500_content_clone_provenance.sql` appliquée
+  uniquement sur Supabase development/staging; historique synchronisé.
+- L'administration peut cloner questionnaires, ensembles de clauses et checklists
+  de service sans altérer les sources. Chaque clone conserve une provenance immutable,
+  crée une nouvelle identité/version brouillon et émet audit plus Event Outbox.
+- L'interface FR/AR `/administration/clonage` expose les trois opérations avec motif,
+  idempotence, autorisation restrictive et validation des identifiants.
+- Gates : DB/RLS 121 fichiers, 2 979 assertions et 4 scénarios de concurrence PASS;
+  lint, TypeScript strict et build PASS. Aucun environnement de production modifié.
