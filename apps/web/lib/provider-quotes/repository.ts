@@ -4,7 +4,9 @@ import type { ProviderQuoteDashboard } from "./model";
 
 const id = z.string().uuid();
 const currency = z.string().regex(/^[A-Z]{3}$/u);
-const minor = z.string().regex(/^\d{1,18}$/u);
+// PostgreSQL bigint can contain 19 decimal digits. Values originate from bigint
+// columns and are projected as text by the database before PostgREST serializes them.
+const minor = z.string().regex(/^\d{1,19}$/u);
 const membership = z.object({
   organization_id: id,
   organizations: z.object({ display_name: z.string().min(1) }),
@@ -26,6 +28,8 @@ export function unambiguousTaxRules(values: Tax[]): Tax[] {
   }
   return [...grouped.values()].filter((group) => group.length === 1).map((group) => group[0]!).sort((left, right) => left.category_code.localeCompare(right.category_code));
 }
+
+export function parseQuoteVersionAmounts(values: unknown) { return z.array(quoteVersion).max(100).safeParse(values); }
 
 export async function loadProviderQuotes(requestedOrganizationId?: string): Promise<{ status: "success"; dashboard: ProviderQuoteDashboard } | Failure> {
   const client = await getSupabaseServerClient();
@@ -67,8 +71,8 @@ export async function loadProviderQuotes(requestedOrganizationId?: string): Prom
   const quotes = z.array(quote).max(100).safeParse(quoteResult.data);
   if (quoteResult.error || !quotes.success) return { status: "error", reason: "QUERY_FAILED" };
   const quoteVersionIds = quotes.data.flatMap((item) => item.current_version_id ? [item.current_version_id] : []);
-  const quoteVersionsResult = quoteVersionIds.length ? await client.from("quote_versions").select("id,version_number,currency,subtotal_minor,tax_minor,total_minor").in("id", quoteVersionIds).limit(100) : { data: [], error: null };
-  const quoteVersions = z.array(quoteVersion).max(100).safeParse(quoteVersionsResult.data);
+  const quoteVersionsResult = quoteVersionIds.length ? await client.rpc("list_provider_quote_version_amounts", { p_provider_organization_id: organizationId, p_quote_version_ids: quoteVersionIds }) : { data: [], error: null };
+  const quoteVersions = parseQuoteVersionAmounts(quoteVersionsResult.data);
   if (quoteVersionsResult.error || !quoteVersions.success) return { status: "error", reason: "QUERY_FAILED" };
 
   const versionById = new Map(versions.data.map((item) => [item.id, item]));

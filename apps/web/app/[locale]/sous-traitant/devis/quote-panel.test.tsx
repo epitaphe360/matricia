@@ -24,4 +24,13 @@ describe("QuotePanel fiscal fail-closed",()=>{
     expect(html).not.toContain("<form");
     expect(html).not.toContain("STANDARD_SERVICE");
   });
+  it("autorise le reflow des montants bigint tout en conservant leur direction LTR",()=>{
+    const exact={...dashboard,invitations:[{...dashboard.invitations[0]!,taxCategoryCode:"STANDARD_SERVICE",quote:{...dashboard.invitations[0]!.quote!,subtotalMinor:"900719925474099300",taxMinor:"180143985094819860",totalMinor:"1080863910568919160"}}]};
+    const html=renderToStaticMarkup(<QuotePanel dashboard={exact} locale="ar" m={getProviderQuoteMessages("ar")} identities={identities}/>);
+    expect(html).toContain('dir="ltr"');
+    expect(html).toContain("[overflow-wrap:anywhere]");
+    expect(html).toContain("1080863910568919160");
+    expect(html).toContain('name="taxRuleVersionId"');
+    expect(html).toContain("w-full min-w-0 max-w-full");
+  });
 });
