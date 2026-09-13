@@ -33,6 +33,7 @@ const scenarios: Scenario[] = [
   { name: "18 marketing publication is blocked without required consent", proofs: [{ file: "0114_v41_legal_governance_marketing.test.sql", markers: ["consent", "blocked"] }] },
   { name: "19 historical invoice and ledger entries remain immutable", proofs: [{ file: "0003_immutable_ledgers.test.sql", markers: ["immutable"] }, { file: "0112_v41_finance_workflow_commands.test.sql", markers: ["immutable evidence"] }] },
   { name: "20 tenant A cannot read tenant B data in new modules", proofs: [{ file: "0110_v41_privacy_governance.test.sql", markers: ["cannot read another tenant"] }, { file: "0113_v41_resilience_security_registry.test.sql", markers: ["DENY cross-tenant"] }] },
+  { name: "21 admin submits and independently validates external readiness evidence", proofs: [{ file: "0117_v41_admin_external_validations.test.sql", markers: ["four-eyes", "optimistic concurrency", "authenticated-only"] }] },
 ];
 
 const proofFiles = [...new Set(scenarios.flatMap(({ proofs }) => proofs.map(({ file }) => file)))];

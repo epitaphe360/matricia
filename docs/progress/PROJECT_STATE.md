@@ -492,3 +492,18 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - Technical development/staging status is GREEN. Catalogue human review, CNDP/legal
   formalities, real provider certification, production restore/security drills and
   production authorization remain `REQUIRED_NOT_COMPLETED`. No production change occurred.
+
+## Checkpoint V4.1 admin-managed external validation - 2026-09-13
+
+- Migration additive `20260913017100_v41_admin_external_validations.sql` appliquée sur
+  Supabase development/staging; dry-run final `upToDate=true`.
+- Le tableau de bord Admin V4.1 permet désormais la saisie et la validation des neuf
+  familles de preuves externes : CNDP, signature, trois revues catalogue, restauration,
+  test d'intrusion et autorisation Production.
+- Commandes AAL2 idempotentes, validation à quatre yeux, concurrence optimiste,
+  RLS restrictive, preuves/décisions immuables, audit et Event Outbox sont actifs.
+- Gates : DB/RLS 117 fichiers et 2931 assertions PASS; 4 scénarios de concurrence
+  PASS; Web 128 fichiers/490 tests PASS; lint, TypeScript strict et build PASS;
+  E2E V4.1 21 scénarios sur desktop et 360 px, soit 42/42 PASS.
+- Les preuves restent non approuvées tant qu'elles ne sont pas réellement saisies et
+  validées par deux administrateurs distincts. Aucun déploiement Production n'a eu lieu.

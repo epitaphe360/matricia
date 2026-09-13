@@ -19,6 +19,10 @@ Date: 2026-09-13
 
 ## Explicit non-code release conditions
 
+All conditions below are now submitted and approved from the Admin V4.1 dashboard.
+The submitter cannot approve the same evidence; AAL2, immutable history, audit and
+Outbox are enforced by migration 171.
+
 - [ ] Catalogue human review: CONTENT_REVIEW_REQUIRED (6000 Arabic translations,
   2400 expert reviews and 100 recommendation/opportunity links identified).
 - [ ] CNDP/legal formalities: REQUIRED_NOT_COMPLETED.
