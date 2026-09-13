@@ -450,3 +450,26 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - Aucun environnement de production n'a été modifié. La couverture atomique reste
   honnêtement à 1 `PROVEN` et 67 `PARTIAL`; ce checkpoint ne revendique pas une
   V1 terminée à 100 %.
+
+## Checkpoint final de vérification V1 — 2026-09-13
+
+- Les lots consolidés correspondent aux commits `b9d8e69`, `7ba354b`, `59e7491`
+  et `d6c6cd5`. Les Actions universelles sont PASS sur 8/8 parcours E2E et le lot
+  Provider Quotes P23 est PASS sur 4/4 parcours FR/AR, 360 px et desktop.
+- La migration additive
+  `20260912015700_provider_quote_exact_amount_projection.sql` projette les montants
+  `bigint` en `TEXT` sans conversion flottante. Elle est appliquée uniquement sur
+  Supabase development; le dry-run lié final retourne `upToDate=true` sans migration,
+  seed ni rôle en attente. Le test DB `0102` est PASS sur 9/9 assertions et les 4
+  scénarios de concurrence sont PASS.
+- Gate global consolidé : Web 126 fichiers/480 tests PASS; Worker 11 fichiers/54
+  tests PASS; lint, TypeScript strict, build, `release:validate`,
+  `traceability:validate`, `spec:validate` et `git diff --check` PASS.
+- Le P1 qui masquait la soumission d'un devis `DRAFT`/`REVISED` lorsque sa règle
+  fiscale historique n'était plus active est fermé et audité sans finding P0/P1/P2.
+  La création d'une nouvelle révision reste fail-closed sans règle fiscale active.
+- La couverture formelle reste honnêtement à 1/76 exigences `VERIFIED` et 1/68
+  fonctions MAT prouvées. Ce checkpoint confirme les gates exécutés, mais ne
+  revendique pas une V1 Gold Master terminée à 100 %.
+- Aucun environnement, secret ou donnée de production n'a été lu ou modifié; aucun
+  déploiement production n'est autorisé par ce checkpoint.
