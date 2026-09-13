@@ -430,3 +430,23 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   actuellement empêché par le runner GitHub/facturation, ClamAV réel en staging, audit
   manuel lecteur d'écran, déclencheur périodique service-role du scheduler et preuves
   atomiques/signoffs des exigences restantes. Aucun déploiement production n'est autorisé.
+
+## Checkpoint d'intégration final — 2026-09-12
+
+- Portfolio Client : commit `b91de14`, 468/468 tests Web et P22 4/4. Actions
+  universelles : 7/7. Questionnaires/Diagnostics : 4/4.
+- Provider Quotes : 21 tests PASS; devise persistée, sélection multi-organisation
+  explicite et fiscalité autoritative. La migration additive
+  `20260912015600_quote_tax_authority_hardening.sql` est appliquée uniquement sur
+  Supabase development. Le visa indépendant de la migration 156 est PASS sans
+  finding P0/P1/P2; l'autorité runtime est prouvée par 19/19 assertions incluant
+  les appels directs au RPC public sous rôle authentifié.
+- Gate DB globale : 101 fichiers, 2 526 assertions et 4 scénarios de concurrence
+  PASS. E2E critiques : 20/20 PASS; le runner isole, protège et nettoie ses états
+  authentifiés.
+- Typecheck et lint Web PASS. Le dry-run Supabase final retourne
+  `upToDate=true`. Le lint DB global ne remonte pour la migration 156 aucune
+  nouvelle anomalie; ses alertes restantes sont des dettes historiques hors 156.
+- Aucun environnement de production n'a été modifié. La couverture atomique reste
+  honnêtement à 1 `PROVEN` et 67 `PARTIAL`; ce checkpoint ne revendique pas une
+  V1 terminée à 100 %.

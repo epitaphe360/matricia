@@ -14,6 +14,7 @@ const MODULES:readonly ModuleLink[]=[
  {key:"clientMissions",path:"client/missions",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN"]},
  {key:"diagnostics",path:"client/diagnostics",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_BUYER","CLIENT_VIEWER"]},
  {key:"providerReputation",path:"sous-traitant/reputation",space:"provider",roles:["PROVIDER_OWNER","PROVIDER_MANAGER","PROVIDER_SALES","PROVIDER_VIEWER"]},
+ {key:"providerQuotes",path:"sous-traitant/devis",space:"provider",roles:["PROVIDER_OWNER","PROVIDER_MANAGER","PROVIDER_SALES","PROVIDER_VIEWER"]},
  {key:"providerMissions",path:"sous-traitant/missions",space:"provider",roles:["PROVIDER_OWNER","PROVIDER_MANAGER","PROVIDER_TECHNICIAN"]},
  {key:"franchiseGovernance",path:"franchise/gouvernance",space:"franchise",roles:["FRANCHISE_OWNER","FRANCHISE_MANAGER","FRANCHISE_EXPERT","FRANCHISE_PROVIDER_MANAGER","FRANCHISE_ACCOUNTING","FRANCHISE_VIEWER"],platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER","READ_ONLY_AUDITOR"]},
  {key:"franchiseFollowups",path:"franchise/relances",space:"franchise",roles:["FRANCHISE_OWNER","FRANCHISE_MANAGER","FRANCHISE_EXPERT","FRANCHISE_PROVIDER_MANAGER","FRANCHISE_ACCOUNTING","FRANCHISE_VIEWER"],platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER","LIBRARY_MANAGER","READ_ONLY_AUDITOR"]},
@@ -27,6 +28,7 @@ const MODULES:readonly ModuleLink[]=[
  {key:"questionnaireAnalytics",path:"administration/questionnaires/analytique",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","LIBRARY_MANAGER","READ_ONLY_AUDITOR"]},
  {key:"notifications",path:"notifications",space:"universal",requiresMembership:true},
  {key:"messaging",path:"messagerie",space:"universal",requiresMembership:true},
+ {key:"actionCenter",path:"actions",space:"universal",requiresMembership:true},
 ];
 const membershipRows=z.array(z.object({id:z.string().uuid()})),roleRows=z.array(z.object({role_code:z.string(),revoked_at:z.string().nullable()})),platformRows=z.array(z.object({role_code:z.string()}));
 

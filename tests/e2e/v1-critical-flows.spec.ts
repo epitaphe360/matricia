@@ -37,6 +37,7 @@ const otherRoleRoutes = [
   "sous-traitant/qualification",
   "sous-traitant/facturation",
   "sous-traitant/missions",
+  "sous-traitant/devis",
   "franchise/gouvernance",
 ] as const;
 
