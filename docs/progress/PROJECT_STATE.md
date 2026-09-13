@@ -565,3 +565,13 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   idempotence, autorisation restrictive et validation des identifiants.
 - Gates : DB/RLS 121 fichiers, 2 979 assertions et 4 scénarios de concurrence PASS;
   lint, TypeScript strict et build PASS. Aucun environnement de production modifié.
+
+## Checkpoint autosauvegarde questionnaire résiliente — 2026-09-13
+
+- L'autosauvegarde Client conserve le délai de 800 ms, renouvelle les identités de
+  commande et synchronise désormais les versions optimistes renvoyées par le serveur.
+- Une saisie effectuée hors ligne reste dans l'onglet, passe en file d'attente et est
+  renvoyée automatiquement au retour du réseau; un conflit propose explicitement de
+  recharger la version serveur sans écrasement silencieux.
+- Messages FR/AR, états accessibles et commandes tactiles 44 px minimum sont fournis.
+- Gates : Web 128 fichiers/491 tests PASS; lint, TypeScript strict et build PASS.
