@@ -701,3 +701,23 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   désactivée jusqu'à l'injection KMS/Vault des credentials acquis et aux essais
   fournisseurs; le `container_id` Meta ambigu requiert une revue/réconciliation
   humaine et n'est jamais republié automatiquement.
+
+## Checkpoint MARKETING-007 — tendances hebdomadaires — 2026-09-13
+
+- Migration additive `20260913018600_marketing_weekly_trends.sql` appliquée
+  uniquement sur Supabase development; le dry-run final confirme la cible à jour.
+- L'agrégateur hebdomadaire calcule les volumes et croissances en anomalies
+  distinctes, applique avant agrégation le consentement Marketing Analytics, les
+  seuils de confidentialité et de croissance versionnés, puis crée les snapshots
+  et suggestions sans exposer de PII.
+- Le worker est protégé par `CRON_SECRET`, paginé à 500 groupes et reprend après
+  interruption grâce à un checkpoint privé durable, un verrou advisory et un
+  verrou de ligne. Les mutations sont idempotentes, auditées et émises via Outbox.
+- Gates : DB/RLS 132 fichiers, 3 150 assertions et 4 scénarios de concurrence
+  PASS; Web 133 fichiers/526 tests PASS; lint, TypeScript strict et build PASS. Réaudit indépendant :
+  GO/MERGEABLE, 0 P0 et 0 P1. `MARKETING-007` reste `IN_PROGRESS` jusqu'à l'E2E
+  authentifié et à la preuve d'exécution planifiée.
+- L'audit atomique consolidé confirme honnêtement 1/76 exigence `VERIFIED`; les
+  autres exigences disposent d'implémentations partielles mais attendent encore
+  leur preuve atomique et leur visa indépendant. Aucun environnement de production
+  n'a été modifié.

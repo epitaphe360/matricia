@@ -45,7 +45,7 @@ Autorité : Gold Master V4 FINAL. Audit ciblé sans chargement du catalogue des 
 | 004 | règles versionnées par compte social, 8 posts/4 reels/jour 25, calendriers et états | PARTIAL — job mensuel et approbation globale E2E absents. |
 | 005 | connexions/comptes/jobs/résultats, consentement, idempotence | PARTIAL — adaptateurs LinkedIn/Meta sandbox et failover provider absents. |
 | 006 | événements immuables, leads, chemins multi-touch, valeur bigint, LAST_NON_DIRECT_CLICK | PARTIAL — ingestion publique CTA et liaison réelle diagnostic/RFQ/contrat absentes. |
-| 007 | seuil de confidentialité versionné, snapshots/cibles pseudonymisés, suggestions tenant-scoped | PARTIAL — agrégateur hebdomadaire et génération depuis anomalies absents. |
+| 007 | `18600`, test `0132`, worker hebdomadaire Vercel; consentement, seuils versionnés, snapshots/suggestions, reprise durable | PARTIAL — agrégateur depuis anomalies livré et audité sans P0/P1; E2E authentifié et preuve d'exécution planifiée restent à signer. |
 | 008 | vue KPI et recommandations bornées | PARTIAL — vues/filtres complets acteur/bibliothèque/service/réseau/période et E2E absents. |
 
 ## Contrôles de sécurité

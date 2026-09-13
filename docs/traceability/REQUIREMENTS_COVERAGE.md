@@ -2,7 +2,7 @@
 
 Autorité : Gold Master V4 FINAL. Audit au 2026-09-13 : **1/68 `VERIFIED`, 67/68 `IN_PROGRESS`, 0/68 `PLANNED`** pour `MAT-FUNC-001..068`. Dans ce registre validable, `IN_PROGRESS` correspond à `PARTIAL` : une implémentation existe, mais au moins une preuve atomique manque. `VERIFIED` reste interdit sans contrat, implémentation, tests SQL/RLS et E2E, preuve d’exécution et visa indépendant.
 
-Les références détaillées et la preuve manquante exacte de chaque ligne `IN_PROGRESS` sont consignées dans `docs/traceability/V1_IMPLEMENTATION_COVERAGE_2026-09-12.md`. Les huit lignes Marketing restent `PLANNED` et ne changent pas le compteur des 68 fonctions V1.
+Les références détaillées et la preuve manquante exacte de chaque ligne `IN_PROGRESS` sont consignées dans `docs/traceability/V1_IMPLEMENTATION_COVERAGE_2026-09-12.md`. Sept lignes Marketing restent `PLANNED`; `MARKETING-007` est `IN_PROGRESS` après livraison de l'agrégateur hebdomadaire, sans changer le compteur des 68 fonctions V1.
 
 | requirement | status | implementation_refs | test_refs | evidence | owner | release_signoff |
 |---|---|---|---|---|---|---|
@@ -80,7 +80,7 @@ Les références détaillées et la preuve manquante exacte de chaque ligne `IN_
 | MARKETING-004 | PLANNED | [] | [] | [] | marketing-automation-agent | PENDING |
 | MARKETING-005 | PLANNED | [] | [] | [] | social-integration-agent | PENDING |
 | MARKETING-006 | PLANNED | [] | [] | [] | marketing-analytics-agent | PENDING |
-| MARKETING-007 | PLANNED | [] | [] | [] | marketing-automation-agent | PENDING |
+| MARKETING-007 | IN_PROGRESS | [supabase/migrations/20260913018600_marketing_weekly_trends.sql, apps/web/app/api/workers/marketing-trends/route.ts, apps/web/vercel.json] | [supabase/tests/0132_marketing_weekly_trends.test.sql, apps/web/app/api/workers/marketing-trends/route.test.ts] | [docs/traceability/V1_ATOMIC_GAP_AUDIT_2026-09-13.md, docs/progress/PROJECT_STATE.md] | marketing-automation-agent | PENDING:E2E-authentifie-et-preuve-operationnelle |
 | MARKETING-008 | PLANNED | [] | [] | [] | marketing-analytics-agent | PENDING |
 
 Les exigences `MAT-FUNC-069..090` sont explicitement hors périmètre V1. Marketing Autopilot est détaillé dans `docs/specs/sections/marketing-autopilot.md`.

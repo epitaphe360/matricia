@@ -8,6 +8,10 @@
     {
       "path": "/api/workers/marketing-publications?limit=10",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/workers/marketing-trends",
+      "schedule": "15 4 * * 1"
     }
   ]
 }
