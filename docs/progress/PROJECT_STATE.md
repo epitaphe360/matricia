@@ -575,3 +575,15 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   recharger la version serveur sans écrasement silencieux.
 - Messages FR/AR, états accessibles et commandes tactiles 44 px minimum sont fournis.
 - Gates : Web 128 fichiers/491 tests PASS; lint, TypeScript strict et build PASS.
+
+## Checkpoint centres de coûts transversaux — 2026-09-13
+
+- Migration additive `20260913017600_typed_cost_center_financial_links.sql`
+  appliquée uniquement sur Supabase development/staging.
+- Les allocations relient désormais un centre de coûts aux projets, tâches, contrats,
+  missions, jalons, factures Provider côté Client, documents et RFQ. Chaque référence
+  est validée dans le tenant; une facture ne peut pas être surallouée.
+- L'interface Portefeuille FR/AR expose le type et l'identifiant de la source; les
+  montants restent en unités mineures côté serveur, avec idempotence, audit et Outbox.
+- Gates : DB/RLS 122 fichiers, 2 989 assertions et 4 scénarios de concurrence PASS;
+  lint, TypeScript strict et build PASS. Aucun environnement de production modifié.
