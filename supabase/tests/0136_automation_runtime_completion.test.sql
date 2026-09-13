@@ -13,6 +13,11 @@ select isnt_empty($$select 1 from pg_get_functiondef('public.claim_notification_
 select isnt_empty($$select 1 from pg_get_functiondef('public.record_notification_delivery_worker_result_v1(uuid,uuid,text,text,text,text,jsonb,text,uuid)'::regprocedure)d where d like '%DEAD_LETTER%'and d like '%NotificationDeliveryRetryScheduledV1%'$$,'result supports retry and DLQ evidence');
 select isnt_empty($$select 1 from pg_get_functiondef('public.run_domain_automation_schedulers_v1(date,integer)'::regprocedure)d where d like '%pg_try_advisory_xact_lock%'$$,'scheduler rejects a concurrent run through its transaction lock');
 
+-- Isolate the deterministic claim fixture from pre-existing development jobs.
+update public.notification_deliveries
+set next_attempt_at=clock_timestamp()+interval'1 day'
+where status in('PENDING','FAILED')and(next_attempt_at is null or next_attempt_at<=clock_timestamp());
+
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)values('13600000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','p136@example.invalid','',now(),'{}','{}',now(),now());
 insert into public.organizations(id,legal_name,display_name,status,created_by)values('13610000-0000-4000-8000-000000000001','P136 SARL','P136','ACTIVE','13600000-0000-4000-8000-000000000001');
 insert into public.organization_memberships(id,organization_id,user_id,status,activated_at)values('13611000-0000-4000-8000-000000000001','13610000-0000-4000-8000-000000000001','13600000-0000-4000-8000-000000000001','ACTIVE',clock_timestamp());

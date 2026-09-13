@@ -730,7 +730,10 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - Gates locales finales : Web 149 fichiers/621 tests PASS; TypeScript strict PASS;
   lint PASS; aucun marqueur incomplet. SQL 0133/0135 PASS (64 assertions), 0134
   PASS (61), 0136 PASS (33 + 4 concurrences) et 0137 PASS (64) sur bases fraîches.
-- Le dry-run Supabase lié confirme uniquement les migrations 187–192 en attente.
-  Leur application development a été refusée par le garde d'autorisation de l'hôte;
-  elle reste donc à exécuter, suivie du SQL/RLS distant et des E2E authentifiés sans
-  skip. Aucun statut global 100 % ou VERIFIED n'est revendiqué avant ces preuves.
+- Les migrations 187–192 ont été appliquées manuellement sur Supabase development,
+  puis inscrites dans l'historique CLI. Le correctif additif 193 normalise la portée
+  d'idempotence des revues Marketing et a été appliqué automatiquement.
+- Tests development : 0133 PASS (33), 0134 PASS (61), 0135 PASS (34), 0136 PASS
+  (33), 0137 PASS (64), 0138 PASS (8), plus 4 scénarios de concurrence. Les E2E
+  authentifiés sans skip et la configuration des fournisseurs externes restent les
+  seules preuves opérationnelles de ce checkpoint; aucune production n'a été touchée.
