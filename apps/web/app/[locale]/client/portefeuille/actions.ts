@@ -6,7 +6,6 @@ import { code, locale, moneyToMinor, sha256, uuid } from "@/lib/client-portfolio
 import { portfolioRpc } from "@/lib/client-portfolio/server-repository";
 
 export type State = { status: "idle" } | { status: "success" } | { status: "error"; reason: "VALIDATION" | "FORBIDDEN" | "UNAVAILABLE" };
-export const idle: State = { status: "idle" };
 const base = z.object({ locale, idempotencyKey: uuid });
 const optionalUuid = z.union([z.literal(""), uuid]);
 const nullable = (value: string) => value || null;
@@ -30,3 +29,6 @@ export async function recordAllocation(_:State,form:FormData):Promise<State>{con
 
 const eventSchema=base.extend({organizationId:uuid,projectId:optionalUuid,eventType:z.enum(["CUSTOM","PROJECT_DEADLINE","APPROVAL","DOCUMENT","INVOICE","MISSION","RFQ"]),titleFr:z.string().trim().min(2).max(240),titleAr:z.string().trim().min(2).max(240),startsAt:z.string().datetime({local:true}),endsAt:z.string()});
 export async function scheduleEvent(_:State,form:FormData):Promise<State>{const p=eventSchema.safeParse(Object.fromEntries([...form.keys()].map(key=>[key,field(form,key)])));if(!p.success||p.data.endsAt&&p.data.endsAt<p.data.startsAt)return{status:"error",reason:"VALIDATION"};return execute(p.data.locale,"schedule_client_calendar_event",{p_organization_id:p.data.organizationId,p_project_id:nullable(p.data.projectId),p_event_type:p.data.eventType,p_title_fr:p.data.titleFr,p_title_ar:p.data.titleAr,p_starts_at:new Date(p.data.startsAt).toISOString(),p_ends_at:p.data.endsAt?new Date(p.data.endsAt).toISOString():null,p_source_type:null,p_source_id:null,p_idempotency_key:p.data.idempotencyKey,p_correlation_id:randomUUID()});}
+
+const contractLinkSchema=base.extend({projectId:uuid,contractId:uuid});
+export async function linkContract(_:State,form:FormData):Promise<State>{const p=contractLinkSchema.safeParse(Object.fromEntries([...form.keys()].map(key=>[key,field(form,key)])));if(!p.success)return{status:"error",reason:"VALIDATION"};return execute(p.data.locale,"link_contract_to_client_project",{p_project_id:p.data.projectId,p_contract_id:p.data.contractId,p_idempotency_key:p.data.idempotencyKey,p_correlation_id:randomUUID()});}

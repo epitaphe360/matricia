@@ -9,13 +9,22 @@ export type Capability = "READ" | "MANAGE_PORTFOLIO" | "MANAGE_BUDGET";
 export type Organization = { id: string; name: string; capabilities: Capability[] };
 export type Site = { id: string; organizationId: string; code: string; nameFr: string; nameAr: string };
 export type Project = { id: string; organizationId: string; code: string; siteId: string | null; status: string; version: number; rowVersion: number; progressBasisPoints: number; nameFr: string; nameAr: string; descriptionFr: string; descriptionAr: string; startedOn: string | null; targetEndOn: string | null };
+export type Contract = { id: string; organizationId: string; providerOrganizationId: string; projectId: string | null; status: string; version: number };
 export type Task = { id: string; projectId: string; key: string; type: string; status: string; dueAt: string | null; rowVersion: number; titleFr: string; titleAr: string };
 export type Budget = { id: string; organizationId: string; fiscalYear: number; currency: string; libraryId: string | null; siteId: string | null; projectId: string | null; status: string; version: number; amountMinor: string; approvedAmountMinor: string | null };
 export type CostCenter = { id: string; organizationId: string; code: string; status: string; version: number; nameFr: string; nameAr: string };
 export type Allocation = { id: string; organizationId: string; costCenterId: string; budgetId: string; projectId: string | null; type: string; amountMinor: string; currency: string; createdAt: string };
-export type CalendarItem = { organizationId: string; projectId: string | null; itemId: string; sourceKind: string; eventType: string; titleFr: string; titleAr: string; startsAt: string; endsAt: string | null; status: string };
+export type CalendarItem = { organizationId: string; projectId: string | null; itemId: string; sourceKind: string; eventType: string; titleFr: string; titleAr: string; startsAt: string; endsAt: string | null; status: string; occursOn: string | null; allDay: boolean };
 export type Library = { id: string; nameFr: string; nameAr: string };
-export type Portfolio = { organizations: Organization[]; sites: Site[]; projects: Project[]; tasks: Task[]; budgets: Budget[]; costCenters: CostCenter[]; allocations: Allocation[]; calendar: CalendarItem[]; libraries: Library[] };
+export type Portfolio = { organizations: Organization[]; sites: Site[]; projects: Project[]; contracts: Contract[]; tasks: Task[]; budgets: Budget[]; costCenters: CostCenter[]; allocations: Allocation[]; calendar: CalendarItem[]; libraries: Library[] };
+
+export function displayCalendarDate(item: CalendarItem, localeValue: "fr" | "ar"): string {
+  if (item.allDay && item.occursOn) {
+    const [year, month, day] = item.occursOn.split("-").map(Number);
+    if (year && month && day) return new Intl.DateTimeFormat(localeValue === "ar" ? "ar-MA" : "fr-MA", { dateStyle: "long", timeZone: "UTC" }).format(new Date(Date.UTC(year, month - 1, day)));
+  }
+  return new Intl.DateTimeFormat(localeValue === "ar" ? "ar-MA" : "fr-MA", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Casablanca" }).format(new Date(item.startsAt));
+}
 
 export type RepoResult<T> = { status: "success"; value: T } | { status: "error"; reason: "UNAUTHENTICATED" | "FORBIDDEN" | "UNAVAILABLE" };
 

@@ -4,11 +4,12 @@ const mocks = vi.hoisted(() => ({ rpc: vi.fn(), revalidate: vi.fn() }));
 vi.mock("@/lib/client-portfolio/server-repository", () => ({ portfolioRpc: mocks.rpc }));
 vi.mock("@/lib/client-portfolio/model", async () => import("../../../../lib/client-portfolio/model"));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidate }));
-import { createProject, idle, recordAllocation, saveBudget, scheduleEvent } from "./actions";
+import { createProject, linkContract, recordAllocation, saveBudget, scheduleEvent } from "./actions";
 
 const id = (n: number) => `${String(n).padStart(8, "0")}-0000-4000-8000-000000000000`;
 function form(values: Record<string, string>) { const result = new FormData(); for (const [key, value] of Object.entries(values)) result.set(key, value); return result; }
 const base = { locale: "fr", idempotencyKey: id(1) };
+const idle = { status:"idle" } as const;
 
 describe("client portfolio actions", () => {
   beforeEach(() => { mocks.rpc.mockReset().mockResolvedValue({ status: "success", value: {} }); mocks.revalidate.mockReset(); });
@@ -33,5 +34,10 @@ describe("client portfolio actions", () => {
   it("requires a positive allocation and a SHA-256 evidence binding", async () => {
     await expect(recordAllocation(idle, form({ ...base, organizationId: id(2), costCenterId: id(3), budgetId: id(4), projectId: "", allocationType: "ACTUAL", amount: "0", evidenceHash: "bad" }))).resolves.toEqual({ status: "error", reason: "VALIDATION" });
     expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it("links a validated contract to a project through the audited command", async () => {
+    await expect(linkContract(idle, form({ ...base, projectId:id(3), contractId:id(4) }))).resolves.toEqual({ status:"success" });
+    expect(mocks.rpc).toHaveBeenCalledWith("link_contract_to_client_project", expect.objectContaining({ p_project_id:id(3), p_contract_id:id(4), p_idempotency_key:id(1) }));
   });
 });

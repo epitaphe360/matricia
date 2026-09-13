@@ -17,6 +17,10 @@ for (const locale of ["fr", "ar"] as const) {
       await expect(page.locator("html")).toHaveAttribute("lang", locale);
       await expect(page.locator("html")).toHaveAttribute("dir", locale === "ar" ? "rtl" : "ltr");
       await expect(page.getByRole("heading", { level: 1, name: headings[locale] })).toBeVisible();
+      await expect(page.getByText(locale === "ar" ? "التقويم المركزي" : "Calendrier central")).toBeVisible();
+      await expect(page.getByText(locale === "ar" ? "العقود" : "Contrats", { exact: true })).toBeVisible();
+      const linkHeading = page.getByText(locale === "ar" ? "ربط عقد" : "Rattacher un contrat", { exact: true });
+      if (await linkHeading.count()) await expect(linkHeading).toBeVisible();
       const foreignOrganization = process.env.E2E_FOREIGN_ORGANIZATION_NAME;
       if (foreignOrganization) await expect(page.locator("body")).not.toContainText(foreignOrganization);
       const size = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, content: document.documentElement.scrollWidth }));
