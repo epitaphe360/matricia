@@ -507,3 +507,20 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   E2E V4.1 21 scénarios sur desktop et 360 px, soit 42/42 PASS.
 - Les preuves restent non approuvées tant qu'elles ne sont pas réellement saisies et
   validées par deux administrateurs distincts. Aucun déploiement Production n'a eu lieu.
+
+## Checkpoint MAT-FUNC-026 — activation complète des avenants — 2026-09-13
+
+- Migrations additives `20260913017200` et corrective de compatibilité `17201`
+  appliquées uniquement sur Supabase development/staging; dry-run final
+  `upToDate=true`.
+- Un avenant passe désormais de DRAFT à PENDING_SIGNATURE, exige les signatures AAL2
+  distinctes Client et Sous-traitant, puis crée une nouvelle version contractuelle
+  immutable. Parties, clauses et items sont snapshotés; les deltas ADD/REPLACE/REMOVE
+  sont appliqués sans modifier l'historique; la mission active est rattachée à la
+  nouvelle version.
+- Interfaces FR/AR et responsive ajoutées aux espaces Client et Sous-traitant.
+  Mutations idempotentes, RLS restrictive, concurrence, audit et Event Outbox actifs.
+- Gates : DB/RLS 118 fichiers, 2946 assertions et 4 scénarios de concurrence PASS;
+  lint, TypeScript strict, build et absence de placeholders PASS.
+- Aucun environnement de production n'a été modifié. Prochain lot : coffre documentaire
+  transversal et réutilisation contrôlée conformité/RFQ/contrat/mission.
