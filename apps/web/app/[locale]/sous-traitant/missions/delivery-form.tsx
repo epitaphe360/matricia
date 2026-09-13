@@ -19,11 +19,7 @@ export function DeliveryForm({deliverableId,locale,idempotencyKey,messages:m}:{d
       <input type="hidden" name="locale" value={locale}/><input type="hidden" name="deliverableId" value={deliverableId}/><input type="hidden" name="idempotencyKey" value={idempotencyKey}/>
       <Field id={`${id}-description`} label={m.descriptionLabel}><textarea id={`${id}-description`} name="description" required minLength={3} maxLength={4000} className="min-h-28 w-full rounded-md border bg-background p-3 text-base"/></Field>
       <Field id={`${id}-links`} label={m.links}><textarea id={`${id}-links`} name="linksText" maxLength={6000} dir="ltr" className="min-h-24 w-full rounded-md border bg-background p-3 text-base"/></Field>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field id={`${id}-type`} label={m.proofType}><select id={`${id}-type`} name="proofType" className="min-h-11 w-full rounded-md border bg-background px-3 text-base">{["DOCUMENT","IMAGE","URL","CHECKLIST","OTHER"].map(type=><option key={type}>{type}</option>)}</select></Field>
-        <Field id={`${id}-location`} label={m.proofLocation}><Input id={`${id}-location`} name="proofLocation" required maxLength={1000} dir="ltr" className="min-h-11 text-base"/></Field>
-      </div>
-      <Field id={`${id}-hash`} label={locale==="ar"?"بصمة SHA-256 الحقيقية للملف":"Empreinte SHA-256 réelle du fichier"}><Input id={`${id}-hash`} name="evidenceHash" required pattern="[0-9a-fA-F]{64}" minLength={64} maxLength={64} dir="ltr" className="min-h-11 font-mono text-base"/></Field>
+      <Field id={`${id}-file`} label={locale==="ar"?"ملف الدليل (PDF أو JPEG أو PNG، 10 ميغابايت كحد أقصى)":"Fichier de preuve (PDF, JPEG ou PNG, 10 Mo maximum)"}><Input id={`${id}-file`} name="proofFile" type="file" required accept="application/pdf,image/jpeg,image/png" className="min-h-11 text-base"/></Field>
       <Field id={`${id}-note`} label={m.proofNote}><Input id={`${id}-note`} name="proofNote" maxLength={500} className="min-h-11 text-base"/></Field>
       <Button disabled={pending} className="min-h-11 w-full sm:w-fit">{pending?m.pending:m.send}</Button>
       <p role={state.status==="error"?"alert":"status"} aria-live="polite" className={state.status==="error"?"min-h-5 text-sm text-destructive":"min-h-5 text-sm text-primary"}>{feedback}</p>

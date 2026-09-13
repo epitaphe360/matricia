@@ -99,6 +99,14 @@ describe("marketing publication worker", () => {
     expect(mocks.rpc).toHaveBeenCalledTimes(2);
   });
 
+  it("compte une publication sandbox comme preuve traitée, jamais comme skip", async () => {
+    const claimed = job("5");
+    sequence({ data: claimed, error: null }, { data: { outcome: "SANDBOXED" }, error: null });
+    mocks.publish.mockResolvedValue({ outcome: "SANDBOXED" });
+    const response = await POST(request("?limit=1"));
+    expect(await response.json()).toMatchObject({ processed: 1, sandboxed: 1, skipped: 0 });
+  });
+
   it("balaye les leases expirés avant de réclamer un nouveau job", async () => {
     mocks.rpc.mockImplementation(async (name: string) => name === "mark_timed_out_social_publication_attempts_v1" ? { data: { outcome: "MARKETING_TIMEOUTS_PROCESSED", marked: 2 }, error: null } : { data: { outcome: "NO_JOB" }, error: null });
     const response = await POST(request());

@@ -32,6 +32,9 @@ export const scheduleRuleInput = z.object({
 }).refine((value) => value.postsPerMonth + value.reelsPerMonth > 0, "empty calendar");
 export const scheduleRuleActivationInput = z.object({ ruleId: uuid, headRowVersion: z.coerce.number().int().nonnegative(), idempotencyKey: commandKey });
 export const assistedCalendarApprovalInput = z.object({ calendarId: uuid, rowVersion: z.coerce.number().int().positive(), idempotencyKey: commandKey });
+export const brandKitInput=z.object({organizationId:uuid,payload:z.record(z.string(),z.unknown()),claims:z.array(z.unknown()),certifications:z.array(z.unknown()),changeReason:z.string().trim().min(3).max(500),markReady:z.boolean(),idempotencyKey:commandKey});
+export const templateInitializationInput=z.object({idempotencyKey:commandKey});
+export const brandEvidenceReviewInput=z.object({brandKitVersionId:uuid,evidenceType:z.enum(["CLAIM","CERTIFICATION"]),evidenceKey:z.string().trim().min(2).max(120),decision:z.enum(["VERIFIED","REJECTED","REVOKED"]),evidenceHash:sha256,validUntil:z.string().datetime({offset:true}).nullable(),reason:z.string().trim().min(3).max(1000),idempotencyKey:commandKey});
 
 export type MarketingDashboard = {
   organizations: Array<{ id: string; name: string }>;
@@ -39,6 +42,9 @@ export type MarketingDashboard = {
   brandVersions: Array<{ id: string; organizationId: string; version: number; status: string; tradeName: string }>;
   connections: Array<{ id: string; organizationId: string; provider: "LINKEDIN" | "META"; status: string }>;
   socialAccounts: Array<{ id: string; organizationId: string; connectionId: string; provider: "LINKEDIN" | "META"; displayName: string; status: string }>;
+  brandAuthorizations?:Array<{id:string;organizationId:string;decision:"GRANTED"|"WITHDRAWN";scope:string[];policyVersion:string;effectiveFrom:string;effectiveUntil:string|null}>;
+  connectionSecurity?:Array<{id:string;organizationId:string;connectionId:string;version:number;provider:"LINKEDIN"|"META";status:string;approvedScopes:string[];expiresAt:string|null}>;
+  killSwitches?:Array<{id:string;organizationId:string|null;scope:"GLOBAL"|"PROVIDER";provider:"LINKEDIN"|"META"|null;version:number;enabled:boolean;reason:string;decidedAt:string}>;
   scheduleRules: Array<{ id: string; organizationId: string; socialAccountId: string; version: number; status: string; timezone: string; postsPerMonth: number; reelsPerMonth: number; generationDay: number; allowedSlots: Array<z.infer<typeof marketingAllowedSlot>>; maxServiceRepetition: number; privacyMinimumAggregate: number; effective: boolean; headRowVersion: number }>;
   campaigns: Array<{ id: string; organizationId: string; mode: z.infer<typeof campaignMode>; titleFr: string; titleAr: string; status: string; frequencyMaxWeekly: number; riskThreshold: number; rowVersion: number; approvedAt: string | null }>;
   contents: Array<{ id: string; campaignId: string; channel: "LINKEDIN" | "FACEBOOK" | "INSTAGRAM" | "REEL"; versionId: string; language: "FR" | "AR"; hook: string; body: string; cta: string; hashtags: string[]; riskScore: number; status: string; expiresAt: string | null }>;
@@ -46,7 +52,16 @@ export type MarketingDashboard = {
   calendar: Array<{ id: string; calendarId: string; campaignId: string; contentVersionId: string; scheduledAt: string; status: string }>;
   exceptions: Array<{ id: string; organizationId: string; campaignId: string; contentVersionId: string | null; type: string; severity: "WARNING" | "BLOCKING"; reason: string; automaticResolutionPossible: boolean; status: string; resolution: string | null; createdAt: string }>;
   performance: Array<{ campaignId: string; generated: string; published: string; failed: string; impressions: string; clicks: string; leads: string; diagnostics: string; opportunities: string; rfqs: string; contracts: string; attributedValueMinor: string; marketingCostMinor: string; feedback: z.infer<typeof marketingFeedback> }>;
+  performanceDimensions: Array<{ organizationId:string;campaignId:string;actorUserId:string;contentId:string|null;libraryId:string|null;serviceId:string|null;network:"LINKEDIN"|"FACEBOOK"|"INSTAGRAM"|"REEL"|null;metricDate:string;metric:string;quantity:string;valueMinor:string;currency:string|null;providerOrganizationId:string|null;franchiseId:string|null }>;
 };
 
 export function parseJsonObject(value: string) { try { const parsed: unknown = JSON.parse(value); return z.record(z.string(), z.unknown()).safeParse(parsed); } catch { return { success: false as const }; } }
-export function formatMinor(value: string, currency: string, locale: "fr" | "ar") { const minor = BigInt(value), zero = BigInt(0), hundred = BigInt(100), negative = minor < zero, absolute = negative ? -minor : minor; return `${negative ? "−" : ""}${(absolute / hundred).toLocaleString(locale === "ar" ? "ar-MA" : "fr-MA")},${(absolute % hundred).toString().padStart(2, "0")}\u00a0${currency}`; }
+const arabicDigits = "٠١٢٣٤٥٦٧٨٩";
+function localizeDigits(value: string) { return value.replace(/\d/g, (digit) => arabicDigits[Number(digit)]!); }
+function groupInteger(value: string, separator: string) { return value.replace(/\B(?=(\d{3})+(?!\d))/g, separator); }
+export function formatMinor(value: string, currency: string, locale: "fr" | "ar") {
+  const minor = BigInt(value), zero = BigInt(0), hundred = BigInt(100), negative = minor < zero, absolute = negative ? -minor : minor;
+  const whole = (absolute / hundred).toString(), fraction = (absolute % hundred).toString().padStart(2, "0");
+  if (locale === "ar") return `${negative ? "−" : ""}${localizeDigits(groupInteger(whole, "٬"))}٫${localizeDigits(fraction)}\u00a0${currency}`;
+  return `${negative ? "−" : ""}${groupInteger(whole, "\u202f")},${fraction}\u00a0${currency}`;
+}

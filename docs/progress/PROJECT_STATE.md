@@ -721,3 +721,16 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   autres exigences disposent d'implémentations partielles mais attendent encore
   leur preuve atomique et leur visa indépendant. Aucun environnement de production
   n'a été modifié.
+
+## Checkpoint V4.1 — compléments 187–192 — 2026-09-13
+
+- Six migrations additives couvrent Marketing/CTA et approbations, preuves Client/
+  Provider, notifications et schedulers, réputation/badges/checklists, ainsi que le
+  centre financier/coûts/économies/ROI. Aucun reset ni changement production.
+- Gates locales finales : Web 149 fichiers/621 tests PASS; TypeScript strict PASS;
+  lint PASS; aucun marqueur incomplet. SQL 0133/0135 PASS (64 assertions), 0134
+  PASS (61), 0136 PASS (33 + 4 concurrences) et 0137 PASS (64) sur bases fraîches.
+- Le dry-run Supabase lié confirme uniquement les migrations 187–192 en attente.
+  Leur application development a été refusée par le garde d'autorisation de l'hôte;
+  elle reste donc à exécuter, suivie du SQL/RLS distant et des E2E authentifiés sans
+  skip. Aucun statut global 100 % ou VERIFIED n'est revendiqué avant ces preuves.

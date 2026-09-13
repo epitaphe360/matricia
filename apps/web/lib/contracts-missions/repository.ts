@@ -12,7 +12,7 @@ const signatureRow = z.object({ id, contract_id: id, contract_version_id: id, or
 const itemType = z.enum(["DELIVERABLE", "EXCLUSION", "ACCEPTANCE_CRITERION", "PAYMENT_TERM", "CORRECTION", "PENALTY"]);
 const itemRow = z.object({ id, contract_version_id: id, item_key: z.string(), item_type: itemType, label_fr: z.string().min(1), label_ar: z.string().min(1), sort_order: z.number().int().positive() });
 const missionRow = z.object({ id, contract_id: id, contract_version_id: id, status: z.string(), started_at: z.string().nullable(), completed_at: z.string().nullable() });
-const milestoneRow = z.object({ id, mission_id: id, milestone_key: z.string(), title_fr: z.string(), title_ar: z.string(), status: z.string(), due_at: z.string().nullable() });
+const milestoneRow = z.object({ id, mission_id: id, milestone_key: z.string(), title_fr: z.string(), title_ar: z.string(), status: z.string(), due_at: z.string().nullable(), row_version: z.number().int().positive() });
 const deliverableRow = z.object({ id, mission_id: id, deliverable_key: z.string(), label_fr: z.string(), label_ar: z.string(), status: z.string(), current_version: z.number().int().nonnegative() });
 const criterionRow = z.object({ deliverable_id: id, criterion_key: z.string(), status: z.string() });
 const deliveryVersionRow = z.object({ id, deliverable_id: id, version: z.number().int().positive() });
@@ -53,7 +53,7 @@ export async function loadContractMissions(locale: "fr" | "ar"): Promise<LoadRes
   const missionIds = missions.data.map((mission) => mission.id);
   const [itemsResult, milestonesResult, deliverablesResult] = await Promise.all([
     client.from("contract_items").select("id,contract_version_id,item_key,item_type,label_fr,label_ar,sort_order").in("contract_version_id", versionIds).order("sort_order").limit(1000),
-    missionIds.length ? client.from("mission_milestones").select("id,mission_id,milestone_key,title_fr,title_ar,status,due_at").in("mission_id", missionIds).order("sort_order").limit(500) : Promise.resolve({ data: [], error: null }),
+    missionIds.length ? client.from("mission_milestones").select("id,mission_id,milestone_key,title_fr,title_ar,status,due_at,row_version").in("mission_id", missionIds).order("sort_order").limit(500) : Promise.resolve({ data: [], error: null }),
     missionIds.length ? client.from("deliverables").select("id,mission_id,deliverable_key,label_fr,label_ar,status,current_version").in("mission_id", missionIds).limit(500) : Promise.resolve({ data: [], error: null }),
   ]);
   if (itemsResult.error || milestonesResult.error || deliverablesResult.error) return { status: "error", reason: "QUERY_FAILED" };
@@ -115,7 +115,7 @@ export async function loadContractMissions(locale: "fr" | "ar"): Promise<LoadRes
         status: mission.status,
         startedAt: mission.started_at,
         completedAt: mission.completed_at,
-        milestones: milestones.data.filter((milestone) => milestone.mission_id === mission.id).map((milestone) => ({ id: milestone.id, key: milestone.milestone_key, title: locale === "ar" ? milestone.title_ar : milestone.title_fr, status: milestone.status, dueAt: milestone.due_at })),
+        milestones: milestones.data.filter((milestone) => milestone.mission_id === mission.id).map((milestone) => ({ id: milestone.id, key: milestone.milestone_key, title: locale === "ar" ? milestone.title_ar : milestone.title_fr, status: milestone.status, dueAt: milestone.due_at, rowVersion: milestone.row_version })),
         deliverables: deliverables.data.filter((deliverable) => deliverable.mission_id === mission.id).map((deliverable) => {const current=deliveryVersions.data.find((version)=>version.deliverable_id===deliverable.id&&version.version===deliverable.current_version);const proofs=current?deliveryProofs.data.filter((proof)=>proof.delivery_version_id===current.id):[];const proofScanStatus=proofs.length===0?"NONE":proofs.every((proof)=>proof.scan_status==="CLEAN")?"CLEAN":proofs.some((proof)=>proof.scan_status==="INFECTED")?"INFECTED":proofs.some((proof)=>proof.scan_status==="ERROR")?"ERROR":"PENDING";return { id: deliverable.id, key: deliverable.deliverable_key, label: locale === "ar" ? deliverable.label_ar : deliverable.label_fr, status: deliverable.status, currentVersion: deliverable.current_version, proofScanStatus, criteria: criteria.data.filter((criterion) => criterion.deliverable_id === deliverable.id).map((criterion) => ({ key: criterion.criterion_key, status: criterion.status })) };}),
       }];
     }),

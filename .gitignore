@@ -22,9 +22,8 @@ dist/
 .wrangler/
 .sites-runtime/
 *.tsbuildinfo
-/artifacts/test-results/playwright/
-/artifacts/test-results/playwright-report/
-/artifacts/test-results/p06-catalog/
+/artifacts/test-results/*
+!/artifacts/test-results/README.md
 
 # local tools and deployment state
 .vercel/

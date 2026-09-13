@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const headers = { "cache-control": "no-store" } as const;
-type Summary = { processed: number; published: number; retried: number; failed: number; skipped: number; reconciliationRequired: number; timedOutMarked: number; timeoutSweepFailed: boolean };
+type Summary = { processed: number; published: number; sandboxed: number; retried: number; failed: number; skipped: number; reconciliationRequired: number; timedOutMarked: number; timeoutSweepFailed: boolean };
 
 function authorized(request: Request) {
   const expected = process.env.CRON_SECRET ?? "";
@@ -25,7 +25,7 @@ function requestedLimit(request: Request) {
 function countResult(summary: Summary, result: PublicationResult) {
   if (result.outcome === "PUBLISHED") summary.published++;
   else if (result.outcome === "RETRYABLE_FAILURE") summary.retried++;
-  else if (result.outcome === "SANDBOXED") summary.skipped++;
+  else if (result.outcome === "SANDBOXED") summary.sandboxed++;
   else summary.failed++;
 }
 
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   const client = getSupabaseAdminClient();
   const workerId = `web-${randomUUID()}`;
   const limit = requestedLimit(request);
-  const summary: Summary = { processed: 0, published: 0, retried: 0, failed: 0, skipped: 0, reconciliationRequired: 0, timedOutMarked: 0, timeoutSweepFailed: false };
+  const summary: Summary = { processed: 0, published: 0, sandboxed: 0, retried: 0, failed: 0, skipped: 0, reconciliationRequired: 0, timedOutMarked: 0, timeoutSweepFailed: false };
   const timeoutSweep = await client.rpc("mark_timed_out_social_publication_attempts_v1", { p_limit: 100, p_correlation_id: randomUUID() });
   const marked = (timeoutSweep.data as { marked?: unknown } | null)?.marked;
   if (timeoutSweep.error || typeof marked !== "number" || !Number.isInteger(marked) || marked < 0) summary.timeoutSweepFailed = true;

@@ -29,13 +29,27 @@ export const deliverySubmissionSchema = z.object({
   return { ...value, links };
 });
 
+export const milestoneSubmissionSchema = z.object({
+  milestoneId: uuid,
+  expectedRowVersion: z.coerce.number().int().positive(),
+  idempotencyKey: uuid,
+});
+
+export const checklistCompletionSchema = z.object({
+  itemId: uuid,
+  expectedStatus: z.literal("PENDING"),
+  proofId: z.union([uuid, z.literal("")]),
+  idempotencyKey: uuid,
+});
+
 export type ProviderMissionDashboard = {
   organizationId: string;
   organizationName: string;
   missions: Array<{
     id: string; contractId: string; status: string; startedAt: string | null; completedAt: string | null;
     contract: { currentVersion: number; priceMinor: string; currency: string; contentHash: string } | null;
-    milestones: Array<{ id: string; key: string; title: string; status: string; dueAt: string | null }>;
+    milestones: Array<{ id: string; key: string; title: string; status: string; dueAt: string | null; rowVersion: number }>;
+    checklistItems: Array<{ id:string; key:string; label:string; instructions:string|null; proofRequired:boolean; allowedProofTypes:string[]; status:string; templateVersion:number|null; templateHash:string|null; proofOptions:Array<{id:string;type:string}> }>;
     deliverables: Array<{ id:string; key:string; label:string; proofRequired:boolean; status:string; currentVersion:number; versions:Array<{id:string;version:number;description:string;submittedAt:string;contentHash:string;proofCount:number;proofScanStatus:"NONE"|"PENDING"|"CLEAN"|"INFECTED"|"ERROR"}> }>;
   }>;
 };
@@ -43,10 +57,12 @@ export type ProviderMissionDashboard = {
 export const providerMissionRows = {
   membership: z.object({ organization_id: uuid, organizations: z.object({ display_name: z.string().min(1) }) }),
   mission: z.object({ id: uuid, contract_id: uuid, status: z.string(), started_at: z.string().nullable(), completed_at: z.string().nullable() }),
-  milestone: z.object({ id: uuid, mission_id: uuid, milestone_key: z.string(), title_fr: z.string(), title_ar: z.string(), status: z.string(), due_at: z.string().nullable() }),
+  milestone: z.object({ id: uuid, mission_id: uuid, milestone_key: z.string(), title_fr: z.string(), title_ar: z.string(), status: z.string(), due_at: z.string().nullable(), row_version: z.number().int().positive() }),
   deliverable: z.object({ id: uuid, mission_id: uuid, deliverable_key: z.string(), label_fr: z.string(), label_ar: z.string(), proof_required: z.boolean(), status: z.string(), current_version: safeVersion }),
   version: z.object({ id: uuid, deliverable_id: uuid, version: safeVersion, description: z.string(), submitted_at: z.string(), content_hash: z.string().regex(/^[0-9a-f]{64}$/) }),
-  proof: z.object({ delivery_version_id: uuid, scan_status: z.enum(["PENDING","CLEAN","INFECTED","ERROR"]) }),
+  proof: z.object({ id:uuid, delivery_version_id: uuid, proof_type:z.string(), scan_status: z.enum(["PENDING","CLEAN","INFECTED","ERROR"]) }),
+  checklist: z.object({ id:uuid, mission_id:uuid, item_key:z.string(), label_fr:z.string(), label_ar:z.string(), instructions_fr:z.string().nullable(), instructions_ar:z.string().nullable(), proof_required:z.boolean(), allowed_proof_types:z.array(z.string()), status:z.string(), checklist_snapshot_id:uuid.nullable() }),
+  checklistSnapshot: z.object({ id:uuid, mission_id:uuid, template_version:z.number().int().positive(), template_content_hash:z.string().regex(/^[0-9a-f]{64}$/) }),
   contract: z.object({ id: uuid, current_version: z.number().int().positive() }),
   contractVersion: z.object({ contract_id: uuid, version: z.number().int().positive(), price_minor: exactMinor, currency: z.string().regex(/^[A-Z]{3}$/), content_hash: z.string().regex(/^[0-9a-f]{64}$/) }),
 };

@@ -6,5 +6,8 @@ describe("marketing autopilot model", () => {
   it("borne fréquence et risque sans flottants financiers", () => expect(campaignInput.safeParse({ organizationId:id,brandKitVersionId:id,mode:"ASSISTED",titleFr:"Campagne",titleAr:"حملة",frequencyMaxWeekly:8,riskThreshold:20,audienceSnapshot:{segment:"PME"},sourceSnapshot:{version:1},idempotencyKey:id }).success).toBe(true));
   it("impose une date planifiée avec fuseau", () => expect(scheduleInput.safeParse({ campaignId:id,contentVersionId:id,socialConnectionId:id,scheduledAt:"2026-09-13T10:00:00",rowVersion:1,idempotencyKey:id }).success).toBe(false));
   it("rejette les tableaux JSON", () => expect(parseJsonObject("[]").success).toBe(false));
-  it("formate les unités mineures exactement", () => expect(formatMinor("12345","MAD","fr")).toContain("123,45"));
+  it("formate les unités mineures exactement en FR et AR", () => {
+    expect(formatMinor("120000","MAD","fr")).toBe("1 200,00 MAD");
+    expect(formatMinor("120000","MAD","ar")).toBe("١٬٢٠٠٫٠٠ MAD");
+  });
 });
