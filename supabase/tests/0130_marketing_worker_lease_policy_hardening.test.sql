@@ -7,8 +7,8 @@ select has_column('public','social_publication_jobs','claimed_at','jobs record c
 select has_column('public','social_publication_jobs','lease_expires_at','jobs have a bounded lease');
 select has_index('public','social_publication_jobs','social_publication_jobs_lease_idx','expired claims are indexed');
 select isnt_empty($$select 1 from pg_get_functiondef('public.claim_next_social_publication_job_v41(text,uuid)'::regprocedure)d
-  where d like'%lease_expires_at%'and d like'%reclaimed%'$$,
-  'claim worker recovers expired leases and returns recovery evidence');
+  where d like'%lease_expires_at%'and d like'%lease_token%'and d like'%provider_idempotency_key%'$$,
+  'claim worker returns a bounded lease and stable provider idempotency key');
 select isnt_empty($$select 1 from pg_get_functiondef('public.claim_next_social_publication_job_v41(text,uuid)'::regprocedure)d
   where d like'%PUBLICATION_POLICY_BLOCKED%'and d like'%SocialPublicationPolicyBlockedV1%'
   and d like'%marketing.publication.policy_blocked%'$$,

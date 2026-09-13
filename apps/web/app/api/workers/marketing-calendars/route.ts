@@ -33,6 +33,10 @@ function requestedMonth(request: Request): string | null | undefined {
     : month;
 }
 
+function nextMonthStartUtc(now = new Date()): string {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)).toISOString().slice(0, 10);
+}
+
 export async function POST(request: Request): Promise<Response> {
   const correlationId = randomUUID();
   const headers = { ...NO_STORE_HEADERS, "x-correlation-id": correlationId };
@@ -60,7 +64,17 @@ export async function POST(request: Request): Promise<Response> {
       return Response.json({ code: "MARKETING_CALENDAR_GENERATION_FAILED" }, { status: 503, headers });
     }
 
-    return Response.json(data, { status: 200, headers });
+    const effectiveMonth = monthStart ?? nextMonthStartUtc();
+    const shortages = await client.rpc("detect_marketing_calendar_shortages_v1", {
+      p_month_start: effectiveMonth,
+      p_correlation_id: correlationId,
+    });
+    if (shortages.error) {
+      return Response.json({ code: "MARKETING_CALENDAR_SHORTAGE_CHECK_FAILED" }, { status: 503, headers });
+    }
+
+    const generation = data && typeof data === "object" && !Array.isArray(data) ? data : { generation: data };
+    return Response.json({ ...generation, shortages: shortages.data }, { status: 200, headers });
   } catch {
     return Response.json({ code: "MARKETING_CALENDAR_GENERATION_FAILED" }, { status: 503, headers });
   }

@@ -1,6 +1,6 @@
 begin;
 set local search_path=public,extensions;
-select plan(51);
+select plan(56);
 
 select ok((select count(*)=23 from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and c.relname=any(array[
   'contract_authority_snapshots','contract_lifecycle_terms','contract_annex_versions','contract_obligation_definitions','contract_obligation_events','probative_notices','probative_notice_delivery_events','contract_lifecycle_events',
@@ -30,9 +30,9 @@ select ok(has_function_privilege('authenticated','public.record_contract_authori
 select ok(has_function_privilege('authenticated','public.record_marketing_brand_authorization_v41(uuid,text,text[],text,text,timestamptz,timestamptz,text,uuid)','EXECUTE') and not has_function_privilege('anon','public.record_marketing_brand_authorization_v41(uuid,text,text[],text,text,timestamptz,timestamptz,text,uuid)','EXECUTE'),'brand authorization provisioning is authenticated and governed');
 select ok(has_function_privilege('authenticated','public.record_social_connection_security_v41(uuid,text,text,text,text[],timestamptz,text,uuid)','EXECUTE') and not has_function_privilege('anon','public.record_social_connection_security_v41(uuid,text,text,text,text[],timestamptz,text,uuid)','EXECUTE'),'vault-reference provisioning is authenticated and governed');
 select ok((select count(*)=3 and bool_and(proconfig::text like '%search_path=pg_catalog%')from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname=any(array['record_contract_authority_v41','record_marketing_brand_authorization_v41','record_social_connection_security_v41'])),'all provisioning commands use fixed search paths');
-select ok(has_function_privilege('authenticated','public.record_social_publication_result_v41(uuid,text,text,text,text,uuid)','EXECUTE') and not has_function_privilege('anon','public.record_social_publication_result_v41(uuid,text,text,text,text,uuid)','EXECUTE'),'exact published content can only be journalled through the governed command');
+select ok(has_function_privilege('service_role','public.record_social_publication_worker_result_v42(uuid,uuid,text,text,text,text,uuid)','EXECUTE') and not has_function_privilege('authenticated','public.record_social_publication_worker_result_v42(uuid,uuid,text,text,text,text,uuid)','EXECUTE'),'exact published content can only be journalled through the lease-bound service command');
 select ok(has_function_privilege('authenticated','public.record_probative_contract_notice_v41(uuid,text,integer,uuid,text,text,text,text,text,text,text,jsonb,text,uuid)','EXECUTE'),'contract notice command is authenticated-only');
-select ok(not has_function_privilege('anon','public.claim_social_publication_job_v41(uuid,text,uuid)','EXECUTE'),'anonymous cannot claim publication jobs');
+select ok(not has_function_privilege('anon','public.claim_next_social_publication_job_v41(text,uuid)','EXECUTE')and has_function_privilege('service_role','public.claim_next_social_publication_job_v41(text,uuid)','EXECUTE'),'only service workers can claim publication jobs');
 select ok((select prosecdef and proconfig::text like '%search_path=pg_catalog%' from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='claim_social_publication_job_v41'),'publication claim has fixed search path');
 select ok(not has_function_privilege('authenticated','private.marketing_publication_ready_v41(uuid,text,uuid,uuid)','EXECUTE') and not has_function_privilege('anon','private.marketing_publication_ready_v41(uuid,text,uuid,uuid)','EXECUTE'),'marketing readiness stays private behind guarded commands');
 
@@ -101,15 +101,30 @@ select is(private.marketing_publication_ready_v41('ca140000-0000-0000-0000-00000
 insert into public.marketing_consents(organization_id,purpose,decision,policy_version,evidence_hash,decided_by)values('ca140000-0000-0000-0000-000000000001','SOCIAL_PUBLISHING','WITHDRAWN','V4.1',repeat('4',64),'c1140000-0000-0000-0000-000000000002');
 select is(private.marketing_publication_ready_v41('ca140000-0000-0000-0000-000000000001','LINKEDIN','c1140000-0000-0000-0000-000000000020','c1140000-0000-0000-0000-000000000070'),false,'publication without current consent is denied');
 insert into public.marketing_consents(organization_id,purpose,decision,policy_version,evidence_hash,decided_by)values('ca140000-0000-0000-0000-000000000001','SOCIAL_PUBLISHING','GRANTED','V4.1',repeat('5',64),'c1140000-0000-0000-0000-000000000002');
-select throws_ok($$select public.claim_social_publication_job_v41('c1140000-0000-0000-0000-000000000091','worker-v41')$$,'55000','MARKETING_PUBLICATION_BLOCKED','claim revalidates and blocks noncompliant content');
-select lives_ok($$select public.claim_social_publication_job_v41('c1140000-0000-0000-0000-000000000090','worker-v41')$$,'claim accepts valid content');
+select throws_ok($$select public.claim_social_publication_job_v41('c1140000-0000-0000-0000-000000000091','worker-v41')$$,'42501','LEASE_TOKEN_REQUIRED','legacy claim fails closed instead of bypassing lease-bound attempts');
+create temporary table v42_claim(payload jsonb);grant insert,select on v42_claim to service_role;
+select set_config('request.jwt.claim.role','service_role',true);
+insert into v42_claim select public.claim_next_social_publication_job_v41('worker-v42');
+select is((select payload->>'outcome'from v42_claim),'JOB_CLAIMED','lease-bound claim accepts valid content');
+select throws_ok($$insert into public.social_publication_attempt_events(organization_id,job_id,attempt,lease_token,worker_id,state,request_hash,provider,provider_request_key,correlation_id)select organization_id,'c1140000-0000-0000-0000-000000000091',1,extensions.gen_random_uuid(),'collision-worker','CLAIMED',repeat('f',64),provider,provider_request_key,extensions.gen_random_uuid()from public.social_publication_attempt_events where job_id='c1140000-0000-0000-0000-000000000090'and state='CLAIMED'$$,'23505','duplicate key value violates unique constraint "social_publication_attempt_events_provider_request_uidx"','provider idempotency registry rejects a second claim with the same provider request key');
+create temporary table v42_first_claim as select payload from v42_claim;grant select on v42_first_claim to service_role;
+select lives_ok($$select public.record_social_publication_worker_result_v42('c1140000-0000-0000-0000-000000000090',(select(payload->>'lease_token')::uuid from v42_first_claim),'RETRYABLE_FAILURE',null,'PROVIDER_HTTP_429','retry-v42-429')$$,'the publisher contract code PROVIDER_HTTP_429 schedules a bounded retry');
+select throws_ok($$select public.record_social_publication_worker_result_v42('c1140000-0000-0000-0000-000000000090',(select(payload->>'lease_token')::uuid from v42_first_claim),'RETRYABLE_FAILURE',null,'HTTP_429','retry-v42-429')$$,'22000','IDEMPOTENCY_PAYLOAD_MISMATCH','altered legacy-code replay is rejected');
+update public.social_publication_jobs set available_at=case when id='c1140000-0000-0000-0000-000000000090'then clock_timestamp()-interval'1 second'else clock_timestamp()+interval'1 hour'end where id in('c1140000-0000-0000-0000-000000000090','c1140000-0000-0000-0000-000000000091');delete from v42_claim;
+insert into v42_claim select public.claim_next_social_publication_job_v41('worker-v42-reclaim');
+select is((select payload->>'outcome'from v42_claim),'JOB_CLAIMED','rate-limited job can be reclaimed for a new attempt');
+select isnt((select payload->>'provider_idempotency_key'from v42_claim),(select payload->>'provider_idempotency_key'from v42_first_claim),'each reclaimed attempt receives a distinct deterministic provider request key');
+select set_config('request.jwt.claim.role','authenticated',true);
 select lives_ok($$select public.set_marketing_kill_switch_v41(null,'GLOBAL',null,true,'Incident test',repeat('6',64),'kill-v41-enable')$$,'global kill switch can be enabled idempotently');
-select throws_ok($$select public.record_social_publication_result_v41('c1140000-0000-0000-0000-000000000090','PUBLISHED','provider-v41',null,'result-v41')$$,'55000','MARKETING_PUBLICATION_BLOCKED','result revalidates current kill switch before publication');
+select set_config('request.jwt.claim.role','service_role',true);
+select throws_ok($$select public.record_social_publication_worker_result_v42('c1140000-0000-0000-0000-000000000090',(select(payload->>'lease_token')::uuid from v42_claim),'PUBLISHED','provider-v42',null,'result-v42')$$,'55000','MARKETING_PUBLICATION_BLOCKED','lease-bound result revalidates current kill switch before publication');
+select set_config('request.jwt.claim.role','authenticated',true);
 select lives_ok($$select public.set_marketing_kill_switch_v41(null,'GLOBAL',null,false,'Incident resolved',repeat('7',64),'kill-v41-disable')$$,'global kill switch can be released');
-select lives_ok($$select public.record_social_publication_result_v41('c1140000-0000-0000-0000-000000000090','PUBLISHED','provider-v41',null,'result-v41')$$,'valid result is recorded after fresh checks');
-select lives_ok($$select public.record_social_publication_result_v41('c1140000-0000-0000-0000-000000000090','PUBLISHED','provider-v41',null,'result-v41-replay')$$,'publication result replay is idempotent');
+select set_config('request.jwt.claim.role','service_role',true);
+select lives_ok($$select public.record_social_publication_worker_result_v42('c1140000-0000-0000-0000-000000000090',(select(payload->>'lease_token')::uuid from v42_claim),'PUBLISHED','provider-v42',null,'result-v42')$$,'valid lease-bound result is recorded after fresh checks');
+select lives_ok($$select public.record_social_publication_worker_result_v42('c1140000-0000-0000-0000-000000000090',(select(payload->>'lease_token')::uuid from v42_claim),'PUBLISHED','provider-v42',null,'result-v42')$$,'publication result replay is idempotent');
 select is((select count(*)from public.marketing_publication_journal where job_id='c1140000-0000-0000-0000-000000000090'),1::bigint,'exact publication journal is append-only and unique');
-select is((select count(*)from public.social_publication_results where job_id='c1140000-0000-0000-0000-000000000090'),1::bigint,'result replay creates no duplicate provider result');
+select is((select count(*)from public.social_publication_results where job_id='c1140000-0000-0000-0000-000000000090'),2::bigint,'each attempt has one result and replay creates no duplicate provider result');
 
 create temporary table catalog_rpc_results(payload jsonb);
 select set_config('request.jwt.claim.role','service_role',true);

@@ -677,3 +677,27 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - Gates : DB/RLS 130 fichiers, 3 079 assertions et 4 scénarios de concurrence PASS;
   Web 130 fichiers/507 tests PASS; lint, TypeScript strict et build PASS.
   Aucun environnement de production n'a été modifié.
+
+## Checkpoint intégrité at-most-once Marketing — 2026-09-13
+
+- Migration additive `20260913018500_marketing_publication_attempt_integrity.sql`
+  appliquée uniquement sur Supabase development; le dry-run final confirme la cible
+  distante à jour.
+- Chaque claim est lié à une lease et à une clé fournisseur SHA-256 unique par
+  tentative. Les attempts sont immuables; les anciens RPC sans lease échouent fermés.
+  Seul `PROVIDER_HTTP_429` autorise un retry borné avec une nouvelle clé. Toute
+  réponse réseau, timeout ou 5xx ambiguë exige une réconciliation probante avant
+  publication, échec ou remise en file.
+- Les quotas sont sérialisés par organisation et provider. Les preuves de consentement,
+  d'autorisation, de conformité, de contenu et de sécurité sont figées au claim.
+  Timeout, quota, policy, pénurie calendrier et réconciliation sont audités et émis
+  par Event Outbox; les workers exécutent les balayages timeout et pénurie.
+- Gates : replay local migrations 001–185 PASS; DB/RLS 131 fichiers, 3 110 assertions
+  et 4 scénarios de concurrence PASS; Web 132 fichiers/521 tests PASS; lint,
+  TypeScript strict et build PASS; E2E authentifiés FR/AR à 360 px et desktop 24/24
+  PASS avec fixtures development neutralisées. Audit indépendant : MERGEABLE,
+  aucun P0/P1 bloquant dans ce périmètre.
+- Aucun environnement de production n'a été modifié. La publication live reste
+  désactivée jusqu'à l'injection KMS/Vault des credentials acquis et aux essais
+  fournisseurs; le `container_id` Meta ambigu requiert une revue/réconciliation
+  humaine et n'est jamais republié automatiquement.

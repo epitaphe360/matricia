@@ -20,6 +20,7 @@ insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_co
 ('a8900000-0000-4000-8000-000000000005','00000000-0000-0000-0000-000000000000','authenticated','authenticated','unscoped-89@example.invalid','',now(),'{}','{}',now(),now()),
 ('a8900000-0000-4000-8000-000000000006','00000000-0000-0000-0000-000000000000','authenticated','authenticated','admin-89@example.invalid','',now(),'{}','{}',now(),now());
 insert into public.organizations(id,legal_name,display_name,status,created_by)values('b8900000-0000-4000-8000-000000000001','Multi Franchise P89 SARL','Multi Franchise P89','ACTIVE','a8900000-0000-4000-8000-000000000001');
+insert into public.catalog_libraries(id,code,slug,steward_organization_id,status,created_by)values('f8900000-0000-4000-8000-000000000010','FRANCHISE_SCOPE','franchise-scope','b8900000-0000-4000-8000-000000000001','DRAFT','a8900000-0000-4000-8000-000000000001');
 insert into public.organization_memberships(id,organization_id,user_id,status,activated_at)values
 ('c8900000-0000-4000-8000-000000000001','b8900000-0000-4000-8000-000000000001','a8900000-0000-4000-8000-000000000001','ACTIVE',now()),
 ('c8900000-0000-4000-8000-000000000002','b8900000-0000-4000-8000-000000000001','a8900000-0000-4000-8000-000000000002','ACTIVE',now()),
@@ -27,8 +28,8 @@ insert into public.organization_memberships(id,organization_id,user_id,status,ac
 ('c8900000-0000-4000-8000-000000000004','b8900000-0000-4000-8000-000000000001','a8900000-0000-4000-8000-000000000004','ACTIVE',now()),
 ('c8900000-0000-4000-8000-000000000005','b8900000-0000-4000-8000-000000000001','a8900000-0000-4000-8000-000000000005','ACTIVE',now());
 insert into public.franchises(id,library_id,operator_organization_id,franchise_type,operator_code,territory_code,status,created_by)values
-('d8900000-0000-4000-8000-000000000001',(select id from public.catalog_libraries order by code limit 1),'b8900000-0000-4000-8000-000000000001','STANDARD','FRANCHISEE','P89_F1','ACTIVE','a8900000-0000-4000-8000-000000000001'),
-('d8900000-0000-4000-8000-000000000002',(select id from public.catalog_libraries order by code limit 1),'b8900000-0000-4000-8000-000000000001','STANDARD','FRANCHISEE','P89_F2','ACTIVE','a8900000-0000-4000-8000-000000000003');
+('d8900000-0000-4000-8000-000000000001','f8900000-0000-4000-8000-000000000010','b8900000-0000-4000-8000-000000000001','STANDARD','FRANCHISEE','P89_F1','ACTIVE','a8900000-0000-4000-8000-000000000001'),
+('d8900000-0000-4000-8000-000000000002','f8900000-0000-4000-8000-000000000010','b8900000-0000-4000-8000-000000000001','STANDARD','FRANCHISEE','P89_F2','ACTIVE','a8900000-0000-4000-8000-000000000003');
 insert into public.organization_member_roles(membership_id,role_code,franchise_id)values
 ('c8900000-0000-4000-8000-000000000001','FRANCHISE_MANAGER','d8900000-0000-4000-8000-000000000001'),
 ('c8900000-0000-4000-8000-000000000002','FRANCHISE_VIEWER','d8900000-0000-4000-8000-000000000001'),
