@@ -78,6 +78,13 @@ const analysisOutput = z.object({
   model_version_id: uuid,
   human_confirmation_required: z.literal(true),
 }).passthrough();
+const discoveryOutput = z.object({
+  outcome: z.literal("ASSISTANCE_SCOPE_DISCOVERED"),
+  algorithm: z.literal("TOKEN_OVERLAP_V1"),
+  service_candidates: z.array(z.object({ service_version_id: uuid, service_id: uuid, score_basis_points: z.number().int().min(0).max(10_000) }).strict()).max(20),
+  question_candidates: z.array(z.object({ question_version_id: uuid, service_id: uuid, required_for_quote: z.boolean(), score_basis_points: z.number().int().min(0).max(10_000) }).strict()).max(50),
+  human_confirmation_required: z.literal(true),
+}).strict();
 const similarityOutput = z.object({
   outcome: z.literal("ANOMALY_SIMILARITY_PROPOSED"),
   request_id: uuid,
@@ -208,12 +215,25 @@ export function createAssistedIntelligenceRepository(source: AssistanceSource): 
     async analyze(input) {
       const parsed = analysisInputSchema.safeParse(input);
       if (!parsed.success) return failure("INVALID_INPUT");
+      let serviceVersionIds = parsed.data.serviceVersionIds;
+      let questionVersionIds = parsed.data.questionVersionIds;
+      if (parsed.data.context === "NEED_TEXT" && parsed.data.inputText) {
+        const discovery = await command(source, "discover_assistance_scope", {
+          p_organization_id: parsed.data.organizationId,
+          p_input_text: parsed.data.inputText,
+          p_known_data_keys: parsed.data.knownDataKeys,
+          p_limit: 20,
+        }, discoveryOutput);
+        if (discovery.status === "error") return discovery;
+        serviceVersionIds = [...new Set([...serviceVersionIds, ...discovery.value.service_candidates.map((candidate) => candidate.service_version_id)])].slice(0, 50);
+        questionVersionIds = [...new Set([...questionVersionIds, ...discovery.value.question_candidates.map((candidate) => candidate.question_version_id)])].slice(0, 50);
+      }
       const result = await command(source, "run_assisted_analysis", {
         p_organization_id: parsed.data.organizationId,
         p_context_type: parsed.data.context,
         p_input_text: parsed.data.inputText,
-        p_candidate_service_version_ids: parsed.data.serviceVersionIds,
-        p_candidate_question_version_ids: parsed.data.questionVersionIds,
+        p_candidate_service_version_ids: serviceVersionIds,
+        p_candidate_question_version_ids: questionVersionIds,
         p_known_data_keys: parsed.data.knownDataKeys,
         p_model_version_id: parsed.data.modelVersionId,
         p_profile_reassessment_id: parsed.data.profileReassessmentId,

@@ -7,7 +7,8 @@ vi.mock("@/lib/assisted-intelligence/model", async () => await import("../../../
 vi.mock("@/lib/assisted-intelligence/contracts", async () => await import("../../../../../lib/assisted-intelligence/contracts"));
 vi.mock("@/lib/i18n/locale", async () => await import("../../../../../lib/i18n/locale"));
 vi.mock("@/lib/supabase/server", () => ({ getSupabaseServerClient: mocks.getClient }));
-import { compareAnomalies, decideSuggestion, idleAssistanceAction, runAnalysis } from "./actions";
+import { compareAnomalies, decideSuggestion, runAnalysis } from "./actions";
+import { idleAssistanceAction } from "./action-state";
 
 const id = (n: number) => `${String(n).padStart(8, "0")}-0000-4000-8000-000000000000`;
 function form(values: Record<string, string>) { const data = new FormData(); for (const [key, value] of Object.entries(values)) data.set(key, value); return data; }

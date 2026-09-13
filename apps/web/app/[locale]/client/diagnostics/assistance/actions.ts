@@ -8,13 +8,7 @@ import { contextSchema, decisionSchema, minimizeAssistanceInput, parseKnownKeys,
 import type { AssistanceFailure } from "@/lib/assisted-intelligence/contracts";
 import { isLocale } from "@/lib/i18n/locale";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-
-export type AssistanceActionState =
-  | { status: "idle" }
-  | { status: "success"; suggestionCount?: number }
-  | { status: "error"; reason: "VALIDATION" | "UNAUTHENTICATED" | "FORBIDDEN" | "CONFLICT" | "FAILED" };
-
-export const idleAssistanceAction: AssistanceActionState = { status: "idle" };
+import type { AssistanceActionState } from "./action-state";
 
 function text(form: FormData, key: string): string {
   return String(form.get(key) ?? "").trim();

@@ -10,7 +10,7 @@ import { getQuestionnaireMessages } from "./messages";
 import { StructuredQuestionControl } from "./structured-controls";
 
 const id = (n: number) => String(n).padStart(8, "0") + "-0000-4000-8000-000000000000";
-const base = (type: Question["type"], value: unknown = null): Question => ({ id: id(10), sectionId: id(11), sortOrder: 1, labelFr: "Question", labelAr: "سؤال", helpFr: null, helpAr: null, whyFr: null, whyAr: null, type, required: true, nullable: false, options: [], validation: {}, structured: null, answer: value === null ? null : { value, rowVersion: 1 } });
+const base = (type: Question["type"], value: unknown = null): Question => ({ id: id(10), sectionId: id(11), sortOrder: 1, labelFr: "Question", labelAr: "سؤال", helpFr: null, helpAr: null, whyFr: null, whyAr: null, type, required: true, nullable: false, options: [], validation: {}, structured: null, answer: value === null ? null : { value, rowVersion: 1, answeredAt: "2026-09-13T00:00:00Z", expiresAt: null, requiresRevalidation: false } });
 const documents = [{ id: id(1), organizationId: id(2), name: "preuve.png", type: "TAX_DOCUMENT" as const, mimeType: "image/png", status: "VERIFIED" as const }];
 
 describe("StructuredQuestionControl", () => {

@@ -3,7 +3,8 @@
 import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { AssistanceCandidate, AssistanceDashboard, AssistanceSuggestion } from "@/lib/assisted-intelligence/contracts";
-import { compareAnomalies, decideSuggestion, idleAssistanceAction, runAnalysis, type AssistanceActionState } from "./actions";
+import { compareAnomalies, decideSuggestion, runAnalysis } from "./actions";
+import { idleAssistanceAction, type AssistanceActionState } from "./action-state";
 import type { AssistanceMessages } from "./messages";
 
 type Keys = { analysis: string; similarity: string; decisions: Record<string, string> };

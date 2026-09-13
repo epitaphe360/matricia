@@ -32,6 +32,8 @@ export type SolutionSet = {
   decisions: { id: string; level: SolutionLevel; decision: SolutionDecision; reason: string; deferredUntil: string | null; decidedAt: string }[];
 };
 export type Benchmark = { id: string; metricCode: string; segmentKey: string; periodStart: string; periodEnd: string; groupSizeBand: string; roundedMean: string; publishedAt: string };
+export type SolutionBundleItem = { id: string; serviceId: string; serviceVersionId: string; libraryId: string; dedupeKey: string; fusionStrategy: "KEEP_PRIMARY" | "MERGE_SCOPE" | "SEQUENCE"; sourceCount: number; provenance: unknown[]; amountMinor: string; sortOrder: number };
+export type SolutionBundle = { id: string; organizationId: string; key: string; version: number; titleFr: string; titleAr: string; descriptionFr: string; descriptionAr: string; sourceManifestHash: string; fusionPolicySnapshot: Record<string, unknown>; libraryCodes: string[]; totalAmountMinor: string; currency: string; createdAt: string; items: SolutionBundleItem[] };
 
 const localeTag = (locale: "fr" | "ar") => locale === "ar" ? "ar-MA" : "fr-MA";
 

@@ -17,7 +17,7 @@ export async function createServerQuestionnaireSessionsRepository() {
     async questionLinks(versionId) { return client.from("questionnaire_version_questions").select("section_id,question_version_id,sort_order,required_override").eq("questionnaire_version_id", versionId).order("sort_order").limit(101); },
     async questions(ids) { return ids.length ? client.from("question_versions").select("id,label_fr,label_ar,help_fr,help_ar,why_we_ask_fr,why_we_ask_ar,answer_type,required_by_default,options,validation_schema,structured_schema,nullable").in("id", ids).limit(100) : { data: [], error: null }; },
     async answers(sessionId) { return client.from("questionnaire_answers").select("id,question_version_id,current_revision_id,row_version").eq("session_id", sessionId).limit(100); },
-    async revisions(ids) { return ids.length ? client.from("questionnaire_answer_revisions").select("id,value").in("id", ids).limit(100) : { data: [], error: null }; },
+    async revisions(ids) { return ids.length ? client.from("questionnaire_answer_revisions").select("id,value,answered_at,expires_at").in("id", ids).limit(100) : { data: [], error: null }; },
     async rpc(name, input) { return client.rpc(name, input); },
   });
 }
