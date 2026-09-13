@@ -540,3 +540,16 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   lint, TypeScript strict, build et synchronisation Supabase PASS.
 - Aucun environnement de production n'a été modifié. Prochain lot : audit ciblé
   puis fermeture des écarts UI encore réels dans CRM, récompenses, IA et règles.
+
+## Checkpoint Admin incitations — récompenses, badges et parrainage — 2026-09-13
+
+- Migration additive `20260913017400_admin_badge_policy_versions.sql` appliquée
+  uniquement sur Supabase development/staging. Les politiques de badges sont
+  désormais créées en versions immuables avec AAL2, idempotence, audit et Outbox.
+- La route FR/AR `/administration/incitations` administre les versions de règles
+  de récompense/parrainage, les politiques de badges, les évaluations sur snapshots
+  de réputation et les décisions humaines publication/révocation.
+- Les crédits restent attribués exclusivement par le moteur et le ledger immuable;
+  l'interface ne modifie aucun solde directement.
+- Gates : DB/RLS 120 fichiers, 2 968 assertions et 4 scénarios de concurrence PASS;
+  lint, TypeScript strict et build PASS. Aucun environnement de production modifié.

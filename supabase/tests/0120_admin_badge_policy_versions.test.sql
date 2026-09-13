@@ -1,0 +1,9 @@
+begin;set local search_path=public,extensions;select plan(7);
+select has_function('public','create_provider_badge_policy_version',array['uuid','text','text','text','text','integer','integer','timestamptz','timestamptz','text','text','uuid'],'Badge policy command exists');
+select ok(has_function_privilege('authenticated','public.create_provider_badge_policy_version(uuid,text,text,text,text,integer,integer,timestamptz,timestamptz,text,text,uuid)','EXECUTE')and not has_function_privilege('anon','public.create_provider_badge_policy_version(uuid,text,text,text,text,integer,integer,timestamptz,timestamptz,text,text,uuid)','EXECUTE'),'Command is authenticated-only');
+select ok((select pg_get_functiondef(p.oid)like'%aal2%'and pg_get_functiondef(p.oid)like'%begin_contract_command%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='create_provider_badge_policy_version'),'AAL2 and idempotency are enforced');
+select ok((select pg_get_functiondef(p.oid)like'%BADGE_POLICY_EFFECTIVE_WINDOW_OVERLAP%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='create_provider_badge_policy_version'),'Effective windows cannot overlap');
+select ok((select pg_get_functiondef(p.oid)like'%audit_events%'and pg_get_functiondef(p.oid)like'%event_outbox%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='create_provider_badge_policy_version'),'Command is audited and emits Outbox');
+select ok((select count(*)=1 from pg_trigger where tgname='provider_badge_policy_immutable'and not tgisinternal),'Policy versions stay immutable');
+select ok(not has_table_privilege('authenticated','public.provider_badge_policy_versions','INSERT'),'Direct insertion remains denied');
+select*from finish();rollback;

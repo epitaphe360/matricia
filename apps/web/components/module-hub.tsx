@@ -24,6 +24,7 @@ const MODULES:readonly ModuleLink[]=[
  {key:"adminClients",path:"administration/clients",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","COMPLIANCE_MANAGER","READ_ONLY_AUDITOR"]},
  {key:"adminProviders",path:"administration/providers",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","COMPLIANCE_MANAGER","FINANCE_MANAGER","READ_ONLY_AUDITOR"]},
  {key:"adminFinance",path:"administration/finance",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER"]},
+ {key:"rewards",path:"administration/incitations",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER","COMPLIANCE_MANAGER"]},
  {key:"adminGovernance",path:"administration/gouvernance-franchise",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER","LIBRARY_MANAGER","DISPUTE_MANAGER","READ_ONLY_AUDITOR"]},
  {key:"adminOperations",path:"administration/operations",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","READ_ONLY_AUDITOR"]},
  {key:"adminV41",path:"administration/v4-1/procurement",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER","COMPLIANCE_MANAGER","DISPUTE_MANAGER","READ_ONLY_AUDITOR"]},
