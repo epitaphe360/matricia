@@ -18,6 +18,7 @@ export type QuestionnaireSessionSource = {
   questions(ids: string[]): Promise<Query>;
   answers(sessionId: string): Promise<Query>;
   revisions(ids: string[]): Promise<Query>;
+  prefills?(sessionId: string): Promise<Query>;
   rpc(name: string, input: Record<string, unknown>): Promise<Query>;
 };
 
@@ -36,9 +37,10 @@ const versionRow = z.object({ id: questionnaireUuid, version: z.number().int().p
 const sessionRow = z.object({ id: questionnaireUuid, organization_id: questionnaireUuid, actor_user_id: questionnaireUuid, questionnaire_version_id: questionnaireUuid, status: sessionStatus, locale: databaseLocale, updated_at: z.string(), submitted_at: z.string().nullable(), row_version: z.number().int().positive() }).strict();
 const sectionRow = z.object({ id: questionnaireUuid, label_fr: z.string().min(1), label_ar: z.string().min(1), help_fr: z.string().nullable(), help_ar: z.string().nullable(), sort_order: z.number().int().positive() }).strict();
 const linkRow = z.object({ section_id: questionnaireUuid, question_version_id: questionnaireUuid, sort_order: z.number().int().positive(), required_override: z.boolean().nullable() }).strict();
-const questionRow = z.object({ id: questionnaireUuid, label_fr: z.string().min(1), label_ar: z.string().min(1), help_fr: z.string().nullable(), help_ar: z.string().nullable(), why_we_ask_fr: z.string().nullable(), why_we_ask_ar: z.string().nullable(), answer_type: answerType, required_by_default: z.boolean(), options: z.array(z.string()).max(1000), validation_schema: z.record(z.unknown()), structured_schema: z.record(z.unknown()).nullable(), nullable: z.boolean() }).strict();
+const questionRow = z.object({ id: questionnaireUuid, label_fr: z.string().min(1), label_ar: z.string().min(1), help_fr: z.string().nullable(), help_ar: z.string().nullable(), why_we_ask_fr: z.string().nullable(), why_we_ask_ar: z.string().nullable(), answer_type: answerType, data_key:z.string().default("unknown"),prefill_source:z.enum(["PROFILE","ORGANIZATION","SITE","PREVIOUS_ANSWER","DOCUMENT"]).nullable().default(null),sensitivity:z.enum(["PUBLIC","BUSINESS","CONFIDENTIAL","RESTRICTED"]).default("BUSINESS"),required_by_default: z.boolean(), options: z.array(z.string()).max(1000), validation_schema: z.record(z.unknown()), structured_schema: z.record(z.unknown()).nullable(), nullable: z.boolean() }).strict();
 const answerRow = z.object({ id: questionnaireUuid, question_version_id: questionnaireUuid, current_revision_id: questionnaireUuid.nullable(), row_version: z.number().int().positive() }).strict();
 const revisionRow = z.object({ id: questionnaireUuid, value: z.unknown(), answered_at: z.string(), expires_at: z.string().nullable() }).strict();
+const prefillRow=z.object({question_version_id:questionnaireUuid,value:z.unknown(),source:z.enum(["PROFILE","ORGANIZATION","SITE","PREVIOUS_ANSWER","DOCUMENT"]),source_updated_at:z.string(),fresh_until:z.string(),requires_confirmation:z.boolean()}).strict();
 const hash = z.string().regex(/^[0-9a-f]{64}$/u);
 const startedResponse = z.object({ outcome: z.literal("QUESTIONNAIRE_SESSION_STARTED"), session_id: questionnaireUuid, row_version: z.number().int().positive(), questionnaire_version_id: questionnaireUuid, session_snapshot_id: questionnaireUuid, session_snapshot_hash: hash }).strict();
 const acceptedAnswer = z.object({ question_version_id: questionnaireUuid, answer_row_version: z.number().int().positive() }).strict();
@@ -110,15 +112,17 @@ export function createQuestionnaireSessionsRepository(source: QuestionnaireSessi
         if (questions.status === "error") return questions;
         const revisions = rows(revisionRow, await source.revisions(answers.value.flatMap((answer) => answer.current_revision_id ? [answer.current_revision_id] : [])), 100);
         if (revisions.status === "error") return revisions;
+        const prefills=source.prefills?rows(prefillRow,await source.prefills(session.id),100):{status:"success",value:[]}as const;
+        if(prefills.status==="error")return prefills;
         const questionById = new Map(questions.value.map((question) => [question.id, question]));
         const revisionById = new Map(revisions.value.map((revision) => [revision.id, revision]));
-        const answerByQuestion = new Map(answers.value.map((answer) => [answer.question_version_id, answer]));
+        const answerByQuestion = new Map(answers.value.map((answer) => [answer.question_version_id, answer])),prefillByQuestion=new Map(prefills.value.map(item=>[item.question_version_id,item]));
         const sectionModels = sections.value.map((section) => ({ id: section.id, labelFr: section.label_fr, labelAr: section.label_ar, helpFr: section.help_fr, helpAr: section.help_ar, sortOrder: section.sort_order, questions: links.value.filter((link) => link.section_id === section.id).flatMap((link) => {
           const question = questionById.get(link.question_version_id);
           if (!question) return [];
-          const answer = answerByQuestion.get(question.id), revision = answer?.current_revision_id ? revisionById.get(answer.current_revision_id) : undefined;
+          const answer = answerByQuestion.get(question.id), revision = answer?.current_revision_id ? revisionById.get(answer.current_revision_id) : undefined,prefill=prefillByQuestion.get(question.id);
           const expiresAt = revision?.expires_at ?? null;
-          return [{ id: question.id, sectionId: section.id, sortOrder: link.sort_order, labelFr: question.label_fr, labelAr: question.label_ar, helpFr: question.help_fr, helpAr: question.help_ar, whyFr: question.why_we_ask_fr, whyAr: question.why_we_ask_ar, type: question.answer_type, required: link.required_override ?? question.required_by_default, nullable: question.nullable, options: question.options, validation: question.validation_schema, structured: question.structured_schema, answer: answer && revision ? { value: revision.value, rowVersion: answer.row_version, answeredAt: revision.answered_at, expiresAt, requiresRevalidation: expiresAt !== null && Date.parse(expiresAt) <= Date.now() } : null }];
+          return [{ id: question.id, sectionId: section.id, sortOrder: link.sort_order, labelFr: question.label_fr, labelAr: question.label_ar, helpFr: question.help_fr, helpAr: question.help_ar, whyFr: question.why_we_ask_fr, whyAr: question.why_we_ask_ar, type: question.answer_type, required: link.required_override ?? question.required_by_default, nullable: question.nullable, options: question.options, validation: question.validation_schema, structured: question.structured_schema, answer: answer && revision ? { value: revision.value, rowVersion: answer.row_version, answeredAt: revision.answered_at, expiresAt, requiresRevalidation: expiresAt !== null && Date.parse(expiresAt) <= Date.now() } : prefill?{value:prefill.value,rowVersion:0,answeredAt:prefill.source_updated_at,expiresAt:prefill.fresh_until,requiresRevalidation:true,prefilled:true,source:prefill.source}:null }];
         }).sort((a, b) => a.sortOrder - b.sortOrder) })).sort((a, b) => a.sortOrder - b.sortOrder);
         const summary = { id: session.id, organizationId: session.organization_id, questionnaireVersionId: session.questionnaire_version_id, status: session.status, locale: session.locale, updatedAt: session.updated_at, submittedAt: session.submitted_at, rowVersion: session.row_version, titleFr: version.title_fr, titleAr: version.title_ar };
         const allQuestions = sectionModels.flatMap((section) => section.questions);

@@ -601,3 +601,15 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   avec ressource typée, double contrôle et nombre d'approbations configurable.
 - Gates : DB/RLS 123 fichiers, 3 001 assertions et 4 scénarios de concurrence PASS;
   lint, TypeScript strict et build PASS. Aucun environnement de production modifié.
+
+## Checkpoint préremplissage transversal et fraîcheur — 2026-09-13
+
+- Migration additive `20260913017800_versioned_prefill_freshness.sql` appliquée
+  uniquement sur Supabase development/staging.
+- Cinq politiques de fraîcheur versionnées couvrent profil, organisation, site,
+  réponse antérieure et document. Les faits sont versionnés et immutables.
+- Les questionnaires proposent désormais les valeurs fraîches compatibles par
+  `data_key`, tenant, acteur et sensibilité; toute suggestion doit être confirmée
+  avant d'être persistée ou comptée comme réponse.
+- Gates ciblés : 10 assertions SQL/RLS PASS; Web 128 fichiers/491 tests PASS;
+  lint, TypeScript strict et build PASS. Aucun environnement de production modifié.

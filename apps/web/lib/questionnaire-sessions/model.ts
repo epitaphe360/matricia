@@ -66,7 +66,7 @@ export type Question = {
   options: string[];
   validation: Record<string, unknown>;
   structured: Record<string, unknown> | null;
-  answer: { value: unknown; rowVersion: number; answeredAt: string; expiresAt: string | null; requiresRevalidation: boolean } | null;
+  answer: { value: unknown; rowVersion: number; answeredAt: string; expiresAt: string | null; requiresRevalidation: boolean; prefilled?: boolean; source?: string } | null;
 };
 export type QuestionnaireSection = { id: string; labelFr: string; labelAr: string; helpFr: string | null; helpAr: string | null; sortOrder: number; questions: Question[] };
 export type SessionDetail = SessionSummary & { descriptionFr: string; descriptionAr: string; sections: QuestionnaireSection[]; answeredCount: number; expiringAnswerCount: number; expiredAnswerCount: number; questionCount: number };
