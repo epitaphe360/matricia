@@ -14,10 +14,8 @@ type Props = {
 };
 
 export function PublicShell({ children, locale, alternatePath, messages }: Props) {
-  const alternate = locale === "fr" ? "ar" : "fr";
   return <>
     <a href="#contenu-principal" className="sr-only z-50 rounded-md bg-background px-4 py-3 font-semibold text-primary focus:not-sr-only focus:fixed focus:start-4 focus:top-4">{messages.skipToContent}</a>
-    <div className="border-b bg-muted/30 px-4 sm:px-6"><div className="mx-auto flex max-w-7xl justify-end"><Link href={`/${alternate}${alternatePath}`} hrefLang={alternate} lang={alternate} aria-label={messages.languageLabel} className="inline-flex min-h-11 items-center rounded-md px-3 text-sm font-semibold text-primary hover:underline">{messages.language}</Link></div></div>
     {children}
   </>;
 }
