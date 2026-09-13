@@ -28,6 +28,7 @@ const MODULES:readonly ModuleLink[]=[
  {key:"rewards",path:"administration/incitations",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER","COMPLIANCE_MANAGER"]},
  {key:"adminGovernance",path:"administration/gouvernance-franchise",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER","LIBRARY_MANAGER","DISPUTE_MANAGER","READ_ONLY_AUDITOR"]},
  {key:"adminOperations",path:"administration/operations",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","READ_ONLY_AUDITOR"]},
+ {key:"adminOperations",path:"administration/anti-abus",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","READ_ONLY_AUDITOR"]},
  {key:"adminV41",path:"administration/v4-1/procurement",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER","COMPLIANCE_MANAGER","DISPUTE_MANAGER","READ_ONLY_AUDITOR"]},
  {key:"questionnaireAnalytics",path:"administration/questionnaires/analytique",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","LIBRARY_MANAGER","READ_ONLY_AUDITOR"]},
  {key:"notifications",path:"notifications",space:"universal",requiresMembership:true},

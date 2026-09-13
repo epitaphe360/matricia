@@ -587,3 +587,17 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   montants restent en unités mineures côté serveur, avec idempotence, audit et Outbox.
 - Gates : DB/RLS 122 fichiers, 2 989 assertions et 4 scénarios de concurrence PASS;
   lint, TypeScript strict et build PASS. Aucun environnement de production modifié.
+
+## Checkpoint moteur transversal anti-abus — 2026-09-13
+
+- Migration additive `20260913017700_transversal_abuse_detection.sql` appliquée
+  uniquement sur Supabase development/staging.
+- Les règles anti-abus sont versionnées par type d'événement; les signaux ne conservent
+  que des empreintes et un contexte expurgé. Le moteur applique fenêtre, vélocité et
+  seuils ALLOW/REVIEW/BLOCK puis ouvre une file de revue humaine.
+- L'interface FR/AR `/administration/anti-abus` permet de créer les versions et de
+  statuer avec AAL2, preuve, RLS restrictive, historique immutable, audit et Outbox.
+- Le Command Center existant couvre déjà les approbations multi-objets transversales
+  avec ressource typée, double contrôle et nombre d'approbations configurable.
+- Gates : DB/RLS 123 fichiers, 3 001 assertions et 4 scénarios de concurrence PASS;
+  lint, TypeScript strict et build PASS. Aucun environnement de production modifié.
