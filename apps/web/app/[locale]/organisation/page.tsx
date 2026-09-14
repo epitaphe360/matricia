@@ -8,8 +8,9 @@ import { isLocale } from "@/lib/i18n/locale";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { OrganizationForm } from "./organization-form";
 
-export default async function OrganizationPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function OrganizationPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ role?: string }> }) {
   const { locale } = await params;
+  const query = await searchParams;
   if (!isLocale(locale)) notFound();
   const supabase = await getSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -17,12 +18,14 @@ export default async function OrganizationPage({ params }: { params: Promise<{ l
 
   const messages = getDictionary(locale).organization;
   const alternate = locale === "fr" ? "ar" : "fr";
+  const defaultRole = query.role === "fournisseur" ? "PROVIDER_OWNER" : query.role === "franchise" ? "FRANCHISE_OWNER" : "CLIENT_OWNER";
+  const roleQuery = query.role === "fournisseur" || query.role === "franchise" ? `?role=${query.role}` : "";
   return (
     <main className="min-h-dvh bg-muted/40 px-4 py-8 sm:px-6 sm:py-12">
       <div className="mx-auto w-full max-w-2xl space-y-5">
         <nav aria-label={messages.backToDashboard} className="flex flex-wrap items-center justify-between gap-3">
           <Button asChild variant="ghost"><Link href={`/${locale}/tableau-de-bord`}>{messages.backToDashboard}</Link></Button>
-          <Link href={`/${alternate}/organisation`} hrefLang={alternate} className="rounded-md px-3 py-2 text-sm font-medium text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">{messages.language}</Link>
+          <Link href={`/${alternate}/organisation${roleQuery}`} hrefLang={alternate} className="rounded-md px-3 py-2 text-sm font-medium text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">{messages.language}</Link>
         </nav>
         <Card className="shadow-xl">
           <CardHeader className="space-y-3">
@@ -30,7 +33,7 @@ export default async function OrganizationPage({ params }: { params: Promise<{ l
             <CardTitle className="text-2xl sm:text-3xl">{messages.title}</CardTitle>
             <CardDescription className="leading-6">{messages.description}</CardDescription>
           </CardHeader>
-          <CardContent><OrganizationForm locale={locale} idempotencyKey={randomUUID()} /></CardContent>
+          <CardContent><OrganizationForm locale={locale} idempotencyKey={randomUUID()} defaultRole={defaultRole} /></CardContent>
         </Card>
       </div>
     </main>

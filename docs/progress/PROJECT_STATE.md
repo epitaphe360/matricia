@@ -819,3 +819,15 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - Les espaces authentifiés n'ont pas été inspectés visuellement pendant cette
   passe faute de compte de test explicitement autorisé. Aucun déploiement ni
   changement de base ou de production n'a été effectué.
+
+## Correctif inscription publique — 2026-09-14
+
+- L'en-tête, la connexion et l'entrée fournisseur exposent maintenant une
+  inscription explicite Client ou Sous-traitant. Le mode inscription autorise
+  la création Auth par OTP; le mode connexion continue d'interdire toute
+  création implicite afin d'éviter l'énumération et les comptes accidentels.
+- Après validation du courriel, le nouveau compte reprend sur le passeport
+  organisation avec le rôle Client ou Provider prérempli, sans accorder de rôle
+  plateforme ni contourner les contrôles d'organisation.
+- Gates : lint et TypeScript strict PASS; Web 151 fichiers/629 tests PASS;
+  build Next.js PASS; E2E design et inscription 24/24 PASS.

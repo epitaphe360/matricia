@@ -29,4 +29,10 @@ describe("OtpForm", () => {
     expect(html).toContain("رمز عبر البريد");
     expect(html).toContain("كلمة المرور");
   });
+
+  it("rend le formulaire OTP dans le parcours d’inscription", () => {
+    const html = renderToStaticMarkup(<OtpForm locale="fr" intent="registration" nextPath="/fr/organisation" />);
+    expect(html).toContain("Recevoir mon code");
+    expect(html).toContain('autoComplete="email"');
+  });
 });

@@ -18,7 +18,7 @@ function SubmitButton({ pendingLabel, submitLabel }: { pendingLabel: string; sub
   return <Button className="min-h-11 w-full" type="submit" disabled={pending} aria-describedby="organization-form-status">{pending ? pendingLabel : submitLabel}</Button>;
 }
 
-export function OrganizationForm({ locale, idempotencyKey }: { locale: Locale; idempotencyKey: string }) {
+export function OrganizationForm({ locale, idempotencyKey, defaultRole = "CLIENT_OWNER" }: { locale: Locale; idempotencyKey: string; defaultRole?: (typeof roleCodes)[number] }) {
   const messages = getDictionary(locale).organization;
   const [state, formAction] = useActionState(createOrRequestOrganization, initialState);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -75,7 +75,7 @@ export function OrganizationForm({ locale, idempotencyKey }: { locale: Locale; i
       </div>
       <div className="space-y-2">
         <Label htmlFor="ownerRole">{messages.ownerRoleLabel}</Label>
-        <select id="ownerRole" name="ownerRole" defaultValue="CLIENT_OWNER" required aria-invalid={Boolean(fieldErrors.ownerRole)} aria-describedby={fieldErrors.ownerRole ? "ownerRole-error" : undefined} aria-errormessage={fieldErrors.ownerRole ? "ownerRole-error" : undefined} className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50">
+        <select id="ownerRole" name="ownerRole" defaultValue={defaultRole} required aria-invalid={Boolean(fieldErrors.ownerRole)} aria-describedby={fieldErrors.ownerRole ? "ownerRole-error" : undefined} aria-errormessage={fieldErrors.ownerRole ? "ownerRole-error" : undefined} className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50">
           {roleCodes.map((role) => <option key={role} value={role}>{messages.roles[role]}</option>)}
         </select>
         {fieldErrors.ownerRole ? <p id="ownerRole-error" className="text-sm text-destructive">{messages.errors.ownerRole}</p> : null}
