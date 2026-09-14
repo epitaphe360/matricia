@@ -737,3 +737,18 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   (33), 0137 PASS (64), 0138 PASS (8), plus 4 scénarios de concurrence. Les E2E
   authentifiés sans skip et la configuration des fournisseurs externes restent les
   seules preuves opérationnelles de ce checkpoint; aucune production n'a été touchée.
+
+## Checkpoint accès de validation multi-espaces — 2026-09-13
+
+- La connexion par mot de passe optionnelle complète désormais l'OTP principal en
+  FR/AR, avec erreurs non énumérantes et redirection vers le tableau de bord.
+- Quatre identités isolées ont été créées et authentifiées sur Supabase development
+  pour les espaces Administration, Client, Sous-traitant et Franchisé. Les rôles
+  attendus ont été vérifiés; les secrets temporaires ont été remis uniquement via le
+  presse-papiers local et ne sont ni loggés, ni documentés, ni commités.
+- Le hub récupère les rôles plateforme par le RPC de sécurité borné au compte, sans
+  ouvrir de lecture directe sur la table centrale. Les actions Admin sensibles restent
+  soumises à AAL2/MFA.
+- Gates : Web 150 fichiers/623 tests PASS; TypeScript strict PASS; lint sans erreur;
+  build production PASS. GitHub et le déploiement Vercel autorisé ont été mis à jour
+  au commit `67835bc`.
