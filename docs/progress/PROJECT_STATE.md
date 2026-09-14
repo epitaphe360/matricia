@@ -752,3 +752,14 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - Gates : Web 150 fichiers/623 tests PASS; TypeScript strict PASS; lint sans erreur;
   build production PASS. GitHub et le déploiement Vercel autorisé ont été mis à jour
   au commit `67835bc`.
+
+## Checkpoint E2E authentifié sans skip — 2026-09-13
+
+- Le gate P05 authentifié a été rejoué sur Supabase development avec deux tenants,
+  une identité centrale AAL2, la même identité AAL1 et une identité sans rôle.
+- Résultat Playwright : 28/28 PASS, zéro skip, zéro flaky et zéro échec, en FR/AR,
+  sur Chromium 360 px et desktop. Les refus anonymes, l'isolation inter-tenant et
+  l'obligation MFA centrale sont prouvés.
+- Toutes les fixtures Auth, données et stockage ont été neutralisées; les preuves
+  d'audit immuables sont conservées et le rapport expurgé est enregistré sous
+  `docs/evidence/p05/authenticated-e2e-last-run.json`.
