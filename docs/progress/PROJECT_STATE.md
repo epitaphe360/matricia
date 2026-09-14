@@ -803,3 +803,19 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - Déploiements Railway Worker et ClamAV : `SUCCESS`. Le backlog Outbox est passé
   de 542 à 0 et `https://matricia.vercel.app/api/readiness` répond HTTP 200 avec
   PostgreSQL et Outbox `up`. Aucun secret n'est documenté ou commité.
+
+## Checkpoint design premium public — 2026-09-14
+
+- La Home et les parcours publics diagnostic, besoin, fournisseur, connexion,
+  contact, franchise et à-propos utilisent désormais le système visuel premium
+  centralisé et la signature Réponse → Priorité → Action, sans réintroduire de
+  catalogue public ni changer une règle métier.
+- Les parcours FR/AR conservent route, paramètres et brouillons; les contrôles
+  radio, champs libres et menu mobile ont été renforcés pour le clavier et les
+  technologies d'assistance.
+- Gates : lint et TypeScript strict PASS; build Next.js PASS; Web 151 fichiers/
+  627 tests PASS; UI 4/4 PASS; E2E public ciblé 26/26 PASS. Les captures réelles
+  avant/après et le rapport sont dans `docs/design-premium/`.
+- Les espaces authentifiés n'ont pas été inspectés visuellement pendant cette
+  passe faute de compte de test explicitement autorisé. Aucun déploiement ni
+  changement de base ou de production n'a été effectué.
