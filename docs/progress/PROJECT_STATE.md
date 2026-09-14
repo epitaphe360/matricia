@@ -777,3 +777,19 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - Blocages externes vérifiés : le jeton Supabase Management fourni retourne HTTP 403
   et ne voit pas le projet, empêchant la configuration Auth URL/SMTP; le worker
   Railway/ClamAV n'est pas configuré, donc 542 événements Outbox restent en attente.
+
+## Checkpoint Railway Worker/ClamAV et Outbox — 2026-09-14
+
+- Le projet Railway `Matricia` et ses services production `matricia-worker` et
+  `clamav` ont été créés après autorisation explicite. ClamAV utilise l'image
+  officielle épinglée `clamav/clamav:1.4.6-debian13-slim` et reste accessible
+  uniquement sur le réseau privé Railway.
+- Le worker est configuré avec build/start ciblés, healthcheck `/health`, secrets
+  injectés sans affichage, Supabase service role, dispatch HTTPS borné à
+  `matricia.vercel.app` et liaison ClamAV privée.
+- Un récepteur Outbox interne authentifié, validé et borné à 128 Kio est déployé
+  sur Vercel. Tests ciblés 3/3 PASS, TypeScript strict Worker/Web PASS et build
+  Next.js production PASS.
+- Déploiements Railway Worker et ClamAV : `SUCCESS`. Le backlog Outbox est passé
+  de 542 à 0 et `https://matricia.vercel.app/api/readiness` répond HTTP 200 avec
+  PostgreSQL et Outbox `up`. Aucun secret n'est documenté ou commité.
