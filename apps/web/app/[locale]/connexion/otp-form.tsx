@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { requestOtp } from "./actions";
 
-export function OtpForm({ locale }: { locale: Locale }) {
+export function OtpForm({ locale, nextPath }: { locale: Locale; nextPath?: string }) {
   const messages = getDictionary(locale).auth;
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -29,7 +29,7 @@ export function OtpForm({ locale }: { locale: Locale }) {
     setStatus("pending"); setMessage("");
     let result;
     try {
-      result = await requestOtp(normalizedEmail, locale);
+      result = await requestOtp(normalizedEmail, locale, nextPath);
     } catch {
       setStatus("error"); setMessage(messages.genericError); return;
     }
@@ -44,7 +44,7 @@ export function OtpForm({ locale }: { locale: Locale }) {
     setStatus("pending"); setMessage("");
     const { error } = await getSupabaseBrowserClient().auth.verifyOtp({ email, token: normalizedToken, type: "email" });
     if (error) { setStatus("error"); setMessage(messages.genericError); return; }
-    router.replace(`/${locale}/tableau-de-bord`);
+    router.replace(nextPath ?? "/" + locale + "/tableau-de-bord");
     router.refresh();
   }
 
@@ -59,7 +59,7 @@ export function OtpForm({ locale }: { locale: Locale }) {
       password,
     });
     if (error) { setStatus("error"); setMessage(messages.genericError); return; }
-    router.replace(`/${locale}/tableau-de-bord`);
+    router.replace(nextPath ?? "/" + locale + "/tableau-de-bord");
     router.refresh();
   }
 

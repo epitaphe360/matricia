@@ -26,6 +26,7 @@
 ## Catalogue et collaboration
 
 - Employer les skills pertinents et charger le contexte de manière ciblée. Ne jamais charger les 6 000 questions du catalogue si la tâche ne l’exige pas ; filtrer à la bibliothèque, au service ou au sous-ensemble utile.
+- Pour l’expérience commerciale, appliquer la refonte guidée documentée dans `docs/refonte-sans-catalogue/` : le catalogue reste un référentiel interne, jamais une étape imposée au client ou au fournisseur.
 - Travailler en multi-agents seulement pour des périmètres indépendants, avec une branche/worktree par domaine. Un seul propriétaire en écriture par fichier, migration et fichier partagé ; les agents d’audit restent indépendants du code audité.
 
 ## Règles franchise

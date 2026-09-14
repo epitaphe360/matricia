@@ -14,10 +14,16 @@ function clientIp(headerStore: Headers): string | null {
   return candidate;
 }
 
-export async function requestOtp(emailInput: string, localeInput: string): Promise<OtpRequestResult> {
+function safeNextPath(value: string | undefined, locale: Locale): string {
+  if (!value || !value.startsWith("/" + locale + "/") || value.startsWith("//") || value.includes("\\") || value.length > 1000) return "/" + locale + "/tableau-de-bord";
+  return value;
+}
+
+export async function requestOtp(emailInput: string, localeInput: string, nextPathInput?: string): Promise<OtpRequestResult> {
   const email = normalizeEmail(emailInput);
   if (!email) return { accepted: false, reason: "INVALID_EMAIL" };
   const locale: Locale = isLocale(localeInput) ? localeInput : "fr";
+  const nextPath = safeNextPath(nextPathInput, locale);
   const environment = getServerEnvironment();
   const admin = getSupabaseAdminClient();
   const headerStore = await headers();
@@ -32,7 +38,7 @@ export async function requestOtp(emailInput: string, localeInput: string): Promi
       email,
       options: {
         shouldCreateUser: false,
-        emailRedirectTo: `${environment.NEXT_PUBLIC_APP_URL}/${locale}/auth/callback`,
+        emailRedirectTo: environment.NEXT_PUBLIC_APP_URL + "/" + locale + "/auth/callback?next=" + encodeURIComponent(nextPath),
       },
     });
   }

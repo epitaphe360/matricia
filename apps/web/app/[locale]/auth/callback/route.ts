@@ -6,10 +6,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { locale } = await params;
   if (!isLocale(locale)) return NextResponse.redirect(new URL("/fr/connexion", request.url));
   const code = request.nextUrl.searchParams.get("code");
+  const requested = request.nextUrl.searchParams.get("next");
+  const nextPath = requested && requested.startsWith("/" + locale + "/") && !requested.startsWith("//") && !requested.includes("\\") ? requested : "/" + locale + "/tableau-de-bord";
   if (code) {
     const supabase = await getSupabaseServerClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) return NextResponse.redirect(new URL(`/${locale}/tableau-de-bord`, request.url));
+    if (!error) return NextResponse.redirect(new URL(nextPath, request.url));
   }
   return NextResponse.redirect(new URL(`/${locale}/connexion`, request.url));
 }
