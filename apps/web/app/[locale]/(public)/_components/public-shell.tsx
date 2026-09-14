@@ -13,7 +13,8 @@ type Props = {
   messages: PublicMessages["common"];
 };
 
-export function PublicShell({ children, locale, alternatePath, messages }: Props) {
+export function PublicShell(props: Props) {
+  const { children, messages } = props;
   return <>
     <a href="#contenu-principal" className="sr-only z-50 rounded-md bg-background px-4 py-3 font-semibold text-primary focus:not-sr-only focus:fixed focus:start-4 focus:top-4">{messages.skipToContent}</a>
     {children}

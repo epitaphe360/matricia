@@ -55,7 +55,7 @@ describe("requestOtp", () => {
       email: "personne@example.ma",
       options: {
         shouldCreateUser: false,
-        emailRedirectTo: "https://app.example.test/ar/auth/callback",
+        emailRedirectTo: "https://app.example.test/ar/auth/callback?next=%2Far%2Ftableau-de-bord",
       },
     });
   });
