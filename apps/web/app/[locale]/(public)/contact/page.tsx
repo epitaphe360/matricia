@@ -11,7 +11,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
   if (!isLocale(locale)) notFound();
   const messages = getContactMessages(locale);
 
-  return <main className="px-4 py-12 sm:px-6 sm:py-16">
+  return <main id="contenu-principal" tabIndex={-1} className="px-4 py-12 sm:px-6 sm:py-16">
     <div className="mx-auto max-w-5xl space-y-8">
       <header className="max-w-3xl">
         <p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary">{messages.eyebrow}</p>

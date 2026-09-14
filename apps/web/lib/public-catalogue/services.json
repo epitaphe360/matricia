@@ -1,0 +1,1402 @@
+[
+  {
+    "code": "IT-AUDIT-SI",
+    "library": "IT",
+    "name": "Audit du système d’information et feuille de route",
+    "description": "Prestation structurée de audit du système d’information et feuille de route comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "rapport de diagnostic, constats, priorités et plan d’action"
+  },
+  {
+    "code": "IT-ARCHI",
+    "library": "IT",
+    "name": "Architecture et urbanisation du système d’information",
+    "description": "Prestation structurée de architecture et urbanisation du système d’information comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "IT-NETWORK",
+    "library": "IT",
+    "name": "Conception et installation réseau LAN/Wi-Fi",
+    "description": "Prestation structurée de conception et installation réseau lan/wi-fi comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "IT-FIREWALL",
+    "library": "IT",
+    "name": "Déploiement de pare-feu et sécurisation réseau",
+    "description": "Prestation structurée de déploiement de pare-feu et sécurisation réseau comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "IT-VOIP",
+    "library": "IT",
+    "name": "Téléphonie IP, centre d’appels et communications unifiées",
+    "description": "Prestation structurée de téléphonie ip, centre d’appels et communications unifiées comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "IT-CYBER-AUDIT",
+    "library": "IT",
+    "name": "Audit de cybersécurité",
+    "description": "Prestation structurée de audit de cybersécurité comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "rapport de diagnostic, constats, priorités et plan d’action"
+  },
+  {
+    "code": "IT-PENTEST",
+    "library": "IT",
+    "name": "Test d’intrusion Web, mobile ou infrastructure",
+    "description": "Prestation structurée de test d’intrusion web, mobile ou infrastructure comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "rapport de diagnostic, constats, priorités et plan d’action"
+  },
+  {
+    "code": "IT-SOC-MDR",
+    "library": "IT",
+    "name": "Supervision SOC/MDR et réponse aux incidents",
+    "description": "Prestation structurée de supervision soc/mdr et réponse aux incidents comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "service récurrent, SLA, rapports et support"
+  },
+  {
+    "code": "IT-BACKUP",
+    "library": "IT",
+    "name": "Sauvegarde, restauration et archivage",
+    "description": "Prestation structurée de sauvegarde, restauration et archivage comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "IT-BCP-DRP",
+    "library": "IT",
+    "name": "Plan de continuité et plan de reprise informatique",
+    "description": "Prestation structurée de plan de continuité et plan de reprise informatique comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "IT-CLOUD-MIG",
+    "library": "IT",
+    "name": "Migration vers le cloud",
+    "description": "Prestation structurée de migration vers le cloud comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "IT-M365",
+    "library": "IT",
+    "name": "Déploiement Microsoft 365 ou Google Workspace",
+    "description": "Prestation structurée de déploiement microsoft 365 ou google workspace comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "IT-WEB-SHOWCASE",
+    "library": "IT",
+    "name": "Création de site Web vitrine",
+    "description": "Prestation structurée de création de site web vitrine comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "design, réalisation, intégration, mise en ligne et accès"
+  },
+  {
+    "code": "IT-ECOMMERCE",
+    "library": "IT",
+    "name": "Création de boutique e-commerce",
+    "description": "Prestation structurée de création de boutique e-commerce comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "design, réalisation, intégration, mise en ligne et accès"
+  },
+  {
+    "code": "IT-WEB-APP",
+    "library": "IT",
+    "name": "Développement d’application Web métier",
+    "description": "Prestation structurée de développement d’application web métier comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "application, code, documentation, tests et déploiement"
+  },
+  {
+    "code": "IT-MOBILE-APP",
+    "library": "IT",
+    "name": "Développement d’application mobile",
+    "description": "Prestation structurée de développement d’application mobile comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "application, code, documentation, tests et déploiement"
+  },
+  {
+    "code": "IT-ERP-CRM",
+    "library": "IT",
+    "name": "Implémentation ou intégration ERP/CRM",
+    "description": "Prestation structurée de implémentation ou intégration erp/crm comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "application, code, documentation, tests et déploiement"
+  },
+  {
+    "code": "IT-BI",
+    "library": "IT",
+    "name": "Data warehouse et tableaux de bord BI",
+    "description": "Prestation structurée de data warehouse et tableaux de bord bi comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "modèle de données, pipelines, tableaux de bord et documentation"
+  },
+  {
+    "code": "IT-AI-AUTO",
+    "library": "IT",
+    "name": "Automatisation IA, assistants et chatbots",
+    "description": "Prestation structurée de automatisation ia, assistants et chatbots comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "cas d’usage, prototype, intégrations, garde-fous et documentation"
+  },
+  {
+    "code": "IT-CCTV-IOT",
+    "library": "IT",
+    "name": "Vidéosurveillance, contrôle d’accès et IoT",
+    "description": "Prestation structurée de vidéosurveillance, contrôle d’accès et iot comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "COM-MKT-STRAT",
+    "library": "COM",
+    "name": "Stratégie marketing globale",
+    "description": "Prestation structurée de stratégie marketing globale comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "COM-BRAND",
+    "library": "COM",
+    "name": "Plateforme de marque et stratégie de branding",
+    "description": "Prestation structurée de plateforme de marque et stratégie de branding comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "territoires créatifs, recommandations et sélection finale"
+  },
+  {
+    "code": "COM-NAMING",
+    "library": "COM",
+    "name": "Naming de marque, produit ou service",
+    "description": "Prestation structurée de naming de marque, produit ou service comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "territoires créatifs, recommandations et sélection finale"
+  },
+  {
+    "code": "COM-VISUAL-ID",
+    "library": "COM",
+    "name": "Identité visuelle et charte graphique",
+    "description": "Prestation structurée de identité visuelle et charte graphique comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "concepts, fichiers sources et déclinaisons finales"
+  },
+  {
+    "code": "COM-GRAPHIC",
+    "library": "COM",
+    "name": "Création graphique et supports commerciaux",
+    "description": "Prestation structurée de création graphique et supports commerciaux comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "concepts, fichiers sources et déclinaisons finales"
+  },
+  {
+    "code": "COM-COPY",
+    "library": "COM",
+    "name": "Rédaction Web, commerciale et institutionnelle",
+    "description": "Prestation structurée de rédaction web, commerciale et institutionnelle comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "contenus rédigés, relus et livrés aux formats convenus"
+  },
+  {
+    "code": "COM-CONTENT-PLAN",
+    "library": "COM",
+    "name": "Stratégie éditoriale et calendrier de contenu",
+    "description": "Prestation structurée de stratégie éditoriale et calendrier de contenu comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "ligne éditoriale, calendrier, formats et gouvernance"
+  },
+  {
+    "code": "COM-SOCIAL-STRAT",
+    "library": "COM",
+    "name": "Stratégie réseaux sociaux",
+    "description": "Prestation structurée de stratégie réseaux sociaux comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "COM-COMMUNITY",
+    "library": "COM",
+    "name": "Community management",
+    "description": "Prestation structurée de community management comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "service récurrent, SLA, rapports et support"
+  },
+  {
+    "code": "COM-SEO",
+    "library": "COM",
+    "name": "Référencement naturel SEO",
+    "description": "Prestation structurée de référencement naturel seo comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "service récurrent, SLA, rapports et support"
+  },
+  {
+    "code": "COM-EMAIL",
+    "library": "COM",
+    "name": "E-mail marketing et automatisation",
+    "description": "Prestation structurée de e-mail marketing et automatisation comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "plan de campagne, paramétrage, créations, diffusion et reporting"
+  },
+  {
+    "code": "COM-DIGITAL-ADS",
+    "library": "COM",
+    "name": "Campagnes publicitaires digitales",
+    "description": "Prestation structurée de campagnes publicitaires digitales comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "plan de campagne, paramétrage, créations, diffusion et reporting"
+  },
+  {
+    "code": "COM-MEDIA",
+    "library": "COM",
+    "name": "Plan média et achat d’espace",
+    "description": "Prestation structurée de plan média et achat d’espace comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "plan de campagne, paramétrage, créations, diffusion et reporting"
+  },
+  {
+    "code": "COM-PHOTO",
+    "library": "COM",
+    "name": "Photographie corporate, produit ou immobilière",
+    "description": "Prestation structurée de photographie corporate, produit ou immobilière comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "production, fichiers maîtres et exports multi-formats"
+  },
+  {
+    "code": "COM-VIDEO",
+    "library": "COM",
+    "name": "Production vidéo corporate ou publicitaire",
+    "description": "Prestation structurée de production vidéo corporate ou publicitaire comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "production, fichiers maîtres et exports multi-formats"
+  },
+  {
+    "code": "COM-MOTION",
+    "library": "COM",
+    "name": "Motion design et animation",
+    "description": "Prestation structurée de motion design et animation comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "production, fichiers maîtres et exports multi-formats"
+  },
+  {
+    "code": "COM-PR",
+    "library": "COM",
+    "name": "Relations presse et relations publiques",
+    "description": "Prestation structurée de relations presse et relations publiques comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "service récurrent, SLA, rapports et support"
+  },
+  {
+    "code": "COM-INFLUENCE",
+    "library": "COM",
+    "name": "Marketing d’influence",
+    "description": "Prestation structurée de marketing d’influence comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "plan de campagne, paramétrage, créations, diffusion et reporting"
+  },
+  {
+    "code": "COM-EVENT",
+    "library": "COM",
+    "name": "Conception et communication événementielle",
+    "description": "Prestation structurée de conception et communication événementielle comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "concept, planning, coordination, exécution et bilan"
+  },
+  {
+    "code": "COM-PRINT-SIGN",
+    "library": "COM",
+    "name": "Impression, PLV et signalétique",
+    "description": "Prestation structurée de impression, plv et signalétique comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "produits conformes, BAT et livraison/installation"
+  },
+  {
+    "code": "ACC-BOOKKEEPING",
+    "library": "ACC",
+    "name": "Tenue comptable externalisée",
+    "description": "Prestation structurée de tenue comptable externalisée comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "opérations exécutées, contrôles et reporting périodique"
+  },
+  {
+    "code": "ACC-CLEANUP",
+    "library": "ACC",
+    "name": "Rattrapage et régularisation comptable",
+    "description": "Prestation structurée de rattrapage et régularisation comptable comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "livrables du projet, planning, contrôles et clôture"
+  },
+  {
+    "code": "ACC-CLOSE",
+    "library": "ACC",
+    "name": "Clôture mensuelle et annuelle",
+    "description": "Prestation structurée de clôture mensuelle et annuelle comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "opérations exécutées, contrôles et reporting périodique"
+  },
+  {
+    "code": "ACC-FS",
+    "library": "ACC",
+    "name": "Préparation des états financiers",
+    "description": "Prestation structurée de préparation des états financiers comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "livrables du projet, planning, contrôles et clôture"
+  },
+  {
+    "code": "ACC-VAT",
+    "library": "ACC",
+    "name": "Déclarations de TVA",
+    "description": "Prestation structurée de déclarations de tva comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "opérations exécutées, contrôles et reporting périodique"
+  },
+  {
+    "code": "ACC-CORP-TAX",
+    "library": "ACC",
+    "name": "Déclarations fiscales et impôt sur les sociétés",
+    "description": "Prestation structurée de déclarations fiscales et impôt sur les sociétés comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "opérations exécutées, contrôles et reporting périodique"
+  },
+  {
+    "code": "ACC-TAX-REVIEW",
+    "library": "ACC",
+    "name": "Revue fiscale et diagnostic de conformité",
+    "description": "Prestation structurée de revue fiscale et diagnostic de conformité comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "rapport de diagnostic, constats, priorités et plan d’action"
+  },
+  {
+    "code": "ACC-TAX-AUDIT",
+    "library": "ACC",
+    "name": "Assistance lors d’un contrôle fiscal",
+    "description": "Prestation structurée de assistance lors d’un contrôle fiscal comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "ACC-BUDGET",
+    "library": "ACC",
+    "name": "Budget annuel et prévisions",
+    "description": "Prestation structurée de budget annuel et prévisions comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "ACC-MGMT-CONTROL",
+    "library": "ACC",
+    "name": "Mise en place du contrôle de gestion",
+    "description": "Prestation structurée de mise en place du contrôle de gestion comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "ACC-COSTING",
+    "library": "ACC",
+    "name": "Calcul des coûts et rentabilité par produit",
+    "description": "Prestation structurée de calcul des coûts et rentabilité par produit comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "ACC-TREASURY",
+    "library": "ACC",
+    "name": "Gestion et prévision de trésorerie",
+    "description": "Prestation structurée de gestion et prévision de trésorerie comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "ACC-COLLECTION",
+    "library": "ACC",
+    "name": "Optimisation du recouvrement client",
+    "description": "Prestation structurée de optimisation du recouvrement client comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "service récurrent, SLA, rapports et support"
+  },
+  {
+    "code": "ACC-INVOICING",
+    "library": "ACC",
+    "name": "Mise en place de la facturation et des contrôles",
+    "description": "Prestation structurée de mise en place de la facturation et des contrôles comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "ACC-FIN-MODEL",
+    "library": "ACC",
+    "name": "Modèle financier et business plan",
+    "description": "Prestation structurée de modèle financier et business plan comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "ACC-FUNDING",
+    "library": "ACC",
+    "name": "Préparation d’un dossier de financement",
+    "description": "Prestation structurée de préparation d’un dossier de financement comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "ACC-AUDIT-PREP",
+    "library": "ACC",
+    "name": "Préparation à l’audit financier",
+    "description": "Prestation structurée de préparation à l’audit financier comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "dossier préparé, réponses et suivi des demandes"
+  },
+  {
+    "code": "ACC-DUE-DIL",
+    "library": "ACC",
+    "name": "Due diligence financière",
+    "description": "Prestation structurée de due diligence financière comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "rapport de diagnostic, constats, priorités et plan d’action"
+  },
+  {
+    "code": "ACC-SOFTWARE",
+    "library": "ACC",
+    "name": "Choix et déploiement d’un logiciel comptable",
+    "description": "Prestation structurée de choix et déploiement d’un logiciel comptable comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "ACC-INVENTORY",
+    "library": "ACC",
+    "name": "Inventaire physique et valorisation des stocks",
+    "description": "Prestation structurée de inventaire physique et valorisation des stocks comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "livrables du projet, planning, contrôles et clôture"
+  },
+  {
+    "code": "LEGAL-CREATE",
+    "library": "LEGAL",
+    "name": "Création et structuration de société",
+    "description": "Prestation structurée de création et structuration de société comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse juridique, options, risques et recommandations"
+  },
+  {
+    "code": "LEGAL-CORP-SECRETARY",
+    "library": "LEGAL",
+    "name": "Secrétariat juridique annuel",
+    "description": "Prestation structurée de secrétariat juridique annuel comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "service récurrent, SLA, rapports et support"
+  },
+  {
+    "code": "LEGAL-GOV",
+    "library": "LEGAL",
+    "name": "Mise en place de la gouvernance et délégations",
+    "description": "Prestation structurée de mise en place de la gouvernance et délégations comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse juridique, options, risques et recommandations"
+  },
+  {
+    "code": "LEGAL-CONTRACT-DRAFT",
+    "library": "LEGAL",
+    "name": "Rédaction de contrat commercial",
+    "description": "Prestation structurée de rédaction de contrat commercial comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "document juridique versionné, commentaires et version finale"
+  },
+  {
+    "code": "LEGAL-CONTRACT-REVIEW",
+    "library": "LEGAL",
+    "name": "Revue et négociation de contrat",
+    "description": "Prestation structurée de revue et négociation de contrat comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "document juridique versionné, commentaires et version finale"
+  },
+  {
+    "code": "LEGAL-GTC",
+    "library": "LEGAL",
+    "name": "Conditions générales de vente ou d’utilisation",
+    "description": "Prestation structurée de conditions générales de vente ou d’utilisation comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "document juridique versionné, commentaires et version finale"
+  },
+  {
+    "code": "LEGAL-EMPLOYMENT",
+    "library": "LEGAL",
+    "name": "Contrats de travail et documents RH",
+    "description": "Prestation structurée de contrats de travail et documents rh comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "document juridique versionné, commentaires et version finale"
+  },
+  {
+    "code": "LEGAL-HR-DISPUTE",
+    "library": "LEGAL",
+    "name": "Assistance en conflit ou procédure disciplinaire",
+    "description": "Prestation structurée de assistance en conflit ou procédure disciplinaire comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse juridique, options, risques et recommandations"
+  },
+  {
+    "code": "LEGAL-TRADEMARK",
+    "library": "LEGAL",
+    "name": "Dépôt et protection de marque",
+    "description": "Prestation structurée de dépôt et protection de marque comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "document juridique versionné, commentaires et version finale"
+  },
+  {
+    "code": "LEGAL-IP-CONTRACT",
+    "library": "LEGAL",
+    "name": "Contrats de propriété intellectuelle et licences",
+    "description": "Prestation structurée de contrats de propriété intellectuelle et licences comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "document juridique versionné, commentaires et version finale"
+  },
+  {
+    "code": "LEGAL-PRIVACY",
+    "library": "LEGAL",
+    "name": "Conformité données personnelles et politique de confidentialité",
+    "description": "Prestation structurée de conformité données personnelles et politique de confidentialité comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "diagnostic, registre, politiques et plan de mise en conformité"
+  },
+  {
+    "code": "LEGAL-COMPLIANCE-AUDIT",
+    "library": "LEGAL",
+    "name": "Audit de conformité réglementaire",
+    "description": "Prestation structurée de audit de conformité réglementaire comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "diagnostic, registre, politiques et plan de mise en conformité"
+  },
+  {
+    "code": "LEGAL-ETHICS",
+    "library": "LEGAL",
+    "name": "Code éthique, anticorruption et dispositif d’alerte",
+    "description": "Prestation structurée de code éthique, anticorruption et dispositif d’alerte comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "diagnostic, registre, politiques et plan de mise en conformité"
+  },
+  {
+    "code": "LEGAL-LICENSE",
+    "library": "LEGAL",
+    "name": "Obtention ou renouvellement d’agrément/licence",
+    "description": "Prestation structurée de obtention ou renouvellement d’agrément/licence comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "document juridique versionné, commentaires et version finale"
+  },
+  {
+    "code": "LEGAL-DEBT-RECOVERY",
+    "library": "LEGAL",
+    "name": "Recouvrement amiable et juridique",
+    "description": "Prestation structurée de recouvrement amiable et juridique comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "document juridique versionné, commentaires et version finale"
+  },
+  {
+    "code": "LEGAL-PRE-LITIGATION",
+    "library": "LEGAL",
+    "name": "Mise en demeure et stratégie précontentieuse",
+    "description": "Prestation structurée de mise en demeure et stratégie précontentieuse comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse juridique, options, risques et recommandations"
+  },
+  {
+    "code": "LEGAL-LITIGATION",
+    "library": "LEGAL",
+    "name": "Coordination et suivi d’un contentieux",
+    "description": "Prestation structurée de coordination et suivi d’un contentieux comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "document juridique versionné, commentaires et version finale"
+  },
+  {
+    "code": "LEGAL-LEASE",
+    "library": "LEGAL",
+    "name": "Rédaction ou revue de bail commercial",
+    "description": "Prestation structurée de rédaction ou revue de bail commercial comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "document juridique versionné, commentaires et version finale"
+  },
+  {
+    "code": "LEGAL-SHA",
+    "library": "LEGAL",
+    "name": "Pacte d’associés ou convention de partenariat",
+    "description": "Prestation structurée de pacte d’associés ou convention de partenariat comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "document juridique versionné, commentaires et version finale"
+  },
+  {
+    "code": "LEGAL-FRANCHISE",
+    "library": "LEGAL",
+    "name": "Contrat et structuration de franchise",
+    "description": "Prestation structurée de contrat et structuration de franchise comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "document juridique versionné, commentaires et version finale"
+  },
+  {
+    "code": "HR-AUDIT",
+    "library": "HR",
+    "name": "Audit RH et plan d’action",
+    "description": "Prestation structurée de audit rh et plan d’action comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "rapport de diagnostic, constats, priorités et plan d’action"
+  },
+  {
+    "code": "HR-WORKFORCE",
+    "library": "HR",
+    "name": "Planification des effectifs et emplois",
+    "description": "Prestation structurée de planification des effectifs et emplois comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "HR-JOB-DESC",
+    "library": "HR",
+    "name": "Fiches de poste et référentiel métiers",
+    "description": "Prestation structurée de fiches de poste et référentiel métiers comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "livrables du projet, planning, contrôles et clôture"
+  },
+  {
+    "code": "HR-RECRUIT",
+    "library": "HR",
+    "name": "Recrutement de profils",
+    "description": "Prestation structurée de recrutement de profils comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "shortlist, évaluations, entretiens et accompagnement"
+  },
+  {
+    "code": "HR-EXEC-SEARCH",
+    "library": "HR",
+    "name": "Chasse de cadres et dirigeants",
+    "description": "Prestation structurée de chasse de cadres et dirigeants comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "shortlist, évaluations, entretiens et accompagnement"
+  },
+  {
+    "code": "HR-ONBOARD",
+    "library": "HR",
+    "name": "Parcours d’intégration des nouveaux salariés",
+    "description": "Prestation structurée de parcours d’intégration des nouveaux salariés comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "livrables du projet, planning, contrôles et clôture"
+  },
+  {
+    "code": "HR-PERFORMANCE",
+    "library": "HR",
+    "name": "Système d’évaluation de la performance",
+    "description": "Prestation structurée de système d’évaluation de la performance comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "HR-COMPETENCY",
+    "library": "HR",
+    "name": "Référentiel de compétences et gestion des carrières",
+    "description": "Prestation structurée de référentiel de compétences et gestion des carrières comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "livrables du projet, planning, contrôles et clôture"
+  },
+  {
+    "code": "HR-SUCCESSION",
+    "library": "HR",
+    "name": "Plans de succession et hauts potentiels",
+    "description": "Prestation structurée de plans de succession et hauts potentiels comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "HR-COMP-BEN",
+    "library": "HR",
+    "name": "Politique de rémunération et avantages",
+    "description": "Prestation structurée de politique de rémunération et avantages comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "HR-PAYROLL",
+    "library": "HR",
+    "name": "Externalisation ou sécurisation de la paie",
+    "description": "Prestation structurée de externalisation ou sécurisation de la paie comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "opérations exécutées, contrôles et reporting périodique"
+  },
+  {
+    "code": "HR-ADMIN",
+    "library": "HR",
+    "name": "Administration du personnel externalisée",
+    "description": "Prestation structurée de administration du personnel externalisée comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "opérations exécutées, contrôles et reporting périodique"
+  },
+  {
+    "code": "HR-TIME",
+    "library": "HR",
+    "name": "Gestion du temps, absences et planning",
+    "description": "Prestation structurée de gestion du temps, absences et planning comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "HR-TRAIN-NEEDS",
+    "library": "HR",
+    "name": "Analyse des besoins de formation",
+    "description": "Prestation structurée de analyse des besoins de formation comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "HR-TRAIN-DELIVERY",
+    "library": "HR",
+    "name": "Conception et animation de formation",
+    "description": "Prestation structurée de conception et animation de formation comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "supports, sessions, évaluations et attestations"
+  },
+  {
+    "code": "HR-ENGAGEMENT",
+    "library": "HR",
+    "name": "Enquête d’engagement et climat social",
+    "description": "Prestation structurée de enquête d’engagement et climat social comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "questionnaire, collecte, analyse et plan d’action"
+  },
+  {
+    "code": "HR-RELATIONS",
+    "library": "HR",
+    "name": "Gestion des relations sociales",
+    "description": "Prestation structurée de gestion des relations sociales comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "HR-DISCIPLINE",
+    "library": "HR",
+    "name": "Processus disciplinaire et gestion des dossiers sensibles",
+    "description": "Prestation structurée de processus disciplinaire et gestion des dossiers sensibles comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "HR-HRIS",
+    "library": "HR",
+    "name": "Choix et déploiement d’un SIRH",
+    "description": "Prestation structurée de choix et déploiement d’un sirh comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "HR-OUTSOURCING",
+    "library": "HR",
+    "name": "Direction RH externalisée",
+    "description": "Prestation structurée de direction rh externalisée comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "service récurrent, SLA, rapports et support"
+  },
+  {
+    "code": "INS-RISK-AUDIT",
+    "library": "INS",
+    "name": "Audit global des risques assurables",
+    "description": "Prestation structurée de audit global des risques assurables comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "cartographie des risques, évaluation et plan de traitement"
+  },
+  {
+    "code": "INS-MAP",
+    "library": "INS",
+    "name": "Cartographie et plan de traitement des risques",
+    "description": "Prestation structurée de cartographie et plan de traitement des risques comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "cartographie des risques, évaluation et plan de traitement"
+  },
+  {
+    "code": "INS-PROPERTY",
+    "library": "INS",
+    "name": "Assurance multirisque des biens",
+    "description": "Prestation structurée de assurance multirisque des biens comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, consultation du marché, comparaison et proposition de couverture"
+  },
+  {
+    "code": "INS-BI",
+    "library": "INS",
+    "name": "Assurance pertes d’exploitation",
+    "description": "Prestation structurée de assurance pertes d’exploitation comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, consultation du marché, comparaison et proposition de couverture"
+  },
+  {
+    "code": "INS-GL",
+    "library": "INS",
+    "name": "Responsabilité civile exploitation",
+    "description": "Prestation structurée de responsabilité civile exploitation comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, consultation du marché, comparaison et proposition de couverture"
+  },
+  {
+    "code": "INS-PRO-LIAB",
+    "library": "INS",
+    "name": "Responsabilité civile professionnelle",
+    "description": "Prestation structurée de responsabilité civile professionnelle comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, consultation du marché, comparaison et proposition de couverture"
+  },
+  {
+    "code": "INS-PRODUCT",
+    "library": "INS",
+    "name": "Responsabilité produits",
+    "description": "Prestation structurée de responsabilité produits comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, consultation du marché, comparaison et proposition de couverture"
+  },
+  {
+    "code": "INS-DNO",
+    "library": "INS",
+    "name": "Responsabilité des dirigeants",
+    "description": "Prestation structurée de responsabilité des dirigeants comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, consultation du marché, comparaison et proposition de couverture"
+  },
+  {
+    "code": "INS-HEALTH",
+    "library": "INS",
+    "name": "Assurance santé collective",
+    "description": "Prestation structurée de assurance santé collective comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, consultation du marché, comparaison et proposition de couverture"
+  },
+  {
+    "code": "INS-LIFE",
+    "library": "INS",
+    "name": "Décès, invalidité et prévoyance collective",
+    "description": "Prestation structurée de décès, invalidité et prévoyance collective comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, consultation du marché, comparaison et proposition de couverture"
+  },
+  {
+    "code": "INS-WORK-ACC",
+    "library": "INS",
+    "name": "Accidents du travail et risques professionnels",
+    "description": "Prestation structurée de accidents du travail et risques professionnels comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, consultation du marché, comparaison et proposition de couverture"
+  },
+  {
+    "code": "INS-CYBER",
+    "library": "INS",
+    "name": "Assurance cyber",
+    "description": "Prestation structurée de assurance cyber comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, consultation du marché, comparaison et proposition de couverture"
+  },
+  {
+    "code": "INS-CONSTRUCTION",
+    "library": "INS",
+    "name": "Tous risques chantier et responsabilité décennale",
+    "description": "Prestation structurée de tous risques chantier et responsabilité décennale comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, consultation du marché, comparaison et proposition de couverture"
+  },
+  {
+    "code": "INS-CREDIT",
+    "library": "INS",
+    "name": "Assurance-crédit clients",
+    "description": "Prestation structurée de assurance-crédit clients comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, consultation du marché, comparaison et proposition de couverture"
+  },
+  {
+    "code": "INS-FLEET",
+    "library": "INS",
+    "name": "Assurance flotte automobile",
+    "description": "Prestation structurée de assurance flotte automobile comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, consultation du marché, comparaison et proposition de couverture"
+  },
+  {
+    "code": "INS-CARGO",
+    "library": "INS",
+    "name": "Assurance transport de marchandises",
+    "description": "Prestation structurée de assurance transport de marchandises comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, consultation du marché, comparaison et proposition de couverture"
+  },
+  {
+    "code": "INS-CLAIMS",
+    "library": "INS",
+    "name": "Gestion et optimisation des sinistres",
+    "description": "Prestation structurée de gestion et optimisation des sinistres comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "dossier sinistre, échanges, suivi et bilan d’indemnisation"
+  },
+  {
+    "code": "INS-PREVENTION",
+    "library": "INS",
+    "name": "Plan de prévention et réduction des sinistres",
+    "description": "Prestation structurée de plan de prévention et réduction des sinistres comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "plan de prévention, procédures et indicateurs"
+  },
+  {
+    "code": "INS-POLICY-AUDIT",
+    "library": "INS",
+    "name": "Audit des polices et garanties existantes",
+    "description": "Prestation structurée de audit des polices et garanties existantes comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "rapport de diagnostic, constats, priorités et plan d’action"
+  },
+  {
+    "code": "INS-TENDER",
+    "library": "INS",
+    "name": "Appel d’offres assureurs et renouvellement",
+    "description": "Prestation structurée de appel d’offres assureurs et renouvellement comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "dossier de consultation, analyse des offres et recommandation"
+  },
+  {
+    "code": "LOG-PROC-AUDIT",
+    "library": "LOG",
+    "name": "Audit de la fonction achats",
+    "description": "Prestation structurée de audit de la fonction achats comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "rapport de diagnostic, constats, priorités et plan d’action"
+  },
+  {
+    "code": "LOG-SOURCING-STRAT",
+    "library": "LOG",
+    "name": "Stratégie de sourcing et catégories",
+    "description": "Prestation structurée de stratégie de sourcing et catégories comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "LOG-SUPPLIER-SEARCH",
+    "library": "LOG",
+    "name": "Recherche et présélection de fournisseurs",
+    "description": "Prestation structurée de recherche et présélection de fournisseurs comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "longlist, shortlist, vérifications et recommandations"
+  },
+  {
+    "code": "LOG-TENDER",
+    "library": "LOG",
+    "name": "Gestion d’appel d’offres fournisseurs",
+    "description": "Prestation structurée de gestion d’appel d’offres fournisseurs comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "dossier de consultation, analyse des offres et recommandation"
+  },
+  {
+    "code": "LOG-SUP-QUAL",
+    "library": "LOG",
+    "name": "Qualification et homologation fournisseurs",
+    "description": "Prestation structurée de qualification et homologation fournisseurs comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "rapport de diagnostic, constats, priorités et plan d’action"
+  },
+  {
+    "code": "LOG-SUP-PERF",
+    "library": "LOG",
+    "name": "Évaluation et performance fournisseurs",
+    "description": "Prestation structurée de évaluation et performance fournisseurs comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "LOG-CONTRACT-NEG",
+    "library": "LOG",
+    "name": "Négociation et optimisation des contrats achats",
+    "description": "Prestation structurée de négociation et optimisation des contrats achats comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "LOG-SPEND-ANALYSIS",
+    "library": "LOG",
+    "name": "Analyse des dépenses et économies",
+    "description": "Prestation structurée de analyse des dépenses et économies comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "modèle de données, pipelines, tableaux de bord et documentation"
+  },
+  {
+    "code": "LOG-E-PROC",
+    "library": "LOG",
+    "name": "Mise en place d’un processus e-procurement",
+    "description": "Prestation structurée de mise en place d’un processus e-procurement comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "LOG-INVENTORY-OPT",
+    "library": "LOG",
+    "name": "Optimisation des niveaux de stock",
+    "description": "Prestation structurée de optimisation des niveaux de stock comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "LOG-FORECAST",
+    "library": "LOG",
+    "name": "Prévision de la demande et S&OP",
+    "description": "Prestation structurée de prévision de la demande et s&op comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "modèle de données, pipelines, tableaux de bord et documentation"
+  },
+  {
+    "code": "LOG-WH-DESIGN",
+    "library": "LOG",
+    "name": "Conception ou optimisation d’entrepôt",
+    "description": "Prestation structurée de conception ou optimisation d’entrepôt comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "études, plans, notes de calcul et estimations"
+  },
+  {
+    "code": "LOG-WMS",
+    "library": "LOG",
+    "name": "Choix et déploiement WMS",
+    "description": "Prestation structurée de choix et déploiement wms comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "LOG-PICKING",
+    "library": "LOG",
+    "name": "Optimisation préparation de commandes",
+    "description": "Prestation structurée de optimisation préparation de commandes comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "LOG-TRANS-TENDER",
+    "library": "LOG",
+    "name": "Appel d’offres transporteurs",
+    "description": "Prestation structurée de appel d’offres transporteurs comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "dossier de consultation, analyse des offres et recommandation"
+  },
+  {
+    "code": "LOG-ROUTE",
+    "library": "LOG",
+    "name": "Optimisation des tournées et du dernier kilomètre",
+    "description": "Prestation structurée de optimisation des tournées et du dernier kilomètre comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "modèle de données, pipelines, tableaux de bord et documentation"
+  },
+  {
+    "code": "LOG-CUSTOMS",
+    "library": "LOG",
+    "name": "Assistance douane et conformité import-export",
+    "description": "Prestation structurée de assistance douane et conformité import-export comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "LOG-IMPORT",
+    "library": "LOG",
+    "name": "Organisation d’opérations import-export",
+    "description": "Prestation structurée de organisation d’opérations import-export comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "service récurrent, SLA, rapports et support"
+  },
+  {
+    "code": "LOG-SC-DIGITAL",
+    "library": "LOG",
+    "name": "Digitalisation et tableau de bord supply chain",
+    "description": "Prestation structurée de digitalisation et tableau de bord supply chain comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "modèle de données, pipelines, tableaux de bord et documentation"
+  },
+  {
+    "code": "LOG-BCP",
+    "library": "LOG",
+    "name": "Plan de continuité supply chain",
+    "description": "Prestation structurée de plan de continuité supply chain comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "plan de prévention, procédures et indicateurs"
+  },
+  {
+    "code": "BTP-FEAS",
+    "library": "BTP",
+    "name": "Étude de faisabilité immobilière ou chantier",
+    "description": "Prestation structurée de étude de faisabilité immobilière ou chantier comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "études, plans, notes de calcul et estimations"
+  },
+  {
+    "code": "BTP-ARCH",
+    "library": "BTP",
+    "name": "Conception architecturale",
+    "description": "Prestation structurée de conception architecturale comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "esquisses, plans, rendus et dossier de conception"
+  },
+  {
+    "code": "BTP-STRUCT",
+    "library": "BTP",
+    "name": "Étude de structure",
+    "description": "Prestation structurée de étude de structure comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "études, plans, notes de calcul et estimations"
+  },
+  {
+    "code": "BTP-GEO",
+    "library": "BTP",
+    "name": "Étude géotechnique",
+    "description": "Prestation structurée de étude géotechnique comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "études, plans, notes de calcul et estimations"
+  },
+  {
+    "code": "BTP-MEP-DESIGN",
+    "library": "BTP",
+    "name": "Études électricité, plomberie et CVC",
+    "description": "Prestation structurée de études électricité, plomberie et cvc comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "études, plans, notes de calcul et estimations"
+  },
+  {
+    "code": "BTP-QS",
+    "library": "BTP",
+    "name": "Métré, estimation et bordereau de prix",
+    "description": "Prestation structurée de métré, estimation et bordereau de prix comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "études, plans, notes de calcul et estimations"
+  },
+  {
+    "code": "BTP-PM",
+    "library": "BTP",
+    "name": "Maîtrise d’œuvre et gestion de projet chantier",
+    "description": "Prestation structurée de maîtrise d’œuvre et gestion de projet chantier comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "planning, coordination, contrôle budget/qualité et reporting"
+  },
+  {
+    "code": "BTP-GC",
+    "library": "BTP",
+    "name": "Construction tous corps d’état",
+    "description": "Prestation structurée de construction tous corps d’état comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "travaux exécutés, essais, DOE et réception"
+  },
+  {
+    "code": "BTP-RENOV",
+    "library": "BTP",
+    "name": "Rénovation de bâtiment ou local",
+    "description": "Prestation structurée de rénovation de bâtiment ou local comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "travaux exécutés, essais, DOE et réception"
+  },
+  {
+    "code": "BTP-FITOUT",
+    "library": "BTP",
+    "name": "Aménagement intérieur et fit-out",
+    "description": "Prestation structurée de aménagement intérieur et fit-out comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "travaux exécutés, essais, DOE et réception"
+  },
+  {
+    "code": "BTP-ELEC",
+    "library": "BTP",
+    "name": "Installation et mise à niveau électrique",
+    "description": "Prestation structurée de installation et mise à niveau électrique comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "travaux exécutés, essais, DOE et réception"
+  },
+  {
+    "code": "BTP-PLUMB",
+    "library": "BTP",
+    "name": "Plomberie, sanitaires et réseaux d’eau",
+    "description": "Prestation structurée de plomberie, sanitaires et réseaux d’eau comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "travaux exécutés, essais, DOE et réception"
+  },
+  {
+    "code": "BTP-HVAC",
+    "library": "BTP",
+    "name": "Climatisation, ventilation et traitement d’air",
+    "description": "Prestation structurée de climatisation, ventilation et traitement d’air comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "travaux exécutés, essais, DOE et réception"
+  },
+  {
+    "code": "BTP-FIRE",
+    "library": "BTP",
+    "name": "Détection et protection incendie",
+    "description": "Prestation structurée de détection et protection incendie comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "travaux exécutés, essais, DOE et réception"
+  },
+  {
+    "code": "BTP-SECURITY",
+    "library": "BTP",
+    "name": "Contrôle d’accès, alarme et sûreté bâtiment",
+    "description": "Prestation structurée de contrôle d’accès, alarme et sûreté bâtiment comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "travaux exécutés, essais, DOE et réception"
+  },
+  {
+    "code": "BTP-SOLAR",
+    "library": "BTP",
+    "name": "Installation solaire photovoltaïque",
+    "description": "Prestation structurée de installation solaire photovoltaïque comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "étude, équipements, installation, tests et mise en service"
+  },
+  {
+    "code": "BTP-ENERGY-AUDIT",
+    "library": "BTP",
+    "name": "Audit énergétique de bâtiment",
+    "description": "Prestation structurée de audit énergétique de bâtiment comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "rapport de diagnostic, constats, priorités et plan d’action"
+  },
+  {
+    "code": "BTP-MAINT",
+    "library": "BTP",
+    "name": "Contrat de maintenance multi-technique",
+    "description": "Prestation structurée de contrat de maintenance multi-technique comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "service récurrent, SLA, rapports et support"
+  },
+  {
+    "code": "BTP-INSPECTION",
+    "library": "BTP",
+    "name": "Inspection technique et diagnostic bâtiment",
+    "description": "Prestation structurée de inspection technique et diagnostic bâtiment comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "rapport de diagnostic, constats, priorités et plan d’action"
+  },
+  {
+    "code": "BTP-LANDSCAPE",
+    "library": "BTP",
+    "name": "Aménagement paysager, piscine et extérieurs",
+    "description": "Prestation structurée de aménagement paysager, piscine et extérieurs comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "travaux exécutés, essais, DOE et réception"
+  },
+  {
+    "code": "QHSE-ISO9001",
+    "library": "QHSE",
+    "name": "Mise en place ISO 9001",
+    "description": "Prestation structurée de mise en place iso 9001 comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "système documenté, preuves de déploiement et préparation audit"
+  },
+  {
+    "code": "QHSE-PROCESS",
+    "library": "QHSE",
+    "name": "Cartographie et optimisation des processus",
+    "description": "Prestation structurée de cartographie et optimisation des processus comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "QHSE-SUPPLIER-QUALITY",
+    "library": "QHSE",
+    "name": "Qualité fournisseurs",
+    "description": "Prestation structurée de qualité fournisseurs comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "système documenté, preuves de déploiement et préparation audit"
+  },
+  {
+    "code": "QHSE-ISO14001",
+    "library": "QHSE",
+    "name": "Mise en place ISO 14001",
+    "description": "Prestation structurée de mise en place iso 14001 comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "système documenté, preuves de déploiement et préparation audit"
+  },
+  {
+    "code": "QHSE-ENV-AUDIT",
+    "library": "QHSE",
+    "name": "Audit environnemental",
+    "description": "Prestation structurée de audit environnemental comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "rapport de diagnostic, constats, priorités et plan d’action"
+  },
+  {
+    "code": "QHSE-WASTE",
+    "library": "QHSE",
+    "name": "Plan de gestion des déchets",
+    "description": "Prestation structurée de plan de gestion des déchets comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "QHSE-ISO45001",
+    "library": "QHSE",
+    "name": "Mise en place ISO 45001",
+    "description": "Prestation structurée de mise en place iso 45001 comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "système documenté, preuves de déploiement et préparation audit"
+  },
+  {
+    "code": "QHSE-SAFETY-AUDIT",
+    "library": "QHSE",
+    "name": "Audit santé et sécurité au travail",
+    "description": "Prestation structurée de audit santé et sécurité au travail comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "rapport de diagnostic, constats, priorités et plan d’action"
+  },
+  {
+    "code": "QHSE-RISK-ASSESS",
+    "library": "QHSE",
+    "name": "Évaluation des risques professionnels",
+    "description": "Prestation structurée de évaluation des risques professionnels comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "rapport de diagnostic, constats, priorités et plan d’action"
+  },
+  {
+    "code": "QHSE-HSE-PLAN",
+    "library": "QHSE",
+    "name": "Plan HSE chantier ou site",
+    "description": "Prestation structurée de plan hse chantier ou site comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "système documenté, preuves de déploiement et préparation audit"
+  },
+  {
+    "code": "QHSE-HACCP",
+    "library": "QHSE",
+    "name": "Mise en place HACCP",
+    "description": "Prestation structurée de mise en place haccp comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "système documenté, preuves de déploiement et préparation audit"
+  },
+  {
+    "code": "QHSE-ISO22000",
+    "library": "QHSE",
+    "name": "Mise en place ISO 22000",
+    "description": "Prestation structurée de mise en place iso 22000 comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "système documenté, preuves de déploiement et préparation audit"
+  },
+  {
+    "code": "QHSE-FOOD-AUDIT",
+    "library": "QHSE",
+    "name": "Audit hygiène et sécurité alimentaire",
+    "description": "Prestation structurée de audit hygiène et sécurité alimentaire comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "rapport de diagnostic, constats, priorités et plan d’action"
+  },
+  {
+    "code": "QHSE-ISO17025",
+    "library": "QHSE",
+    "name": "Préparation ISO/IEC 17025 laboratoire",
+    "description": "Prestation structurée de préparation iso/iec 17025 laboratoire comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "système documenté, preuves de déploiement et préparation audit"
+  },
+  {
+    "code": "QHSE-METROLOGY",
+    "library": "QHSE",
+    "name": "Gestion de métrologie et étalonnage",
+    "description": "Prestation structurée de gestion de métrologie et étalonnage comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "service récurrent, SLA, rapports et support"
+  },
+  {
+    "code": "QHSE-INTERNAL-AUDIT",
+    "library": "QHSE",
+    "name": "Audit interne de système de management",
+    "description": "Prestation structurée de audit interne de système de management comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "rapport de diagnostic, constats, priorités et plan d’action"
+  },
+  {
+    "code": "QHSE-CAPA",
+    "library": "QHSE",
+    "name": "Gestion des non-conformités et CAPA",
+    "description": "Prestation structurée de gestion des non-conformités et capa comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "QHSE-DOC-MGMT",
+    "library": "QHSE",
+    "name": "Système documentaire qualité/HSE",
+    "description": "Prestation structurée de système documentaire qualité/hse comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "QHSE-INTEGRATED",
+    "library": "QHSE",
+    "name": "Système intégré Qualité-Environnement-Sécurité",
+    "description": "Prestation structurée de système intégré qualité-environnement-sécurité comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "système documenté, preuves de déploiement et préparation audit"
+  },
+  {
+    "code": "QHSE-CERT-PREP",
+    "library": "QHSE",
+    "name": "Préparation et accompagnement à la certification",
+    "description": "Prestation structurée de préparation et accompagnement à la certification comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "système documenté, preuves de déploiement et préparation audit"
+  },
+  {
+    "code": "SALES-AUDIT",
+    "library": "SALES",
+    "name": "Audit commercial",
+    "description": "Prestation structurée de audit commercial comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "rapport de diagnostic, constats, priorités et plan d’action"
+  },
+  {
+    "code": "SALES-GTM",
+    "library": "SALES",
+    "name": "Stratégie go-to-market",
+    "description": "Prestation structurée de stratégie go-to-market comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "SALES-MARKET-RESEARCH",
+    "library": "SALES",
+    "name": "Étude de marché et segmentation clients",
+    "description": "Prestation structurée de étude de marché et segmentation clients comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "méthodologie, collecte, analyse et rapport"
+  },
+  {
+    "code": "SALES-PRICING",
+    "library": "SALES",
+    "name": "Stratégie de prix et politique commerciale",
+    "description": "Prestation structurée de stratégie de prix et politique commerciale comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "SALES-PROCESS",
+    "library": "SALES",
+    "name": "Conception du processus de vente",
+    "description": "Prestation structurée de conception du processus de vente comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "SALES-PIPELINE",
+    "library": "SALES",
+    "name": "Mise en place du pipeline et prévisions commerciales",
+    "description": "Prestation structurée de mise en place du pipeline et prévisions commerciales comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "SALES-TENDER",
+    "library": "SALES",
+    "name": "Réponse aux appels d’offres commerciaux",
+    "description": "Prestation structurée de réponse aux appels d’offres commerciaux comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "service récurrent, SLA, rapports et support"
+  },
+  {
+    "code": "SALES-CRM-IMPL",
+    "library": "SALES",
+    "name": "Choix et déploiement CRM",
+    "description": "Prestation structurée de choix et déploiement crm comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "SALES-SALES-AUTO",
+    "library": "SALES",
+    "name": "Automatisation commerciale et séquences",
+    "description": "Prestation structurée de automatisation commerciale et séquences comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "SALES-LEADGEN",
+    "library": "SALES",
+    "name": "Génération de leads B2B/B2C",
+    "description": "Prestation structurée de génération de leads b2b/b2c comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "plan de campagne, paramétrage, créations, diffusion et reporting"
+  },
+  {
+    "code": "SALES-TELEMARKETING",
+    "library": "SALES",
+    "name": "Téléprospection et prise de rendez-vous",
+    "description": "Prestation structurée de téléprospection et prise de rendez-vous comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "service récurrent, SLA, rapports et support"
+  },
+  {
+    "code": "SALES-SCRIPTS",
+    "library": "SALES",
+    "name": "Scripts, argumentaires et outils d’aide à la vente",
+    "description": "Prestation structurée de scripts, argumentaires et outils d’aide à la vente comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "contenus rédigés, relus et livrés aux formats convenus"
+  },
+  {
+    "code": "SALES-ORG",
+    "library": "SALES",
+    "name": "Organisation et dimensionnement de la force de vente",
+    "description": "Prestation structurée de organisation et dimensionnement de la force de vente comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "SALES-TRAIN",
+    "library": "SALES",
+    "name": "Formation et coaching commercial",
+    "description": "Prestation structurée de formation et coaching commercial comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "supports, sessions, évaluations et attestations"
+  },
+  {
+    "code": "SALES-KAM",
+    "library": "SALES",
+    "name": "Programme grands comptes et key account management",
+    "description": "Prestation structurée de programme grands comptes et key account management comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "SALES-CHANNEL",
+    "library": "SALES",
+    "name": "Réseau de distributeurs et partenaires",
+    "description": "Prestation structurée de réseau de distributeurs et partenaires comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "SALES-EXPORT",
+    "library": "SALES",
+    "name": "Développement commercial à l’export",
+    "description": "Prestation structurée de développement commercial à l’export comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "analyse, recommandations, feuille de route et ateliers"
+  },
+  {
+    "code": "SALES-CX-MAP",
+    "library": "SALES",
+    "name": "Cartographie du parcours et expérience client",
+    "description": "Prestation structurée de cartographie du parcours et expérience client comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "méthodologie, collecte, analyse et rapport"
+  },
+  {
+    "code": "SALES-LOYALTY",
+    "library": "SALES",
+    "name": "Programme de fidélité et rétention",
+    "description": "Prestation structurée de programme de fidélité et rétention comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  },
+  {
+    "code": "SALES-CUSTOMER-SERVICE",
+    "library": "SALES",
+    "name": "Mise en place ou optimisation du service client",
+    "description": "Prestation structurée de mise en place ou optimisation du service client comprenant cadrage, exécution, contrôle, documentation et réception.",
+    "deliverables": "solution installée, configurée, testée et documentée"
+  }
+]

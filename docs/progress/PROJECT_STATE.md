@@ -1,5 +1,15 @@
 # Matricia — Project State
 
+## 2026-09-14 — Refonte publique, aperçu local
+
+- Direction visuelle reprise suite au rejet utilisateur : blanc/bleu électrique, photographie illustrative originale, titre client/talents/réussite partagée, cartes flottantes et mouvement désactivable. La direction sombre à anneaux a été remplacée.
+- Accueil : studio interactif de trois projets illustratifs, liens vers les expertises complémentaires, parcours de confiance, entrées Client/Sous-traitant et Franchise.
+- Catalogue public : projection des 200 services du CSV de référence (aucune question chargée), recherche multi-mots insensible aux accents, filtre bibliothèque, état vide, 200 fiches avec métadonnées et sitemap. Ce catalogue de référence statique ne remplace pas la publication organisationnelle.
+- FR/AR et RTL pour l'interface ; les noms/descriptions de services issus du catalogue source restent en français, signalés et balisés lang=fr.
+- Preuves : 4 E2E desktop/360 px FR/AR verts avec axe WCAG A/AA, studio, pause des animations, filtrage, fiches et recherche vide. ESLint ciblé vert. Captures dans artifacts/test-results/playwright/public-experience-*.
+- Pas de changement base de données, ni déploiement de cette refonte. Validation visuelle utilisateur encore attendue ; aucune note de satisfaction ou validation globale V1 inférée.
+- Visuel et prompt : docs/progress/public-experience-visual.md.
+
 Dernière mise à jour : 2026-09-12 15:50 America/Toronto
 
 Phase de contrôle active : **PHASE 01 — contrats atomiques en cours**

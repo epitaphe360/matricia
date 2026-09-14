@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "@/components/public-site/experience.css";
 import { notFound } from "next/navigation";
 import { PublicFooter } from "@/components/public-site/public-footer";
 import { PublicNavigation } from "@/components/public-site/public-navigation";
@@ -17,6 +18,7 @@ export default async function PublicLayout({ children, params }: Readonly<{ chil
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   return <div dir={locale === "ar" ? "rtl" : "ltr"} className="flex min-h-dvh flex-col bg-background text-foreground">
+    <a href="#contenu-principal" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:start-2 z-50 bg-white text-slate-950 p-3">{getPublicMessages(locale).common.skipToContent}</a>
     <PublicNavigation locale={locale}/>
     <div className="flex-1">{children}</div>
     <PublicFooter locale={locale}/>
