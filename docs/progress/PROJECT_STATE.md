@@ -763,3 +763,17 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - Toutes les fixtures Auth, données et stockage ont été neutralisées; les preuves
   d'audit immuables sont conservées et le rapport expurgé est enregistré sous
   `docs/evidence/p05/authenticated-e2e-last-run.json`.
+
+## Checkpoint configuration Vercel et diagnostic runtime — 2026-09-14
+
+- Le périmètre Vercel Matricia a été corrigé localement puis les variables Production
+  manquantes ont été créées sans écraser les secrets existants : environnement,
+  référence Supabase, chiffrement, webhook interne, signature CTA, paiement DEMO et
+  garde-fous Marketing sandbox. Aucun secret n'a été affiché ou commité.
+- Le déploiement Production `c3e9ea8` est READY; accueil, connexion et health répondent
+  HTTP 200. Web : 150 fichiers/624 tests PASS, TypeScript strict et build PASS.
+- Le diagnostic readiness distingue maintenant PostgreSQL `up` du backlog Outbox
+  `down` (`OUTBOX_BACKLOG`) au lieu de signaler faussement la base indisponible.
+- Blocages externes vérifiés : le jeton Supabase Management fourni retourne HTTP 403
+  et ne voit pas le projet, empêchant la configuration Auth URL/SMTP; le worker
+  Railway/ClamAV n'est pas configuré, donc 542 événements Outbox restent en attente.
