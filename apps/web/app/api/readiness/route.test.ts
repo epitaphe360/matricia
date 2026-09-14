@@ -23,6 +23,19 @@ describe("GET /api/readiness", () => {
     expect(response.status).toBe(503);
     const body = await response.json();
     expect(body.checks.database).toMatchObject({ status: "down", code: "DATABASE_UNAVAILABLE" });
+    expect(body.checks.outbox).toMatchObject({ status: "down", code: "OUTBOX_STATUS_UNAVAILABLE" });
     expect(JSON.stringify(body)).not.toContain("credential detail");
+  });
+
+  it("distingue une base disponible d'un backlog Outbox", async () => {
+    mocks.rpc.mockResolvedValue({ data: [{ database_ok: true, outbox_ok: false }], error: null });
+    const response = await GET();
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({
+      checks: {
+        database: { status: "up" },
+        outbox: { status: "down", code: "OUTBOX_BACKLOG" },
+      },
+    });
   });
 });
