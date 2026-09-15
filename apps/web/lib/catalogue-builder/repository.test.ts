@@ -9,6 +9,11 @@ function dependencies(overrides: Partial<BuilderRepositoryDependencies> = {}): B
     libraries: async () => ({ data: [library], error: null }),
     library: async (libraryId) => ({ data: libraryId === library.id ? [library] : [], error: null }),
     services: async () => ({ data: [{ id: "22222222-2222-4222-8222-222222222222", library_id: library.id, code: "IT_AUDIT", slug: "it-audit", status: "PUBLISHED" }], error: null }),
+    draftReleases: async () => ({ data: [], error: null }),
+    approvedServiceVersions: async () => ({ data: [], error: null }),
+    release: async () => ({ data: [], error: null }),
+    serviceVersion: async () => ({ data: [], error: null }),
+    lastReleaseItem: async () => ({ data: [], error: null }),
     rpc: vi.fn(async () => ({ data: null, error: { code: "42501" } })),
     ...overrides,
   };
@@ -152,5 +157,15 @@ describe("catalogue builder repository", () => {
     expect(added).toEqual({ status: "success", value: { rowVersion: 2 } });
     expect(submitted).toEqual({ status: "success", value: { releaseId, status: "APPROVED", snapshotHash: "d".repeat(64) } });
     expect(rpc).toHaveBeenCalledTimes(2);
+  });
+  it("derives release integrity, order and row version from authorized records", async () => {
+    const releaseId = "55555555-5555-4555-8555-555555555555", versionId = "66666666-6666-4666-8666-666666666666", serviceId = "22222222-2222-4222-8222-222222222222";
+    const repo = createCatalogBuilderRepository(dependencies({
+      release: async () => ({ data: [{ id: releaseId, library_id: library.id, row_version: 7, status: "DRAFT" }], error: null }),
+      serviceVersion: async () => ({ data: [{ id: versionId, service_id: serviceId, library_id: library.id, content_hash: "c".repeat(64), status: "APPROVED" }], error: null }),
+      lastReleaseItem: async () => ({ data: [{ sort_order: 12 }], error: null }),
+    }));
+    await expect(repo.resolveApprovedServiceItem(releaseId, versionId)).resolves.toEqual({ status: "success", value: { releaseId, objectType: "SERVICE", objectId: serviceId, versionId, contentHash: "c".repeat(64), sortOrder: 13, expectedRowVersion: 7 } });
+    await expect(repo.resolveDraftRelease(releaseId)).resolves.toEqual({ status: "success", value: { releaseId, rowVersion: 7 } });
   });
 });

@@ -92,7 +92,7 @@ export default async function CatalogueReleaseAdministrationPage({ params, searc
               <QuestionnaireBuilder locale={locale} library={selectedLibrary} messages={messages} commandIdentity={{ idempotencyKey: randomUUID(), correlationId: randomUUID() }} />
               <QuestionBuilder locale={locale} library={selectedLibrary} service={selectedService} messages={messages} commandIdentity={{ idempotencyKey: randomUUID(), correlationId: randomUUID() }} />
               <RuleBuilder locale={locale} library={selectedLibrary} messages={messages} commandIdentity={{ idempotencyKey: randomUUID(), correlationId: randomUUID() }} />
-              <ReleaseWorkflow locale={locale} library={selectedLibrary} service={selectedService} messages={messages} commandIdentities={{
+              <ReleaseWorkflow locale={locale} library={selectedLibrary} service={selectedService} draftReleases={result.value.draftReleases} approvedVersions={result.value.approvedServiceVersions.filter(item => item.serviceId === selectedService.id)} messages={messages} commandIdentities={{
                 create: { idempotencyKey: randomUUID(), correlationId: randomUUID() },
                 add: { idempotencyKey: randomUUID(), correlationId: randomUUID() },
                 submit: { idempotencyKey: randomUUID(), correlationId: randomUUID() },

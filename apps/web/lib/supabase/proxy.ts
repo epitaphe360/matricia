@@ -3,7 +3,16 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getPublicEnvironment } from "@/lib/env";
 import { normalizeLocale } from "@/lib/i18n/locale";
 
-const PUBLIC_EXACT_SEGMENTS = new Set(["", "a-propos", "contact", "franchise"]);
+const PUBLIC_EXACT_SEGMENTS = new Set([
+  "",
+  "a-propos",
+  "abonnements",
+  "besoin",
+  "contact",
+  "diagnostic",
+  "fournisseur",
+  "franchise",
+]);
 
 function isPublicPath(pathname: string, locale: string): boolean {
   if (pathname === "/") return true;

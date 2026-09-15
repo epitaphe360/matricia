@@ -831,3 +831,11 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
   plateforme ni contourner les contrôles d'organisation.
 - Gates : lint et TypeScript strict PASS; Web 151 fichiers/629 tests PASS;
   build Next.js PASS; E2E design et inscription 24/24 PASS.
+
+## Checkpoint corrections publiques et espaces connectés — 2026-09-15
+
+- Les parcours publics diagnostic, besoin précis, fournisseur, abonnements, contact et authentification sont raccordés jusqu'au dossier autorisé, avec reprise FR/AR et écritures serveur idempotentes.
+- Les espaces Client et Sous-traitant ont reçu les corrections P0 : contexte d'organisation serveur, diagnostics et demandes sans identifiants techniques, devis multiligne exact, qualification documentaire privée et facturation métier. Navigation, Franchise et Administration ont été harmonisées sans affaiblir RLS, AAL2, approbations ou règles financières.
+- Migrations additives `194` à `199` et `202` à `204` appliquées sur Supabase development ; dry-run distant final `upToDate: true`.
+- Gates : workspace 867 tests PASS, TypeScript strict PASS, lint PASS, build PASS ; Playwright public 10/10 PASS ; E2E authentifié 24/24 PASS ; SQL 147 fichiers / 3 455 assertions / 4 scénarios de concurrence PASS ; catalogue 10/200/6000 et absence de placeholders validés.
+- Les résidus (primitive documentaire de preuve de paiement, quelques statuts avancés, revue visuelle authentifiée exhaustive et traçabilité Gold Master `1/76 VERIFIED` avec P01 ouverte) sont explicitement consignés dans `docs/corrections-public-dashboards/PROGRESS.md`. Aucun déploiement production n'a été effectué pendant cette passe.

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { resolveClientOrganizationContext } from "@/lib/client-organization-context";
 import { createServerCreditsRepository } from "@/lib/credits-wallet/server-repository";
 import { isLocale } from "@/lib/i18n/locale";
 import { getServerTimestamp } from "@/lib/time/server-clock";
@@ -10,14 +11,26 @@ import { messages } from "./messages";
 import { RedemptionActions } from "./redemption-actions";
 import { WalletAction } from "./wallet-action";
 
-export default async function Credits({ params }: { params: Promise<{ locale: string }> }) {
+export default async function Credits({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string }> }) {
   const { locale } = await params;
+  const { organizationId } = await searchParams;
   if (!isLocale(locale)) notFound();
-  const result = await (await createServerCreditsRepository()).load();
+  const result = await (await createServerCreditsRepository(organizationId)).load();
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
   if (result.status === "error") throw new Error("CREDITS_UNAVAILABLE");
 
-  const data = result.value;
+  const context = resolveClientOrganizationContext(result.value.organizations.map((organization) => ({ organization_id: organization.id })), organizationId);
+  if (context.status === "error") throw new Error("CLIENT_ORGANIZATION_CONTEXT_REQUIRED");
+  const selectedOrganizationId = context.membership.organization_id;
+  const selectedWalletIds = new Set(result.value.wallets.filter((wallet) => wallet.organizationId === selectedOrganizationId).map((wallet) => wallet.id));
+  const data = {
+    ...result.value,
+    organizations: result.value.organizations.filter((organization) => organization.id === selectedOrganizationId),
+    wallets: result.value.wallets.filter((wallet) => wallet.organizationId === selectedOrganizationId),
+    lots: result.value.lots.filter((lot) => selectedWalletIds.has(lot.walletId)),
+    customerBoxes: result.value.customerBoxes.filter((box) => box.organizationId === selectedOrganizationId),
+    redemptions: result.value.redemptions.filter((redemption) => redemption.organizationId === selectedOrganizationId),
+  };
   const m = messages(locale);
   const today = getServerTimestamp();
 

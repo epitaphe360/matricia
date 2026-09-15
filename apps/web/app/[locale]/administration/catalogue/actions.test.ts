@@ -7,6 +7,8 @@ const repository = vi.hoisted(() => ({
   createRelease: vi.fn(),
   addReleaseItem: vi.fn(),
   submitRelease: vi.fn(),
+  resolveApprovedServiceItem: vi.fn(),
+  resolveDraftRelease: vi.fn(),
 }));
 const revalidatePath = vi.hoisted(() => vi.fn());
 
@@ -33,7 +35,7 @@ function form(values: Record<string, string>): FormData {
 }
 
 function createForm(extra: Record<string, string> = {}) {
-  return form({ locale: "fr", confirmed: "yes", ...identity, libraryId, releaseKey: "IT.E2E.V1", sourceBundleHash: "a".repeat(64), expectedLibraryRowVersion: "4", requiresCentralApproval: "no", ...extra });
+  return form({ locale: "fr", confirmed: "yes", ...identity, libraryId, releaseKey: "IT.E2E.V1", sourceNote: "Construction éditoriale validée", expectedLibraryRowVersion: "4", requiresCentralApproval: "no", ...extra });
 }
 
 beforeEach(() => {
@@ -44,6 +46,8 @@ beforeEach(() => {
   repository.createQuestionnaire.mockResolvedValue({ status: "success", value: { questionnaireId: objectId, versionId, sectionId: releaseId, identityRowVersion: 1, versionRowVersion: 1, snapshotHash: "f".repeat(64) } });
   repository.addReleaseItem.mockResolvedValue({ status: "success", value: { rowVersion: 2 } });
   repository.submitRelease.mockResolvedValue({ status: "success", value: { releaseId, status: "APPROVED", snapshotHash: "b".repeat(64) } });
+  repository.resolveApprovedServiceItem.mockResolvedValue({ status: "success", value: { releaseId, objectType: "SERVICE", objectId, versionId, contentHash: "c".repeat(64), sortOrder: 1, expectedRowVersion: 1 } });
+  repository.resolveDraftRelease.mockResolvedValue({ status: "success", value: { releaseId, rowVersion: 2 } });
 });
 
 describe("catalogue questionnaire server action", () => {
@@ -130,16 +134,16 @@ describe("catalogue release server actions", () => {
 
   it("adds an approved version through the typed action", async () => {
     const result = await addReleaseItemAction({ status: "idle" }, form({
-      locale: "ar", confirmed: "yes", ...identity, releaseId, objectType: "SERVICE", objectId, versionId,
-      contentHash: "c".repeat(64), sortOrder: "1", expectedRowVersion: "1",
+      locale: "ar", confirmed: "yes", ...identity, releaseId, versionId,
     }));
     expect(result).toEqual({ status: "success", operation: "ITEM_ADDED", releaseId, rowVersion: 2 });
     expect(repository.addReleaseItem).toHaveBeenCalledWith(expect.objectContaining({ objectType: "SERVICE", sortOrder: 1, expectedRowVersion: 1, ...identity }));
+    expect(repository.resolveApprovedServiceItem).toHaveBeenCalledWith(releaseId, versionId);
   });
 
   it("submits and translates a permission denial to a stable error", async () => {
     repository.submitRelease.mockResolvedValue({ status: "error", reason: "FORBIDDEN" });
-    const result = await submitReleaseAction({ status: "idle" }, form({ locale: "fr", confirmed: "yes", ...identity, releaseId, expectedRowVersion: "2" }));
+    const result = await submitReleaseAction({ status: "idle" }, form({ locale: "fr", confirmed: "yes", ...identity, releaseId }));
     expect(result).toEqual({ status: "error", reason: "FORBIDDEN" });
   });
 });

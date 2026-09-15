@@ -4,7 +4,6 @@ import { useActionState, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import type { Locale } from "@/lib/i18n/locale";
 import type { MarketingDashboard } from "@/lib/marketing-autopilot/model";
 import { activateScheduleRule, approveAssistedCalendar, createScheduleRule, type MarketingActionState } from "./actions";
@@ -59,7 +58,7 @@ function ScheduleRuleForm({ dashboard, locale, m, keyValue }: { dashboard: Marke
       <div className="space-y-2"><Label htmlFor={`${root}-reels`}>{m.reelsPerMonth}</Label><Input id={`${root}-reels`} name="reelsPerMonth" type="number" min={0} max={100} defaultValue={4} required className={control}/></div>
       <div className="space-y-2"><Label htmlFor={`${root}-repeat`}>{m.maxServiceRepetition}</Label><Input id={`${root}-repeat`} name="maxServiceRepetition" type="number" min={1} max={20} defaultValue={2} required className={control}/></div>
       <div className="space-y-2"><Label htmlFor={`${root}-privacy`}>{m.privacyMinimumAggregate}</Label><Input id={`${root}-privacy`} name="privacyMinimumAggregate" type="number" min={3} max={1000} defaultValue={10} required className={control}/></div>
-      <div className="space-y-2 sm:col-span-2"><Label htmlFor={`${root}-slots`}>{m.allowedSlots}</Label><Textarea id={`${root}-slots`} name="allowedSlots" defaultValue={'[{"dayOfMonth":5,"time":"09:00"},{"dayOfMonth":15,"time":"14:00"}]'} required className="min-h-28 font-mono text-sm" dir="ltr"/><p className="text-sm text-muted-foreground">{m.allowedSlotsHelp}</p></div>
+      <fieldset className="grid gap-3 rounded-xl border p-3 sm:col-span-2 sm:grid-cols-2"><legend className="px-1 font-medium">{m.allowedSlots}</legend><div className="space-y-2"><Label htmlFor={`${root}-slot-day-1`}>{m.slotDay}</Label><Input id={`${root}-slot-day-1`} name="slotDay1" type="number" min={1} max={31} defaultValue={5} required className={control}/></div><div className="space-y-2"><Label htmlFor={`${root}-slot-time-1`}>{m.slotTime}</Label><Input id={`${root}-slot-time-1`} name="slotTime1" type="time" defaultValue="09:00" required className={control}/></div><div className="space-y-2"><Label htmlFor={`${root}-slot-day-2`}>{m.slotDayOptional}</Label><Input id={`${root}-slot-day-2`} name="slotDay2" type="number" min={1} max={31} defaultValue={15} className={control}/></div><div className="space-y-2"><Label htmlFor={`${root}-slot-time-2`}>{m.slotTimeOptional}</Label><Input id={`${root}-slot-time-2`} name="slotTime2" type="time" defaultValue="14:00" className={control}/></div><p className="text-sm text-muted-foreground sm:col-span-2">{m.allowedSlotsHelp}</p></fieldset>
       <div className="sm:col-span-2"><Submit pending={pending} label={m.createVersion} m={m}/><Feedback state={state} m={m}/></div>
     </form>}
   </section>;

@@ -89,6 +89,11 @@ insert into public.marketing_brand_authorizations(organization_id,decision,autho
 set local session_replication_role=origin;
 select is((select count(distinct a.id)from public.diagnostic_anomalies a join public.diagnostic_runs r on r.id=a.diagnostic_run_id where r.organization_id='73000000-0000-4000-8000-000000000001'and a.created_at>=date_trunc('week',current_date)::date-14 and a.created_at<date_trunc('week',current_date)::date-7),6::bigint,'previous week fixture has multiple anomalies within one diagnostic run');
 
+-- The checkpoint is global per week and may legitimately have been completed by
+-- the development scheduler before this transactional fixture runs.
+delete from private.marketing_trend_generation_checkpoints
+where week_start=date_trunc('week',current_date)::date-7;
+
 create temporary table trend_results(result jsonb);
 grant insert,select on trend_results to service_role;
 set local role service_role;

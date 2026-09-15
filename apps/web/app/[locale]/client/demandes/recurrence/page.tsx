@@ -9,10 +9,11 @@ import { cn } from "@/lib/utils";
 import { getClientRecurringMessages } from "./messages";
 import { RecurringPanel } from "./recurring-panel";
 
-export default async function ClientRecurringPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function ClientRecurringPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string }> }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  const messages = getClientRecurringMessages(locale), result = await (await createServerClientRecurringRepository()).load();
+  const { organizationId } = await searchParams;
+  const messages = getClientRecurringMessages(locale), result = await (await createServerClientRecurringRepository()).load(organizationId);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
   const alternate = locale === "fr" ? "ar" : "fr";
   const today = new Date(), horizon = new Date(today); horizon.setUTCDate(horizon.getUTCDate() + 366);

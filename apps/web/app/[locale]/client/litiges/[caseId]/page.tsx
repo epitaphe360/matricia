@@ -13,8 +13,8 @@ import { getDisputeMessages } from "../messages";
 
 function date(value:string|null,locale:"fr"|"ar"){return value?new Intl.DateTimeFormat(locale==="ar"?"ar-MA":"fr-MA",{dateStyle:"medium",timeStyle:"short"}).format(new Date(value)):"—";}
 
-export default async function DisputePage({params}:{params:Promise<{locale:string;caseId:string}>}){
- const{locale,caseId}=await params;if(!isLocale(locale))notFound();const result=await(await createServerDisputesRepository()).detail(caseId);if(result.status==="error"&&result.reason==="UNAUTHENTICATED")redirect(`/${locale}/connexion`);if(result.status==="error"||!result.value)notFound();
+export default async function DisputePage({params,searchParams}:{params:Promise<{locale:string;caseId:string}>;searchParams:Promise<{organizationId?:string}>}){
+ const{locale,caseId}=await params,{organizationId}=await searchParams;if(!isLocale(locale))notFound();const result=await(await createServerDisputesRepository(organizationId)).detail(caseId);if(result.status==="error"&&result.reason==="UNAUTHENTICATED")redirect(`/${locale}/connexion`);if(result.status==="error"||!result.value)notFound();
  const d=result.value,m=getDisputeMessages(locale),keys=Object.fromEntries(["respond","appeal","decide","propose","approve","activate"].map(x=>[x,randomUUID()]));
  return <main className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6"><div className="mx-auto max-w-6xl space-y-6">
   <Link href={`/${locale}/client/litiges`} className={cn(buttonVariants({variant:"outline"}),"min-h-11")}>{m.back}</Link>

@@ -20,9 +20,10 @@ beforeEach(() => {
 describe("franchise CRM actions", () => {
   it("keeps exact performance integers as strings", async () => {
     const value = form();
-    Object.entries({ franchiseId: id, metricVersionId: id, periodStart: "2026-09-01", periodEnd: "2026-09-30", modelVersion: "P10-V1", numerator: "9007199254740993", denominator: "10000000000000000", evidenceReference: "audit://09", sourceEvidenceHash: "a".repeat(64) }).forEach(([name, content]) => value.set(name, content));
+    Object.entries({ franchiseId: id, metricVersionId: id, periodStart: "2026-09-01", periodEnd: "2026-09-30", modelVersion: "P10-V1", numerator: "9007199254740993", denominator: "10000000000000000", evidenceReference: "audit://09" }).forEach(([name, content]) => value.set(name, content));
     await recordSnapshot(idle, value);
     expect(mocks.rpc).toHaveBeenCalledWith("record_franchise_performance_snapshot", expect.objectContaining({ p_measurements: [expect.objectContaining({ numerator: "9007199254740993" })] }));
+    expect(mocks.rpc).toHaveBeenCalledWith("record_franchise_performance_snapshot", expect.objectContaining({ p_source_evidence_hash: expect.stringMatching(/^[0-9a-f]{64}$/u) }));
   });
   it("sends only the requested sequential stage and row version", async () => {
     const value = form();

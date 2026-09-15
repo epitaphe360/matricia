@@ -1,4 +1,5 @@
 "use server";
+import { createHash } from "node:crypto";
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -32,11 +33,9 @@ const createSchema = base.extend({
   requiresCentralApproval: z.enum(["yes", "no"]),
 }).strict();
 const addSchema = base.extend({
-  releaseId: uuidSchema, objectType: z.enum(["LIBRARY", "CATEGORY", "SUBCATEGORY", "SERVICE", "SERVICE_SUBCATEGORY_LINK"]),
-  objectId: uuidSchema, versionId: uuidSchema, contentHash: z.string().trim().regex(/^[0-9a-f]{64}$/u),
-  sortOrder: z.coerce.number().int().positive(), expectedRowVersion: z.coerce.number().int().positive(),
+  releaseId: uuidSchema, versionId: uuidSchema,
 }).strict();
-const submitSchema = base.extend({ releaseId: uuidSchema, expectedRowVersion: z.coerce.number().int().positive() }).strict();
+const submitSchema = base.extend({ releaseId: uuidSchema }).strict();
 const questionSchema = base.extend({
   libraryId: uuidSchema, serviceId: uuidSchema,
   questionKey: z.string().trim().regex(/^[A-Z][A-Z0-9_.-]{1,119}$/u),
@@ -76,7 +75,12 @@ function actionFields(formData: FormData): Record<string, FormDataEntryValue> {
 }
 
 export async function createReleaseAction(_state: BuilderActionState, formData: FormData): Promise<BuilderActionState> {
-  const parsed = createSchema.safeParse(actionFields(formData));
+  const fields = actionFields(formData), sourceNote = z.string().trim().min(3).max(500).safeParse(fields.sourceNote);
+  if (!sourceNote.success) return { status: "error", reason: "VALIDATION" };
+  const sourceBundleHash = createHash("sha256").update(JSON.stringify({ libraryId: fields.libraryId, releaseKey: fields.releaseKey, sourceNote: sourceNote.data })).digest("hex");
+  const commandFields = { ...fields };
+  delete commandFields.sourceNote;
+  const parsed = createSchema.safeParse({ ...commandFields, sourceBundleHash });
   if (!parsed.success) return { status: "error", reason: "VALIDATION" };
   const repository = await createServerCatalogBuilderRepository();
   const result = await repository.createRelease({ ...parsed.data, requiresCentralApproval: parsed.data.requiresCentralApproval === "yes" });
@@ -89,7 +93,9 @@ export async function addReleaseItemAction(_state: BuilderActionState, formData:
   const parsed = addSchema.safeParse(actionFields(formData));
   if (!parsed.success) return { status: "error", reason: "VALIDATION" };
   const repository = await createServerCatalogBuilderRepository();
-  const result = await repository.addReleaseItem(parsed.data);
+  const resolved = await repository.resolveApprovedServiceItem(parsed.data.releaseId, parsed.data.versionId);
+  if (resolved.status === "error") return errorReason(resolved.reason);
+  const result = await repository.addReleaseItem({ ...resolved.value, idempotencyKey: parsed.data.idempotencyKey, correlationId: parsed.data.correlationId });
   if (result.status === "error") return errorReason(result.reason);
   revalidatePath(`/${parsed.data.locale}/administration/catalogue`);
   return { status: "success", operation: "ITEM_ADDED", releaseId: parsed.data.releaseId, rowVersion: result.value.rowVersion };
@@ -99,7 +105,9 @@ export async function submitReleaseAction(_state: BuilderActionState, formData: 
   const parsed = submitSchema.safeParse(actionFields(formData));
   if (!parsed.success) return { status: "error", reason: "VALIDATION" };
   const repository = await createServerCatalogBuilderRepository();
-  const result = await repository.submitRelease(parsed.data);
+  const resolved = await repository.resolveDraftRelease(parsed.data.releaseId);
+  if (resolved.status === "error") return errorReason(resolved.reason);
+  const result = await repository.submitRelease({ releaseId: resolved.value.releaseId, expectedRowVersion: resolved.value.rowVersion, idempotencyKey: parsed.data.idempotencyKey, correlationId: parsed.data.correlationId });
   if (result.status === "error") return errorReason(result.reason);
   revalidatePath(`/${parsed.data.locale}/administration/catalogue`);
   return { status: "success", operation: "SUBMITTED", releaseId: result.value.releaseId, releaseStatus: result.value.status };

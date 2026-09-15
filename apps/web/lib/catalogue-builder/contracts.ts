@@ -19,4 +19,6 @@ export interface CatalogBuilderRepository {
   createRelease(input: { libraryId: string; releaseKey: string; sourceBundleHash: string; requiresCentralApproval: boolean; expectedLibraryRowVersion: number } & CommandIdentity): Promise<BuilderResult<ReleaseDraft>>;
   addReleaseItem(input: ReleaseItemInput): Promise<BuilderResult<{ rowVersion: number }>>;
   submitRelease(input: { releaseId: string; expectedRowVersion: number } & CommandIdentity): Promise<BuilderResult<{ releaseId: string; status: "APPROVED" | "IN_REVIEW"; snapshotHash: string }>>;
+  resolveApprovedServiceItem(releaseId: string, versionId: string): Promise<BuilderResult<Omit<ReleaseItemInput, keyof CommandIdentity>>>;
+  resolveDraftRelease(releaseId: string): Promise<BuilderResult<{ releaseId: string; rowVersion: number }>>;
 }

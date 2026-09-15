@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: [{
       userAgent: "*",
-      allow: ["/fr", "/ar", "/fr/services", "/ar/services", "/fr/franchise", "/ar/franchise", "/fr/a-propos", "/ar/a-propos", "/fr/contact", "/ar/contact", "/favicon.svg", "/social-card.svg"],
+      allow: ["/fr", "/ar", "/fr/diagnostic", "/ar/diagnostic", "/fr/besoin", "/ar/besoin", "/fr/fournisseur", "/ar/fournisseur", "/fr/abonnements", "/ar/abonnements", "/fr/franchise", "/ar/franchise", "/fr/a-propos", "/ar/a-propos", "/fr/contact", "/ar/contact", "/favicon.svg", "/social-card.svg"],
       disallow: ["/", "/api/", "/fr/auth/", "/ar/auth/", "/fr/administration/", "/ar/administration/", "/fr/client/", "/ar/client/", "/fr/connexion", "/ar/connexion", "/fr/invitations/", "/ar/invitations/", "/fr/notifications/", "/ar/notifications/", "/fr/organisation/", "/ar/organisation/", "/fr/securite/", "/ar/securite/", "/fr/sous-traitant/", "/ar/sous-traitant/", "/fr/tableau-de-bord", "/ar/tableau-de-bord", "/fr/catalogue", "/ar/catalogue"],
     }],
     sitemap: new URL("/sitemap.xml", site).href,

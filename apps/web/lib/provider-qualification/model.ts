@@ -31,8 +31,6 @@ export const providerDocumentInputSchema = z.object({
   issuerName: z.string().trim().max(200), referenceNumber: z.string().trim().max(200),
   issuedOn: z.union([z.literal(""), z.string().regex(/^\d{4}-\d{2}-\d{2}$/)]),
   expiresOn: z.union([z.literal(""), z.string().regex(/^\d{4}-\d{2}-\d{2}$/)]),
-  storageObjectPath: z.string().trim().min(3).max(1000).refine((value) => !/(^|\/)\.\.(\/|$)/.test(value)),
-  contentHash: z.string().regex(/^[0-9a-f]{64}$/),
   providerServiceIds: z.array(uuidSchema).max(100), changeReason: z.string().trim().min(3).max(500), idempotencyKey: uuidSchema,
 });
 

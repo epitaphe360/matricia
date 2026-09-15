@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { resolveClientOrganizationContext } from "../client-organization-context";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { ContractItemType, ContractMissionDashboard } from "./model";
 
@@ -18,27 +19,30 @@ const criterionRow = z.object({ deliverable_id: id, criterion_key: z.string(), s
 const deliveryVersionRow = z.object({ id, deliverable_id: id, version: z.number().int().positive() });
 const deliveryProofRow = z.object({ delivery_version_id: id, scan_status: z.enum(["PENDING","CLEAN","INFECTED","ERROR"]) });
 
-type LoadResult = { status: "success"; dashboard: ContractMissionDashboard } | { status: "error"; reason: "UNAUTHENTICATED" | "NO_CLIENT_ORGANIZATION" | "QUERY_FAILED" | "INVALID_RESPONSE" };
+type LoadResult = { status: "success"; dashboard: ContractMissionDashboard } | { status: "error"; reason: "UNAUTHENTICATED" | "NO_CLIENT_ORGANIZATION" | "ORGANIZATION_SELECTION_REQUIRED" | "FORBIDDEN_ORGANIZATION" | "QUERY_FAILED" | "INVALID_RESPONSE" };
 function rows<T>(schema: z.ZodType<T>, value: unknown, max: number) {
   return z.array(schema).max(max).safeParse(value);
 }
 
-export async function loadContractMissions(locale: "fr" | "ar"): Promise<LoadResult> {
+export async function loadContractMissions(locale: "fr" | "ar", requestedOrganizationId?: string): Promise<LoadResult> {
   const client = await getSupabaseServerClient();
   const { data: auth } = await client.auth.getUser();
   if (!auth.user) return { status: "error", reason: "UNAUTHENTICATED" };
-  const membershipResult = await client.from("organization_memberships").select("organization_id,organizations!inner(display_name),organization_member_roles!inner(role_code,revoked_at)").eq("user_id", auth.user.id).eq("status", "ACTIVE").is("organization_member_roles.revoked_at", null).in("organization_member_roles.role_code", ["CLIENT_OWNER", "CLIENT_ADMIN"]).limit(1).maybeSingle();
+  const membershipResult = await client.from("organization_memberships").select("organization_id,organizations!inner(display_name),organization_member_roles!inner(role_code,revoked_at)").eq("user_id", auth.user.id).eq("status", "ACTIVE").is("organization_member_roles.revoked_at", null).in("organization_member_roles.role_code", ["CLIENT_OWNER", "CLIENT_ADMIN"]).limit(100);
   if (membershipResult.error) return { status: "error", reason: "QUERY_FAILED" };
-  const membership = member.safeParse(membershipResult.data);
-  if (!membership.success) return { status: "error", reason: membershipResult.data ? "INVALID_RESPONSE" : "NO_CLIENT_ORGANIZATION" };
-  const organizationId = membership.data.organization_id;
+  const memberships = z.array(member).max(100).safeParse(membershipResult.data);
+  if (!memberships.success) return { status: "error", reason: "INVALID_RESPONSE" };
+  const context = resolveClientOrganizationContext(memberships.data, requestedOrganizationId);
+  if (context.status === "error") return context;
+  const membership = context.membership;
+  const organizationId = membership.organization_id;
 
   const contractsResult = await client.from("contracts").select("id,provider_organization_id,status,current_version,row_version").eq("client_organization_id", organizationId).order("created_at", { ascending: false }).limit(100);
   if (contractsResult.error) return { status: "error", reason: "QUERY_FAILED" };
   const contracts = rows(contractRow, contractsResult.data, 100);
   if (!contracts.success) return { status: "error", reason: "INVALID_RESPONSE" };
   const contractIds = contracts.data.map((contract) => contract.id);
-  if (contractIds.length === 0) return { status: "success", dashboard: { organizationId, organizationName: membership.data.organizations.display_name, contracts: [], missions: [] } };
+  if (contractIds.length === 0) return { status: "success", dashboard: { organizationId, organizationName: membership.organizations.display_name, contracts: [], missions: [] } };
 
   const [versionsResult, signaturesResult, missionsResult] = await Promise.all([
     client.from("contract_versions").select("id,contract_id,version,selected_quote_version_id,price_minor,currency,content_hash,change_reason,created_at").in("contract_id", contractIds).order("version", { ascending: false }).limit(500),
@@ -80,7 +84,7 @@ export async function loadContractMissions(locale: "fr" | "ar"): Promise<LoadRes
 
   return { status: "success", dashboard: {
     organizationId,
-    organizationName: membership.data.organizations.display_name,
+    organizationName: membership.organizations.display_name,
     contracts: contracts.data.flatMap((contract) => {
       const history = versions.data.filter((version) => version.contract_id === contract.id).sort((left, right) => right.version - left.version);
       const current = history.find((version) => version.version === contract.current_version);

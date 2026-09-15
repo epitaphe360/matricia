@@ -49,18 +49,18 @@ where s.status='PUBLISHED' and s.current_published_version_id is not null
 order by s.id limit 1;
 select ok((select count(*)=1 from mf024_catalog),'one published service version is available for the isolated fixture');
 
-insert into public.service_checklist_templates(id,service_version_id,version,items,content_hash,created_by)
+insert into public.service_checklist_templates(id,service_version_id,version,items,content_hash,created_by,publication_status,published_at,published_by)
 select 'fd130000-0000-4000-8000-000000000001',service_version_id,1,
-  '[{"key":"PREPARE","label_fr":"Préparer la mission","label_ar":"إعداد المهمة","proof_required":false},{"key":"VERIFY","label_fr":"Vérifier la preuve","label_ar":"التحقق من الدليل","proof_required":true}]'::jsonb,
-  repeat('a',64),'fd100000-0000-4000-8000-000000000001' from mf024_catalog;
+  '[{"key":"PREPARE","label_fr":"Préparer la mission","label_ar":"إعداد المهمة","instructions_fr":"Préparer les éléments nécessaires","instructions_ar":"إعداد العناصر اللازمة","proof_required":false,"proof_types":[]},{"key":"VERIFY","label_fr":"Vérifier la preuve","label_ar":"التحقق من الدليل","instructions_fr":"Vérifier le document transmis","instructions_ar":"التحقق من الوثيقة المرسلة","proof_required":true,"proof_types":["DOCUMENT"]}]'::jsonb,
+  repeat('a',64),'fd100000-0000-4000-8000-000000000001','PUBLISHED',clock_timestamp(),'fd100000-0000-4000-8000-000000000001' from mf024_catalog;
 
 create temporary table mf024_other_catalog as
 select s.id service_id,s.current_published_version_id service_version_id from public.catalog_services s,mf024_catalog selected
 where s.status='PUBLISHED' and s.current_published_version_id is not null and s.id<>selected.service_id order by s.id limit 1;
-insert into public.service_checklist_templates(id,service_version_id,version,items,content_hash,created_by)
+insert into public.service_checklist_templates(id,service_version_id,version,items,content_hash,created_by,publication_status,published_at,published_by)
 select 'fd130000-0000-4000-8000-000000000002',service_version_id,1,
-  '[{"key":"OTHER","label_fr":"Autre service","label_ar":"خدمة أخرى","proof_required":false}]'::jsonb,
-  repeat('d',64),'fd100000-0000-4000-8000-000000000001' from mf024_other_catalog;
+  '[{"key":"OTHER","label_fr":"Autre service","label_ar":"خدمة أخرى","instructions_fr":"Exécuter la checklist de l’autre service","instructions_ar":"تنفيذ قائمة تحقق الخدمة الأخرى","proof_required":false,"proof_types":[]}]'::jsonb,
+  repeat('d',64),'fd100000-0000-4000-8000-000000000001','PUBLISHED',clock_timestamp(),'fd100000-0000-4000-8000-000000000001' from mf024_other_catalog;
 
 set local session_replication_role=replica;
 insert into public.service_requests(id,client_organization_id,library_id,service_id,status,created_by)
@@ -97,7 +97,7 @@ insert into mf024_observed values
 ('version',(select response->>'checklist_template_version' from mf024_result)),
 ('snapshots',(select count(*)::text from public.mission_checklist_snapshots)),
 ('items',(select count(*)::text from public.mission_checklist_items)),
-('exact',(select (items='[{"key":"PREPARE","label_fr":"Préparer la mission","label_ar":"إعداد المهمة","proof_required":false},{"key":"VERIFY","label_fr":"Vérifier la preuve","label_ar":"التحقق من الدليل","proof_required":true}]'::jsonb and template_content_hash=repeat('a',64))::text from public.mission_checklist_snapshots));
+('exact',(select (items='[{"key":"PREPARE","label_fr":"Préparer la mission","label_ar":"إعداد المهمة","instructions_fr":"Préparer les éléments nécessaires","instructions_ar":"إعداد العناصر اللازمة","proof_required":false,"proof_types":[]},{"key":"VERIFY","label_fr":"Vérifier la preuve","label_ar":"التحقق من الدليل","instructions_fr":"Vérifier le document transmis","instructions_ar":"التحقق من الوثيقة المرسلة","proof_required":true,"proof_types":["DOCUMENT"]}]'::jsonb and template_content_hash=repeat('a',64))::text from public.mission_checklist_snapshots));
 reset role;
 insert into mf024_observed values
 ('audits',(select count(*)::text from public.audit_events where action='mission.checklist_snapshotted')),

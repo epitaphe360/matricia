@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { orderUserActions, type UserActionItem } from "./model";
 
-const base: UserActionItem = { id: "a", kind: "MESSAGE", title: "A", detail: "A", organizationName: null, priority: "LOW", mandatory: false, href: "/fr/messagerie", occurredAt: "2026-09-12T10:00:00Z", dueAt: null, requiresHumanReview: false };
+const base: UserActionItem = { id: "a", kind: "MESSAGE", title: "A", detail: "A", organizationName: null, organizationId:null, priority: "LOW", mandatory: false, href: "/fr/messagerie", occurredAt: "2026-09-12T10:00:00Z", dueAt: null, requiresHumanReview: false };
 
 describe("orderUserActions", () => {
   it("place les obligations puis les échéances et priorités avant la récence", () => {
@@ -14,4 +14,3 @@ describe("orderUserActions", () => {
     expect(ordered.map((item) => item.id)).toEqual(["mandatory", "overdue", "critical", "a"]);
   });
 });
-

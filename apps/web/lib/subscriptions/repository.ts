@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { resolveClientOrganizationContext } from "../client-organization-context";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { SubscriptionDashboard } from "./model";
 
@@ -98,9 +99,9 @@ function mapHistoricalPlan(plan: z.infer<typeof historicalPlanSchema>) {
   };
 }
 
-export async function loadSubscriptionDashboard(): Promise<
+export async function loadSubscriptionDashboard(requestedOrganizationId?: string): Promise<
   | { status: "success"; dashboard: SubscriptionDashboard }
-  | { status: "error"; reason: "UNAUTHENTICATED" | "NO_CLIENT_ORGANIZATION" | "QUERY_FAILED" | "INVALID_RESPONSE" }
+  | { status: "error"; reason: "UNAUTHENTICATED" | "NO_CLIENT_ORGANIZATION" | "ORGANIZATION_SELECTION_REQUIRED" | "FORBIDDEN_ORGANIZATION" | "QUERY_FAILED" | "INVALID_RESPONSE" }
 > {
   const client = await getSupabaseServerClient();
   const { data: auth } = await client.auth.getUser();
@@ -112,14 +113,14 @@ export async function loadSubscriptionDashboard(): Promise<
     .eq("status", "ACTIVE")
     .is("organization_member_roles.revoked_at", null)
     .in("organization_member_roles.role_code", ["CLIENT_OWNER", "CLIENT_ADMIN", "CLIENT_ACCOUNTING", "CLIENT_VIEWER"])
-    .limit(1)
-    .maybeSingle();
+    .limit(100);
   if (membership.error) return { status: "error", reason: "QUERY_FAILED" };
-  const parsedMembership = membershipSchema.safeParse(membership.data);
-  if (!parsedMembership.success) {
-    return { status: "error", reason: membership.data ? "INVALID_RESPONSE" : "NO_CLIENT_ORGANIZATION" };
-  }
-  const organizationId = parsedMembership.data.organization_id;
+  const parsedMemberships = z.array(membershipSchema).max(100).safeParse(membership.data);
+  if (!parsedMemberships.success) return { status: "error", reason: "INVALID_RESPONSE" };
+  const context = resolveClientOrganizationContext(parsedMemberships.data, requestedOrganizationId);
+  if (context.status === "error") return context;
+  const parsedMembership = context.membership;
+  const organizationId = parsedMembership.organization_id;
   const [plansResult, subscriptionResult] = await Promise.all([
     client
       .from("subscription_plan_versions")
@@ -145,12 +146,12 @@ export async function loadSubscriptionDashboard(): Promise<
   const projection = subscriptionValue ? historicalProjectionSchema.safeParse(projectionResult.data) : null;
   const transitions = z.array(transitionSchema).safeParse(transitionsResult.data);
   if ((projection && !projection.success) || !transitions.success) return { status: "error", reason: "INVALID_RESPONSE" };
-  const roles = parsedMembership.data.organization_member_roles.map((role) => role.role_code);
+  const roles = parsedMembership.organization_member_roles.map((role) => role.role_code);
   return {
     status: "success",
     dashboard: {
       organizationId,
-      organizationName: parsedMembership.data.organizations.display_name,
+      organizationName: parsedMembership.organizations.display_name,
       capabilities: { canStartTrial: roles.some((role) => role === "CLIENT_OWNER" || role === "CLIENT_ADMIN"), canChangePlan: roles.some((role) => role === "CLIENT_OWNER" || role === "CLIENT_ADMIN") },
       plans: plans.data.map((plan) => ({
         id: plan.id,

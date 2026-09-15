@@ -20,7 +20,7 @@ export function PublicNavigation({ locale }: { locale: Locale }) {
   const links = [
     { label: journey.how, href: `/${locale}#comment-ca-marche` },
     { label: journey.providers, href: `/${locale}/fournisseur` },
-    { label: journey.plans, href: `/${locale}/client/abonnement` },
+    { label: journey.plans, href: `/${locale}/abonnements` },
   ];
 
   const preserveQuery = (event: React.MouseEvent<HTMLAnchorElement>) => { if (window.location.search) { event.preventDefault(); window.location.assign(alternatePath + window.location.search); } };

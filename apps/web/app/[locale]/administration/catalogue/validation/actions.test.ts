@@ -38,6 +38,14 @@ describe("rule validation server actions", () => {
     expect(mocks.simulate).toHaveBeenCalledWith({ questionnaireVersionId: versionId, answers: { [questionId]: true }, previousAnswers: {} });
   });
 
+  it("construit les réponses depuis les champs métier sans JSON visible", async () => {
+    const value = form();
+    value.set(`answer:${questionId}`, "__TRUE__");
+    value.set(`previous:${questionId}`, "__FALSE__");
+    await simulateRules(idle, value);
+    expect(mocks.simulate).toHaveBeenCalledWith({ questionnaireVersionId: versionId, answers: { [questionId]: true }, previousAnswers: { [questionId]: false } });
+  });
+
   it("refuse un tableau JSON sans appeler le moteur", async () => {
     const value = form();
     value.set("answers", "[]");
