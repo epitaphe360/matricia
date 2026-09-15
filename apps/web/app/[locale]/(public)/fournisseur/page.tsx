@@ -10,7 +10,8 @@ export default function ProviderEntry({ params }: { params: Promise<{ locale: Lo
   const { locale } = use(params);
   const [activity, setActivity] = useState("");
   const copy = getPublicJourneyCopy(locale).provider;
-  const next = `/${locale}/connexion?next=${encodeURIComponent(`/${locale}/sous-traitant/qualification`)}`;
+  const existingAccount = `/${locale}/connexion?next=${encodeURIComponent(`/${locale}/sous-traitant/qualification`)}`;
+  const registration = `/${locale}/connexion?mode=inscription&role=fournisseur`;
 
   useEffect(() => {
     const timer = window.setTimeout(() => setActivity(localStorage.getItem("matricia.provider-intent") ?? localStorage.getItem(`matricia.provider-intent.${locale}`) ?? ""), 0);
@@ -26,15 +27,16 @@ export default function ProviderEntry({ params }: { params: Promise<{ locale: Lo
         {copy.steps.map((step, index) => <li key={step}><span>0{index + 1}</span><CheckCircle2 aria-hidden="true" size={17}/>{step}</li>)}
       </ol>
       <label className="journey-label" htmlFor="provider-activity">{copy.activity}</label>
-      <textarea id="provider-activity" className="journey-textarea" value={activity} placeholder={copy.placeholder} onChange={event => {
+      <p id="provider-activity-example" className="journey-login-note">{copy.example}</p>
+      <textarea id="provider-activity" aria-describedby="provider-activity-example" className="journey-textarea" value={activity} onChange={event => {
         const value = event.target.value.slice(0, 1200);
         setActivity(value);
         localStorage.setItem("matricia.provider-intent", value);
       }} rows={6} maxLength={1200}/>
       <p className="journey-login-note">{copy.note}</p>
       <div className="journey-actions">
-        <Link className="journey-secondary" href={next}>{copy.existing}</Link>
-        <Link className="journey-primary" href={next}>{copy.begin}<ArrowRight size={18} aria-hidden="true" /></Link>
+        <Link className="journey-secondary" href={existingAccount}>{copy.existing}</Link>
+        <Link className="journey-primary" href={registration}>{copy.begin}<ArrowRight size={18} aria-hidden="true" /></Link>
       </div>
     </section>
   </main>;

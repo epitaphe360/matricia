@@ -19,11 +19,12 @@ function safeNextPath(value: string | undefined, locale: Locale): string {
   return value;
 }
 
-export async function requestOtp(emailInput: string, localeInput: string, nextPathInput?: string): Promise<OtpRequestResult> {
+export async function requestOtp(emailInput: string, localeInput: string, nextPathInput?: string, intentInput?: string): Promise<OtpRequestResult> {
   const email = normalizeEmail(emailInput);
   if (!email) return { accepted: false, reason: "INVALID_EMAIL" };
   const locale: Locale = isLocale(localeInput) ? localeInput : "fr";
   const nextPath = safeNextPath(nextPathInput, locale);
+  const isRegistration = intentInput === "registration";
   const environment = getServerEnvironment();
   const admin = getSupabaseAdminClient();
   const headerStore = await headers();
@@ -37,7 +38,7 @@ export async function requestOtp(emailInput: string, localeInput: string, nextPa
     await admin.auth.signInWithOtp({
       email,
       options: {
-        shouldCreateUser: false,
+        shouldCreateUser: isRegistration,
         emailRedirectTo: environment.NEXT_PUBLIC_APP_URL + "/" + locale + "/auth/callback?next=" + encodeURIComponent(nextPath),
       },
     });

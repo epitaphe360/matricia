@@ -32,6 +32,7 @@ describe("RuleValidationPanel", () => {
     expect((html.match(/aria-live="polite"/g) ?? []).length).toBeGreaterThanOrEqual(2);
     expect(html).toContain("Avez-vous une sauvegarde ?");
     expect(html).toContain("Oui ou non");
+    expect(html).not.toContain("Réponses actuelles (JSON)");
     expect(html).not.toMatch(/>YES_NO</);
   });
 

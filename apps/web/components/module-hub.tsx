@@ -1,41 +1,39 @@
-import Link from"next/link";import{z}from"zod";import{Card,CardContent,CardDescription,CardHeader,CardTitle}from"@/components/ui/card";import{buttonVariants}from"@/components/ui/button";import type{Locale}from"@/lib/i18n/locale";import{getSupabaseServerClient}from"@/lib/supabase/server";import{cn}from"@/lib/utils";import{moduleHubCopy}from"./module-hub-copy";
+import Link from "next/link";
+import { z } from "zod";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
+import type { Locale } from "@/lib/i18n/locale";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { cn } from "@/lib/utils";
+import { moduleHubCopy, resolveOrganizationContext, visibleModuleRoutes, type ModuleSpace } from "./module-hub-copy";
 
-type Space="client"|"provider"|"franchise"|"admin"|"universal";type LinkKey=Exclude<keyof typeof moduleHubCopy.fr.links,"map">|"adminV41";
-type ModuleLink={key:LinkKey;path:string;space:Space;roles?:readonly string[];platformRoles?:readonly string[];requiresMembership?:boolean};
-const CLIENT_ALL=["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_BUYER","CLIENT_ACCOUNTING","CLIENT_MEMBER","CLIENT_VIEWER"]as const;
-const MODULES:readonly ModuleLink[]=[
- {key:"portfolio",path:"client/portefeuille",space:"client",roles:CLIENT_ALL},
- {key:"portfolio",path:"client/documents",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN"]},
- {key:"rewards",path:"client/recompenses",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_ACCOUNTING"]},
- {key:"favorites",path:"client/favoris",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_BUYER","CLIENT_VIEWER"]},
- {key:"clientVolume",path:"client/achats-groupes",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_BUYER"]},
- {key:"subscription",path:"client/abonnement",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_ACCOUNTING","CLIENT_VIEWER"]},
- {key:"disputes",path:"client/litiges",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN"]},
- {key:"rfq",path:"client/demandes",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_BUYER","CLIENT_VIEWER"]},
- {key:"clientMissions",path:"client/missions",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN"]},
- {key:"diagnostics",path:"client/diagnostics",space:"client",roles:["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_BUYER","CLIENT_VIEWER"]},
- {key:"providerReputation",path:"sous-traitant/reputation",space:"provider",roles:["PROVIDER_OWNER","PROVIDER_MANAGER","PROVIDER_SALES","PROVIDER_VIEWER"]},
- {key:"providerQuotes",path:"sous-traitant/devis",space:"provider",roles:["PROVIDER_OWNER","PROVIDER_MANAGER","PROVIDER_SALES","PROVIDER_VIEWER"]},
- {key:"providerMissions",path:"sous-traitant/missions",space:"provider",roles:["PROVIDER_OWNER","PROVIDER_MANAGER","PROVIDER_TECHNICIAN"]},
- {key:"franchiseGovernance",path:"franchise/gouvernance",space:"franchise",roles:["FRANCHISE_OWNER","FRANCHISE_MANAGER","FRANCHISE_EXPERT","FRANCHISE_PROVIDER_MANAGER","FRANCHISE_ACCOUNTING","FRANCHISE_VIEWER"],platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER","READ_ONLY_AUDITOR"]},
- {key:"franchiseFollowups",path:"franchise/relances",space:"franchise",roles:["FRANCHISE_OWNER","FRANCHISE_MANAGER","FRANCHISE_EXPERT","FRANCHISE_PROVIDER_MANAGER","FRANCHISE_ACCOUNTING","FRANCHISE_VIEWER"],platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER","LIBRARY_MANAGER","READ_ONLY_AUDITOR"]},
- {key:"adminVolume",path:"administration/achats-groupes",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER"]},
- {key:"cataloguePublications",path:"administration/catalogue/publications",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","LIBRARY_MANAGER"]},
- {key:"cataloguePublications",path:"administration/clonage",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","LIBRARY_MANAGER"]},
- {key:"adminClients",path:"administration/clients",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","COMPLIANCE_MANAGER","READ_ONLY_AUDITOR"]},
- {key:"adminProviders",path:"administration/providers",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","COMPLIANCE_MANAGER","FINANCE_MANAGER","READ_ONLY_AUDITOR"]},
- {key:"adminFinance",path:"administration/finance",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER"]},
- {key:"rewards",path:"administration/incitations",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER","COMPLIANCE_MANAGER"]},
- {key:"adminGovernance",path:"administration/gouvernance-franchise",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER","LIBRARY_MANAGER","DISPUTE_MANAGER","READ_ONLY_AUDITOR"]},
- {key:"adminOperations",path:"administration/operations",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","READ_ONLY_AUDITOR"]},
- {key:"adminOperations",path:"administration/anti-abus",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","READ_ONLY_AUDITOR"]},
- {key:"adminV41",path:"administration/v4-1/procurement",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER","COMPLIANCE_MANAGER","DISPUTE_MANAGER","READ_ONLY_AUDITOR"]},
- {key:"questionnaireAnalytics",path:"administration/questionnaires/analytique",space:"admin",platformRoles:["SUPER_ADMIN","MATRICIA_ADMIN","LIBRARY_MANAGER","READ_ONLY_AUDITOR"]},
- {key:"notifications",path:"notifications",space:"universal",requiresMembership:true},
- {key:"messaging",path:"messagerie",space:"universal",requiresMembership:true},
- {key:"actionCenter",path:"actions",space:"universal",requiresMembership:true},
-];
-const membershipRows=z.array(z.object({id:z.string().uuid()})),roleRows=z.array(z.object({role_code:z.string(),revoked_at:z.string().nullable()})),securityRows=z.array(z.object({matched_role_codes:z.array(z.string())}));
+const membershipRows = z.array(z.object({ id: z.string().uuid(), organization_id: z.string().uuid() }));
+const roleRows = z.array(z.object({ role_code: z.string(), revoked_at: z.string().nullable() }));
+const securityRows = z.array(z.object({ matched_role_codes: z.array(z.string()) }));
+const spaceOrder: readonly ModuleSpace[] = ["client", "provider", "franchise", "admin", "shared"];
 
-export async function ModuleHub({locale}:{locale:Locale}){const messages=moduleHubCopy[locale],client=await getSupabaseServerClient(),{data:auth}=await client.auth.getUser();if(!auth.user)return null;const membershipsQuery=await client.from("organization_memberships").select("id").eq("user_id",auth.user.id).eq("status","ACTIVE").limit(100);const memberships=membershipRows.safeParse(membershipsQuery.data);if(membershipsQuery.error||!memberships.success)return <NavigationState messages={messages} error/>;const[rolesQuery,securityQuery]=await Promise.all([memberships.data.length?client.from("organization_member_roles").select("role_code,revoked_at").in("membership_id",memberships.data.map(item=>item.id)).is("revoked_at",null).limit(300):Promise.resolve({data:[],error:null}),client.rpc("get_my_account_security_requirement")]),roles=roleRows.safeParse(rolesQuery.data),security=securityRows.safeParse(securityQuery.data);if(rolesQuery.error||securityQuery.error||!roles.success||!security.success||security.data.length!==1)return <NavigationState messages={messages} error/>;const activeRoles=new Set(roles.data.map(item=>item.role_code)),activePlatformRoles=new Set(security.data[0]!.matched_role_codes),visible=MODULES.filter(item=>(item.requiresMembership&&memberships.data.length>0)||(item.roles?.some(role=>activeRoles.has(role))??false)||(item.platformRoles?.some(role=>activePlatformRoles.has(role))??false)),spaces=(["client","provider","franchise","admin","universal"]as const).filter(space=>visible.some(item=>item.space===space));return <Card dir={locale==="ar"?"rtl":"ltr"}><CardHeader><CardTitle>{messages.title}</CardTitle><CardDescription>{messages.description}</CardDescription></CardHeader><CardContent>{spaces.length===0?<p className="text-muted-foreground">{messages.empty}</p>:<nav aria-label={messages.title} className="space-y-5">{spaces.map(space=><section key={space} aria-labelledby={`module-space-${space}`}><h3 id={`module-space-${space}`} className="mb-2 text-sm font-semibold text-muted-foreground">{messages.spaces[space]}</h3><ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{visible.filter(item=>item.space===space).map(item=><li key={item.path}><Link href={`/${locale}/${item.path}`} className={cn(buttonVariants({variant:"outline"}),"min-h-11 w-full justify-start whitespace-normal text-start")}>{item.key==="adminV41"?(locale==="ar"?"إشراف الإصدار 4.1":"Supervision V4.1"):messages.links[item.key]}</Link></li>)}</ul></section>)}</nav>}</CardContent></Card>}
-function NavigationState({messages,error}:{messages:typeof moduleHubCopy.fr|typeof moduleHubCopy.ar;error:boolean}){return <Card><CardHeader><CardTitle>{messages.title}</CardTitle><CardDescription>{messages.description}</CardDescription></CardHeader><CardContent><p role={error?"alert":undefined} className={error?"text-sm text-destructive":"text-sm text-muted-foreground"}>{error?messages.unavailable:messages.empty}</p></CardContent></Card>}
+export async function ModuleHub({ locale, selectedOrganizationId }: { locale: Locale; selectedOrganizationId: string | null }) {
+  const messages = moduleHubCopy[locale], client = await getSupabaseServerClient();
+  const { data: auth } = await client.auth.getUser();
+  if (!auth.user) return null;
+  const membershipsQuery = await client.from("organization_memberships").select("id,organization_id").eq("user_id", auth.user.id).eq("status", "ACTIVE").limit(100);
+  const memberships = membershipRows.safeParse(membershipsQuery.data);
+  if (membershipsQuery.error || !memberships.success) return <NavigationState messages={messages} />;
+  const context = resolveOrganizationContext(memberships.data.map((membership) => ({ membershipId: membership.id, organizationId: membership.organization_id })), selectedOrganizationId);
+  const [rolesQuery, securityQuery] = await Promise.all([
+    context.selected ? client.from("organization_member_roles").select("role_code,revoked_at").eq("membership_id", context.selected.membershipId).is("revoked_at", null).limit(100) : Promise.resolve({ data: [], error: null }),
+    client.rpc("get_my_account_security_requirement"),
+  ]);
+  const roles = roleRows.safeParse(rolesQuery.data), security = securityRows.safeParse(securityQuery.data);
+  if (rolesQuery.error || securityQuery.error || !roles.success || !security.success || security.data.length !== 1) return <NavigationState messages={messages} />;
+  const visible = visibleModuleRoutes({ membershipCount: context.selected ? 1 : 0, membershipRoles: new Set(roles.data.map((item) => item.role_code)), platformRoles: new Set(security.data[0]!.matched_role_codes) });
+  const spaces = spaceOrder.filter((space) => visible.some((item) => item.space === space));
+  return <Card dir={locale === "ar" ? "rtl" : "ltr"}><CardHeader><CardTitle>{messages.title}</CardTitle><CardDescription>{messages.description}</CardDescription></CardHeader><CardContent>{spaces.length === 0 ? <p role="status" className="text-muted-foreground">{messages.empty}</p> : <nav aria-label={messages.title} className="space-y-6">{spaces.map((space) => <section key={space} aria-labelledby={`module-space-${space}`}><h3 id={`module-space-${space}`} className="mb-3 text-sm font-semibold text-slate-600">{messages.spaces[space]}</h3><ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{visible.filter((item) => item.space === space).map((item) => {
+    const organizationQuery = item.space !== "admin" && context.selected ? `?organizationId=${encodeURIComponent(context.selected.organizationId)}` : "";
+    return <li key={item.id}><Link href={`/${locale}/${item.path}${organizationQuery}`} className={cn(buttonVariants({ variant: "outline" }), "min-h-11 w-full justify-start whitespace-normal text-start")}>{messages.links[item.id]}</Link></li>;
+  })}</ul></section>)}</nav>}</CardContent></Card>;
+}
+
+function NavigationState({ messages }: { messages: typeof moduleHubCopy.fr | typeof moduleHubCopy.ar }) {
+  return <Card><CardHeader><CardTitle>{messages.title}</CardTitle><CardDescription>{messages.description}</CardDescription></CardHeader><CardContent><p role="alert" className="text-sm text-destructive">{messages.unavailable}</p></CardContent></Card>;
+}

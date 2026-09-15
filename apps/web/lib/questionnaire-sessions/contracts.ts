@@ -5,7 +5,7 @@ export type QuestionnaireResult<T> = { status: "success"; value: T } | { status:
 export type CommandIdentity = { idempotencyKey: string; correlationId: string };
 
 export type QuestionnaireSessionsRepository = {
-  load(selectedSessionId?: string): Promise<QuestionnaireResult<QuestionnaireDashboard>>;
+  load(selectedSessionId?: string, requestedOrganizationId?: string): Promise<QuestionnaireResult<QuestionnaireDashboard>>;
   start(input: CommandIdentity & { organizationId: string; questionnaireVersionId: string; locale: "fr" | "ar"; dueAt: string | null }): Promise<QuestionnaireResult<{ sessionId: string; rowVersion: number }>>;
   save(input: CommandIdentity & { sessionId: string; questionVersionId: string; expectedSessionRowVersion: number; expectedAnswerRowVersion: number; answerType: string; value: unknown }): Promise<QuestionnaireResult<{ sessionId: string; serverRowVersion: number; answerRowVersion: number }>>;
   submit(input: CommandIdentity & { sessionId: string; expectedSessionRowVersion: number }): Promise<QuestionnaireResult<{ sessionId: string; rowVersion: number; manifestHash: string }>>;

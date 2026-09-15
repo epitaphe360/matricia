@@ -1,0 +1,11 @@
+begin;
+select plan(7);
+select has_table('public','public_contact_requests','contact requests table exists');
+select ok((select relrowsecurity from pg_class where oid='public.public_contact_requests'::regclass),'RLS is enabled');
+select ok(not has_table_privilege('anon','public.public_contact_requests','SELECT'),'anonymous users cannot enumerate contacts');
+select ok(not has_function_privilege('anon','public.submit_public_contact_request(text,text,text,text,text,text)','EXECUTE'),'anonymous users cannot call the privileged intake RPC');
+select ok(has_function_privilege('service_role','public.submit_public_contact_request(text,text,text,text,text,text)','EXECUTE'),'service role can call intake through the server');
+select ok((select count(*)=2 from pg_indexes where schemaname='public' and indexname in ('public_contact_requests_review_idx','public_contact_requests_rate_idx')),'review and rate-limit indexes exist');
+select ok(pg_get_functiondef('public.submit_public_contact_request(text,text,text,text,text,text)'::regprocedure) like '%pg_advisory_xact_lock%','rate-limit buckets are serialized before count and insert');
+select * from finish();
+rollback;

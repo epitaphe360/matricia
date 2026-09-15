@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { resolveClientOrganizationContext } from "../client-organization-context";
 import type { ClientRecurringRepository, RecurringFailure, RecurringResult } from "./contracts";
 import { cadence, clientRecurringRole, cloneInput, createPlanInput, generateInput, isoDate, planStatus, recurringUuid, requestStatus, transitionPlanInput, type RecurringDashboard } from "./model";
 
@@ -7,9 +8,9 @@ export type ClientRecurringSource = {
   user(): Promise<string | null>;
   memberships(userId: string): Promise<Query>;
   roles(membershipIds: string[]): Promise<Query>;
-  requests(): Promise<Query>;
+  requests(organizationId: string): Promise<Query>;
   requestVersions(ids: string[]): Promise<Query>;
-  plans(): Promise<Query>;
+  plans(organizationId: string): Promise<Query>;
   planVersions(ids: string[]): Promise<Query>;
   occurrences(ids: string[]): Promise<Query>;
   rpc(name: string, input: Record<string, unknown>): Promise<Query>;
@@ -43,21 +44,25 @@ function parseRows<T>(schema: z.ZodType<T>, query: Query, max: number): Recurrin
 
 export function createClientRecurringRepository(source: ClientRecurringSource): ClientRecurringRepository {
   return {
-    async load() {
+    async load(requestedOrganizationId) {
       const userId = await source.user();
       if (!userId) return { status: "error", reason: "UNAUTHENTICATED" };
       const memberships = parseRows(membershipRow, await source.memberships(userId), 100);
       if (memberships.status === "error") return memberships;
       const roles = parseRows(roleRow, await source.roles(memberships.value.map((item) => item.id)), 300);
       if (roles.status === "error") return roles;
-      const activeRoles = new Set(roles.value.filter((role) => role.revoked_at === null).map((role) => role.role_code));
       const organizationByMembership = new Map(memberships.value.map((membership) => [membership.id, membership.organization_id]));
-      const writableOrganizations = new Set(roles.value.filter((role) => role.revoked_at === null && role.role_code !== "CLIENT_VIEWER").map((role) => organizationByMembership.get(role.membership_id)).filter((organizationId): organizationId is string => Boolean(organizationId)));
+      const authorized = roles.value.filter((role) => role.revoked_at === null).flatMap((role) => { const organizationId = organizationByMembership.get(role.membership_id); return organizationId ? [{ organization_id: organizationId, role: role.role_code }] : []; });
+      const context = resolveClientOrganizationContext(authorized, requestedOrganizationId);
+      if (context.status === "error") return { status: "error", reason: "FORBIDDEN" };
+      const selectedOrganizationId = context.membership.organization_id;
+      const activeRoles = new Set(authorized.filter((role) => role.organization_id === selectedOrganizationId).map((role) => role.role));
+      const writableOrganizations = new Set(authorized.filter((role) => role.organization_id === selectedOrganizationId && role.role !== "CLIENT_VIEWER").map((role) => role.organization_id));
       const roleOrder = ["CLIENT_OWNER", "CLIENT_ADMIN", "CLIENT_BUYER", "CLIENT_VIEWER"] as const;
       const activeRole = roleOrder.find((role) => activeRoles.has(role));
       if (!activeRole) return { status: "error", reason: "FORBIDDEN" };
       const canManage = writableOrganizations.size > 0;
-      const [requestsQuery, plansQuery] = await Promise.all([source.requests(), source.plans()]);
+      const [requestsQuery, plansQuery] = await Promise.all([source.requests(selectedOrganizationId), source.plans(selectedOrganizationId)]);
       const requests = parseRows(requestRow, requestsQuery, 200), plans = parseRows(planRow, plansQuery, 100);
       if (requests.status === "error") return requests;
       if (plans.status === "error") return plans;

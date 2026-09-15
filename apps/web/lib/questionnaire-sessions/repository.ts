@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { resolveClientOrganizationContext } from "../client-organization-context";
 import type { QuestionnaireFailure, QuestionnaireResult, QuestionnaireSessionsRepository } from "./contracts";
 import { answerType, databaseLocale, questionnaireUuid, saveAnswerInput, sessionStatus, startSessionInput, submitSessionInput, type QuestionnaireDashboard } from "./model";
 
@@ -10,7 +11,7 @@ export type QuestionnaireSessionSource = {
   organizations(ids: string[]): Promise<Query>;
   documents(organizationIds: string[]): Promise<Query>;
   publishedVersions(): Promise<Query>;
-  sessions(userId: string): Promise<Query>;
+  sessions(userId: string, organizationId: string): Promise<Query>;
   versions(ids: string[]): Promise<Query>;
   session(id: string): Promise<Query>;
   sections(versionId: string): Promise<Query>;
@@ -67,7 +68,7 @@ function rows<T>(schema: z.ZodType<T>, query: Query, max: number): Questionnaire
 
 export function createQuestionnaireSessionsRepository(source: QuestionnaireSessionSource): QuestionnaireSessionsRepository {
   return {
-    async load(selectedSessionId) {
+    async load(selectedSessionId, requestedOrganizationId) {
       if (selectedSessionId && !questionnaireUuid.safeParse(selectedSessionId).success) return { status: "error", reason: "INVALID_INPUT" };
       const userId = await source.user();
       if (!userId) return { status: "error", reason: "UNAUTHENTICATED" };
@@ -76,9 +77,10 @@ export function createQuestionnaireSessionsRepository(source: QuestionnaireSessi
       const roles = rows(roleRow, await source.roles(memberships.value.map((item) => item.id)), 300);
       if (roles.status === "error") return roles;
       const allowedMemberships = new Set(roles.value.filter((role) => role.revoked_at === null).map((role) => role.membership_id));
-      const organizationIds = [...new Set(memberships.value.filter((membership) => allowedMemberships.has(membership.id)).map((membership) => membership.organization_id))];
-      if (!organizationIds.length) return { status: "error", reason: "FORBIDDEN" };
-      const [organizationsQuery, documentsQuery, availableQuery, sessionsQuery] = await Promise.all([source.organizations(organizationIds), source.documents(organizationIds), source.publishedVersions(), source.sessions(userId)]);
+      const context = resolveClientOrganizationContext(memberships.value.filter((membership) => allowedMemberships.has(membership.id)), requestedOrganizationId);
+      if (context.status === "error") return { status: "error", reason: "FORBIDDEN" };
+      const organizationIds = [context.membership.organization_id];
+      const [organizationsQuery, documentsQuery, availableQuery, sessionsQuery] = await Promise.all([source.organizations(organizationIds), source.documents(organizationIds), source.publishedVersions(), source.sessions(userId, organizationIds[0]!)]);
       const organizations = rows(organizationRow, organizationsQuery, 100), documents = rows(documentRow, documentsQuery, 100), available = rows(versionRow, availableQuery, 50), sessions = rows(sessionRow, sessionsQuery, 100);
       if (organizations.status === "error") return organizations;
       if (documents.status === "error") return documents;
@@ -97,7 +99,7 @@ export function createQuestionnaireSessionsRepository(source: QuestionnaireSessi
         const sessionResult = rows(sessionRow, await source.session(selectedSessionId), 1);
         if (sessionResult.status === "error") return sessionResult;
         const session = sessionResult.value[0];
-        if (!session || session.actor_user_id !== userId) return { status: "error", reason: "FORBIDDEN" };
+        if (!session || session.actor_user_id !== userId || session.organization_id !== organizationIds[0]) return { status: "error", reason: "FORBIDDEN" };
         const versionResult = rows(versionRow, await source.versions([session.questionnaire_version_id]), 1);
         if (versionResult.status === "error") return versionResult;
         const version = versionResult.value[0];
@@ -128,7 +130,7 @@ export function createQuestionnaireSessionsRepository(source: QuestionnaireSessi
         const allQuestions = sectionModels.flatMap((section) => section.questions);
         selected = { ...summary, descriptionFr: version.description_fr, descriptionAr: version.description_ar, sections: sectionModels, answeredCount: allQuestions.filter((question) => question.answer !== null && !question.answer.requiresRevalidation).length, expiringAnswerCount: allQuestions.filter((question) => question.answer?.expiresAt != null).length, expiredAnswerCount: allQuestions.filter((question) => question.answer?.requiresRevalidation).length, questionCount: links.value.length };
       }
-      return { status: "success", value: { organizations: organizations.value.map((organization) => ({ id: organization.id, name: organization.display_name })), documents: documents.value.filter((document) => document.organization_id === selected?.organizationId).map((document) => ({ id: document.id, organizationId: document.organization_id, name: document.original_file_name, type: document.document_type, mimeType: document.declared_mime_type, status: document.status })), questionnaires: available.value.map((version) => ({ id: version.id, version: version.version, titleFr: version.title_fr, titleAr: version.title_ar, descriptionFr: version.description_fr, descriptionAr: version.description_ar })), sessions: summaries, selected } };
+      return { status: "success", value: { organizations: organizations.value.map((organization) => ({ id: organization.id, name: organization.display_name })), documents: documents.value.filter((document) => document.organization_id === organizationIds[0]).map((document) => ({ id: document.id, organizationId: document.organization_id, name: document.original_file_name, type: document.document_type, mimeType: document.declared_mime_type, status: document.status })), questionnaires: available.value.map((version) => ({ id: version.id, version: version.version, titleFr: version.title_fr, titleAr: version.title_ar, descriptionFr: version.description_fr, descriptionAr: version.description_ar })), sessions: summaries.filter((session) => session.organizationId === organizationIds[0]), selected } };
     },
     async start(input) {
       const parsed = startSessionInput.safeParse({ ...input, dueAt: input.dueAt ?? "" });

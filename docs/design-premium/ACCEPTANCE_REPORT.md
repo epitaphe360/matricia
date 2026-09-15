@@ -37,6 +37,7 @@ Captures réelles depuis le build Next.js de production local :
 - `screenshots/after/besoin-fr-390.png`
 - `screenshots/after/fournisseur-fr-1440.png`
 - `screenshots/after/connexion-ar-390.png`
+- `screenshots/after/inscription-fr-390.png`
 
 La commande reproductible est `node scripts/capture-design-premium.mjs http://localhost:5174` après démarrage du build local.
 

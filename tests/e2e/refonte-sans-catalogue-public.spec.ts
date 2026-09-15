@@ -10,7 +10,7 @@ for (const locale of ["fr", "ar"] as const) {
     await diagnosticEntry.click();
     await expect(page).toHaveURL(new RegExp("/" + locale + "/diagnostic"));
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    for (let index = 0; index < 6; index += 1) {
+    for (let index = 0; index < 7; index += 1) {
       await page.locator(".journey-choices button").first().click();
       await page.getByRole("button", { name: locale === "fr" ? "Continuer" : "متابعة" }).click();
     }

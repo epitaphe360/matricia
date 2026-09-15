@@ -12,7 +12,6 @@ import type { BuilderMessages } from "./messages";
 import { usePersistentCommandIdentity } from "./use-command-identity";
 
 const initialState: BuilderActionState = { status: "idle" };
-const objectTypes = ["LIBRARY", "CATEGORY", "SUBCATEGORY", "SERVICE", "SERVICE_SUBCATEGORY_LINK"] as const;
 
 function ActionStatus({ state, messages, id }: { state: BuilderActionState; messages: BuilderMessages; id: string }) {
   if (state.status === "error") {
@@ -24,8 +23,6 @@ function ActionStatus({ state, messages, id }: { state: BuilderActionState; mess
     return (
       <div id={id} role="status" aria-live="polite" className="min-h-6 space-y-1 text-sm text-primary">
         <p>{message}</p>
-        <p className="break-words">{messages.resultRelease}: <bdi dir="ltr" className="font-mono">{state.releaseId}</bdi></p>
-        {state.rowVersion ? <p>{messages.resultVersion}: <bdi dir="ltr">{state.rowVersion}</bdi></p> : null}
         {state.releaseStatus ? <p>{messages.resultStatus}: {messages.releaseStatuses[state.releaseStatus]} (<bdi dir="ltr">{state.releaseStatus}</bdi>)</p> : null}
       </div>
     );
@@ -53,10 +50,12 @@ function TechnicalInput({ id, name, label, defaultValue, pattern, type = "text",
   );
 }
 
-export function ReleaseWorkflow({ locale, library, service, messages, commandIdentities }: {
+export function ReleaseWorkflow({ locale, library, service, draftReleases, approvedVersions, messages, commandIdentities }: {
   locale: Locale;
   library: { id: string; code: string; rowVersion: number; status: CatalogEntityStatus };
   service: { id: string; code: string; status: CatalogEntityStatus };
+  draftReleases: Array<{ id: string; key: string }>;
+  approvedVersions: Array<{ id: string; version: number; nameFr: string; nameAr: string }>;
   messages: BuilderMessages;
   commandIdentities: {
     create: { idempotencyKey: string; correlationId: string };
@@ -87,7 +86,7 @@ export function ReleaseWorkflow({ locale, library, service, messages, commandIde
               <input type="hidden" name="locale" value={locale} /><input type="hidden" name="libraryId" value={library.id} /><input type="hidden" name="expectedLibraryRowVersion" value={library.rowVersion} />
               <input ref={createIdempotencyRef} type="hidden" name="idempotencyKey" defaultValue={commandIdentities.create.idempotencyKey} /><input ref={createCorrelationRef} type="hidden" name="correlationId" defaultValue={commandIdentities.create.correlationId} />
               <TechnicalInput id={`${prefix}-release-key`} name="releaseKey" label={messages.releaseKey} pattern="[A-Z][A-Z0-9_.-]{2,119}" />
-              <TechnicalInput id={`${prefix}-source-hash`} name="sourceBundleHash" label={messages.sourceHash} pattern="[0-9a-f]{64}" />
+              <div className="min-w-0 space-y-2"><Label htmlFor={`${prefix}-source-note`}>{locale === "ar" ? "مصدر ومحتوى الإصدار" : "Source et contenu de la publication"}</Label><Input id={`${prefix}-source-note`} name="sourceNote" required minLength={3} maxLength={500} className="min-h-11" /></div>
               <div className="space-y-2">
                 <Label htmlFor={`${prefix}-approval`}>{messages.centralApproval}</Label>
                 <select id={`${prefix}-approval`} name="requiresCentralApproval" defaultValue="yes" className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -106,17 +105,10 @@ export function ReleaseWorkflow({ locale, library, service, messages, commandIde
           <CardContent>
             <form action={addAction} onSubmitCapture={prepareAdd} aria-describedby={`${prefix}-add-status`} className="space-y-4">
               <input type="hidden" name="locale" value={locale} /><input ref={addIdempotencyRef} type="hidden" name="idempotencyKey" defaultValue={commandIdentities.add.idempotencyKey} /><input ref={addCorrelationRef} type="hidden" name="correlationId" defaultValue={commandIdentities.add.correlationId} />
-              <TechnicalInput id={`${prefix}-add-release-id`} name="releaseId" label={messages.releaseId} />
-              <div className="space-y-2"><Label htmlFor={`${prefix}-type`}>{messages.objectType}</Label><select id={`${prefix}-type`} name="objectType" defaultValue="SERVICE" className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{objectTypes.map((type) => <option key={type} value={type}>{messages.objectTypes[type]}</option>)}</select></div>
-              <TechnicalInput id={`${prefix}-object-id`} name="objectId" label={messages.objectId} defaultValue={service.id} />
-              <TechnicalInput id={`${prefix}-version-id`} name="versionId" label={messages.versionId} />
-              <TechnicalInput id={`${prefix}-content-hash`} name="contentHash" label={messages.contentHash} pattern="[0-9a-f]{64}" />
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-                <TechnicalInput id={`${prefix}-sort`} name="sortOrder" label={messages.sortOrder} type="number" min={1} defaultValue="1" />
-                <TechnicalInput id={`${prefix}-add-version`} name="expectedRowVersion" label={messages.rowVersion} type="number" min={1} defaultValue="1" />
-              </div>
+              <div className="space-y-2"><Label htmlFor={`${prefix}-add-release`}>{messages.releaseId}</Label><select id={`${prefix}-add-release`} name="releaseId" required defaultValue="" className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2"><option value="" disabled>{locale === "ar" ? "اختر مسودة الإصدار" : "Choisir une publication en brouillon"}</option>{draftReleases.map(release => <option key={release.id} value={release.id}>{release.key}</option>)}</select></div>
+              <div className="space-y-2"><Label htmlFor={`${prefix}-approved-version`}>{locale === "ar" ? "النسخة المعتمدة" : "Version approuvée"}</Label><select id={`${prefix}-approved-version`} name="versionId" required defaultValue="" className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2"><option value="" disabled>{locale === "ar" ? "اختر نسخة" : "Choisir une version"}</option>{approvedVersions.map(version => <option key={version.id} value={version.id}>{locale === "ar" ? version.nameAr : version.nameFr} · v{version.version}</option>)}</select></div>
               <Confirmation name="confirmed">{messages.confirmAdd}</Confirmation>
-              <Button type="submit" className="min-h-11 w-full" disabled={adding}>{adding ? messages.adding : messages.add}</Button>
+              <Button type="submit" className="min-h-11 w-full" disabled={adding || draftReleases.length === 0 || approvedVersions.length === 0}>{adding ? messages.adding : messages.add}</Button>
               <ActionStatus state={addState} messages={messages} id={`${prefix}-add-status`} />
             </form>
           </CardContent>
@@ -127,10 +119,9 @@ export function ReleaseWorkflow({ locale, library, service, messages, commandIde
           <CardContent>
             <form action={submitAction} onSubmitCapture={prepareSubmit} aria-describedby={`${prefix}-submit-status`} className="space-y-4">
               <input type="hidden" name="locale" value={locale} /><input ref={submitIdempotencyRef} type="hidden" name="idempotencyKey" defaultValue={commandIdentities.submit.idempotencyKey} /><input ref={submitCorrelationRef} type="hidden" name="correlationId" defaultValue={commandIdentities.submit.correlationId} />
-              <TechnicalInput id={`${prefix}-submit-release-id`} name="releaseId" label={messages.releaseId} />
-              <TechnicalInput id={`${prefix}-submit-version`} name="expectedRowVersion" label={messages.rowVersion} type="number" min={1} />
+              <div className="space-y-2"><Label htmlFor={`${prefix}-submit-release`}>{messages.releaseId}</Label><select id={`${prefix}-submit-release`} name="releaseId" required defaultValue="" className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2"><option value="" disabled>{locale === "ar" ? "اختر مسودة الإصدار" : "Choisir une publication en brouillon"}</option>{draftReleases.map(release => <option key={release.id} value={release.id}>{release.key}</option>)}</select></div>
               <Confirmation name="confirmed">{messages.confirmSubmit}</Confirmation>
-              <Button type="submit" className="min-h-11 w-full" disabled={submitting}>{submitting ? messages.submitting : messages.submit}</Button>
+              <Button type="submit" className="min-h-11 w-full" disabled={submitting || draftReleases.length === 0}>{submitting ? messages.submitting : messages.submit}</Button>
               <ActionStatus state={submitState} messages={messages} id={`${prefix}-submit-status`} />
             </form>
           </CardContent>

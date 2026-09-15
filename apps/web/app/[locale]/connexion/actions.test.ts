@@ -59,4 +59,17 @@ describe("requestOtp", () => {
       },
     });
   });
+
+  it("autorise explicitement la création pour le parcours d’inscription", async () => {
+    mocks.rpc.mockResolvedValue({ data: [{ allowed: true, retry_after_seconds: 0 }], error: null });
+    mocks.signInWithOtp.mockResolvedValue({ data: {}, error: null });
+    await expect(requestOtp("nouveau@example.ma", "fr", "/fr/organisation?role=fournisseur", "registration")).resolves.toEqual({ accepted: true });
+    expect(mocks.signInWithOtp).toHaveBeenCalledWith({
+      email: "nouveau@example.ma",
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: "https://app.example.test/fr/auth/callback?next=%2Ffr%2Forganisation%3Frole%3Dfournisseur",
+      },
+    });
+  });
 });

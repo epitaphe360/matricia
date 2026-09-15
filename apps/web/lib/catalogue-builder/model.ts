@@ -52,7 +52,9 @@ export const builderDraftSchema = z.object({
 export type BuilderDraft = z.infer<typeof builderDraftSchema>;
 export type BuilderLibrary = { id: string; code: string; status: CatalogEntityStatus; rowVersion: number; currentReleaseId: string | null };
 export type BuilderService = { id: string; libraryId: string; code: string; slug: string; status: CatalogEntityStatus };
-export type BuilderWorkspace = { libraries: BuilderLibrary[]; services: BuilderService[]; questionnairePersistenceAvailable: false };
+export type BuilderRelease = { id: string; libraryId: string; key: string; rowVersion: number };
+export type BuilderApprovedServiceVersion = { id: string; serviceId: string; libraryId: string; version: number; nameFr: string; nameAr: string };
+export type BuilderWorkspace = { libraries: BuilderLibrary[]; services: BuilderService[]; draftReleases: BuilderRelease[]; approvedServiceVersions: BuilderApprovedServiceVersion[]; questionnairePersistenceAvailable: false };
 
 export const questionDraftInputSchema = z.object({
   libraryId: uuidSchema,

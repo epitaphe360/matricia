@@ -8,7 +8,7 @@ type Surface = { name: string; route: string; stateVariable: "E2E_ADMIN_STORAGE_
 const surfaces: Surface[] = [
   { name: "command center", route: "administration/command-center", stateVariable: "E2E_ADMIN_STORAGE_STATE", heading: { fr: "Command center", ar: "مركز القيادة" }, navigation: { fr: "Navigation du command center", ar: "التنقل في مركز القيادة" } },
   { name: "marketing autopilot", route: "administration/marketing-autopilot", stateVariable: "E2E_ADMIN_STORAGE_STATE", heading: { fr: "Marketing Autopilot", ar: "التسويق الآلي" } },
-  { name: "diagnostics", route: "client/diagnostics", stateVariable: "E2E_CLIENT_STORAGE_STATE", heading: { fr: "Diagnostics et opportunités", ar: "التشخيصات والفرص" } },
+  { name: "diagnostics", route: "client/diagnostics", stateVariable: "E2E_CLIENT_STORAGE_STATE", heading: { fr: "Mes analyses", ar: "تحليلاتي" } },
 ];
 
 async function expectAccessible(page: Page) {

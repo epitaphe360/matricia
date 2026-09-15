@@ -9,6 +9,7 @@ export type UserActionItem = {
   title: string;
   detail: string;
   organizationName: string | null;
+  organizationId: string | null;
   priority: z.infer<typeof actionPriority>;
   mandatory: boolean;
   href: string;
@@ -35,4 +36,3 @@ export function orderUserActions(items: UserActionItem[], now: string): UserActi
       || Date.parse(a.dueAt ?? a.occurredAt) - Date.parse(b.dueAt ?? b.occurredAt);
   });
 }
-

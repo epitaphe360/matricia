@@ -1,16 +1,17 @@
 import type { MetadataRoute } from "next";
 import { getPublicSiteUrl } from "@/lib/seo/metadata";
-import services from "@/lib/public-catalogue/services.json";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const site = getPublicSiteUrl();
   const routes = [
     { path: "", changeFrequency: "weekly" as const, priority: 1 },
-    { path: "/services", changeFrequency: "weekly" as const, priority: 0.9 },
+    { path: "/diagnostic", changeFrequency: "monthly" as const, priority: 0.9 },
+    { path: "/besoin", changeFrequency: "monthly" as const, priority: 0.8 },
+    { path: "/fournisseur", changeFrequency: "monthly" as const, priority: 0.8 },
+    { path: "/abonnements", changeFrequency: "monthly" as const, priority: 0.8 },
     { path: "/franchise", changeFrequency: "monthly" as const, priority: 0.8 },
     { path: "/a-propos", changeFrequency: "monthly" as const, priority: 0.7 },
     { path: "/contact", changeFrequency: "monthly" as const, priority: 0.7 },
-    ...services.map(service => ({ path: `/services/${service.code.toLowerCase()}`, changeFrequency: "monthly" as const, priority: 0.6 })),
   ];
   return routes.flatMap((route) => {
     const languages = { "fr-MA": new URL(`/fr${route.path}`, site).href, "ar-MA": new URL(`/ar${route.path}`, site).href };

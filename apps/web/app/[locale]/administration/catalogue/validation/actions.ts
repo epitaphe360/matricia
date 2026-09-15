@@ -4,6 +4,7 @@ import { isLocale } from "@/lib/i18n/locale";
 import type { RuleSimulation, RuleValidationReport } from "@/lib/rule-validation/model";
 import { parseAnswerMap, uuidSchema } from "@/lib/rule-validation/model";
 import { createServerRuleValidationRepository } from "@/lib/rule-validation/server-repository";
+import { z } from "zod";
 
 export type RuleValidationActionState =
   | { status: "idle" }
@@ -37,10 +38,24 @@ export async function validateRules(_: RuleValidationActionState, form: FormData
 export async function simulateRules(_: RuleValidationActionState, form: FormData): Promise<RuleValidationActionState> {
   const context = validContext(form);
   if (!context) return { status: "error", reason: "VALIDATION" };
-  const answers = parseAnswerMap(text(form, "answers"));
-  const previousAnswers = parseAnswerMap(text(form, "previousAnswers"));
+  const answers = form.has("answers") ? parseAnswerMap(text(form, "answers")) : answerFields(form, "answer:");
+  const previousAnswers = form.has("previousAnswers") ? parseAnswerMap(text(form, "previousAnswers")) : answerFields(form, "previous:");
   if (!answers || !previousAnswers) return { status: "error", reason: "VALIDATION" };
   const repository = await createServerRuleValidationRepository();
   const result = await repository.simulate({ questionnaireVersionId: context.questionnaireVersionId, answers, previousAnswers });
   return result.status === "success" ? { status: "success", operation: "SIMULATION", simulation: result.value } : actionFailure(result.reason);
+}
+
+function answerFields(form: FormData, prefix: string): Record<string, unknown> | null {
+  const result: Record<string, unknown> = {};
+  for (const [name, raw] of form.entries()) {
+    if (!name.startsWith(prefix) || typeof raw !== "string" || raw.length > 4_000) continue;
+    const id = name.slice(prefix.length);
+    if (!z.string().uuid().safeParse(id).success) return null;
+    const value = raw.trim();
+    if (!value) continue;
+    result[id] = value === "__TRUE__" ? true : value === "__FALSE__" ? false : value;
+    if (Object.keys(result).length > 500) return null;
+  }
+  return result;
 }

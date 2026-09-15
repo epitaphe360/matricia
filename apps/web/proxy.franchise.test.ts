@@ -24,6 +24,14 @@ function request(pathname: string) {
 beforeEach(() => getUser.mockReset());
 
 describe("proxy franchise routing", () => {
+  it.each(["/fr/diagnostic", "/ar/besoin", "/fr/fournisseur", "/ar/abonnements"])("laisse le parcours public %s accessible sans session", async (pathname) => {
+    getUser.mockResolvedValue({ data: { user: null } });
+    const response = await refreshSupabaseSession(request(pathname));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+    expect(getUser).not.toHaveBeenCalled();
+  });
+
   it("laisse la page franchise publique accessible sans session", async () => {
     getUser.mockResolvedValue({ data: { user: null } });
     const response = await refreshSupabaseSession(request("/fr/franchise"));

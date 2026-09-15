@@ -1,0 +1,14 @@
+begin;
+select plan(10);
+select has_table('public','public_diagnostic_intakes','indicative intake table exists');
+select has_function('public','save_public_diagnostic_intake',array['uuid','jsonb','text','text','uuid'],'save contract exists');
+select ok(has_function_privilege('authenticated','public.save_public_diagnostic_intake(uuid,jsonb,text,text,uuid)','EXECUTE'),'authenticated may invoke the guarded contract');
+select ok(not has_function_privilege('anon','public.save_public_diagnostic_intake(uuid,jsonb,text,text,uuid)','EXECUTE'),'anonymous cannot persist an intake');
+select ok(not has_table_privilege('authenticated','public.public_diagnostic_intakes','INSERT'),'clients cannot bypass the contract');
+select ok(has_table_privilege('authenticated','public.public_diagnostic_intakes','SELECT'),'authorized clients may read through RLS');
+select ok((select relrowsecurity from pg_class where oid='public.public_diagnostic_intakes'::regclass),'RLS is enabled');
+select policies_are('public','public_diagnostic_intakes',array['public_diagnostic_intakes_client_read'],'only the tenant read policy exists');
+select ok(pg_get_functiondef('public.save_public_diagnostic_intake(uuid,jsonb,text,text,uuid)'::regprocedure) like '%pg_advisory_xact_lock%' and pg_get_functiondef('public.save_public_diagnostic_intake(uuid,jsonb,text,text,uuid)'::regprocedure) like '%content_hash%','logical save is idempotent and locked');
+select ok(pg_get_functiondef('public.save_public_diagnostic_intake(uuid,jsonb,text,text,uuid)'::regprocedure) like '%audit_events%' and pg_get_functiondef('public.save_public_diagnostic_intake(uuid,jsonb,text,text,uuid)'::regprocedure) like '%event_outbox%','save emits audit and outbox records');
+select * from finish();
+rollback;

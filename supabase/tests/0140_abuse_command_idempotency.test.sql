@@ -1,0 +1,11 @@
+begin;
+select plan(7);
+select has_table('private','abuse_command_keys','abuse command identities are persisted');
+select ok(not has_table_privilege('authenticated','private.abuse_command_keys','SELECT'),'command identities are private');
+select has_function('public','create_abuse_rule_version',array['text','text','integer','integer','integer','integer','jsonb','boolean','text','uuid'],'public rule command keeps its contract');
+select has_function('public','decide_abuse_case',array['uuid','integer','text','text','text','text','uuid'],'public decision command keeps its contract');
+select ok(not has_function_privilege('authenticated','public.create_abuse_rule_version_unchecked_v1(text,text,integer,integer,integer,integer,jsonb,boolean,text,uuid)','EXECUTE'),'unchecked rule command is not callable by users');
+select ok(not has_function_privilege('authenticated','public.decide_abuse_case_unchecked_v1(uuid,integer,text,text,text,text,uuid)','EXECUTE'),'unchecked decision command is not callable by users');
+select ok(pg_get_functiondef('public.create_abuse_rule_version(text,text,integer,integer,integer,integer,jsonb,boolean,text,uuid)'::regprocedure)like'%begin_abuse_command%'and pg_get_functiondef('public.decide_abuse_case(uuid,integer,text,text,text,text,uuid)'::regprocedure)like'%begin_abuse_command%','both sensitive mutations use persisted idempotence');
+select*from finish();
+rollback;

@@ -57,3 +57,14 @@ test("les choix simples et les champs libres exposent leur sémantique", async (
   await page.goto("/fr/besoin");
   await expect(page.locator("textarea")).toHaveAttribute("aria-labelledby", "need-question");
 });
+
+test("l’inscription Client et Sous-traitant est visible et conserve le rôle", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/fr/connexion");
+  await expect(page.getByRole("link", { name: "Compte Client" })).toHaveAttribute("href", "/fr/connexion?mode=inscription&role=client");
+  await page.getByRole("link", { name: "Compte Sous-traitant" }).click();
+  await expect(page).toHaveURL(/\/fr\/connexion\?mode=inscription&role=fournisseur/);
+  await expect(page.getByRole("heading", { level: 1, name: "Créez votre compte Matricia" })).toBeVisible();
+  await page.getByRole("link", { name: "العربية" }).click();
+  await expect(page).toHaveURL(/\/ar\/connexion\?mode=inscription&role=fournisseur/);
+});

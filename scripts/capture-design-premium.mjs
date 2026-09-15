@@ -13,6 +13,7 @@ const shots = [
   ["besoin-fr-390.png", "/fr/besoin", 390, 844],
   ["fournisseur-fr-1440.png", "/fr/fournisseur", 1440, 1000],
   ["connexion-ar-390.png", "/ar/connexion", 390, 844],
+  ["inscription-fr-390.png", "/fr/connexion?mode=inscription&role=client", 390, 844],
 ];
 
 await mkdir(output, { recursive: true });

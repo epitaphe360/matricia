@@ -1,3 +1,4 @@
+import { resolveClientOrganizationContext } from "../client-organization-context";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { Portfolio, RepoResult } from "./model";
 
@@ -13,7 +14,7 @@ export function validPortfolioTenantPayload(organizationIds:string[],projectRows
   return linkRows.every(row=>{const org=text(row,"organization_id");return projects.get(text(row,"project_id"))===org&&contracts.get(text(row,"contract_id"))===org;})&&calendarRows.every(row=>{const projectId=nullable(row,"project_id");return projectId===null||projects.get(projectId)===text(row,"organization_id");});
 }
 
-export async function loadClientPortfolio(): Promise<RepoResult<Portfolio>> {
+export async function loadClientPortfolio(requestedOrganizationId?: string): Promise<RepoResult<Portfolio>> {
   const client = await getSupabaseServerClient();
   const { data: auth, error: authError } = await client.auth.getUser();
   if (authError || !auth.user) return { status: "error", reason: "UNAUTHENTICATED" };
@@ -21,8 +22,16 @@ export async function loadClientPortfolio(): Promise<RepoResult<Portfolio>> {
   if (memberships.error) return { status: "error", reason: "UNAVAILABLE" };
   const membershipRows = rows(memberships.data);
   const membershipIds = membershipRows.map(row => text(row, "id"));
-  const organizationIds = [...new Set(membershipRows.map(row => text(row, "organization_id")))];
-  if (organizationIds.length === 0) return { status: "success", value: { organizations: [], sites: [], projects: [], contracts: [], tasks: [], budgets: [], costCenters: [], allocations: [], calendar: [], libraries: [] } };
+  const authorizedRoles = membershipIds.length ? await client.from("organization_member_roles").select("membership_id,role_code,revoked_at").in("membership_id", membershipIds).is("revoked_at", null).in("role_code", ["CLIENT_OWNER", "CLIENT_ADMIN", "CLIENT_BUYER", "CLIENT_ACCOUNTING", "CLIENT_VIEWER"]).limit(500) : { data: [], error: null };
+  if (authorizedRoles.error) return { status: "error", reason: "UNAVAILABLE" };
+  const authorizedMembershipIds = new Set(rows(authorizedRoles.data).map(row => text(row, "membership_id")));
+  const authorizedMemberships = membershipRows.filter(row => authorizedMembershipIds.has(text(row, "id"))).map(row => ({ organization_id: text(row, "organization_id") }));
+  const context = resolveClientOrganizationContext(authorizedMemberships, requestedOrganizationId);
+  if (context.status === "error") {
+    if (context.reason === "NO_CLIENT_ORGANIZATION" && requestedOrganizationId === undefined) return { status: "success", value: { organizations: [], sites: [], projects: [], contracts: [], tasks: [], budgets: [], costCenters: [], allocations: [], calendar: [], libraries: [] } };
+    return { status: "error", reason: "FORBIDDEN" };
+  }
+  const organizationIds = [context.membership.organization_id];
   const [roles, organizations, sites, siteVersions, projects, projectVersions, contracts, projectContracts, tasks, taskVersions, budgets, budgetVersions, costCenters, costCenterVersions, allocations, calendar, libraries] = await Promise.all([
     client.from("organization_member_roles").select("membership_id,role_code,revoked_at").in("membership_id", membershipIds).is("revoked_at", null).limit(500),
     client.from("organizations").select("id,display_name").in("id", organizationIds).limit(100),
