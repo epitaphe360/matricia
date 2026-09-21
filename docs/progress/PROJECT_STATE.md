@@ -1,3 +1,9 @@
+## 2026-09-21 — Registre des 71 lignes encore ouvertes
+
+- Les 63 lignes `MAT-FUNC` `IN_PROGRESS` ne pointent plus vers la matrice générique. Chacune cite une implémentation, un test et la preuve atomique qui existe. Le motif `PENDING` nomme l’écart restant : visa indépendant, et E2E métier quand il manque encore.
+- Les 8 lignes Marketing étaient déjà rattachées à leur code. Elles restent `IN_PROGRESS` pour le même motif.
+- Compteur inchangé : **5/76 `VERIFIED`**. `validate-traceability` passe. Aucun visa n’a été inventé.
+
 ## 2026-09-21 — Audit final après corrections
 
 - Base locale et base de développement alignées sur `20260921250000`. La table d’avis de marque manquante en local a été recréée depuis `20260913018700`, puis les 33 migrations en attente ont été appliquées. `row_version` est qualifié dans les mises à jour jointes du catalogue (`42702`).
