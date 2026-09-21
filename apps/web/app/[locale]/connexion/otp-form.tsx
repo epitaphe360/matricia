@@ -35,7 +35,11 @@ export function OtpForm({ locale, nextPath, intent = "login" }: { locale: Locale
     } catch {
       setStatus("error"); setMessage(messages.genericError); return;
     }
-    if (!result.accepted) { setStatus("error"); setMessage(messages.invalidEmail); return; }
+    if (!result.accepted) {
+      setStatus("error");
+      setMessage(result.reason === "RATE_LIMITED" ? messages.rateLimited : messages.invalidEmail);
+      return;
+    }
     setEmail(normalizedEmail); setStep("code"); setStatus("idle"); setMessage(messages.sent);
   }
 
@@ -54,7 +58,11 @@ export function OtpForm({ locale, nextPath, intent = "login" }: { locale: Locale
     setStatus("pending"); setMessage("");
     try {
       const result = await requestOtp(email, locale, nextPath, intent);
-      if (!result.accepted) { setStatus("error"); setMessage(messages.genericError); return; }
+      if (!result.accepted) {
+        setStatus("error");
+        setMessage(result.reason === "RATE_LIMITED" ? messages.rateLimited : messages.genericError);
+        return;
+      }
       setStatus("idle"); setMessage(local.resent);
     } catch {
       setStatus("error"); setMessage(messages.genericError);

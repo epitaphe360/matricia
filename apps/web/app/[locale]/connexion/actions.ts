@@ -5,7 +5,7 @@ import { normalizeEmail } from "@/modules/shared/lib/auth/otp";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { getSupabaseAdminClient } from "@/modules/shared/lib/supabase/admin";
 
-export type OtpRequestResult = { accepted: true } | { accepted: false; reason: "INVALID_EMAIL" };
+export type OtpRequestResult = { accepted: true } | { accepted: false; reason: "INVALID_EMAIL" | "RATE_LIMITED" };
 
 function clientIp(headerStore: Headers): string | null {
   const candidate = headerStore.get("cf-connecting-ip") ?? headerStore.get("x-forwarded-for")?.split(",")[0]?.trim();
@@ -26,17 +26,20 @@ export async function requestOtp(emailInput: string, localeInput: string, _nextP
   });
 
   const quota = Array.isArray(data) ? data[0] : data;
-  if (!error && quota?.allowed === true) {
-    // Omit emailRedirectTo: that option makes Auth send a Magic Link instead of the 6-digit OTP.
-    await admin.auth.signInWithOtp({
-      email,
-      options: {
-        shouldCreateUser: isRegistration,
-        ...(isRegistration ? { data: { locale } } : {}),
-      },
-    });
+  if (error || quota?.allowed !== true) {
+    return quota?.allowed === false ? { accepted: false, reason: "RATE_LIMITED" } : { accepted: true };
   }
 
-  // Même résultat pour compte absent, limite atteinte, indisponibilité et succès.
+  const { error: deliveryError } = await admin.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: isRegistration,
+      ...(isRegistration ? { data: { locale } } : {}),
+    },
+  });
+  if (deliveryError?.code === "over_email_send_rate_limit" || deliveryError?.status === 429) {
+    return { accepted: false, reason: "RATE_LIMITED" };
+  }
+
   return { accepted: true };
 }

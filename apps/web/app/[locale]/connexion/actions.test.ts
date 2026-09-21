@@ -34,10 +34,16 @@ describe("requestOtp", () => {
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
-  it("respecte le quota sans révéler la raison au navigateur", async () => {
+  it("signale la limite sans envoyer de code", async () => {
     mocks.rpc.mockResolvedValue({ data: [{ allowed: false, retry_after_seconds: 60 }], error: null });
-    await expect(requestOtp("personne@example.ma", "fr")).resolves.toEqual({ accepted: true });
+    await expect(requestOtp("personne@example.ma", "fr")).resolves.toEqual({ accepted: false, reason: "RATE_LIMITED" });
     expect(mocks.signInWithOtp).not.toHaveBeenCalled();
+  });
+
+  it("signale la limite du service de courriel", async () => {
+    mocks.rpc.mockResolvedValue({ data: [{ allowed: true, retry_after_seconds: 0 }], error: null });
+    mocks.signInWithOtp.mockResolvedValue({ data: {}, error: { code: "over_email_send_rate_limit", status: 429 } });
+    await expect(requestOtp("personne@example.ma", "fr")).resolves.toEqual({ accepted: false, reason: "RATE_LIMITED" });
   });
 
   it("interdit la création implicite et envoie un OTP sans lien magique", async () => {
