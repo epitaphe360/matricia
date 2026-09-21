@@ -43,9 +43,27 @@ export default async function ClientQuestionnairesPage({ params, searchParams }:
           <AlertDescription>{messages.privacy}</AlertDescription>
         </Alert>
         {result.status === "error" ? (
-          <Alert variant="destructive">
-            <AlertTitle>{result.reason === "FORBIDDEN" ? messages.forbidden : result.reason === "BOUNDS_EXCEEDED" ? messages.bounds : messages.loadError}</AlertTitle>
-            <AlertDescription><Link className="underline" href={`/${locale}/client/questionnaires${organizationQuery}`}>{messages.retry}</Link></AlertDescription>
+          <Alert variant={result.reason === "NO_CLIENT_ORGANIZATION" || result.reason === "ORGANIZATION_SELECTION_REQUIRED" ? "default" : "destructive"}>
+            <AlertTitle>
+              {result.reason === "FORBIDDEN" ? messages.forbidden
+                : result.reason === "BOUNDS_EXCEEDED" ? messages.bounds
+                : result.reason === "NO_CLIENT_ORGANIZATION" ? messages.noOrg
+                : result.reason === "ORGANIZATION_SELECTION_REQUIRED" ? messages.selectOrg
+                : messages.loadError}
+            </AlertTitle>
+            <AlertDescription>
+              {result.reason === "ORGANIZATION_SELECTION_REQUIRED" && result.organizations?.length ? (
+                <ul className="mt-3 grid gap-2">
+                  {result.organizations.map((organization) => (
+                    <li key={organization.id}>
+                      <Link className="underline" href={`/${locale}/client/questionnaires?organizationId=${encodeURIComponent(organization.id)}`}>{organization.name}</Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <Link className="underline" href={`/${locale}/client/questionnaires${organizationQuery}`}>{messages.retry}</Link>
+              )}
+            </AlertDescription>
           </Alert>
         ) : (
           <QuestionnairePanel

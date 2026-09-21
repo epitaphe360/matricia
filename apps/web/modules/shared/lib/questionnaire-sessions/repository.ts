@@ -77,8 +77,21 @@ export function createQuestionnaireSessionsRepository(source: QuestionnaireSessi
       const roles = rows(roleRow, await source.roles(memberships.value.map((item) => item.id)), 300);
       if (roles.status === "error") return roles;
       const allowedMemberships = new Set(roles.value.filter((role) => role.revoked_at === null).map((role) => role.membership_id));
-      const context = resolveClientOrganizationContext(memberships.value.filter((membership) => allowedMemberships.has(membership.id)), requestedOrganizationId);
-      if (context.status === "error") return { status: "error", reason: "FORBIDDEN" };
+      const authorized = memberships.value.filter((membership) => allowedMemberships.has(membership.id));
+      const context = resolveClientOrganizationContext(authorized, requestedOrganizationId);
+      if (context.status === "error") {
+        if (context.reason === "NO_CLIENT_ORGANIZATION") return { status: "error", reason: "NO_CLIENT_ORGANIZATION" };
+        if (context.reason === "ORGANIZATION_SELECTION_REQUIRED") {
+          const organizationIds = [...new Set(authorized.map((membership) => membership.organization_id))];
+          const organizations = rows(organizationRow, await source.organizations(organizationIds), 100);
+          return {
+            status: "error",
+            reason: "ORGANIZATION_SELECTION_REQUIRED",
+            organizations: organizations.status === "success" ? organizations.value.map((organization) => ({ id: organization.id, name: organization.display_name })) : [],
+          };
+        }
+        return { status: "error", reason: "FORBIDDEN" };
+      }
       const organizationIds = [context.membership.organization_id];
       const [organizationsQuery, documentsQuery, availableQuery, sessionsQuery] = await Promise.all([source.organizations(organizationIds), source.documents(organizationIds), source.publishedVersions(), source.sessions(userId, organizationIds[0]!)]);
       const organizations = rows(organizationRow, organizationsQuery, 100), documents = rows(documentRow, documentsQuery, 100), available = rows(versionRow, availableQuery, 50), sessions = rows(sessionRow, sessionsQuery, 100);
