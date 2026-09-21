@@ -5,18 +5,18 @@ const personas = ["client", "provider", "franchise", "admin"] as const;
 
 const copy = {
   fr: {
-    title: "Explorer les espaces de démonstration",
-    client: "Voir le tableau de bord Client",
-    provider: "Voir le tableau de bord Prestataire",
-    franchise: "Voir l’espace Franchisé",
-    admin: "Voir le tableau de bord Admin",
+    title: "Connexion automatique",
+    client: "Client",
+    provider: "Sous-traitant",
+    franchise: "Franchisé",
+    admin: "Admin",
   },
   ar: {
-    title: "استكشف مساحات العرض",
-    client: "عرض لوحة تحكم العميل",
-    provider: "عرض لوحة تحكم مقدم الخدمات",
-    franchise: "عرض فضاء صاحب الامتياز",
-    admin: "عرض لوحة تحكم الإدارة",
+    title: "دخول تلقائي",
+    client: "عميل",
+    provider: "مقاول من الباطن",
+    franchise: "صاحب امتياز",
+    admin: "إدارة",
   },
 } satisfies Record<Locale, { title: string } & Record<(typeof personas)[number], string>>;
 

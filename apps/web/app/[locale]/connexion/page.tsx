@@ -6,6 +6,7 @@ import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { getLoginMessages } from "./messages";
 import { OtpForm } from "./otp-form";
 import { DemoAccess } from "./demo-access";
+import { isPublicDemoAccessEnabled } from "./demo-policy";
 import { PublicPhoto } from "@/modules/public/ui/site/public-photo";
 
 function sanitizePlanCode(value: string | string[] | undefined): string | undefined {
@@ -80,7 +81,7 @@ export default async function LoginPage({ params, searchParams }: { params: Prom
           {planCode ? <p role="status" className="mt-5 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-950"><strong>{chrome.planIntent} :</strong> <span dir="ltr">{planCode}</span>. {chrome.planNote}</p> : null}
           {!registration && nextPath ? <p className="mt-5 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm leading-6">{locale === "ar" ? "كان لديكم طلب قيد الإعداد؟ تشخيصكم واحتياجكم وترشيحكم يُستأنفون تلقائياً بعد الاتصال." : "Vous aviez une demande en cours ? Pas d’inquiétude, votre diagnostic, vos besoins et votre candidature prestataire seront automatiquement repris après cette connexion."}</p> : null}
           <div className="mt-8"><OtpForm locale={locale} nextPath={effectiveNextPath} intent={registration ? "registration" : "login"} /></div>
-          {!registration && process.env.MATRICIA_DEMO_ACCESS_ENABLED === "true" && process.env.APP_ENV !== "production" ? <DemoAccess locale={locale} /> : null}
+          {!registration && isPublicDemoAccessEnabled() ? <DemoAccess locale={locale} /> : null}
           {!registration && (query.demo === "unavailable" || query.demo === "disabled") ? <p role="alert" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">{query.demo === "disabled" ? chrome.demoDisabled : chrome.demoUnavailable}</p> : null}
           <ul className="mt-8 space-y-3 text-sm text-slate-600">
             {(locale === "fr"
