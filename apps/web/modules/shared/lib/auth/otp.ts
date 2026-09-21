@@ -8,3 +8,14 @@ export function normalizeOtp(value: string): string | null {
   const normalized = value.replace(/\s/g, "");
   return /^\d{6}$/.test(normalized) ? normalized : null;
 }
+
+export function applyOtpDigits(current: string, index: number, raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  const chars = Array.from({ length: 6 }, (_, position) => current[position] ?? "");
+  if (!digits) {
+    chars[index] = "";
+    return chars.join("");
+  }
+  for (let offset = 0; offset < digits.length && index + offset < 6; offset += 1) chars[index + offset] = digits[offset] ?? "";
+  return chars.join("");
+}
