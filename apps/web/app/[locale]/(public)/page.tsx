@@ -142,7 +142,7 @@ export default async function PublicHomePage({ params }: { params: Promise<{ loc
         </div>
         <aside className="journey-home-provider" id="professionnels">
           <PublicRibbon />
-          <p className="journey-eyebrow">{locale === "ar" ? "مهنيون موثوقون" : "Des professionnels de confiance"}</p>
+          <p className="journey-eyebrow">Des professionnels de confiance</p>
           <h2>{c.providerTitle}</h2>
           <p>{c.providerText}</p>
           <Link className="journey-known" href={`/${locale}/fournisseur`}>
@@ -170,7 +170,7 @@ export default async function PublicHomePage({ params }: { params: Promise<{ loc
         </div>
         <div className="journey-cta-band is-accent">
           <div>
-            <p className="journey-eyebrow">{locale === "ar" ? "ننتقل إلى الحلول المناسبة" : "Passons aux bonnes solutions"}</p>
+            <p className="journey-eyebrow">Passons aux bonnes solutions</p>
             <h2>{c.ctaTitle}</h2>
             <p>{c.ctaText}</p>
             <Link className="journey-primary" href={`/${locale}/diagnostic`}>
