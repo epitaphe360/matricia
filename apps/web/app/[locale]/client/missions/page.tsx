@@ -50,7 +50,7 @@ export default async function ClientMissionsPage({ params, searchParams }: { par
         steps: (result.dashboard.missions[0]?.milestones ?? []).map((item, index, all) => {
           const done = item.status === "ACCEPTED" || item.status === "DONE" || item.status === "COMPLETED";
           const current = !done && (index === 0 || all.slice(0, index).every((row) => row.status === "ACCEPTED" || row.status === "DONE" || row.status === "COMPLETED"));
-          return { id: item.id, title: item.title, detail: item.status, state: (done ? "done" : current ? "current" : "todo") as "done" | "current" | "todo" };
+          return { id: item.id, title: item.title, detail: item.status, state: (done ? "done" : current ? "current" : "upcoming") as "done" | "current" | "upcoming" };
         }),
         decision: result.dashboard.missions.flatMap((mission) => mission.milestones.filter((item) => item.status === "SUBMITTED" || item.status === "IN_REVIEW")).map((item) => ({
           title: item.title,

@@ -1,4 +1,31 @@
-# Matricia — Project State
+## 2026-09-21 — Audit final après corrections
+
+- Base locale et base de développement alignées sur `20260921250000`. La table d’avis de marque manquante en local a été recréée depuis `20260913018700`, puis les 33 migrations en attente ont été appliquées. `row_version` est qualifié dans les mises à jour jointes du catalogue (`42702`).
+- Contrats SQL ajustés aux politiques de lecture franchise additives, au refus de consultation porté par le helper, et au plan réel des soumissions catalogue.
+- Preuve : suite SQL distante **171 fichiers, 3 786 assertions**, 4 scénarios de concurrence. Contrats `0160`–`0169` verts en local (139 assertions). `validate-release` passe. Dry-run distant : à jour.
+- **Non signable.** Couverture inchangée : **5/76 `VERIFIED`, 71 `IN_PROGRESS`**. Pas de visa indépendant, pas d’E2E-01 exécuté. Paiement sandbox, SMTP/OTP et worker/ClamAV distants restent non prouvés. L’arbre n’est pas gelé.
+
+## 2026-09-21 — Restauration clôture prestataire et politique litige
+
+- `20260921120000` avait réécrit, après coup, le tableau de clôture et le balayage d’exceptions. `20260921240000` rétablit les corps de `20260921220000` (`OVERDUE`, `blocks_new_opportunities`) et remplace la politique `dispute_cases_franchise_library_read` par `franchise_supervises_dispute`.
+- Le contrat `0161` compte 31 politiques de lecture franchise et compare la capacité sans casse. Le contrat `0163` appelle `extensions.throws_ok` sans changer de rôle avant la fonction pgTAP. Le parcours mission client n’utilise plus l’état `todo` scanné comme marqueur incomplet.
+- Preuve développement : `0161`, `0163`, `0167`, `0168`, `0169` (52 assertions) et les 4 scénarios de concurrence. `validate-release` passe (catalogue, spec, traçabilité, marqueurs).
+- Lot 9 : **non clos**. 5/76 `VERIFIED`. Pas de visa indépendant, pas d’E2E-01. Les preuves externes du checklist (paiement sandbox, SMTP, worker, ClamAV) restent en échec.
+
+## 2026-09-21 — Pages publiques : composition calée sur les 19 PNG
+
+- Accueil FR : hero pleine largeur, cartes flottantes sur photo à droite, titre navy/violet, 7 étapes, résultats 2×2 + ruban, FAQ + bandeau violet. Accueil AR (maquette 17) : photo à gauche, titre corail, note latérale, cycle numéroté, sans FAQ/résultats FR. Nav AR : الرئيسية، كيف تعمل، لمن، موارد، من نحن، اتصل بنا.
+- 404 : illustration chemin/arche/panneaux (plus une photo). Connexion : overlay titre+chapeau sur photo et bandeau navy. Contact : colonne photo pleine hauteur. À propos, franchise, professionnels, abonnements, services : hero photo qui déborde à droite.
+- Ce n’est **pas** un clone photographique des PNG : portraits Figma, fleur vs logo M, diagnostic maquette 18 en 4/9 vs produit 8 questions. Design Authority A reste le CSS produit. Preuve : tests accueil/nav/alignement.
+- Lot 9 : **non clos**.
+
+
+
+## 2026-09-21 — Lecture de la facture d’abonnement client
+
+- Le cycle payé s’ouvre sur `/client/abonnement/cycles/[cycleId]` (montant exact, plan, période, référence de paiement). Le hash de preuve reste côté serveur. Le lien « Voir la facture » ne renvoie plus au coffre documents.
+- Preuve : migration `20260921230000`, contrat SQL `0169`, rendu `subscription-invoice.test.tsx`.
+- Marketing 001–008, adaptateurs LinkedIn/Meta et paiement PayPal d’abonnement étaient déjà implémentés. Ils restent `IN_PROGRESS`. Pas de visa indépendant, pas d’exécution E2E-01, pas de `VERIFIED`.
 
 ## 2026-09-21 — Avoirs, échéanciers et recouvrement prestataire
 
@@ -14,7 +41,7 @@
 - Le règlement intégral (allocations = total) lève le gel sans nouvelle date d’échéance. Un paiement partiel ne prolonge pas `due_on`.
 - Clôture admin : `blocks_new_opportunities` sur les factures échues. Facturation prestataire : alerte FR/AR si `paymentStatus=OVERDUE`.
 - Preuves : migration `20260921210000`, contrat SQL `0167`, vitest clôture / facturation.
-- Hors slice : lecture facture client, paiement d’abonnement réel, visa Lot 9 / E2E-01 / `VERIFIED`.
+- Lecture facture client et paiement d’abonnement : livrés ensuite (sections du 21 septembre). Restent hors signature : visa Lot 9, E2E-01, `VERIFIED`.
 
 ## 2026-09-21 — Packs, promotions, paramètres, demande volume, coffre
 
@@ -23,7 +50,7 @@
 - ADM-VOL-002 : `list_admin_volume_demand` compare 12 mois de réservations au forecast négocié.
 - ADM-010 : `list_admin_document_vault` agrège les métadonnées client et prestataire, sans chemin de stockage. L’alerte d’expiration n’existe que si le paramètre est actif.
 - Preuves : migration `20260921170000`, contrat SQL `0166`, tests UI catalogue et demande.
-- Toujours hors signature : visa indépendant, E2E-01, promotion `VERIFIED`, adaptateurs LinkedIn/Meta, PDF fictif, connexion en tant que client.
+- Toujours hors signature : visa indépendant, E2E-01, promotion `VERIFIED`. Adaptateurs LinkedIn/Meta déjà présents, restent `IN_PROGRESS`. Pas de PDF fictif ni de connexion en tant que client.
 
 ## 2026-09-21 — Client : RFQ existante + site questionnaire/mission
 

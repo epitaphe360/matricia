@@ -21,17 +21,18 @@ export default async function ContactPage({ params, searchParams }: { params: Pr
 
   return (
     <main id="contenu-principal" tabIndex={-1} className="public-page pb-16">
-      <section className="public-wrap grid gap-10 py-16 lg:grid-cols-[1.1fr_.9fr] lg:items-center">
-        <div>
+      <section className="public-contact-layout">
+        <PublicPhoto className="public-contact-photo" scene="zellige" caption={locale === "ar" ? "من مواهب الغد" : "Des talents pour demain"} />
+        <div className="public-contact-main">
           <p className="journey-eyebrow">{messages.eyebrow}</p>
           <h1>{messages.title}</h1>
           <p className="public-lead mt-5">{messages.description}</p>
+          <p className="journey-script mt-4">{locale === "ar" ? "المهنيون. مغرب يتقدم." : "Des professionnels. Un Maroc qui avance."}</p>
+          <div className="mt-8">
+            <ContactForm locale={locale} initialMotif={initialMotif} initialPlan={initialPlan} />
+          </div>
         </div>
-        <PublicPhoto scene="zellige" caption={locale === "ar" ? "المهنيون. مغرب يتقدم." : "Des professionnels. Un Maroc qui avance."} />
       </section>
-      <div className="public-wrap">
-        <ContactForm locale={locale} initialMotif={initialMotif} initialPlan={initialPlan} />
-      </div>
       <section className="public-wrap mt-10 grid gap-4 sm:grid-cols-2">
         <article className="public-card flex items-start gap-3">
           <Phone aria-hidden="true" className="text-[#6d3cc7]" />

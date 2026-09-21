@@ -21,7 +21,7 @@ export default async function ProviderEntry({ params }: { params: Promise<{ loca
 
   return (
     <main id="contenu-principal" className="public-page pb-16">
-      <section className="public-wrap grid gap-10 py-14 lg:grid-cols-[1.15fr_.85fr] lg:items-center">
+      <section className="public-hero-split">
         <div>
           <p className="journey-eyebrow">{copy.eyebrow}</p>
           <h1>{copy.title}</h1>
@@ -30,6 +30,9 @@ export default async function ProviderEntry({ params }: { params: Promise<{ loca
             <a className="journey-primary" href="#inscription-guidee">{copy.begin}</a>
             <Link className="journey-secondary" href={`/${locale}/connexion?next=${encodeURIComponent(`/${locale}/sous-traitant/qualification`)}`}>{copy.existing}</Link>
           </div>
+          <ul className="journey-trust">
+            {copy.trust.map((item) => <li key={item}><CheckCircle2 size={16} aria-hidden="true" />{item}</li>)}
+          </ul>
         </div>
         <PublicPhoto scene="craftsman" caption={locale === "ar" ? "موهبة مهنية تبني مغرباً مستداماً" : "Le talent professionnel bâtit un Maroc durable"} />
       </section>
@@ -38,10 +41,19 @@ export default async function ProviderEntry({ params }: { params: Promise<{ loca
           {copy.steps.map((step, index) => <li key={step}><span>0{index + 1}</span><CheckCircle2 aria-hidden="true" size={17}/>{step}</li>)}
         </ol>
         <p className="journey-login-note">{copy.note}</p>
-        <div className="public-card mt-6 max-w-none">
-          <h2 className="text-xl">{locale === "ar" ? "تسجيل موجّه" : "Inscription guidée"}</h2>
-          <p className="public-muted mt-2">{copy.example}</p>
-          <ProviderTaxonomySelector locale={locale} libraries={taxonomy.libraries} />
+        <div className="public-contact-board mt-6">
+          <div className="public-card mt-0 max-w-none">
+            <h2 className="text-xl">{locale === "ar" ? "تسجيل موجّه" : "Inscription guidée"}</h2>
+            <p className="public-muted mt-2">{copy.example}</p>
+            <ProviderTaxonomySelector locale={locale} libraries={taxonomy.libraries} />
+          </div>
+          <aside className="public-card">
+            <h2>{copy.whyTitle}</h2>
+            <p className="public-muted mt-2">{copy.whyText}</p>
+            <ul className="mt-4 space-y-2 text-sm text-slate-700">
+              {copy.whyItems.map((item) => <li key={item} className="flex items-start gap-2"><CheckCircle2 aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[#3d6b55]" />{item}</li>)}
+            </ul>
+          </aside>
         </div>
       </section>
       <section className="public-wrap mt-10">

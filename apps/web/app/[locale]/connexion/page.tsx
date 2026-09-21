@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, LockKeyhole } from "lucide-react";
+import { ArrowLeft, LockKeyhole, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDictionary } from "@/modules/shared/lib/i18n/dictionaries";
@@ -44,14 +44,20 @@ export default async function LoginPage({ params, searchParams }: { params: Prom
   });
 
   return (
-    <main dir={locale === "ar" ? "rtl" : "ltr"} className="public-page px-4 py-8 sm:px-6 lg:px-8">
-      <div className="public-wrap grid gap-10 lg:grid-cols-[.9fr_1.1fr] lg:items-start">
-        <div>
-          <p className="max-w-xl text-4xl font-semibold leading-tight text-[#1a2340]">{locale === "ar" ? "مؤسسات أقوى لمغرب مستدام" : "Des entreprises plus fortes pour un Maroc durable"}</p>
-          <p className="public-lead mt-4">{chrome.panelBody}</p>
-          <PublicPhoto className="mt-8 hidden lg:block" scene="window" caption={chrome.panelTitle} />
+    <main dir={locale === "ar" ? "rtl" : "ltr"} className="public-page pb-0">
+      <div className="public-auth-split">
+        <div className="relative">
+          <PublicPhoto
+            className="public-auth-hero hidden lg:block"
+            scene="window"
+            caption={locale === "ar" ? "مؤسسات أقوى لمغرب مستدام" : "Des entreprises plus fortes pour un Maroc durable"}
+            lead={locale === "ar"
+              ? "ترافقكم Matricia في كل مرحلة من مشاريعكم، مع المهنيين المناسبين، وفي ثقة تامة."
+              : "Matricia vous accompagne à chaque étape de vos projets, avec les bons professionnels, en toute confiance."}
+          />
+          <p className="public-lead mt-4 px-6 lg:sr-only">{chrome.panelBody}</p>
         </div>
-        <section className="public-card max-w-none" aria-labelledby="login-title">
+        <section className="public-card public-auth-panel max-w-none" aria-labelledby="login-title">
           <div className="mb-4 flex justify-end">
             <Link href={languageHref} hrefLang={alternate} className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-[#6d3cc7]">{messages.language}</Link>
           </div>
@@ -80,7 +86,7 @@ export default async function LoginPage({ params, searchParams }: { params: Prom
             {(locale === "fr"
               ? ["Vos données sont protégées", "Authentification par code à usage unique", "Aucune information sur l’existence d’un compte n’est affichée"]
               : ["بياناتكم محمية", "مصادقة برمز لمرة واحدة", "لا تُعرض أي معلومة عن وجود حساب"]
-            ).map((item) => <li key={item} className="flex items-start gap-2"><Check aria-hidden="true" className="mt-0.5 size-4 text-[#6d3cc7]" /><span>{item}</span></li>)}
+            ).map((item) => <li key={item} className="flex items-start gap-2"><ShieldCheck aria-hidden="true" className="mt-0.5 size-4 text-[#6d3cc7]" /><span>{item}</span></li>)}
           </ul>
           <div className="mt-7 border-t border-[#eadfce] pt-6 text-center">
             <p className="text-sm text-slate-600">{registration ? chrome.loginTitle : chrome.signupTitle}</p>
@@ -90,6 +96,15 @@ export default async function LoginPage({ params, searchParams }: { params: Prom
           <Link href={`/${locale}`} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-[#6d3cc7]"><ArrowLeft aria-hidden="true" className="size-4 rtl:rotate-180" />{chrome.back}</Link>
         </section>
       </div>
+      <section className="public-auth-band" aria-label={locale === "ar" ? "التزام ماتريسيا" : "Engagement Matricia"}>
+        <p>{locale === "ar" ? "نبني اليوم مغرب الغد" : "Bâtir aujourd’hui le Maroc de demain"}</p>
+        <ul>
+          {(locale === "ar"
+            ? ["مؤسسات أكثر أداءً", "تعاونات موثوقة", "أثر دائم على أقاليمنا", "أبعد، معاً"]
+            : ["Des entreprises plus performantes", "Des collaborations de confiance", "Un impact durable sur nos territoires", "Plus loin, ensemble"]
+          ).map((item) => <li key={item}>{item}</li>)}
+        </ul>
+      </section>
     </main>
   );
 }

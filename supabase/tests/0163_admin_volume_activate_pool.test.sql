@@ -46,23 +46,19 @@ values ('b1634000-0000-4000-8000-000000000001', 'Volume Org 1634', 'Volume 1634'
 insert into public.platform_user_roles(user_id, role_code) values
 ('a1634000-0000-4000-8000-000000000002', 'MATRICIA_ADMIN');
 
-select throws_ok(
-  $$set local role authenticated; select set_config('request.jwt.claim.sub','a1634000-0000-4000-8000-000000000001',true); select set_config('request.jwt.claims','{"sub":"a1634000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true); select public.activate_framework_pool('b1634000-0000-4000-8000-000000000001', null, 0, 168, null, null, null, 'idemp-1634-tenant-xx')$$,
-  '42501',
-  'FRAMEWORK_POOL_DENIED',
-  'tenant cannot activate a volume pool'
+select extensions.throws_ok(
+  $$set local role authenticated; select set_config('request.jwt.claim.sub','a1634000-0000-4000-8000-000000000001',true); select set_config('request.jwt.claims','{"sub":"a1634000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true); select public.activate_framework_pool('b1634000-0000-4000-8000-000000000001', null, 0, 168, null, null, null, 'idemp-1634-tenant-xx')$$::text,
+  '42501'::text,
+  'FRAMEWORK_POOL_DENIED'::text,
+  'tenant cannot activate a volume pool'::text
 );
 
-set local role authenticated;
-select set_config('request.jwt.claim.sub', 'a1634000-0000-4000-8000-000000000002', true);
-select set_config('request.jwt.claims', '{"sub":"a1634000-0000-4000-8000-000000000002","role":"authenticated"}', true);
-select throws_ok(
-  $$select public.activate_framework_pool('b1634000-0000-4000-8000-000000000001', null, 0, 168, null, null, null, 'idemp-1634-noaal2-x')$$,
-  '42501',
-  'FRAMEWORK_POOL_DENIED',
-  'pool activation without AAL2 is denied'
+select extensions.throws_ok(
+  $$set local role authenticated; select set_config('request.jwt.claim.sub','a1634000-0000-4000-8000-000000000002',true); select set_config('request.jwt.claims','{"sub":"a1634000-0000-4000-8000-000000000002","role":"authenticated"}',true); select public.activate_framework_pool('b1634000-0000-4000-8000-000000000001', null, 0, 168, null, null, null, 'idemp-1634-noaal2-x')$$::text,
+  '42501'::text,
+  'FRAMEWORK_POOL_DENIED'::text,
+  'pool activation without AAL2 is denied'::text
 );
-reset role;
 
 select ok((
   select has_function_privilege('authenticated', 'public.activate_framework_pool(uuid,numeric,numeric,integer,uuid,numeric,bigint,text,uuid)', 'EXECUTE')

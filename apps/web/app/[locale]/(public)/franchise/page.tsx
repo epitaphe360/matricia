@@ -23,13 +23,13 @@ export default async function PublicFranchisePage({ params }: { params: Promise<
 
   return (
     <main id="contenu-principal" tabIndex={-1} className="public-page pb-16">
-      <section className="public-wrap grid gap-10 py-16 lg:grid-cols-[1.1fr_.9fr] lg:items-center">
+      <section className="public-hero-split">
         <div>
           <p className="journey-eyebrow">{copy.eyebrow}</p>
           <h1>{copy.title}</h1>
           <p className="public-lead mt-5">{copy.description}</p>
           <div className="journey-actions">
-            <Link href={`/${locale}/franchise/candidature`} className="journey-primary">{apply}<ArrowRight className="rtl-mirror" size={16} aria-hidden="true" /></Link>
+            <Link href={`/${locale}/franchise/candidature`} className="journey-primary is-coral">{apply}<ArrowRight className="rtl-mirror" size={16} aria-hidden="true" /></Link>
             <a href="#role-franchise" className="journey-secondary">{understand}</a>
           </div>
         </div>
@@ -38,13 +38,13 @@ export default async function PublicFranchisePage({ params }: { params: Promise<
       <section id="role-franchise" className="public-wrap">
         <h2 className="public-h2">{copy.roleTitle}</h2>
         <p className="public-lead mt-3">{copy.roleDescription}</p>
-        <ol className="journey-steps mt-8">
+        <ol className="journey-six-steps mt-8">
           {copy.framework.map((item, index) => (
-            <article key={item}>
+            <li key={item}>
               <span>{index + 1}</span>
-              <h2>{item.split(".")[0]}</h2>
-              <p>{item}</p>
-            </article>
+              <strong>{item.split(".")[0]}</strong>
+              <p>{item.includes(". ") ? item.slice(item.indexOf(". ") + 2) : item}</p>
+            </li>
           ))}
         </ol>
       </section>
@@ -65,7 +65,7 @@ export default async function PublicFranchisePage({ params }: { params: Promise<
           <h2>{copy.ctaTitle}</h2>
           <p>{copy.ctaDescription}</p>
         </div>
-        <Link href={`/${locale}/franchise/candidature`} className="journey-primary">{apply}</Link>
+        <Link href={`/${locale}/franchise/candidature`} className="journey-primary is-coral">{apply}</Link>
       </section>
     </main>
   );

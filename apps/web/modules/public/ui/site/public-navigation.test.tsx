@@ -19,6 +19,7 @@ describe("PublicNavigation", () => {
     expect(html).toContain("Franchise");
     expect(html).toContain("À propos");
     expect(html).toContain("Créer un compte");
+    expect(html).toContain("Des bonnes rencontres pour de vrais progrès");
     expect(html).toContain('href="/fr/inscription"');
     expect(html).toContain("Se connecter");
     expect(html).toMatch(/aria-current="page"[^>]+href="\/fr\/fournisseur"/u);
@@ -32,8 +33,11 @@ describe("PublicNavigation", () => {
     currentPathname = "/ar/fournisseur";
     const html = renderToStaticMarkup(<PublicNavigation locale="ar" />);
     expect(html).toContain('dir="rtl"');
-    expect(html).toContain("المهنيون");
-    expect(html).toContain("الاشتراكات");
+    expect(html).toContain("كيف تعمل المنصة");
+    expect(html).toContain("لمن");
+    expect(html).toContain("موارد");
+    expect(html).toContain("من نحن");
+    expect(html).toContain("اتصل بنا");
     expect(html).toMatch(/aria-current="page"[^>]+href="\/ar\/fournisseur"/u);
     expect(html).toContain("rtl-mirror");
   });

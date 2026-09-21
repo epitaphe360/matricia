@@ -18,7 +18,7 @@ function FileGlyph({ kind }: { kind: "pdf" | "docx" | "xlsx" | "file" | "message
   return <span className="client-file-glyph" data-kind={kind} aria-hidden>{label}</span>;
 }
 
-function stepStateLabel(state: "done" | "current" | "todo", locale: Locale) {
+function stepStateLabel(state: "done" | "current" | "todo" | "upcoming", locale: Locale) {
   if (state === "done") return locale === "ar" ? "منجز" : "Terminé";
   if (state === "current") return locale === "ar" ? "قيد الانتظار" : "En attente";
   return locale === "ar" ? "للمعالجة" : "À traiter";
@@ -334,7 +334,7 @@ export function RequestsBoard({ locale, query, compareHref, rows, organizationNa
 
 export type MissionBoardView = {
   validations: Array<{ id: string; title: string; detail: string; href: string }>;
-  steps: Array<{ id: string; title: string; detail: string; state: "done" | "current" | "todo" }>;
+  steps: Array<{ id: string; title: string; detail: string; state: "done" | "current" | "todo" | "upcoming" }>;
   decision: { title: string; context: string; impact: string; href: string } | null;
   files: Array<{ id: string; title: string; href: string; kind: "pdf" | "docx" | "xlsx" | "file" | "message" | "folder" }>;
 };

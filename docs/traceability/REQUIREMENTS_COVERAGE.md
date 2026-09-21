@@ -2,7 +2,7 @@
 
 Autorité : Gold Master V4 FINAL. Audit au 2026-09-15 : **5/68 `VERIFIED`, 63/68 `IN_PROGRESS`, 0/68 `PLANNED`** pour `MAT-FUNC-001..068`. Dans ce registre validable, `IN_PROGRESS` correspond à `PARTIAL` : une implémentation existe, mais au moins une preuve atomique manque. `VERIFIED` reste interdit sans contrat, implémentation, tests SQL/RLS et E2E, preuve d’exécution et visa indépendant.
 
-Les références détaillées et la preuve manquante exacte de chaque ligne `IN_PROGRESS` sont consignées dans `docs/traceability/V1_IMPLEMENTATION_COVERAGE_2026-09-12.md`. Sept lignes Marketing restent `PLANNED`; `MARKETING-007` est `IN_PROGRESS` après livraison de l'agrégateur hebdomadaire, sans changer le compteur des 68 fonctions V1.
+Les références détaillées et la preuve manquante exacte de chaque ligne `IN_PROGRESS` sont consignées dans `docs/traceability/V1_IMPLEMENTATION_COVERAGE_2026-09-12.md`. Les huit lignes Marketing sont `IN_PROGRESS` : le code existe, le visa indépendant et l’E2E authentifié manquent. Le compteur des 68 fonctions V1 ne change pas.
 
 | requirement | status | implementation_refs | test_refs | evidence | owner | release_signoff |
 |---|---|---|---|---|---|---|
@@ -74,13 +74,13 @@ Les références détaillées et la preuve manquante exacte de chaque ligne `IN_
 | MAT-FUNC-066 | IN_PROGRESS | [docs/traceability/V1_IMPLEMENTATION_COVERAGE_2026-09-12.md#mat-func-066] | [docs/traceability/V1_IMPLEMENTATION_COVERAGE_2026-09-12.md#mat-func-066] | [docs/traceability/V1_IMPLEMENTATION_COVERAGE_2026-09-12.md#mat-func-066] | admin_command_center_agent | PENDING:preuve-manquante-detaillee-dans-la-matrice-atomique |
 | MAT-FUNC-067 | IN_PROGRESS | [docs/traceability/V1_IMPLEMENTATION_COVERAGE_2026-09-12.md#mat-func-067] | [docs/traceability/V1_IMPLEMENTATION_COVERAGE_2026-09-12.md#mat-func-067] | [docs/traceability/V1_IMPLEMENTATION_COVERAGE_2026-09-12.md#mat-func-067] | rfq_matching_agent | PENDING:preuve-manquante-detaillee-dans-la-matrice-atomique |
 | MAT-FUNC-068 | IN_PROGRESS | [docs/traceability/V1_IMPLEMENTATION_COVERAGE_2026-09-12.md#mat-func-068] | [docs/traceability/V1_IMPLEMENTATION_COVERAGE_2026-09-12.md#mat-func-068] | [docs/traceability/V1_IMPLEMENTATION_COVERAGE_2026-09-12.md#mat-func-068] | security_architect | PENDING:preuve-manquante-detaillee-dans-la-matrice-atomique |
-| MARKETING-001 | PLANNED | [] | [] | [] | marketing-content-agent | PENDING |
-| MARKETING-002 | PLANNED | [] | [] | [] | marketing-content-agent | PENDING |
-| MARKETING-003 | PLANNED | [] | [] | [] | marketing-content-agent | PENDING |
-| MARKETING-004 | PLANNED | [] | [] | [] | marketing-automation-agent | PENDING |
-| MARKETING-005 | PLANNED | [] | [] | [] | social-integration-agent | PENDING |
-| MARKETING-006 | PLANNED | [] | [] | [] | marketing-analytics-agent | PENDING |
+| MARKETING-001 | IN_PROGRESS | [supabase/migrations/20260912007800_marketing_autopilot.sql, supabase/migrations/20260913018700_marketing_content_attribution_completion.sql] | [supabase/tests/0058_p18_marketing_autopilot.test.sql] | [docs/progress/PROJECT_STATE.md] | marketing-content-agent | PENDING:visa-independant-et-E2E |
+| MARKETING-002 | IN_PROGRESS | [apps/web/modules/shared/lib/marketing-autopilot/content-engine.ts, supabase/migrations/20260913018700_marketing_content_attribution_completion.sql] | [apps/web/modules/shared/lib/marketing-autopilot/content-engine.test.ts] | [docs/progress/PROJECT_STATE.md] | marketing-content-agent | PENDING:visa-independant-et-E2E |
+| MARKETING-003 | IN_PROGRESS | [supabase/migrations/20260912007800_marketing_autopilot.sql] | [supabase/tests/0058_p18_marketing_autopilot.test.sql] | [docs/progress/PROJECT_STATE.md] | marketing-content-agent | PENDING:visa-independant-et-E2E |
+| MARKETING-004 | IN_PROGRESS | [supabase/migrations/20260913018100_marketing_calendar_scheduler.sql, apps/web/modules/admin/screens/marketing-autopilot/calendar-management.tsx] | [supabase/tests/0058_p18_marketing_autopilot.test.sql] | [docs/progress/PROJECT_STATE.md] | marketing-automation-agent | PENDING:visa-independant-et-E2E |
+| MARKETING-005 | IN_PROGRESS | [apps/web/modules/shared/lib/marketing-autopilot/publisher.ts, supabase/migrations/20260913018000_marketing_publication_worker.sql] | [apps/web/modules/shared/lib/marketing-autopilot/publisher.test.ts] | [docs/progress/PROJECT_STATE.md] | social-integration-agent | PENDING:visa-independant-et-credentials-live |
+| MARKETING-006 | IN_PROGRESS | [supabase/migrations/20260913018700_marketing_content_attribution_completion.sql] | [supabase/tests/0058_p18_marketing_autopilot.test.sql] | [docs/progress/PROJECT_STATE.md] | marketing-analytics-agent | PENDING:visa-independant-et-E2E |
 | MARKETING-007 | IN_PROGRESS | [supabase/migrations/20260913018600_marketing_weekly_trends.sql, apps/web/app/api/workers/marketing-trends/route.ts, apps/web/vercel.json] | [supabase/tests/0132_marketing_weekly_trends.test.sql, apps/web/app/api/workers/marketing-trends/route.test.ts] | [docs/traceability/V1_ATOMIC_GAP_AUDIT_2026-09-13.md, docs/progress/PROJECT_STATE.md] | marketing-automation-agent | PENDING:E2E-authentifie-et-preuve-operationnelle |
-| MARKETING-008 | PLANNED | [] | [] | [] | marketing-analytics-agent | PENDING |
+| MARKETING-008 | IN_PROGRESS | [supabase/migrations/20260912007800_marketing_autopilot.sql, apps/web/modules/shared/lib/marketing-autopilot/repository.ts] | [supabase/tests/0058_p18_marketing_autopilot.test.sql] | [docs/progress/PROJECT_STATE.md] | marketing-analytics-agent | PENDING:visa-independant-et-E2E |
 
 Les exigences `MAT-FUNC-069..090` sont explicitement hors périmètre V1. Marketing Autopilot est détaillé dans `docs/specs/sections/marketing-autopilot.md`.

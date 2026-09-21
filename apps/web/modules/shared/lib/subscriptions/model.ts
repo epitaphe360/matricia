@@ -57,6 +57,7 @@ export type SubscriptionSummary = {
     amountMinor: string;
     periodStart: string;
     periodEnd: string;
+    paymentReference: string | null;
     plan: HistoricalSubscriptionPlan;
   }>;
   transitions: Array<{

@@ -46,6 +46,17 @@ export default async function PublicInscriptionPage({
         <div>
           <p className="max-w-xl text-4xl font-semibold leading-tight text-[#1a2340]">{locale === "ar" ? "مؤسسات ومهنيون، تقدموا معاً." : "Entreprises et professionnels, avancez ensemble."}</p>
           <p className="public-lead mt-4">{locale === "ar" ? "تنظم ماتريسيا الاحتياجات وتسهّل الربط وترافق تنفيذ الخدمات." : "Matricia structure les besoins, facilite la mise en relation et accompagne l’exécution des prestations."}</p>
+          <ul className="mt-8 space-y-4">
+            {(locale === "ar"
+              ? [["فرص مؤهلة", "مشاريع ملموسة وشركاء ثقة."], ["أدوات لنشاطكم", "وفّروا الوقت وركّزوا على الأهم."], ["منظومة أكثر انفتاحاً", "معاً لسوق أكثر شفافية ووصولاً."]]
+              : [["Des opportunités qualifiées", "Des projets concrets et des partenaires de confiance."], ["Des outils pensés pour votre activité", "Gagnez du temps, restez concentré sur l’essentiel."], ["Un écosystème plus ouvert", "Ensemble pour un marché plus transparent et accessible."]]
+            ).map(([title, text]) => (
+              <li key={title}>
+                <strong className="block text-[#1a2340]">{title}</strong>
+                <span className="mt-1 block text-sm text-slate-600">{text}</span>
+              </li>
+            ))}
+          </ul>
           <PublicPhoto className="mt-8" scene="koutoubia" caption={locale === "ar" ? "نتقدم معاً" : "Avançons ensemble"} />
         </div>
         <section className="public-card max-w-none">

@@ -37,7 +37,7 @@ export default async function PublicAboutPage({ params }: { params: Promise<{ lo
 
   return (
     <main id="contenu-principal" tabIndex={-1} className="public-page pb-16">
-      <section className="public-wrap grid gap-10 py-16 lg:grid-cols-[1.15fr_.85fr] lg:items-center">
+      <section className="public-hero-split">
         <div>
           <p className="journey-eyebrow">{copy.eyebrow}</p>
           <h1>{copy.title}</h1>
@@ -49,7 +49,7 @@ export default async function PublicAboutPage({ params }: { params: Promise<{ lo
         </div>
         <PublicPhoto scene="terrace" caption={local.statement} />
       </section>
-      <section className="public-wrap grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="public-wrap public-principles">
         {copy.principles.map((principle, index) => {
           const Icon = icons[index] ?? Sparkles;
           return (

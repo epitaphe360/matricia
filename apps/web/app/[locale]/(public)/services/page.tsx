@@ -20,7 +20,7 @@ export default async function ServicesTransition({ params, searchParams }: { par
 
   return (
     <main id="contenu-principal" className="public-page pb-16">
-      <section className="public-wrap grid gap-10 py-14 lg:grid-cols-[1.15fr_.85fr] lg:items-center">
+      <section className="public-hero-split">
         <div>
           <p className="journey-eyebrow">{copy.eyebrow}</p>
           <h1>{copy.title}</h1>

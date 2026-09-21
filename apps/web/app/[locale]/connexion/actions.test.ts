@@ -17,9 +17,6 @@ vi.mock("@/modules/shared/lib/auth/otp", () => ({
 vi.mock("@/modules/shared/lib/i18n/locale", () => ({
   isLocale: (value: string) => value === "fr" || value === "ar",
 }));
-vi.mock("@/modules/shared/lib/env", () => ({
-  getServerEnvironment: () => ({ NEXT_PUBLIC_APP_URL: "https://app.example.test" }),
-}));
 vi.mock("next/headers", () => ({
   headers: async () => new Headers({ "x-forwarded-for": "203.0.113.7, 10.0.0.1" }),
 }));
@@ -43,7 +40,7 @@ describe("requestOtp", () => {
     expect(mocks.signInWithOtp).not.toHaveBeenCalled();
   });
 
-  it("interdit la création implicite et construit un callback localisé", async () => {
+  it("interdit la création implicite et envoie un OTP sans lien magique", async () => {
     mocks.rpc.mockResolvedValue({ data: [{ allowed: true, retry_after_seconds: 0 }], error: null });
     mocks.signInWithOtp.mockResolvedValue({ data: {}, error: null });
     await expect(requestOtp(" Personne@Example.ma ", "ar")).resolves.toEqual({ accepted: true });
@@ -55,7 +52,6 @@ describe("requestOtp", () => {
       email: "personne@example.ma",
       options: {
         shouldCreateUser: false,
-        emailRedirectTo: "https://app.example.test/ar/auth/callback?next=%2Far%2Ftableau-de-bord",
       },
     });
   });
@@ -68,7 +64,7 @@ describe("requestOtp", () => {
       email: "nouveau@example.ma",
       options: {
         shouldCreateUser: true,
-        emailRedirectTo: "https://app.example.test/fr/auth/callback?next=%2Ffr%2Forganisation%3Frole%3Dfournisseur",
+        data: { locale: "fr" },
       },
     });
   });

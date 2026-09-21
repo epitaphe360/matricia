@@ -63,12 +63,11 @@ export default async function PublicSubscriptionsPage({ params }: { params: Prom
 
   return (
     <main id="contenu-principal" className="public-page pb-16">
-      <section className="public-wrap grid gap-10 py-16 lg:grid-cols-[1.1fr_.9fr] lg:items-center">
+      <section className="public-hero-split">
         <div>
           <p className="journey-eyebrow">{messages.eyebrow}</p>
-          <h1>{messages.title}</h1>
-          <p className="public-lead mt-4">{messages.headline}</p>
-          <p className="public-lead mt-3">{messages.description}</p>
+          <h1>{messages.headline}</h1>
+          <p className="public-lead mt-4">{messages.description}</p>
           <ul className="journey-trust">
             {messages.pillars.map(([item]) => <li key={item}>{item}</li>)}
           </ul>
@@ -120,6 +119,35 @@ export default async function PublicSubscriptionsPage({ params }: { params: Prom
         <div className="flex flex-wrap gap-3">
           <Link className="journey-primary" href={`/${locale}/diagnostic`}>{messages.discover}</Link>
           <Link className="journey-secondary" href={`/${locale}/contact`}>{messages.contact}</Link>
+        </div>
+      </section>
+      <section className="public-wrap mt-12">
+        <h2 className="public-h2">{locale === "ar" ? "أسئلة متكررة" : "Questions fréquentes"}</h2>
+        <p className="public-muted mt-3">{locale === "ar" ? "ما تحتاجون معرفته عن الاشتراكات والتجربة والأرصدة." : "Tout ce que vous devez savoir sur nos abonnements, l’essai et la gestion des crédits."}</p>
+        <div className="journey-faq">
+          {(locale === "ar"
+            ? [
+                ["هل يمكن تجربة ماتريسيا قبل الاشتراك؟", "نعم. التجربة المتاحة في المساحة العميلة تبقى محدودة زمنياً ولا تُحوَّل إلى اشتراك دون تأكيدكم."],
+                ["كيف تعمل الأرصدة؟", "الأرصدة تُقيَّد في دفتر غير قابل للتعديل. الرصيد المعروض يُشتق من الحركات، ولا يُغيَّر يدوياً."],
+                ["ما هي Box؟", "Box حزمة منافع مرتبطة بالخطة. محتواها وشروطها تُؤكَّد عند التفعيل في المساحة الآمنة."],
+                ["هل يمكن تغيير الصيغة لاحقاً؟", "نعم، من مساحة الاشتراك بعد الاتصال. أي تغيير يُطبَّق وفق القواعد النشطة للخطة."],
+                ["ماذا يحدث عند نهاية فترة التجربة؟", "إذا لم تُفعَّل خطة Gold نشطة، تُقيَّد بعض الإجراءات الجديدة. التاريخ والمحتوى المحفوظان يبقيان."],
+                ["كيف أدير اشتراكي من حسابي؟", "بعد الاتصال، الصفحة Client / Abonnement يعرض الخطة والدورة والحركات المرتبطة."],
+              ]
+            : [
+                ["Puis-je essayer Matricia avant de m’abonner ?", "Oui. L’essai disponible dans l’espace Client est limité dans le temps et ne se convertit pas en abonnement sans votre confirmation."],
+                ["Comment fonctionnent les crédits ?", "Les crédits sont inscrits dans un ledger immuable. Le solde affiché est dérivé des mouvements ; il n’est jamais modifié manuellement."],
+                ["Qu’est-ce qu’une Box ?", "Une Box est un ensemble de bénéfices lié à un plan. Son contenu et ses conditions sont confirmés à l’activation, dans l’espace sécurisé."],
+                ["Puis-je changer de formule plus tard ?", "Oui, depuis l’espace abonnement après connexion. Tout changement s’applique selon les règles actives du plan."],
+                ["Que se passe-t-il à la fin de ma période d’essai ?", "Sans plan Gold actif, certaines nouvelles actions sont restreintes. L’historique et le contenu déjà enregistrés restent disponibles."],
+                ["Comment gérer mon abonnement depuis mon compte ?", "Après connexion, la page Client / Abonnement affiche le plan, le cycle et les mouvements associés."],
+              ]
+          ).map(([question, answer]) => (
+            <details key={question}>
+              <summary>{question}<span aria-hidden="true">+</span></summary>
+              <p>{answer}</p>
+            </details>
+          ))}
         </div>
       </section>
       <Link href={`/${locale}/client/abonnement`} className="public-wrap mt-4 inline-flex min-h-11 items-center font-semibold text-[#6d3cc7] underline underline-offset-4">{messages.manage}</Link>

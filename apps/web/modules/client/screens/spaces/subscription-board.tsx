@@ -74,7 +74,7 @@ export function SubscriptionBoard({
                       <td>{cycle.periodEnd}</td>
                       <td dir="ltr">{cycle.plan.code} · v{cycle.plan.version}</td>
                       <td dir="ltr">{formatMinor(cycle.amountMinor, cycle.currency, locale)}</td>
-                      <td><Link href={`/${locale}/client/documents${query}`} className="client-text-link">{c.seeInvoice}</Link></td>
+                      <td><Link href={`/${locale}/client/abonnement/cycles/${cycle.id}${query}`} className="client-text-link">{c.seeInvoice}</Link></td>
                     </tr>
                   ))}
                 </tbody>
