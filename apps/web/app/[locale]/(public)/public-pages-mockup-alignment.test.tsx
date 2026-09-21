@@ -13,6 +13,12 @@ vi.mock("./contact/contact-form", () => ({
 }));
 vi.mock("../connexion/otp-form", () => ({ OtpForm: () => <form>OTP</form> }));
 vi.mock("../connexion/demo-access", () => ({ DemoAccess: () => null }));
+vi.mock("next/image", () => ({
+  default: (props: { src: string; alt: string }) => (
+    // eslint-disable-next-line @next/next/no-img-element -- mock de next/image pour le rendu statique
+    <img src={props.src} alt={props.alt} />
+  ),
+}));
 
 import PublicHomePage from "./page";
 import ContactPage from "./contact/page";
@@ -23,27 +29,26 @@ import { PublicNavigation } from "@/modules/public/ui/site/public-navigation";
 import { NotFoundScreen } from "../not-found";
 
 describe("alignement maquettes pages publiques", () => {
-  it("accueil FR : trois intentions, aperçu illustratif, sept étapes, FAQ et bandeau", async () => {
+  it("accueil FR : trois intentions, aperçu, sept étapes, FAQ et bandeau", async () => {
     const html = renderToStaticMarkup(await PublicHomePage({ params: Promise.resolve({ locale: "fr" }) }));
     expect(html).toContain("Analyser mon entreprise");
     expect(html).toContain("Proposer mes services");
     expect(html).toContain("J’ai déjà un besoin précis");
-    expect(html).toContain("Organisation interne");
-    expect(html).toContain("Exemple illustratif");
-    expect(html).toContain("Comment Matricia vous accompagne");
-    expect(html).toContain("journey-outcomes-board");
+    expect(html).toContain("Organisation et croissance");
+    expect(html).toContain("Un parcours clair, de votre besoin à sa réalisation");
+    expect(html).toContain("Le cycle Matricia");
     expect(html).toContain("Questions fréquentes");
-    expect(html).toContain("is-accent");
+    expect(html).toContain("Votre prochaine bonne décision commence ici.");
+    expect(html).toContain("/home-v2/hero-collaboration.png");
   });
 
-  it("accueil AR : photo RTL, cycle numéroté, sans FAQ ni résultats FR", async () => {
+  it("accueil AR : photo, cycle et FAQ dans le sens RTL", async () => {
     const html = renderToStaticMarkup(await PublicHomePage({ params: Promise.resolve({ locale: "ar" }) }));
-    expect(html).toContain("/scenes/window-medina.png");
-    expect(html).toContain("دورة ماتريسيا في سبع خطوات");
-    expect(html).toContain("is-coral");
-    expect(html).toContain("خيارات مغربية لأثر حقيقي");
-    expect(html).not.toContain("journey-outcomes-board");
-    expect(html).not.toContain("journey-faq-board");
+    expect(html).toContain("/home-v2/hero-collaboration.png");
+    expect(html).toContain("دورة ماتريسيا");
+    expect(html).toContain('dir="rtl"');
+    expect(html).toContain("اكتشف ما يعيق تطور مؤسستك.");
+    expect(html).toContain("الأسئلة الشائعة");
   });
 
   it("navigation FR identique à la maquette 00", () => {
