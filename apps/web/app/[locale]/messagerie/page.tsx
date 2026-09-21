@@ -1,3 +1,129 @@
-import Link from"next/link";import{notFound,redirect}from"next/navigation";import{Badge}from"@/components/ui/badge";import{buttonVariants}from"@/components/ui/button";import{Card,CardContent,CardHeader,CardTitle}from"@/components/ui/card";import{createInternalMessagingRepository}from"@/lib/internal-messaging/server-repository";import{isLocale,type Locale}from"@/lib/i18n/locale";import{cn}from"@/lib/utils";import{OpenThreadForm,SendMessageForm}from"./messaging-forms";import{getMessagingMessages}from"./messages";
-function date(value:string,locale:Locale){return new Intl.DateTimeFormat(locale==="ar"?"ar-MA":"fr-MA",{dateStyle:"medium",timeStyle:"short"}).format(new Date(value))}
-export default async function MessagingPage({params,searchParams}:{params:Promise<{locale:string}>;searchParams:Promise<{fil?:string}>}){const{locale}=await params;if(!isLocale(locale))notFound();const{fil}=await searchParams;const result=await(await createInternalMessagingRepository()).load(fil);if(result.status==="error"&&result.reason==="UNAUTHENTICATED")redirect(`/${locale}/connexion`);const m=getMessagingMessages(locale),alternate=locale==="fr"?"ar":"fr";return <main className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6"><div className="mx-auto max-w-6xl space-y-6"><header className="space-y-4"><nav aria-label={m.navigation} className="flex flex-wrap justify-between gap-3"><Link className={cn(buttonVariants({variant:"outline"}),"min-h-11")} href={`/${locale}/tableau-de-bord`}>{m.back}</Link><Link className="px-3 py-2 text-primary underline" href={`/${alternate}/messagerie${fil?`?fil=${fil}`:""}`} hrefLang={alternate}>{m.language}</Link></nav><div><p className="text-xs font-semibold uppercase tracking-[.18em] text-primary">{m.eyebrow}</p><h1 className="mt-2 text-3xl font-semibold">{m.title}</h1><p className="mt-3 max-w-3xl text-muted-foreground">{m.description}</p></div><p className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm">{m.privacy}</p></header>{result.status==="error"?<Card><CardContent className="pt-6"><p role="alert" className="text-destructive">{m.loadError}</p><Link className="mt-3 inline-block underline" href={`/${locale}/messagerie`}>{m.retry}</Link></CardContent></Card>:<div className="grid min-w-0 gap-5 lg:grid-cols-[20rem_1fr]"><aside className="space-y-4"><OpenThreadForm options={result.value.options} locale={locale} m={m}/><section aria-labelledby="thread-list-title" className="space-y-2"><h2 id="thread-list-title" className="text-lg font-semibold">{m.threads}</h2>{result.value.inbox.length===0?<p role="status" className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">{m.empty}</p>:result.value.inbox.map(thread=><Link key={thread.id} href={`/${locale}/messagerie?fil=${thread.id}`} aria-current={fil===thread.id?"page":undefined} className="block min-h-11 rounded-xl border bg-card p-3 hover:border-primary aria-[current=page]:border-primary"><span className="block truncate font-medium">{thread.subject}</span><span className="mt-1 flex justify-between gap-2 text-xs text-muted-foreground"><span>{thread.counterparty_alias==="CLIENT"?m.client:m.provider}</span><span>{thread.message_count} {m.messages}</span></span></Link>)}</section></aside><section aria-labelledby="conversation-title" className="min-w-0"><Card><CardHeader><div className="flex flex-wrap items-center justify-between gap-2"><CardTitle id="conversation-title">{result.value.conversation?.thread.subject??m.conversation}</CardTitle>{result.value.conversation?<Badge variant="outline">{m.policy} · {result.value.conversation.thread.contact_policy_version}</Badge>:null}</div></CardHeader><CardContent>{result.value.conversation?<div className="space-y-5"><ol aria-label={m.conversation} className="max-h-[32rem] space-y-4 overflow-y-auto pe-1">{result.value.conversation.messages.map(message=><li key={message.id} className={cn("flex",message.mine?"justify-end":"justify-start")}><article className={cn("max-w-[88%] rounded-2xl px-4 py-3 text-sm sm:max-w-[75%]",message.mine?"bg-primary text-primary-foreground":"bg-muted")}><p className="mb-1 text-xs opacity-75">{message.sender_alias==="CLIENT"?m.client:m.provider} · {date(message.created_at,locale)}</p><p className="whitespace-pre-wrap break-words">{message.body}</p>{message.attachments.map(file=><p key={file.id} className="mt-2 border-t pt-2 text-xs">{file.name} · {file.scan_status==="CLEAN"?m.attachmentClean:file.scan_status==="PENDING"?m.attachmentPending:file.scan_status==="REJECTED"?m.attachmentRejected:m.attachmentError}</p>)}</article></li>)}</ol><SendMessageForm threadId={result.value.conversation.thread.id} senderOrganizationId={result.value.conversation.thread.participant_organization_id} locale={locale} m={m} locked={result.value.conversation.thread.status==="LOCKED"}/></div>:<p className="text-muted-foreground">{m.choose}</p>}</CardContent></Card></section></div>}</div></main>}
+import { notFound, redirect } from "next/navigation";
+import { Badge } from "@/modules/shared/ui/badge";
+import { createInternalMessagingRepository } from "@/modules/shared/lib/internal-messaging/server-repository";
+import { resolveWorkspaceShell } from "@/modules/shared/lib/connected-space/workspace-shell";
+import { isLocale, type Locale } from "@/modules/shared/lib/i18n/locale";
+import { resolveClientSpace } from "@/modules/client/data/spaces/context";
+import { spaceCopy } from "@/modules/client/data/spaces/copy";
+import { MessagesBoard, SpaceActions } from "@/modules/client/screens/spaces/boards";
+import { ClientAppShell } from "@/modules/client/ui/client-app-shell";
+import { providerCopy } from "@/modules/provider/data/spaces/copy";
+import { ProviderActions, ProviderAppShell } from "@/modules/provider/ui/provider-app-shell";
+import { OpenThreadForm, SendMessageForm } from "./messaging-forms";
+import { getMessagingMessages } from "./messages";
+
+function date(value: string, locale: Locale) {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-MA" : "fr-MA", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Casablanca" }).format(new Date(value));
+}
+
+function ConversationPanel({
+  locale,
+  m,
+  result,
+}: {
+  locale: Locale;
+  m: ReturnType<typeof getMessagingMessages>;
+  result: Awaited<ReturnType<Awaited<ReturnType<typeof createInternalMessagingRepository>>["load"]>>;
+}) {
+  if (result.status === "error") {
+    return <p role="alert">{m.loadError}</p>;
+  }
+  if (result.value.conversation) {
+    return (
+      <div className="space-y-4">
+        <header className="client-priority-head">
+          <h2>{result.value.conversation.thread.subject}</h2>
+          <Badge variant="outline">{m.policy}</Badge>
+        </header>
+        <ol className="client-feed">
+          {result.value.conversation.messages.map((message) => (
+            <li key={message.id}>
+              <span>
+                <strong>{message.sender_alias === "CLIENT" ? m.client : m.provider}</strong>
+                <small>{date(message.created_at, locale)}</small>
+                <p>{message.body}</p>
+              </span>
+            </li>
+          ))}
+        </ol>
+        <SendMessageForm
+          threadId={result.value.conversation.thread.id}
+          senderOrganizationId={result.value.conversation.thread.participant_organization_id}
+          locale={locale}
+          m={m}
+          locked={result.value.conversation.thread.status === "LOCKED"}
+        />
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-4">
+      <OpenThreadForm options={result.value.options} locale={locale} m={m} />
+      <p>{m.choose}</p>
+    </div>
+  );
+}
+
+export default async function MessagingPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ fil?: string; organizationId?: string }> }) {
+  const [{ locale }, query] = await Promise.all([params, searchParams]);
+  if (!isLocale(locale)) notFound();
+  const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
+  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  const [result, workspaceShell] = await Promise.all([
+    (await createInternalMessagingRepository()).load(query.fil),
+    resolveWorkspaceShell(space.selectedOrganizationId),
+  ]);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  const m = getMessagingMessages(locale);
+  const c = spaceCopy(locale);
+  const threads =
+    result.status === "success"
+      ? result.value.inbox.map((thread) => ({
+          id: thread.id,
+          title: thread.subject,
+          meta: thread.counterparty_alias === "CLIENT" ? m.client : m.provider,
+          href: `/${locale}/messagerie?fil=${thread.id}${space.selectedOrganizationId ? `&organizationId=${space.selectedOrganizationId}` : ""}`,
+        }))
+      : [];
+
+  const board = (
+    <MessagesBoard locale={locale} query={space.selectedQuery} threads={threads} organizationName={space.organizationName}>
+      <ConversationPanel locale={locale} m={m} result={result} />
+    </MessagesBoard>
+  );
+
+  if (workspaceShell === "provider") {
+    const p = providerCopy(locale);
+    return (
+      <ProviderAppShell
+        locale={locale}
+        selectedQuery={space.selectedQuery}
+        selectedOrganizationId={space.selectedOrganizationId}
+        userEmail={space.userEmail}
+        active="messages"
+        title={m.title}
+        lead={m.description}
+        kicker={p.kicker}
+        actions={<ProviderActions href={`/${locale}/messagerie${space.selectedQuery}`} label={m.open} />}
+      >
+        {board}
+      </ProviderAppShell>
+    );
+  }
+
+  return (
+    <ClientAppShell
+      locale={locale}
+      selectedQuery={space.selectedQuery}
+      selectedOrganizationId={space.selectedOrganizationId}
+      userEmail={space.userEmail}
+      active="messages"
+      title={c.msgTitle}
+      lead={c.msgLead}
+      kicker={c.kicker}
+      actions={<SpaceActions href={`/${locale}/messagerie${space.selectedQuery}`} label={c.newMessage} />}
+    >
+      {board}
+    </ClientAppShell>
+  );
+}

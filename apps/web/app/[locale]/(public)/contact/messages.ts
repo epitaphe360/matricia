@@ -1,9 +1,9 @@
-import type { Locale } from "@/lib/i18n/locale";
+import type { Locale } from "@/modules/shared/lib/i18n/locale";
 
 const fr = {
-  eyebrow: "Échanger avec Matricia",
-  title: "Parlons de votre besoin",
-  description: "Pour protéger vos informations et assurer un suivi traçable, les demandes détaillées sont prises en charge depuis votre espace sécurisé.",
+  eyebrow: "Contact",
+  title: "Échangeons ensemble",
+  description: "Une question, un besoin d’accompagnement ou une opportunité de collaboration ? Notre équipe vous répond dans les meilleurs délais.",
   serviceTitle: "Commencer par un diagnostic",
   serviceText: "Répondez à quelques questions pour faire émerger vos priorités et identifier le bon point de départ.",
   serviceAction: "Analyser mon entreprise",

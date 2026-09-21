@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { isLocale } from "@/lib/i18n/locale";
-import { localizedRouteMetadata } from "@/lib/seo/metadata";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+import { localizedRouteMetadata } from "@/modules/shared/lib/seo/metadata";
 import { getPublicMessages } from "../messages";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {

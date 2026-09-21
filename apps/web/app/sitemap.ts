@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getPublicSiteUrl } from "@/lib/seo/metadata";
+import { getPublicSiteUrl } from "@/modules/shared/lib/seo/metadata";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const site = getPublicSiteUrl();
@@ -7,11 +7,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "", changeFrequency: "weekly" as const, priority: 1 },
     { path: "/diagnostic", changeFrequency: "monthly" as const, priority: 0.9 },
     { path: "/besoin", changeFrequency: "monthly" as const, priority: 0.8 },
+    { path: "/entreprises", changeFrequency: "monthly" as const, priority: 0.8 },
     { path: "/fournisseur", changeFrequency: "monthly" as const, priority: 0.8 },
     { path: "/abonnements", changeFrequency: "monthly" as const, priority: 0.8 },
     { path: "/franchise", changeFrequency: "monthly" as const, priority: 0.8 },
     { path: "/a-propos", changeFrequency: "monthly" as const, priority: 0.7 },
     { path: "/contact", changeFrequency: "monthly" as const, priority: 0.7 },
+    { path: "/mentions-legales", changeFrequency: "yearly" as const, priority: 0.3 },
+    { path: "/confidentialite", changeFrequency: "yearly" as const, priority: 0.3 },
+    { path: "/conditions", changeFrequency: "yearly" as const, priority: 0.3 },
   ];
   return routes.flatMap((route) => {
     const languages = { "fr-MA": new URL(`/fr${route.path}`, site).href, "ar-MA": new URL(`/ar${route.path}`, site).href };

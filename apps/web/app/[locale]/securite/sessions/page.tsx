@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getDictionary } from "@/lib/i18n/dictionaries";
-import { isLocale, type Locale } from "@/lib/i18n/locale";
-import { cn } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { Badge } from "@/modules/shared/ui/badge";
+import { buttonVariants } from "@/modules/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/ui/card";
+import { getDictionary } from "@/modules/shared/lib/i18n/dictionaries";
+import { isLocale, type Locale } from "@/modules/shared/lib/i18n/locale";
+import { cn } from "@/modules/shared/lib/utils";
 import { listMySessions, type SafeSession } from "./actions";
 import { RevokeSessionForm } from "./revoke-session-form";
+import { ConnectedAppShell } from "@/modules/shared/ui/connected-app-shell";
+import { spaceCopy } from "@/modules/client/data/spaces/copy";
 
 function dateLabel(value: string | null, locale: Locale, unavailable: string) {
   if (!value) return unavailable;
@@ -26,29 +28,36 @@ function deviceLabel(session: SafeSession, labels: { unknownDevice: string; mobi
   return /Mobile|Android|iPhone|iPad/i.test(session.userAgent) ? labels.mobileDevice : labels.desktopDevice;
 }
 
-export default async function SessionsPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function SessionsPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string }> }) {
   const { locale } = await params;
+  const query = await searchParams;
   if (!isLocale(locale)) notFound();
   const result = await listMySessions();
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
   const messages = getDictionary(locale).sessions;
+  const c = spaceCopy(locale);
   const alternate = locale === "fr" ? "ar" : "fr";
 
   return (
-    <main className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6 sm:py-8">
-      <div className="mx-auto max-w-4xl space-y-6">
-        <header className="space-y-4">
-          <nav aria-label={messages.navigationLabel} className="flex flex-wrap items-center justify-between gap-3">
-            <Link href={`/${locale}/tableau-de-bord`} className={cn(buttonVariants({ variant: "outline" }), "min-h-11")}>{messages.backToDashboard}</Link>
-            <Link href={`/${alternate}/securite/sessions`} hrefLang={alternate} className="rounded-md px-3 py-2 text-sm font-medium text-primary">{messages.language}</Link>
-          </nav>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{messages.eyebrow}</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">{messages.title}</h1>
-            <p className="mt-3 max-w-2xl text-muted-foreground">{messages.description}</p>
-          </div>
-        </header>
-
+    <ConnectedAppShell
+      locale={locale}
+      organizationId={query.organizationId}
+      title={c.sessions}
+      lead={messages.description}
+      clientActive="company"
+      providerActive="company"
+      franchiseActive="governance"
+    >
+      <main className="client-page">
+        <nav className="client-tabs" aria-label={c.orgTitle}>
+          <Link href={`/${locale}/organisation${query.organizationId ? `?organizationId=${query.organizationId}` : ""}`}>{c.orgTitle}</Link>
+          <Link href={`/${locale}/securite/compte${query.organizationId ? `?organizationId=${query.organizationId}` : ""}`}>{c.security}</Link>
+          <a href="#sessions" aria-current="page">{c.sessions}</a>
+          <Link href={`/${locale}/organisation/roles${query.organizationId ? `?organizationId=${query.organizationId}` : ""}`}>{c.people}</Link>
+        </nav>
+        <p>
+          <Link href={`/${alternate}/securite/sessions${query.organizationId ? `?organizationId=${query.organizationId}` : ""}`} hrefLang={alternate} className="client-text-link">{messages.language}</Link>
+        </p>
         {result.status === "error" ? (
           <Alert variant="destructive">
             <AlertTitle>{messages.loadErrorTitle}</AlertTitle>
@@ -58,15 +67,13 @@ export default async function SessionsPage({ params }: { params: Promise<{ local
             </AlertDescription>
           </Alert>
         ) : result.sessions.length === 0 ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>{messages.emptyTitle}</CardTitle>
-              <CardDescription>{messages.emptyDescription}</CardDescription>
-            </CardHeader>
-          </Card>
+          <article className="client-card">
+            <h2>{messages.emptyTitle}</h2>
+            <p>{messages.emptyDescription}</p>
+          </article>
         ) : (
-          <section aria-labelledby="session-list-title" className="space-y-4">
-            <h2 id="session-list-title" className="text-xl font-semibold">{messages.listTitle}</h2>
+          <section id="sessions" aria-labelledby="session-list-title" className="client-card">
+            <h2 id="session-list-title">{messages.listTitle}</h2>
             <ul className="grid gap-4">
               {result.sessions.map((session) => (
                 <li key={session.id}>
@@ -96,7 +103,7 @@ export default async function SessionsPage({ params }: { params: Promise<{ local
             </ul>
           </section>
         )}
-      </div>
-    </main>
+      </main>
+    </ConnectedAppShell>
   );
 }

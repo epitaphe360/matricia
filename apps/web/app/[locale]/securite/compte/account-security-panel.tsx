@@ -2,13 +2,13 @@
 
 import Image from "next/image";
 import { useActionState, useId } from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import type { Locale } from "@/lib/i18n/locale";
+import { Alert, AlertDescription } from "@/modules/shared/ui/alert";
+import { Badge } from "@/modules/shared/ui/badge";
+import { Button } from "@/modules/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/ui/card";
+import { Input } from "@/modules/shared/ui/input";
+import { Label } from "@/modules/shared/ui/label";
+import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import {
   beginTotpEnrollment,
   requestPasswordNonce,

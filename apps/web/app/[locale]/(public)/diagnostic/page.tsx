@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { isLocale } from "@/lib/i18n/locale";
-import { localizedRouteMetadata } from "@/lib/seo/metadata";
-import { PrediagnosticFlow } from "@/components/public-journey/prediagnostic-flow";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+import { localizedRouteMetadata } from "@/modules/shared/lib/seo/metadata";
+import { PrediagnosticFlow } from "@/modules/public/ui/journey/prediagnostic-flow";
+import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 import { savePublicDiagnosticIntake } from "./actions";
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params; if (!isLocale(locale)) return {};

@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { DevelopmentMockSignatureProvider } from "./mock-provider.js";
-import { verifyHmacSha256Webhook } from "./provider.js";
+import { assessSignatureProviderReadiness, verifyHmacSha256Webhook } from "./provider.js";
 
 const document = { contractVersionId: "contract-v1", sha256: "a".repeat(64), fileName: "contract.pdf", storagePath: "contracts/v1.pdf" };
 const signers = [
@@ -41,5 +41,18 @@ describe("SignatureProvider V4.1", () => {
     const signatureHex = createHmac("sha256", secret).update(String(timestampSeconds)).update(".").update(rawBody).digest("hex");
     expect(verifyHmacSha256Webhook({ rawBody, signatureHex, timestampSeconds, receivedAt, toleranceSeconds: 300, secret })).toBe(true);
     expect(verifyHmacSha256Webhook({ rawBody, signatureHex, timestampSeconds: timestampSeconds - 301, receivedAt, toleranceSeconds: 300, secret })).toBe(false);
+  });
+
+  it("fails closed when no real signature provider is registered for production", () => {
+    const mock = new DevelopmentMockSignatureProvider();
+    expect(assessSignatureProviderReadiness(undefined, { NODE_ENV: "production", SIGNATURE_PROVIDER_MODE: "EXTERNAL" })).toEqual({ status: "not_ready", code: "SIGNATURE_PROVIDER_NOT_REGISTERED" });
+    expect(assessSignatureProviderReadiness(mock, { NODE_ENV: "production", SIGNATURE_PROVIDER_MODE: "DEVELOPMENT_MOCK" })).toEqual({ status: "not_ready", code: "SIGNATURE_DEVELOPMENT_PROVIDER_FORBIDDEN" });
+    expect(assessSignatureProviderReadiness(mock, { NODE_ENV: "development", SIGNATURE_PROVIDER_MODE: "DEVELOPMENT_MOCK" })).toMatchObject({ status: "ready", providerCode: "MATRICIA_DEV_MOCK", supportedLevels: ["SIMPLE"] });
+  });
+
+  it("requires an exact configured code for an external adapter", () => {
+    const external = { ...new DevelopmentMockSignatureProvider(), code: "MOROCCO_SIGNATURE_PROVIDER", developmentOnly: false } as unknown as import("./provider.js").SignatureProvider;
+    expect(assessSignatureProviderReadiness(external, { NODE_ENV: "production", SIGNATURE_PROVIDER_MODE: "EXTERNAL", SIGNATURE_PROVIDER_CODE: "OTHER" })).toEqual({ status: "not_ready", code: "SIGNATURE_PROVIDER_CODE_MISMATCH" });
+    expect(assessSignatureProviderReadiness(external, { NODE_ENV: "production", SIGNATURE_PROVIDER_MODE: "EXTERNAL", SIGNATURE_PROVIDER_CODE: "MOROCCO_SIGNATURE_PROVIDER" })).toMatchObject({ status: "ready", providerCode: "MOROCCO_SIGNATURE_PROVIDER" });
   });
 });

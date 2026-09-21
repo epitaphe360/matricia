@@ -1,2 +1,35 @@
-import Link from"next/link";import{notFound,redirect}from"next/navigation";import{Alert,AlertDescription,AlertTitle}from"@/components/ui/alert";import{buttonVariants}from"@/components/ui/button";import{isLocale}from"@/lib/i18n/locale";import{loadQuestionnaireAbandonmentDashboard}from"@/lib/questionnaire-abandonment-analytics/repository";import{cn}from"@/lib/utils";import{AnalyticsDashboard}from"./analytics-dashboard";import{getMessages}from"./messages";
-export default async function Page({params}:{params:Promise<{locale:string}>}){const{locale}=await params;if(!isLocale(locale))notFound();const m=getMessages(locale),result=await loadQuestionnaireAbandonmentDashboard();if(result.status==="error"&&result.reason==="UNAUTHENTICATED")redirect(`/${locale}/connexion`);const alternate=locale==="fr"?"ar":"fr";return <main dir={locale==="ar"?"rtl":"ltr"} className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6 sm:py-8"><div className="mx-auto max-w-7xl space-y-7"><nav aria-label={m.navigation} className="flex flex-wrap items-center justify-between gap-3"><Link href={`/${locale}/administration/command-center`} className={cn(buttonVariants({variant:"outline"}),"min-h-11")}>{m.back}</Link><Link href={`/${alternate}/administration/questionnaires/analytique`} hrefLang={alternate} className="min-h-11 rounded-md px-3 py-2 font-medium text-primary hover:underline">{m.language}</Link></nav><header><p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{m.eyebrow}</p><h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{m.title}</h1><p className="mt-3 max-w-4xl leading-7 text-muted-foreground">{m.description}</p></header>{result.status==="error"?<Alert variant="destructive"><AlertTitle>{result.reason==="FORBIDDEN"?m.forbidden:m.unavailable}</AlertTitle><AlertDescription>{result.reason==="FORBIDDEN"?m.forbiddenText:m.unavailableText}<div><Link href={`/${locale}/administration/questionnaires/analytique`} className={cn(buttonVariants({variant:"outline"}),"mt-4 min-h-11")}>{m.retry}</Link></div></AlertDescription></Alert>:<AnalyticsDashboard d={result.dashboard} locale={locale} m={m}/>}</div></main>}
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { buttonVariants } from "@/modules/shared/ui/button";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+import { loadQuestionnaireAbandonmentDashboard } from "@/modules/shared/lib/questionnaire-abandonment-analytics/repository";
+import { cn } from "@/modules/shared/lib/utils";
+import { AnalyticsDashboard } from "@/modules/admin/screens/questionnaires/analytique/analytics-dashboard";
+import { getMessages } from "@/modules/admin/screens/questionnaires/analytique/messages";
+import { AdminModulePage } from "@/modules/admin/ui/admin-module-page";
+
+export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+  const m = getMessages(locale);
+  const result = await loadQuestionnaireAbandonmentDashboard();
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  return (
+    <AdminModulePage locale={locale} active="catalog" path="questionnaires/analytique" title={m.title} lead={m.description}>
+      {result.status === "error" ? (
+        <Alert variant="destructive">
+          <AlertTitle>{result.reason === "FORBIDDEN" ? m.forbidden : m.unavailable}</AlertTitle>
+          <AlertDescription>
+            {result.reason === "FORBIDDEN" ? m.forbiddenText : m.unavailableText}
+            <div>
+              <Link href={`/${locale}/administration/questionnaires/analytique`} className={cn(buttonVariants({ variant: "outline" }), "mt-4 min-h-11")}>{m.retry}</Link>
+            </div>
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <AnalyticsDashboard d={result.dashboard} locale={locale} m={m} />
+      )}
+    </AdminModulePage>
+  );
+}

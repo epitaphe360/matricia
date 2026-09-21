@@ -1,4 +1,4 @@
-import type { Locale } from "@/lib/i18n/locale";
+import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import type { OrganizationRole, SafeMembership, SafeRoleRequest } from "./actions";
 
 const fr = {

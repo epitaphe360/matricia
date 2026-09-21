@@ -1,11 +1,36 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Alert,AlertDescription,AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
-import { isLocale } from "@/lib/i18n/locale";
-import { loadProviderDashboard } from "@/lib/provider-qualification/repository";
-import { cn } from "@/lib/utils";
-import { getProviderMessages } from "./messages";
-import { QualificationForms } from "./qualification-forms";
-export default async function ProviderQualificationPage({params}:{params:Promise<{locale:string}>}){const{locale}=await params;if(!isLocale(locale))notFound();const messages=getProviderMessages(locale);const result=await loadProviderDashboard();if(result.status==="error"&&result.reason==="UNAUTHENTICATED")redirect(`/${locale}/connexion`);const alternate=locale==="fr"?"ar":"fr";return <main className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6 sm:py-8"><div className="mx-auto max-w-7xl space-y-7"><nav aria-label="Navigation" className="flex flex-wrap items-center justify-between gap-3"><Link href={`/${locale}/tableau-de-bord`} className={cn(buttonVariants({variant:"outline"}),"min-h-11")}>{messages.back}</Link><Link href={`/${alternate}/sous-traitant/qualification`} hrefLang={alternate} className="min-h-11 rounded-md px-3 py-2 font-medium text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">{messages.switchLanguage}</Link></nav><header><p className="text-xs font-semibold uppercase tracking-[.18em] text-primary">{messages.eyebrow}</p><div className="mt-2 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{messages.title}</h1>{result.status==="success"?<Badge variant="outline">{result.dashboard.profile?.overallStatus??"PROFILE_INCOMPLETE"}</Badge>:null}</div><p className="mt-3 max-w-3xl leading-7 text-muted-foreground">{messages.description}</p></header>{result.status==="error"?<Alert variant={result.reason==="NO_PROVIDER_ORGANIZATION"?"default":"destructive"}><AlertTitle>{result.reason==="NO_PROVIDER_ORGANIZATION"?messages.noProvider:messages.loadError}</AlertTitle><AlertDescription>{result.reason}</AlertDescription></Alert>:<><section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-6"><p className="text-sm text-muted-foreground">{result.dashboard.organizationName}</p><div className="mt-2 flex flex-wrap gap-2"><Badge>{result.dashboard.profile?.companyStatus??"PROFILE_INCOMPLETE"}</Badge><Badge variant="secondary">{result.dashboard.profile?.partnerContractStatus??"NOT_SIGNED"}</Badge></div></section><QualificationForms dashboard={result.dashboard} locale={locale} messages={messages} keys={{profile:crypto.randomUUID(),service:crypto.randomUUID(),capacity:crypto.randomUUID(),document:crypto.randomUUID()}}/></>}</div></main>}
+import { Alert, AlertTitle } from "@/modules/shared/ui/alert";
+import { resolveProviderSpace } from "@/modules/provider/data/spaces/context";
+import { providerCopy } from "@/modules/provider/data/spaces/copy";
+import { loadProviderDashboard } from "@/modules/provider/data/qualification/repository";
+import { QualificationBoard } from "@/modules/provider/screens/spaces/boards";
+import { getProviderMessages } from "@/modules/provider/screens/qualification/messages";
+import { QualificationForms } from "@/modules/provider/screens/qualification/qualification-forms";
+import { ProviderActions, ProviderAppShell } from "@/modules/provider/ui/provider-app-shell";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+
+export default async function ProviderQualificationPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string }> }) {
+  const [{ locale }, query] = await Promise.all([params, searchParams]);
+  if (!isLocale(locale)) notFound();
+  const space = await resolveProviderSpace({ locale, organizationId: query.organizationId });
+  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  const messages = getProviderMessages(locale);
+  const result = await loadProviderDashboard();
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  const c = providerCopy(locale);
+  return (
+    <ProviderAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="qualify" title={c.qualTitle} lead={c.qualLead} kicker={c.kicker} actions={<ProviderActions href="#qualification" label={c.completeFolder} />}>
+      <QualificationBoard locale={locale} query={space.selectedQuery} dashboard={result.status === "success" ? result.dashboard : null} />
+      <details id="qualification" className="client-ops">
+        <summary>{c.opsQual}</summary>
+        {result.status === "error" ? (
+          <Alert data-error-reason={result.reason} variant={result.reason === "NO_PROVIDER_ORGANIZATION" ? "default" : "destructive"}>
+            <AlertTitle>{result.reason === "NO_PROVIDER_ORGANIZATION" ? messages.noProvider : messages.loadError}</AlertTitle>
+          </Alert>
+        ) : (
+          <QualificationForms dashboard={result.dashboard} locale={locale} messages={messages} keys={{ profile: crypto.randomUUID(), service: crypto.randomUUID(), capacity: crypto.randomUUID(), document: crypto.randomUUID() }} />
+        )}
+      </details>
+    </ProviderAppShell>
+  );
+}

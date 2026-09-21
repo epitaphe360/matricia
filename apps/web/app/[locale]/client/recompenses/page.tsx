@@ -1,27 +1,65 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { buttonVariants } from "@/components/ui/button";
-import { isLocale } from "@/lib/i18n/locale";
-import { loadRewardsDashboard } from "@/lib/rewards-referrals-roi/repository";
-import { cn } from "@/lib/utils";
-import { getValueMessages } from "./messages";
-import { ValuePanel } from "./value-panel";
+import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { resolveClientSpace } from "@/modules/client/data/spaces/context";
+import { spaceCopy } from "@/modules/client/data/spaces/copy";
+import { ClientAppShell } from "@/modules/client/ui/client-app-shell";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+import { loadRewardsDashboard } from "@/modules/shared/lib/rewards-referrals-roi/repository";
+import { getValueMessages } from "@/modules/client/screens/recompenses/messages";
+import { ValuePanel } from "@/modules/client/screens/recompenses/value-panel";
+import { RewardsBoard } from "@/modules/client/screens/spaces/rewards-board";
 
-export default async function RewardsPage({ params, searchParams }: {
+export default async function RewardsPage({
+  params,
+  searchParams,
+}: {
   params: Promise<{ locale: string }>;
   searchParams: Promise<{ organizationId?: string }>;
 }) {
   const { locale } = await params;
   const { organizationId } = await searchParams;
   if (!isLocale(locale)) notFound();
-  const result = await loadRewardsDashboard(organizationId);
+
+  const space = await resolveClientSpace({ locale, organizationId });
+  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+
+  const result = await loadRewardsDashboard(space.selectedOrganizationId ?? organizationId);
   const messages = getValueMessages(locale);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  const c = spaceCopy(locale);
   const alternate = locale === "fr" ? "ar" : "fr";
-  const organizationQuery = organizationId ? `?organizationId=${encodeURIComponent(organizationId)}` : "";
-  return <main dir={locale === "ar" ? "rtl" : "ltr"} className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6"><div className="mx-auto max-w-7xl space-y-7">
-    <nav aria-label={messages.navigation} className="flex justify-between gap-3"><Link href={`/${locale}/tableau-de-bord${organizationQuery}`} className={cn(buttonVariants({ variant: "outline" }), "min-h-11")}>{messages.back}</Link><Link href={`/${alternate}/client/recompenses${organizationQuery}`} hrefLang={alternate} className="min-h-11 px-3 py-2 font-medium text-primary">{messages.language}</Link></nav>
-    <header><h1 className="text-3xl font-semibold sm:text-4xl">{messages.title}</h1><p className="mt-3 max-w-4xl leading-7 text-muted-foreground">{messages.intro}</p></header>
-    {result.status === "error" ? <Alert variant={result.reason === "NO_ORGANIZATION" || result.reason === "ORGANIZATION_SELECTION_REQUIRED" ? "default" : "destructive"}><AlertTitle>{result.reason === "NO_ORGANIZATION" || result.reason === "ORGANIZATION_SELECTION_REQUIRED" ? messages.noOrg : messages.loadError}</AlertTitle><AlertDescription>{result.reason}</AlertDescription></Alert> : <ValuePanel dashboard={result.dashboard} locale={locale} m={messages}/>}</div></main>;
+
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+
+  return (
+    <ClientAppShell
+      locale={locale}
+      selectedQuery={space.selectedQuery}
+      selectedOrganizationId={space.selectedOrganizationId}
+      userEmail={space.userEmail}
+      active="rewards"
+      title={messages.title}
+      lead={messages.intro}
+      kicker={space.organizationName ?? c.kicker}
+      actions={
+        <Link href={`/${alternate}/client/recompenses${space.selectedQuery}`} hrefLang={alternate} lang={alternate} className="client-text-link">
+          {messages.language}
+        </Link>
+      }
+    >
+      {result.status === "error" ? (
+        <Alert variant={result.reason === "NO_ORGANIZATION" || result.reason === "ORGANIZATION_SELECTION_REQUIRED" ? "default" : "destructive"}>
+          <AlertTitle>{result.reason === "NO_ORGANIZATION" || result.reason === "ORGANIZATION_SELECTION_REQUIRED" ? messages.noOrg : messages.loadError}</AlertTitle>
+          <AlertDescription>{result.reason}</AlertDescription>
+        </Alert>
+      ) : (
+        <RewardsBoard locale={locale} query={space.selectedQuery} dashboard={result.dashboard}>
+          <details className="client-ops">
+            <summary>{messages.rules}</summary>
+            <ValuePanel dashboard={result.dashboard} locale={locale} m={messages} />
+          </details>
+        </RewardsBoard>
+      )}
+    </ClientAppShell>
+  );
 }

@@ -1,10 +1,84 @@
 import Link from "next/link";
+import { Download, UserPlus } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { buttonVariants } from "@/components/ui/button";
-import { loadAdminClients } from "@/lib/admin-clients/repository";
-import { isLocale } from "@/lib/i18n/locale";
-import { cn } from "@/lib/utils";
-import { ClientsPanel } from "./clients-panel";
-import { getAdminClientMessages } from "./messages";
-export default async function AdminClientsPage({params}:{params:Promise<{locale:string}>}){const{locale}=await params;if(!isLocale(locale))notFound();const m=getAdminClientMessages(locale),result=await loadAdminClients(locale);if(result.status==="error"&&result.reason==="UNAUTHENTICATED")redirect(`/${locale}/connexion`);const alternate=locale==="fr"?"ar":"fr",keys:Record<string,string>={};if(result.status==="success")for(const item of result.dashboard.cases){keys[`case:${item.id}`]=crypto.randomUUID();for(const document of item.documents)keys[`document:${document.id}`]=crypto.randomUUID();for(const question of item.questions)keys[`response:${question.id}`]=crypto.randomUUID()}return <main dir={locale==="ar"?"rtl":"ltr"} className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6 sm:py-8"><div className="mx-auto max-w-6xl space-y-7"><nav aria-label={m.navigation} className="flex flex-wrap justify-between gap-3"><Link href={`/${locale}/administration/command-center`} className={cn(buttonVariants({variant:"outline"}),"min-h-11")}>{m.back}</Link><Link href={`/${alternate}/administration/clients`} hrefLang={alternate} className="min-h-11 rounded-md px-3 py-2 font-medium text-primary hover:underline">{m.language}</Link></nav><header><p className="text-xs font-semibold uppercase tracking-[.18em] text-primary">{m.eyebrow}</p><h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{m.title}</h1><p className="mt-3 max-w-4xl leading-7 text-muted-foreground">{m.description}</p></header>{result.status==="error"?<Alert variant={result.reason==="MFA_REQUIRED"?"default":"destructive"}><AlertTitle>{result.reason==="MFA_REQUIRED"?m.mfaTitle:result.reason==="FORBIDDEN"?m.forbiddenPage:m.loadError}</AlertTitle><AlertDescription>{result.reason==="MFA_REQUIRED"?<><p>{m.mfaBody}</p><Link href={`/${locale}/securite/compte`} className={cn(buttonVariants(),"mt-4 min-h-11")}>{m.configureMfa}</Link></>:<Link href={`/${locale}/administration/clients`} className={cn(buttonVariants({variant:"outline"}),"mt-4 min-h-11")}>{m.retry}</Link>}</AlertDescription></Alert>:<ClientsPanel dashboard={result.dashboard} locale={locale} m={m} keys={keys}/>}</div></main>}
+import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { resolveAdminSpace } from "@/modules/admin/data/spaces/context";
+import { actorCopy } from "@/modules/admin/data/spaces/actors-copy";
+import { loadAdminClientDirectory } from "@/modules/admin/data/spaces/actors-repository";
+import { ClientsBoard } from "@/modules/admin/screens/spaces/actor-boards";
+import { ClientsPanel } from "@/modules/admin/screens/clients/clients-panel";
+import { getAdminClientMessages } from "@/modules/admin/screens/clients/messages";
+import { AdminAppShell, AdminCrumb } from "@/modules/admin/ui/admin-app-shell";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+
+export default async function AdminClientsPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ organizationId?: string; q?: string }>;
+}) {
+  const [{ locale }, query] = await Promise.all([params, searchParams]);
+  if (!isLocale(locale)) notFound();
+  const space = await resolveAdminSpace({ locale, organizationId: query.organizationId });
+  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  const directory = await loadAdminClientDirectory(locale);
+  if (directory.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  const a = actorCopy(locale);
+  const m = getAdminClientMessages(locale);
+  const alternate = locale === "ar" ? "fr" : "ar";
+
+  return (
+    <AdminAppShell
+      locale={locale}
+      selectedQuery={space.selectedQuery}
+      selectedOrganizationId={space.selectedOrganizationId}
+      userEmail={space.userEmail}
+      active="actors"
+      actorCurrent="clients"
+      searchAction={`/${locale}/administration/clients`}
+      searchPlaceholder={a.searchUsers}
+      alternateHref={`/${alternate}/administration/clients${space.selectedQuery}`}
+      crumb={<AdminCrumb locale={locale} query={space.selectedQuery} items={[{ href: `/${locale}/administration/entreprises${space.selectedQuery}`, label: locale === "ar" ? "الفاعلون" : "Acteurs" }, { label: a.clientsTitle }]} />}
+      title={a.clientsTitle}
+      lead={a.clientsLead}
+      actions={
+        <>
+          <Link href={`/${locale}/administration/utilisateurs/inviter${space.selectedQuery}${space.selectedQuery ? "&" : "?"}role=CLIENT_OWNER`} className="admin-soft-cta"><UserPlus className="size-4" aria-hidden />{a.inviteClient}</Link>
+          <Link href={`/${locale}/administration/clients/export${space.selectedQuery}`} className="admin-dir-action" data-tone="white"><Download className="size-4" aria-hidden />{locale === "ar" ? "تصدير" : "Exporter"}</Link>
+        </>
+      }
+    >
+      {directory.reason === "MFA_REQUIRED" ? (
+        <main className="client-page">
+          <Alert>
+            <AlertTitle>{m.mfaTitle}</AlertTitle>
+            <AlertDescription>
+              <p>{m.mfaBody}</p>
+              <Link href={`/${locale}/securite/compte`} className="admin-soft-cta">{m.configureMfa}</Link>
+            </AlertDescription>
+          </Alert>
+          <ClientsBoard locale={locale} query={space.selectedQuery} organizations={[]} cases={[]} diagnostics={[]} search={query.q} />
+        </main>
+      ) : directory.reason === "FORBIDDEN" ? (
+        <main className="client-page">
+          <Alert variant="destructive">
+            <AlertTitle>{a.forbiddenSection}</AlertTitle>
+            <AlertDescription>{a.forbiddenSectionLead}</AlertDescription>
+          </Alert>
+          <ClientsBoard locale={locale} query={space.selectedQuery} organizations={[]} cases={[]} diagnostics={[]} search={query.q} />
+        </main>
+      ) : (
+        <>
+          <ClientsBoard locale={locale} query={space.selectedQuery} organizations={directory.organizations} cases={directory.cases} diagnostics={directory.diagnostics} search={query.q} />
+          {directory.dashboard ? (
+            <details className="client-ops">
+              <summary>{m.title}</summary>
+              <ClientsPanel dashboard={directory.dashboard} locale={locale} m={m} keys={directory.keys} />
+            </details>
+          ) : null}
+        </>
+      )}
+    </AdminAppShell>
+  );
+}

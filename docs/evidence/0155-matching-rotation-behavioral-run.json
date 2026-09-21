@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-15T18:32:46.344Z",
+  "environment": "development",
+  "outcome": "PASS",
+  "files": [
+    "0155_matching_rotation_behavioral.test.sql"
+  ],
+  "assertions": 26,
+  "concurrencyScenarios": 4
+}

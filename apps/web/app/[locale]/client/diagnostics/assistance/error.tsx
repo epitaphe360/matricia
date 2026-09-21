@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { getAssistanceMessages } from "./messages";
+import { getAssistanceMessages } from "@/modules/client/screens/diagnostics/assistance/messages";
 
 export default function AssistanceError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const locale = usePathname().split("/")[1] === "ar" ? "ar" : "fr";

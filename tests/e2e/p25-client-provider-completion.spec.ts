@@ -4,7 +4,7 @@ import { expect, test, type Browser, type Page } from "@playwright/test";
 
 type Locale = "fr" | "ar";
 const clientSurfaces = [
-  { route: "client/diagnostics", heading: { fr: "Diagnostics et opportunités", ar: "التشخيصات والفرص" } },
+  { route: "client/diagnostics", heading: { fr: "Comprendre vos priorités", ar: "فهم أولوياتكم" } },
   { route: "client/demandes", heading: { fr: "Demandes et devis", ar: "الطلبات والعروض" } },
   { route: "client/missions", heading: { fr: "Contrats et missions", ar: "العقود والمهام" } },
   { route: "messagerie", heading: { fr: "Messagerie sécurisée", ar: "المراسلة الآمنة" } },

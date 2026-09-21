@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { directionFor, isLocale } from "@/lib/i18n/locale";
-import { seoCopy } from "@/lib/seo/metadata";
+import { directionFor, isLocale } from "@/modules/shared/lib/i18n/locale";
+import { seoCopy } from "@/modules/shared/lib/seo/metadata";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;

@@ -1,14 +1,14 @@
 import { ArrowRight, BookOpen, Search } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { isLocale } from "@/lib/i18n/locale";
-import { encodeCatalogCursor, parseCatalogQuery } from "@/lib/catalogue/model";
-import { listPublishedLibraries, searchPublishedCatalog } from "@/lib/catalogue/repository";
-import { cn } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { Badge } from "@/modules/shared/ui/badge";
+import { buttonVariants } from "@/modules/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/ui/card";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+import { encodeCatalogCursor, parseCatalogQuery } from "@/modules/shared/lib/catalogue/model";
+import { listPublishedLibraries, searchPublishedCatalog } from "@/modules/shared/lib/catalogue/repository";
+import { cn } from "@/modules/shared/lib/utils";
 import { getCatalogMessages } from "./messages";
 
 function queryHref(locale: string, librarySlug: string, releaseId: string, search: string, cursor?: string) {

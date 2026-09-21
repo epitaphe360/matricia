@@ -100,6 +100,26 @@ async function neutralizeRunFixtures(database) {
     await transaction`update public.catalog_releases set status='CANCELLED',lease_token=null,leased_until=null,next_attempt_at=null,row_version=row_version+1
       where id in (${id.release}::uuid,${id.reclaimRelease}::uuid)
         and status in ('DRAFT','IN_REVIEW','APPROVED','SCHEDULED','PUBLISHING','FAILED')`;
+    await transaction`update public.catalog_releases set status='ARCHIVED',lease_token=null,leased_until=null,next_attempt_at=null,published_at=null,retired_at=null,row_version=row_version+1
+      where library_id=${id.library}::uuid
+        and status in ('DRAFT','IN_REVIEW','APPROVED','SCHEDULED','PUBLISHING','FAILED','DEAD_LETTER','PUBLISHED','RETIRED')
+        and id not in (${id.release}::uuid,${id.reclaimRelease}::uuid)`;
+    await transaction`update public.catalog_libraries set status='ARCHIVED',archived_at=coalesce(archived_at,clock_timestamp()),current_release_id=null,current_published_version_id=null,row_version=row_version+1,updated_at=clock_timestamp()
+      where id=${id.library}::uuid and status<>'ARCHIVED'`;
+    await transaction`update public.catalog_categories set status='ARCHIVED',archived_at=coalesce(archived_at,clock_timestamp()),row_version=row_version+1
+      where library_id=${id.library}::uuid and status<>'ARCHIVED'`;
+    await transaction`update public.catalog_subcategories set status='ARCHIVED',archived_at=coalesce(archived_at,clock_timestamp()),row_version=row_version+1
+      where library_id=${id.library}::uuid and status<>'ARCHIVED'`;
+    await transaction`update public.catalog_services set status='ARCHIVED',archived_at=coalesce(archived_at,clock_timestamp()),row_version=row_version+1
+      where library_id=${id.library}::uuid and status<>'ARCHIVED'`;
+    await transaction`update public.catalog_service_subcategory_links set status='ARCHIVED',row_version=row_version+1
+      where library_id=${id.library}::uuid and status<>'ARCHIVED'`;
+    await transaction`insert into private.catalog_acl_write_capabilities(backend_pid,transaction_id)
+      values(pg_backend_pid(),txid_current()) on conflict do nothing`;
+    await transaction`update public.catalog_library_mandates set status='REVOKED',valid_until=coalesce(valid_until,clock_timestamp()),row_version=row_version+1
+      where library_id=${id.library}::uuid and status='ACTIVE'`;
+    await transaction`delete from private.catalog_acl_write_capabilities
+      where backend_pid=pg_backend_pid() and transaction_id=txid_current()`;
     await transaction`update public.organization_member_roles role set revoked_at=coalesce(role.revoked_at,clock_timestamp())
       where role.membership_id=${id.member}::uuid and role.revoked_at is null`;
     await transaction`update public.organization_memberships set status='REVOKED',updated_at=clock_timestamp(),row_version=row_version+1
@@ -311,7 +331,8 @@ try {
     (select count(*)::integer from public.organization_member_roles where membership_id=${id.member}::uuid and revoked_at is null) as active_organization_roles,
     (select count(*)::integer from public.platform_user_roles where user_id=${id.reviewer}::uuid and role_code='MATRICIA_ADMIN' and revoked_at is null) as active_reviewer_roles,
     (select count(*)::integer from public.catalog_releases where id in (${id.release}::uuid,${id.reclaimRelease}::uuid)
-      and status not in ('CANCELLED','RETIRED','DEAD_LETTER','ARCHIVED')) as active_releases`;
+      and status not in ('CANCELLED','RETIRED','DEAD_LETTER','ARCHIVED')) as active_releases,
+    (select count(*)::integer from public.catalog_libraries where id=${id.library}::uuid and status<>'ARCHIVED') as active_libraries`;
   if (Object.values(residual[0]).some((value) => value !== 0)) throw new Error('P06 concurrency fixture neutralization verification failed');
   console.log(`INFO retained immutable archived P06 evidence fixture organization=${id.org}`);
 } catch (error) {

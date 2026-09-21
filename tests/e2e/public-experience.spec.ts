@@ -10,10 +10,10 @@ for (const locale of ["fr", "ar"] as const) {
     await expect(page.getByRole("link", { name: locale === "fr" ? "Proposer mes services" : "اقترحوا خدماتكم" }).first()).toHaveAttribute("href", `/${locale}/fournisseur`);
     await expect(page.getByRole("link", { name: locale === "fr" ? "J’ai déjà un besoin précis" : "لدي احتياج محدد" })).toHaveAttribute("href", `/${locale}/besoin`);
     const registration = page.getByRole("link", { name: locale === "fr" ? "Créer un compte" : "إنشاء حساب" });
-    if (await registration.first().isVisible()) await expect(registration.first()).toHaveAttribute("href", new RegExp(`/${locale}/connexion\\?mode=inscription`));
+    if (await registration.first().isVisible()) await expect(registration.first()).toHaveAttribute("href", new RegExp(`/${locale}/inscription`));
     else {
-      await page.getByRole("button", { name: locale === "fr" ? "Menu" : "القائمة" }).click();
-      await expect(page.getByRole("link", { name: locale === "fr" ? "Créer un compte" : "إنشاء حساب" }).first()).toHaveAttribute("href", new RegExp(`/${locale}/connexion\\?mode=inscription`));
+      await page.getByRole("button", { name: locale === "fr" ? "Ouvrir le menu" : "فتح القائمة" }).click();
+      await expect(page.getByRole("link", { name: locale === "fr" ? "Créer un compte" : "إنشاء حساب" }).first()).toHaveAttribute("href", new RegExp(`/${locale}/inscription`));
     }
     const width = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, content: document.documentElement.scrollWidth }));
     expect(width.content).toBeLessThanOrEqual(width.viewport);

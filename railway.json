@@ -6,7 +6,7 @@
   },
   "deploy": {
     "startCommand": "corepack pnpm --filter @matricia/worker start",
-    "healthcheckPath": "/health",
+    "healthcheckPath": "/readiness",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 5

@@ -3,8 +3,8 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { isLocale, type Locale } from "@/lib/i18n/locale";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { isLocale, type Locale } from "@/modules/shared/lib/i18n/locale";
+import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 
 const uuidSchema = z.string().uuid();
 const sessionRowSchema = z.object({

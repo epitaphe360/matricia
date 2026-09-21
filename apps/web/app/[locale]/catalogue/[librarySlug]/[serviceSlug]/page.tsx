@@ -1,14 +1,14 @@
 import { ArrowLeft, CheckCircle2, CircleMinus, Layers3 } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
-import { isLocale } from "@/lib/i18n/locale";
-import { parseCatalogQuery, serviceTypeLabel } from "@/lib/catalogue/model";
-import { getPublishedCatalogService } from "@/lib/catalogue/repository";
-import { cn } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { Badge } from "@/modules/shared/ui/badge";
+import { buttonVariants } from "@/modules/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader } from "@/modules/shared/ui/card";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+import { parseCatalogQuery, serviceTypeLabel } from "@/modules/shared/lib/catalogue/model";
+import { getPublishedCatalogService } from "@/modules/shared/lib/catalogue/repository";
+import { cn } from "@/modules/shared/lib/utils";
 import { getCatalogMessages } from "../../messages";
 
 export default async function PublishedServicePage({ params, searchParams }: {

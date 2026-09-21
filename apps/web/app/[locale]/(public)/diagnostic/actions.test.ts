@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { rpc, revalidatePath } = vi.hoisted(() => ({ rpc: vi.fn(), revalidatePath: vi.fn() }));
-vi.mock("@/lib/supabase/server", () => ({ getSupabaseServerClient: async () => ({ rpc }) }));
+vi.mock("@/modules/shared/lib/supabase/server", () => ({ getSupabaseServerClient: async () => ({ rpc }) }));
 vi.mock("next/cache", () => ({ revalidatePath }));
 import { savePublicDiagnosticIntake } from "./actions";
 

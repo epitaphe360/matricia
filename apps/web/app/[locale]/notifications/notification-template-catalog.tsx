@@ -1,6 +1,6 @@
-import{Badge}from"@/components/ui/badge";
-import type{Locale}from"@/lib/i18n/locale";
-import type{NotificationDashboard}from"@/lib/notifications/model";
+import{Badge}from"@/modules/shared/ui/badge";
+import type{Locale}from"@/modules/shared/lib/i18n/locale";
+import type{NotificationDashboard}from"@/modules/shared/lib/notifications/model";
 import type{NotificationMessages}from"./messages";
 
 type TemplateRow=NotificationDashboard["templates"][number];

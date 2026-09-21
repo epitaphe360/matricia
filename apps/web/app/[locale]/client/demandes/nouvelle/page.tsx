@@ -1,26 +1,128 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
-import { createServerClientRfqRepository } from "@/lib/client-rfq/server-repository";
-import { isLocale } from "@/lib/i18n/locale";
-import { cn } from "@/lib/utils";
-import { getClientRfqMessages } from "../messages";
-import { loadOpportunityRequestContext } from "../opportunity-context";
-import { RequestForm } from "../request-form";
+import { createServerClientRfqRepository } from "@/modules/client/data/rfq/server-repository";
+import { loadClientPortfolio } from "@/modules/client/data/portfolio/server-repository";
+import { resolveClientSpace } from "@/modules/client/data/spaces/context";
+import { spaceCopy } from "@/modules/client/data/spaces/copy";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+import { getClientRfqMessages } from "@/modules/client/screens/demandes/messages";
+import { loadNeedRequestContext } from "@/modules/client/screens/demandes/need-context";
+import { loadOpportunityRequestContext } from "@/modules/client/screens/demandes/opportunity-context";
+import { RequestForm } from "@/modules/client/screens/demandes/request-form";
+import { expiredDocuments } from "@/modules/client/data/documents/expiry";
+import { loadClientDocumentVault } from "@/modules/client/data/documents/server-repository";
+import { newRequestBlockReason } from "@/modules/client/screens/abonnement/entitlement";
+import { loadSubscriptionDashboard } from "@/modules/shared/lib/subscriptions/repository";
+import { ClientAppShell } from "@/modules/client/ui/client-app-shell";
 
-export default async function NewRequestPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ opportunityId?: string }> }) {
-  const [{ locale }, { opportunityId }] = await Promise.all([params, searchParams]);
+function nouvelleQuery(query: { opportunityId?: string; intakeId?: string; serviceCode?: string; organizationId?: string }): string {
+  const params = new URLSearchParams();
+  if (query.opportunityId) params.set("opportunityId", query.opportunityId);
+  if (query.intakeId) params.set("intakeId", query.intakeId);
+  if (query.serviceCode) params.set("serviceCode", query.serviceCode);
+  if (query.organizationId) params.set("organizationId", query.organizationId);
+  const text = params.toString();
+  return text ? `?${text}` : "";
+}
+
+export default async function NewRequestPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ opportunityId?: string; intakeId?: string; serviceCode?: string; organizationId?: string }>;
+}) {
+  const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
+  const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
+  const nextPath = `/${locale}/client/demandes/nouvelle${nouvelleQuery(query)}`;
+  if (space.status === "unauthenticated") {
+    redirect(`/${locale}/connexion?next=${encodeURIComponent(nextPath)}`);
+  }
   const result = await (await createServerClientRfqRepository()).list();
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion?next=${encodeURIComponent(`/${locale}/client/demandes/nouvelle${opportunityId ? `?opportunityId=${opportunityId}` : ""}`)}`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") {
+    redirect(`/${locale}/connexion?next=${encodeURIComponent(nextPath)}`);
+  }
   const messages = getClientRfqMessages(locale);
-  const context = opportunityId ? await loadOpportunityRequestContext(opportunityId) : null;
-  const organization = context && result.status === "success" ? result.value.organizations.find((item) => item.id === context.organizationId) : null;
-  return <main className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6" dir={locale === "ar" ? "rtl" : "ltr"}><div className="mx-auto max-w-4xl space-y-5">
-    <Link href={`/${locale}/client/demandes`} className={cn(buttonVariants({ variant: "outline" }), "min-h-11")}>{messages.back}</Link>
-    <Card><CardHeader><CardTitle>{messages.createTitle}</CardTitle><CardDescription>{messages.createDescription}</CardDescription></CardHeader><CardContent>
-      {context && organization ? <RequestForm locale={locale} context={{ opportunityId: context.opportunityId, organizationId: context.organizationId, organizationName: organization.name, serviceName: locale === "ar" ? context.serviceNameAr : context.serviceNameFr, title: locale === "ar" ? context.titleAr : context.titleFr, description: locale === "ar" ? context.descriptionAr : context.descriptionFr }} messages={messages} /> : result.status === "error" ? <p role="alert" className="text-destructive">{messages.loadError}</p> : <div role="status" className="space-y-4"><p className="text-muted-foreground">{opportunityId ? messages.contextError : messages.contextRequired}</p><div className="flex flex-col gap-3 sm:flex-row"><Link href={`/${locale}/client/diagnostics`} className={cn(buttonVariants(), "min-h-11")}>{messages.openAnalysis}</Link><Link href={`/${locale}/client/diagnostics/assistance`} className={cn(buttonVariants({ variant: "outline" }), "min-h-11")}>{messages.describeNeed}</Link></div></div>}
-    </CardContent></Card>
-  </div></main>;
+  const c = spaceCopy(locale);
+  const opportunity = query.opportunityId ? await loadOpportunityRequestContext(query.opportunityId) : null;
+  const need = !opportunity && query.intakeId
+    ? await loadNeedRequestContext(query.intakeId, query.serviceCode, space.selectedOrganizationId ?? undefined)
+    : null;
+  const organizationId = opportunity?.organizationId ?? need?.organizationId;
+  const organization = organizationId && result.status === "success"
+    ? result.value.organizations.find((item) => item.id === organizationId)
+    : null;
+  const formContext = opportunity && organization
+    ? {
+        source: "opportunity" as const,
+        opportunityId: opportunity.opportunityId,
+        organizationId: opportunity.organizationId,
+        organizationName: organization.name,
+        serviceName: locale === "ar" ? opportunity.serviceNameAr : opportunity.serviceNameFr,
+        title: locale === "ar" ? opportunity.titleAr : opportunity.titleFr,
+        description: locale === "ar" ? opportunity.descriptionAr : opportunity.descriptionFr,
+        siteId: opportunity.siteId,
+      }
+    : need && organization
+      ? {
+          source: "need" as const,
+          intakeId: need.intakeId,
+          serviceCode: need.serviceCode,
+          organizationId: need.organizationId,
+          organizationName: organization.name,
+          serviceName: locale === "ar" ? need.serviceNameAr : need.serviceNameFr,
+          title: locale === "ar" ? need.titleAr : need.titleFr,
+          description: need.description,
+          regionCode: need.regionCode,
+        }
+      : null;
+  const portfolio = formContext ? await loadClientPortfolio(formContext.organizationId) : null;
+  const sites = portfolio?.status === "success"
+    ? portfolio.value.sites.map((site) => ({ id: site.id, nameFr: site.nameFr, nameAr: site.nameAr }))
+    : [];
+  const entitlementOrgId = formContext?.organizationId ?? space.selectedOrganizationId;
+  const subscription = entitlementOrgId ? await loadSubscriptionDashboard(entitlementOrgId) : { status: "error" as const, reason: "UNAVAILABLE" as const };
+  const vault = entitlementOrgId ? await loadClientDocumentVault(entitlementOrgId) : { status: "error" as const, reason: "UNAVAILABLE" as const };
+  const block = newRequestBlockReason({
+    subscriptionStatus: subscription.status === "success" ? subscription.dashboard.subscription?.status : undefined,
+    expiredDocumentCount: vault.status === "success" ? expiredDocuments(vault.value.documents).length : 0,
+  });
+  return (
+    <ClientAppShell
+      locale={locale}
+      selectedQuery={space.selectedQuery}
+      selectedOrganizationId={space.selectedOrganizationId}
+      userEmail={space.userEmail}
+      active="requests"
+      title={c.newRequestTitle}
+      lead={c.newRequestLead}
+      kicker={c.kicker}
+      actions={<Link href={`/${locale}/client/demandes${space.selectedQuery}`} className="client-ghost-link">{c.backToRequests}</Link>}
+    >
+      <main className="client-page">
+        {block ? (
+          <article className="client-card" role="alert">
+            <p>{block === "document" ? messages.expiredDocumentBlock : messages.trialExpiredBlock}</p>
+            <div className="client-offer-actions">
+              <Link href={`/${locale}/client/${block === "document" ? "documents" : "abonnement"}${space.selectedQuery}`} className="client-cta">{block === "document" ? c.addDoc : messages.reactivateGold}</Link>
+              <Link href={`/${locale}/client/demandes${space.selectedQuery}`} className="client-ghost-link">{c.backToRequests}</Link>
+            </div>
+          </article>
+        ) : formContext ? (
+          <RequestForm locale={locale} context={formContext} messages={messages} sites={sites} />
+        ) : result.status === "error" ? (
+          <p role="alert" className="client-card">{messages.loadError}</p>
+        ) : (
+          <article className="client-card" role="status">
+            <p>{query.opportunityId || query.intakeId ? messages.contextError : messages.contextRequired}</p>
+            <div className="client-offer-actions">
+              <Link href={`/${locale}/client/diagnostics${space.selectedQuery}`} className="client-cta">{messages.openAnalysis}</Link>
+              <Link href={`/${locale}/besoin${space.selectedQuery}`} className="client-ghost-link">{messages.describeNeed}</Link>
+            </div>
+          </article>
+        )}
+      </main>
+    </ClientAppShell>
+  );
 }

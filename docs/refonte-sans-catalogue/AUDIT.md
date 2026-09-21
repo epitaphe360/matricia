@@ -23,8 +23,8 @@ Légende : `PRESENT` = présent et relié ; `PARTIAL` = fondation existante mais
 ## Primitives métier réellement présentes
 
 - Questionnaire versionné et autosave : `supabase/migrations/20260911003700_question_engine_persistence.sql`, fonctions `start_questionnaire_session`, `autosave_questionnaire_answers`, `submit_questionnaire_session` ; RLS et audit/outbox associés. Les 6 000 questions ne seront pas chargées côté navigateur.
-- Diagnostics : `diagnostic_runs`, `diagnostic_anomalies`, `diagnostic_recommendations`, `diagnostic_opportunities` dans `20260912007200_diagnostics_opportunities.sql`; affichage actuel dans `apps/web/lib/diagnostics-opportunities`.
-- RFQ/demandes : fondation et matching dans `20260912005900_rfq_matching_foundation.sql`, mutations serveur dans `apps/web/lib/client-rfq`.
+- Diagnostics : `diagnostic_runs`, `diagnostic_anomalies`, `diagnostic_recommendations`, `diagnostic_opportunities` dans `20260912007200_diagnostics_opportunities.sql`; affichage actuel dans `apps/web/modules/shared/lib/diagnostics-opportunities`.
+- RFQ/demandes : fondation et matching dans `20260912005900_rfq_matching_foundation.sql`, mutations serveur dans `apps/web/modules/client/data/rfq`.
 - Fournisseurs : profils, compétences, documents, qualifications et capacité dans `20260912006200_provider_qualification.sql`; les contacts client/fournisseur restent protégés.
 - Authentification : OTP avec quota serveur `reserve_otp_request`, Supabase et session ; la destination de retour manque.
 

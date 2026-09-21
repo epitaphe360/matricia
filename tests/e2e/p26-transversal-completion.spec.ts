@@ -18,7 +18,7 @@ const franchiseSurfaces: Surface[] = [
 ];
 
 const adminSurfaces: Surface[] = [
-  { route: "administration/command-center", heading: { fr: "Command center", ar: "مركز القيادة" }, evidence: { fr: "À traiter aujourd’hui", ar: "مهام اليوم" } },
+  { route: "administration/command-center", heading: { fr: "Toutes les pages d’administration", ar: "كل صفحات الإدارة" }, evidence: { fr: "Actions sensibles", ar: "إجراءات حسّاسة" } },
   { route: "administration/approbations-finance", heading: { fr: "Approbations métier et commissions", ar: "موافقات الأعمال والعمولات" }, evidence: { fr: "réconciliation strictement un-à-un", ar: "مطابقة واحد لواحد" } },
   { route: "administration/finance", heading: { fr: "Paiements et abonnements", ar: "المدفوعات والاشتراكات" }, evidence: { fr: "À traiter", ar: "يتطلب المعالجة" } },
   { route: "administration/incitations", heading: { fr: "Récompenses, badges et parrainage", ar: "المكافآت والشارات والإحالة" }, evidence: { fr: "Contrôle sensible", ar: "التحكم الحساس" } },

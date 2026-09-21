@@ -24,6 +24,7 @@
     "traceability:validate": "node --experimental-strip-types scripts/validate-traceability.ts",
     "no-placeholders": "node --experimental-strip-types scripts/validate-no-placeholders.ts",
     "release:validate": "node --experimental-strip-types scripts/validate-release.ts",
+    "demo:provision": "node scripts/provision-demo-library-personas.mjs",
     "verify:phase00": "pnpm catalog:validate && pnpm spec:validate && pnpm traceability:validate"
   },
   "devDependencies": {

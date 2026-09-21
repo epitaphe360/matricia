@@ -56,11 +56,41 @@ export interface SignatureEvidence {
 export interface SignatureProvider {
   readonly code: string;
   readonly supportedLevels: readonly SignatureLevel[];
+  readonly developmentOnly?: boolean;
   createEnvelope(input: CreateEnvelopeInput): Promise<ProviderEnvelope>;
   sendEnvelope(providerEnvelopeId: string, idempotencyKey: string): Promise<ProviderEnvelope>;
   voidEnvelope(providerEnvelopeId: string, idempotencyKey: string): Promise<ProviderEnvelope>;
   verifyWebhook(rawBody: Uint8Array, headers: Readonly<Record<string, string>>, receivedAt: Date): Promise<VerifiedSignatureEvent>;
   fetchEvidencePackage(providerEnvelopeId: string): Promise<SignatureEvidence>;
+}
+
+export type SignatureProviderReadiness =
+  | { readonly status: "ready"; readonly providerCode: string; readonly supportedLevels: readonly SignatureLevel[] }
+  | {
+      readonly status: "not_ready";
+      readonly code: "SIGNATURE_PROVIDER_NOT_REGISTERED" | "SIGNATURE_PROVIDER_MODE_INVALID" | "SIGNATURE_PROVIDER_CODE_MISMATCH" | "SIGNATURE_DEVELOPMENT_PROVIDER_FORBIDDEN";
+    };
+
+/**
+ * Fail-closed deployment guard. It validates provider registration without
+ * resolving or returning provider credentials.
+ */
+export function assessSignatureProviderReadiness(
+  provider: SignatureProvider | undefined,
+  env: Readonly<Record<string, string | undefined>>,
+): SignatureProviderReadiness {
+  if (!provider) return { status: "not_ready", code: "SIGNATURE_PROVIDER_NOT_REGISTERED" };
+  const mode = env.SIGNATURE_PROVIDER_MODE?.trim();
+  if (mode !== "DEVELOPMENT_MOCK" && mode !== "EXTERNAL") {
+    return { status: "not_ready", code: "SIGNATURE_PROVIDER_MODE_INVALID" };
+  }
+  if ((env.NODE_ENV === "production" || mode === "EXTERNAL") && provider.developmentOnly) {
+    return { status: "not_ready", code: "SIGNATURE_DEVELOPMENT_PROVIDER_FORBIDDEN" };
+  }
+  if (mode === "EXTERNAL" && env.SIGNATURE_PROVIDER_CODE?.trim() !== provider.code) {
+    return { status: "not_ready", code: "SIGNATURE_PROVIDER_CODE_MISMATCH" };
+  }
+  return { status: "ready", providerCode: provider.code, supportedLevels: provider.supportedLevels };
 }
 
 export interface HmacWebhookInput {

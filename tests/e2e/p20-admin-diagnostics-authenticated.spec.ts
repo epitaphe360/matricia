@@ -6,9 +6,9 @@ type Locale = "fr" | "ar";
 type Surface = { name: string; route: string; stateVariable: "E2E_ADMIN_STORAGE_STATE" | "E2E_CLIENT_STORAGE_STATE"; heading: Record<Locale,string>; navigation?: Record<Locale,string> };
 
 const surfaces: Surface[] = [
-  { name: "command center", route: "administration/command-center", stateVariable: "E2E_ADMIN_STORAGE_STATE", heading: { fr: "Command center", ar: "مركز القيادة" }, navigation: { fr: "Navigation du command center", ar: "التنقل في مركز القيادة" } },
+  { name: "command center", route: "administration/command-center", stateVariable: "E2E_ADMIN_STORAGE_STATE", heading: { fr: "Toutes les pages d’administration", ar: "كل صفحات الإدارة" }, navigation: { fr: "Navigation du command center", ar: "التنقل في مركز القيادة" } },
   { name: "marketing autopilot", route: "administration/marketing-autopilot", stateVariable: "E2E_ADMIN_STORAGE_STATE", heading: { fr: "Marketing Autopilot", ar: "التسويق الآلي" } },
-  { name: "diagnostics", route: "client/diagnostics", stateVariable: "E2E_CLIENT_STORAGE_STATE", heading: { fr: "Mes analyses", ar: "تحليلاتي" } },
+  { name: "diagnostics", route: "client/diagnostics", stateVariable: "E2E_CLIENT_STORAGE_STATE", heading: { fr: "Comprendre vos priorités", ar: "فهم أولوياتكم" } },
 ];
 
 async function expectAccessible(page: Page) {

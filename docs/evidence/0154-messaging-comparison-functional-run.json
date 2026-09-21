@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-15T18:28:13.373Z",
+  "environment": "development",
+  "outcome": "PASS",
+  "files": [
+    "0154_messaging_comparison_functional.test.sql"
+  ],
+  "assertions": 33,
+  "concurrencyScenarios": 4
+}

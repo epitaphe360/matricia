@@ -1,6 +1,6 @@
 import { createPaymentGateway } from "@matricia/infrastructure";
 import { NextResponse } from "next/server";
-import { getPaymentRuntimeConfig } from "@/lib/env";
+import { getPaymentRuntimeConfig } from "@/modules/shared/lib/env";
 import { processPaymentWebhook } from "../_shared";
 
 export async function POST(request: Request) {

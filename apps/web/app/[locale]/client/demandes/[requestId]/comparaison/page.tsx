@@ -1,2 +1,18 @@
-import { randomUUID } from "node:crypto";import Link from "next/link";import { notFound,redirect } from "next/navigation";import { buttonVariants } from "@/components/ui/button";import { createServerClientRfqRepository } from "@/lib/client-rfq/server-repository";import { isLocale } from "@/lib/i18n/locale";import { uuidSchema } from "@/lib/client-rfq/model";import { cn } from "@/lib/utils";import { ComparisonPanel } from "../../comparison-panel";import { getClientRfqMessages } from "../../messages";
-export default async function ComparisonPage({params,searchParams}:{params:Promise<{locale:string;requestId:string}>;searchParams:Promise<{rfq?:string}>}){const[{locale,requestId},{rfq}]=await Promise.all([params,searchParams]);if(!isLocale(locale)||!uuidSchema.safeParse(requestId).success||!uuidSchema.safeParse(rfq).success)notFound();const rfqId=rfq!;const repository=await createServerClientRfqRepository();const detail=await repository.detail(requestId);if(detail.status==="error"&&detail.reason==="UNAUTHENTICATED")redirect(`/${locale}/connexion`);if(detail.status==="error"||!detail.value||detail.value.rfqId!==rfqId)notFound();const comparison=await repository.comparison(rfqId);if(comparison.status==="error"&&comparison.reason==="UNAUTHENTICATED")redirect(`/${locale}/connexion`);if(comparison.status==="error")throw new Error("QUOTE_COMPARISON_UNAVAILABLE");const messages=getClientRfqMessages(locale);return <main className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6"><div className="mx-auto max-w-6xl space-y-6"><Link href={`/${locale}/client/demandes/${requestId}`} className={cn(buttonVariants({variant:"outline"}),"min-h-11")}>{messages.back}</Link><header><h1 className="text-3xl font-semibold">{messages.comparisonTitle}</h1><p className="mt-3 max-w-3xl text-muted-foreground">{messages.comparisonDescription}</p></header><ComparisonPanel locale={locale} requestId={requestId} rfqId={rfqId} messages={messages} canManage={detail.value.canManage} initialComparison={comparison.value} nowIso={new Date().toISOString()} compareKey={randomUUID()} selectKeys={Array.from({length:100},()=>randomUUID())}/></div></main>}
+import { redirect } from "next/navigation";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+
+export default async function ComparisonAliasPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string; requestId: string }>;
+  searchParams: Promise<{ rfq?: string; organizationId?: string }>;
+}) {
+  const [{ locale, requestId }, query] = await Promise.all([params, searchParams]);
+  if (!isLocale(locale)) redirect("/fr/tableau-de-bord");
+  const qs = new URLSearchParams();
+  if (query.rfq) qs.set("rfq", query.rfq);
+  if (query.organizationId) qs.set("organizationId", query.organizationId);
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  redirect(`/${locale}/client/demandes/${requestId}/offres${suffix}`);
+}

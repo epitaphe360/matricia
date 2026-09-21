@@ -17,7 +17,7 @@ Périmètre : Mode Projet et calendrier central du portefeuille Client.
 - Correction additive post-gate : `supabase/migrations/20260913016200_client_calendar_unlinked_mission_regression.sql`, qui préserve les jalons de missions historiques non rattachées tout en enrichissant les missions rattachées avec leur projet.
 - pgTAP : `supabase/tests/0106_client_project_contract_calendar_completeness.test.sql` (29 assertions : structure, RLS/ACL, immutabilité, isolation de deux tenants, rôle VIEWER refusé, confidentialité Provider, spoof refusé, dates exactes, replay, audit et Outbox).
 - Régression pgTAP : `supabase/tests/0107_client_calendar_unlinked_mission_regression.test.sql` (8 assertions liées/non liées, ACL et second tenant) et assertion d’architecture actualisée dans `0065_client_projects_budgets_calendar.test.sql`.
-- Unitaires : `apps/web/lib/client-portfolio/model.test.ts` et `apps/web/app/[locale]/client/portefeuille/actions.test.ts`.
+- Unitaires : `apps/web/modules/client/data/portfolio/model.test.ts` et `apps/web/modules/client/screens/portefeuille/actions.test.ts`.
 - E2E authentifié : `tests/e2e/p22-client-portfolio.spec.ts`, FR/AR, RTL/LTR, 360 px, clavier et axe WCAG.
 
 ## Gates

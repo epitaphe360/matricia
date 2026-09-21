@@ -1,2 +1,36 @@
-import Link from"next/link";import{notFound,redirect}from"next/navigation";import{Alert,AlertDescription,AlertTitle}from"@/components/ui/alert";import{buttonVariants}from"@/components/ui/button";import{isLocale}from"@/lib/i18n/locale";import{loadProviderBilling}from"@/lib/provider-billing/repository";import{cn}from"@/lib/utils";import{BillingPanel}from"./billing-panel";import{getBillingMessages}from"./messages";import{loadBillingMissionOptions}from"./options";
-export default async function ProviderBillingPage({params}:{params:Promise<{locale:string}>}){const{locale}=await params;if(!isLocale(locale))notFound();const m=getBillingMessages(locale),result=await loadProviderBilling();if(result.status==="error"&&result.reason==="UNAUTHENTICATED")redirect(`/${locale}/connexion`);const alternate=locale==="fr"?"ar":"fr",missions=result.status==="success"?await loadBillingMissionOptions(result.dashboard.organizationId,locale):[];return <main className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6 sm:py-8"><div className="mx-auto max-w-7xl space-y-7"><nav aria-label="Navigation" className="flex flex-wrap items-center justify-between gap-3"><Link href={`/${locale}/tableau-de-bord`} className={cn(buttonVariants({variant:"outline"}),"min-h-11")}>{m.back}</Link><Link href={`/${alternate}/sous-traitant/facturation`} hrefLang={alternate} className="min-h-11 rounded-md px-3 py-2 font-medium text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">{m.language}</Link></nav><header><p className="text-xs font-semibold uppercase tracking-[.18em] text-primary">{result.status==="success"?result.dashboard.organizationName:"Matricia"}</p><h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{m.title}</h1><p className="mt-3 max-w-3xl leading-7 text-muted-foreground">{m.description}</p></header>{result.status==="error"?<Alert variant={result.reason==="NO_BILLING_ORGANIZATION"?"default":"destructive"}><AlertTitle>{result.reason==="NO_BILLING_ORGANIZATION"?m.noOrg:m.loadError}</AlertTitle><AlertDescription>{result.reason}</AlertDescription></Alert>:<BillingPanel dashboard={result.dashboard} missions={missions} locale={locale} m={m} keys={Array.from({length:5},()=>crypto.randomUUID())}/>}</div></main>}
+import { notFound, redirect } from "next/navigation";
+import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { resolveProviderSpace } from "@/modules/provider/data/spaces/context";
+import { providerCopy } from "@/modules/provider/data/spaces/copy";
+import { loadProviderBilling } from "@/modules/provider/data/billing/repository";
+import { BillingBoard } from "@/modules/provider/screens/spaces/boards";
+import { BillingPanel } from "@/modules/provider/screens/facturation/billing-panel";
+import { getBillingMessages } from "@/modules/provider/screens/facturation/messages";
+import { loadBillingMissionOptions } from "@/modules/provider/screens/facturation/options";
+import { ProviderActions, ProviderAppShell } from "@/modules/provider/ui/provider-app-shell";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+
+export default async function ProviderBillingPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string }> }) {
+  const [{ locale }, query] = await Promise.all([params, searchParams]);
+  if (!isLocale(locale)) notFound();
+  const space = await resolveProviderSpace({ locale, organizationId: query.organizationId });
+  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  const m = getBillingMessages(locale);
+  const c = providerCopy(locale);
+  const result = await loadProviderBilling();
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  const missions = result.status === "success" ? await loadBillingMissionOptions(result.dashboard.organizationId, locale) : [];
+  return (
+    <ProviderAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="billing" title={c.finTitle} lead={c.finLead} kicker={c.kicker} actions={<ProviderActions href="#facturation-operation" label={c.createInvoice} />}>
+      <BillingBoard locale={locale} query={space.selectedQuery} dashboard={result.status === "success" ? result.dashboard : null} />
+      <details id="facturation-operation" className="client-ops">
+        <summary>{c.opsBilling}</summary>
+        {result.status === "error" ? (
+          <Alert variant={result.reason === "NO_BILLING_ORGANIZATION" ? "default" : "destructive"}><AlertTitle>{result.reason === "NO_BILLING_ORGANIZATION" ? m.noOrg : m.loadError}</AlertTitle><AlertDescription>{result.reason}</AlertDescription></Alert>
+        ) : (
+          <BillingPanel dashboard={result.dashboard} missions={missions} locale={locale} m={m} keys={Array.from({ length: 6 }, () => crypto.randomUUID())} />
+        )}
+      </details>
+    </ProviderAppShell>
+  );
+}

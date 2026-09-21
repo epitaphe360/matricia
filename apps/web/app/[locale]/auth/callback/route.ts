@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { isLocale } from "@/lib/i18n/locale";
+import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

@@ -15,6 +15,7 @@ function sha256(value: string | Uint8Array): string {
 /** Deterministic development adapter. It is intentionally SIMPLE-only and never claims legal qualification. */
 export class DevelopmentMockSignatureProvider implements SignatureProvider {
   readonly code = "MATRICIA_DEV_MOCK";
+  readonly developmentOnly = true;
   readonly supportedLevels = ["SIMPLE"] as const satisfies readonly SignatureLevel[];
   readonly #states = new Map<string, MockState>();
   readonly #operations = new Map<string, ProviderEnvelope>();

@@ -1,20 +1,25 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { resolveClientOrganizationContext } from "@/lib/client-organization-context";
-import { createServerCreditsRepository } from "@/lib/credits-wallet/server-repository";
-import { isLocale } from "@/lib/i18n/locale";
-import { getServerTimestamp } from "@/lib/time/server-clock";
-import { BenefitAction } from "./benefit-action";
-import { messages } from "./messages";
-import { RedemptionActions } from "./redemption-actions";
-import { WalletAction } from "./wallet-action";
+import { Badge } from "@/modules/shared/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/ui/card";
+import { resolveClientOrganizationContext } from "@/modules/shared/client-organization-context";
+import { createServerCreditsRepository } from "@/modules/shared/lib/credits-wallet/server-repository";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+import { getServerTimestamp } from "@/modules/shared/lib/time/server-clock";
+import { BenefitAction } from "@/modules/client/screens/credits/benefit-action";
+import { messages } from "@/modules/client/screens/credits/messages";
+import { RedemptionActions } from "@/modules/client/screens/credits/redemption-actions";
+import { WalletAction } from "@/modules/client/screens/credits/wallet-action";
+import { resolveClientSpace } from "@/modules/client/data/spaces/context";
+import { spaceCopy } from "@/modules/client/data/spaces/copy";
+import { ClientAppShell } from "@/modules/client/ui/client-app-shell";
 
 export default async function Credits({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string }> }) {
   const { locale } = await params;
   const { organizationId } = await searchParams;
   if (!isLocale(locale)) notFound();
+  const space = await resolveClientSpace({ locale, organizationId });
+  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
   const result = await (await createServerCreditsRepository(organizationId)).load();
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
   if (result.status === "error") throw new Error("CREDITS_UNAVAILABLE");
@@ -32,10 +37,12 @@ export default async function Credits({ params, searchParams }: { params: Promis
     redemptions: result.value.redemptions.filter((redemption) => redemption.organizationId === selectedOrganizationId),
   };
   const m = messages(locale);
+  const c = spaceCopy(locale);
   const today = getServerTimestamp();
 
-  return <main className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6"><div className="mx-auto max-w-6xl space-y-7">
-    <header><h1 className="text-3xl font-semibold">{m.title}</h1><p className="mt-2 max-w-3xl text-muted-foreground">{m.intro}</p></header>
+  return (
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="finance" title={m.title} lead={m.intro} kicker={c.kicker}>
+    <main className="client-page">
 
     <section aria-labelledby="wallets"><h2 id="wallets" className="mb-3 text-xl font-semibold">{m.wallet}</h2><div className="grid gap-4 sm:grid-cols-2">
       {data.organizations.map(organization => {
@@ -63,5 +70,7 @@ export default async function Credits({ params, searchParams }: { params: Promis
     </div>}</section>
 
     <section aria-labelledby="redemptions"><h2 id="redemptions" className="mb-3 text-xl font-semibold">{m.redemptions}</h2>{data.redemptions.length === 0 ? <p className="text-muted-foreground">{m.noRedemptions}</p> : data.redemptions.map(redemption => <Card key={redemption.id} className="mb-4"><CardHeader><div className="flex justify-between gap-3"><CardTitle dir="ltr">{redemption.reservedCredits}</CardTitle><Badge>{m.statuses[redemption.status as keyof typeof m.statuses] ?? redemption.status}</Badge></div></CardHeader><CardContent><p>{m.expires}: {new Date(redemption.expiresAt).toLocaleString(locale)}</p><RedemptionActions locale={locale} r={redemption} m={m} keys={{release:randomUUID(), consume:randomUUID()}}/></CardContent></Card>)}</section>
-  </div></main>;
+    </main>
+    </ClientAppShell>
+  );
 }

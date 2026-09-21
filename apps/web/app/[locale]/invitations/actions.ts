@@ -3,9 +3,9 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { getServerEnvironment } from "@/lib/env";
-import { isLocale, type Locale } from "@/lib/i18n/locale";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getServerEnvironment } from "@/modules/shared/lib/env";
+import { isLocale, type Locale } from "@/modules/shared/lib/i18n/locale";
+import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 
 const invitationRoles = [
   "CLIENT_OWNER", "CLIENT_ADMIN", "CLIENT_BUYER", "CLIENT_ACCOUNTING", "CLIENT_MEMBER", "CLIENT_VIEWER",

@@ -1,4 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
+import { createJsonLogger } from "@matricia/observability";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -6,6 +7,8 @@ export const dynamic = "force-dynamic";
 
 const headers = { "cache-control": "no-store" } as const;
 const MAX_BODY_BYTES = 128 * 1024;
+const CONSUMER_CODE = "TERMINAL_OBSERVABILITY";
+const log = createJsonLogger((record) => process.stdout.write(`${record}\n`));
 
 const envelopeSchema = z.object({
   id: z.string().regex(/^[0-9]+$/),
@@ -53,8 +56,21 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ code: "INVALID_REQUEST" }, { status: 400, headers });
   }
 
+  // This endpoint is deliberately a terminal observer for events without a
+  // dedicated worker consumer. It records envelope metadata only; payloads can
+  // contain tenant data and must never be copied to application logs.
+  log("info", {
+    requestId: request.headers.get("x-request-id") ?? parsed.data.correlationId,
+    correlationId: parsed.data.correlationId,
+    event: "outbox.event.observed",
+    outcome: "success",
+    aggregateType: parsed.data.eventType,
+    aggregateId: parsed.data.aggregateId,
+    data: { eventId: parsed.data.id, consumer: CONSUMER_CODE },
+  });
+
   return Response.json(
-    { outcome: "OUTBOX_EVENT_ACCEPTED", eventId: parsed.data.id },
-    { status: 202, headers },
+    { outcome: "OUTBOX_EVENT_OBSERVED", eventId: parsed.data.id, consumer: CONSUMER_CODE },
+    { status: 202, headers: { ...headers, "x-matricia-outbox-consumer": CONSUMER_CODE } },
   );
 }

@@ -1,0 +1,26 @@
+import { notFound } from "next/navigation";
+import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+import { libraryCopy } from "@/modules/franchise/data/library/copy";
+import { FranchiseLibraryHomeBoard } from "@/modules/franchise/screens/library/library-boards";
+import { requireFranchiseLibrary } from "@/modules/franchise/screens/library/page-helper";
+import { FranchiseAppShell } from "@/modules/franchise/ui/franchise-app-shell";
+
+export default async function FranchiseHomePage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string }> }) {
+  const [{ locale }, query] = await Promise.all([params, searchParams]);
+  if (!isLocale(locale)) notFound();
+  const { space, result } = await requireFranchiseLibrary({ locale, organizationId: query.organizationId });
+  const c = libraryCopy(locale);
+  return (
+    <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="home" title={c.homeTitle} lead={c.homeLead} kicker={c.scope} mandateName={result.status === "success" ? result.workspace.mandate.libraryName : null}>
+      {result.status === "error" ? (
+        <Alert variant="destructive">
+          <AlertTitle>{result.reason === "FORBIDDEN" || result.reason === "NO_MANDATE" ? c.forbidden : c.unavailable}</AlertTitle>
+          <AlertDescription>{result.reason === "NO_MANDATE" ? c.noMandate : c.scopeHelp}</AlertDescription>
+        </Alert>
+      ) : (
+        <FranchiseLibraryHomeBoard locale={locale} query={space.selectedQuery} workspace={result.workspace} />
+      )}
+    </FranchiseAppShell>
+  );
+}

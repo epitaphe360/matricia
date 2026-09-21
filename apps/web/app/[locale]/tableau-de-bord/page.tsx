@@ -1,44 +1,265 @@
 import Link from "next/link";
+import { Building2 } from "lucide-react";
+import type { ReactNode } from "react";
 import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ModuleHub } from "@/components/module-hub";
-import { dashboardHomeCopy, resolveOrganizationContext } from "@/components/module-hub-copy";
-import { loadUserActionCenter } from "@/lib/action-center/repository";
-import { isLocale } from "@/lib/i18n/locale";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { cn } from "@/lib/utils";
+import { Alert, AlertDescription } from "@/modules/shared/ui/alert";
+import { dashboardHomeCopy, isCatalogFixtureOrganizationName, resolveOrganizationContext } from "@/modules/shared/module-hub-copy";
+import { filterDashboardActions, summarizeDashboardActions } from "@/modules/shared/lib/action-center/dashboard-summary";
+import { loadUserActionCenterWithinBudget } from "@/modules/shared/lib/action-center/repository";
+import { loadClientHomeSnapshot } from "@/modules/client/data/home/repository";
+import { applyDemoClientHome } from "@/modules/client/data/home/demo-scenario";
+import { filterClientFacingActions } from "@/modules/client/data/home/view-model";
+import { loadProviderHomeSnapshot } from "@/modules/provider/data/home/repository";
+import { filterProviderFacingActions } from "@/modules/provider/data/home/view-model";
+import { isLocale, type Locale } from "@/modules/shared/lib/i18n/locale";
+import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 import { signOut } from "./actions";
 
-const membershipRows = z.array(z.object({ id: z.string().uuid(), organization_id: z.string().uuid(), organizations: z.object({ display_name: z.string().min(1), status: z.string() }) }));
+const membershipRows = z.array(
+  z.object({
+    id: z.string().uuid(),
+    organization_id: z.string().uuid(),
+    organizations: z.object({ display_name: z.string().min(1), status: z.string() }),
+  }),
+);
 
-export default async function DashboardPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ signout?: string; organizationId?: string }> }) {
-  const { locale } = await params, query = await searchParams;
+const PROVIDER_ROLES = new Set(["PROVIDER_OWNER", "PROVIDER_MANAGER", "PROVIDER_SALES", "PROVIDER_TECHNICIAN", "PROVIDER_VIEWER", "PROVIDER_ACCOUNTING"]);
+const CLIENT_ROLES = new Set(["CLIENT_OWNER", "CLIENT_ADMIN", "CLIENT_BUYER", "CLIENT_ACCOUNTING", "CLIENT_MEMBER", "CLIENT_VIEWER"]);
+
+function OrganizationSwitcher({
+  locale,
+  m,
+  organizationsUnavailable,
+  memberships,
+  selectedMembershipId,
+  compact = false,
+}: {
+  locale: Locale;
+  m: (typeof dashboardHomeCopy)[Locale];
+  organizationsUnavailable: boolean;
+  memberships: z.infer<typeof membershipRows> | null;
+  selectedMembershipId: string | null;
+  compact?: boolean;
+}): ReactNode {
+  const selected = memberships?.find((membership) => membership.id === selectedMembershipId);
+  if (compact) {
+    return (
+      <details className="client-org-switch">
+        <summary><Building2 aria-hidden className="size-4" />{selected?.organizations.display_name ?? m.organizationsTitle}</summary>
+        {organizationsUnavailable ? (
+          <p role="alert">{m.organizationError}</p>
+        ) : !memberships || memberships.length === 0 ? (
+          <p role="status">{m.organizationEmpty}</p>
+        ) : (
+          <ul>
+            {memberships.map((membership) => {
+              const current = membership.id === selectedMembershipId;
+              return (
+                <li key={membership.id}>
+                  {current ? (
+                    <span data-selected="true">{membership.organizations.display_name}</span>
+                  ) : (
+                    <Link href={`/${locale}/tableau-de-bord?organizationId=${encodeURIComponent(membership.organization_id)}`}>
+                      {membership.organizations.display_name}
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+            <li><Link href={`/${locale}/organisation`}>{m.organizationCta}</Link></li>
+          </ul>
+        )}
+      </details>
+    );
+  }
+  return (
+    <div className="admin-panel space-y-4">
+      <h2 className="text-lg font-semibold">{m.organizationsTitle}</h2>
+      <p className="text-sm text-[var(--ad-muted)]">{m.organizationsDescription}</p>
+      {organizationsUnavailable ? (
+        <p role="alert" className="text-sm text-destructive">{m.organizationError}</p>
+      ) : !memberships || memberships.length === 0 ? (
+        <p role="status" className="text-sm text-[var(--ad-muted)]">{m.organizationEmpty}</p>
+      ) : (
+        <ul className="space-y-3">
+          {memberships.map((membership) => {
+            const current = membership.id === selectedMembershipId;
+            return (
+              <li key={membership.id} className={`rounded-xl border p-4 ${current ? "border-[var(--ad-forest)] bg-[#f0f7f3]" : "border-[var(--ad-border)]"}`}>
+                <span className="block font-semibold">{membership.organizations.display_name}</span>
+                <span className="mt-1 block text-sm text-[var(--ad-muted)]">{m.status[membership.organizations.status as keyof typeof m.status] ?? m.status.unknown}</span>
+                {current ? (
+                  <span className="admin-badge mt-3" data-tone="default">{m.selected}</span>
+                ) : (
+                  <Link href={`/${locale}/tableau-de-bord?organizationId=${encodeURIComponent(membership.organization_id)}`} className="admin-btn-outline mt-3 w-full">
+                    {m.select} {membership.organizations.display_name}
+                  </Link>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <Link href={`/${locale}/organisation`} className="admin-btn-outline w-full sm:w-auto">{m.organizationCta}</Link>
+    </div>
+  );
+}
+
+export default async function DashboardPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ signout?: string; organizationId?: string; q?: string }>;
+}) {
+  const { locale } = await params;
+  const query = await searchParams;
   if (!isLocale(locale)) notFound();
+
   const supabase = await getSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect(`/${locale}/connexion`);
-  const [membershipsQuery, actionCenter] = await Promise.all([supabase.from("organization_memberships").select("id,organization_id,organizations!inner(display_name,status)").eq("user_id", user.id).eq("status", "ACTIVE").limit(25), loadUserActionCenter(locale)]);
-  const memberships = membershipRows.safeParse(membershipsQuery.data), organizationsUnavailable = Boolean(membershipsQuery.error) || !memberships.success;
-  const requestedOrganizationId = typeof query.organizationId === "string" ? query.organizationId : null;
-  const context = resolveOrganizationContext(memberships.success ? memberships.data.map((membership) => ({ membershipId: membership.id, organizationId: membership.organization_id })) : [], requestedOrganizationId);
-  const selectedMembership = memberships.success ? memberships.data.find((membership) => membership.id === context.selected?.membershipId) ?? null : null;
-  const m = dashboardHomeCopy[locale], alternate = locale === "fr" ? "ar" : "fr";
-  const priorities = actionCenter.status === "success" && selectedMembership ? actionCenter.value.items.filter((item) => item.organizationId === selectedMembership.organization_id || item.organizationId === null).slice(0, 3) : [];
-  const selectedQuery = context.selected ? `?organizationId=${encodeURIComponent(context.selected.organizationId)}` : "";
 
-  return <main dir={locale === "ar" ? "rtl" : "ltr"} className="min-h-dvh bg-[#F7F9FC] px-4 py-6 text-[#14213D] sm:px-6 sm:py-8"><div className="mx-auto max-w-6xl space-y-6">
-    {query.signout === "failed" ? <Alert variant="destructive"><AlertDescription>{m.signOutError}</AlertDescription></Alert> : null}
-    {context.rejected ? <Alert variant="destructive"><AlertDescription>{m.contextRejected}</AlertDescription></Alert> : null}
-    <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"><div className="flex flex-wrap items-start justify-between gap-5"><div className="max-w-3xl"><p className="text-xs font-semibold uppercase tracking-[.18em] text-[#1D4ED8]">{m.eyebrow}</p><h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{m.title}</h1><p className="mt-3 leading-7 text-slate-600">{m.intro}</p>{selectedMembership ? <p className="mt-3 font-semibold text-[#0B1739]">{m.selected} : {selectedMembership.organizations.display_name}</p> : null}</div><div className="flex flex-wrap gap-2"><Link href={`/${alternate}/tableau-de-bord${selectedQuery}`} hrefLang={alternate} lang={alternate} className="min-h-11 rounded-md px-3 py-2.5 text-sm font-medium text-[#1D4ED8] focus-visible:outline focus-visible:outline-2">{m.language}</Link><form action={signOut}><input type="hidden" name="locale" value={locale}/><Button type="submit" variant="outline" className="min-h-11">{m.signOut}</Button></form></div></div></header>
-    <section aria-labelledby="dashboard-priorities" className="grid gap-5 lg:grid-cols-[1.35fr_.65fr]">
-      <Card><CardHeader><CardTitle id="dashboard-priorities">{m.actionsTitle}</CardTitle><CardDescription>{m.actionsDescription}</CardDescription></CardHeader><CardContent className="space-y-4">{actionCenter.status === "error" ? <p role="alert" className="text-sm text-destructive">{m.actionsError}</p> : priorities.length === 0 ? <p role="status" className="text-sm text-muted-foreground">{m.actionsEmpty}</p> : <ul className="space-y-3">{priorities.map((item) => <li key={item.id}><Link href={`${item.href}${item.href.includes("?") ? "&" : "?"}organizationId=${encodeURIComponent(context.selected!.organizationId)}`} className="block rounded-xl border border-slate-200 p-4 hover:border-blue-300 hover:bg-blue-50/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"><div className="flex flex-wrap justify-between gap-2"><span className="font-semibold">{item.title}</span><Badge variant={item.priority === "CRITICAL" || item.priority === "HIGH" ? "destructive" : "secondary"}>{m.priority[item.priority]}</Badge></div>{item.organizationName ? <span className="mt-2 block text-sm text-slate-600">{item.organizationName}</span> : null}</Link></li>)}</ul>}<Link href={`/${locale}/actions${selectedQuery}`} className={cn(buttonVariants(), "min-h-11 w-full sm:w-auto")}>{m.actionsCta}</Link></CardContent></Card>
-      <Card><CardHeader><CardTitle>{m.accountTitle}</CardTitle><CardDescription>{m.signedInAs}</CardDescription></CardHeader><CardContent className="space-y-4"><p className="break-all font-medium" dir="ltr">{user.email ?? "—"}</p><Link href={`/${locale}/securite/sessions`} className={cn(buttonVariants({ variant: "outline" }), "min-h-11 w-full")}>{m.sessionsCta}</Link></CardContent></Card>
-    </section>
-    <Card><CardHeader><CardTitle>{m.organizationsTitle}</CardTitle><CardDescription>{m.organizationsDescription}</CardDescription></CardHeader><CardContent className="space-y-4">{organizationsUnavailable ? <p role="alert" className="text-sm text-destructive">{m.organizationError}</p> : memberships.data.length === 0 ? <p role="status" className="text-sm text-muted-foreground">{m.organizationEmpty}</p> : <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{memberships.data.map((membership) => { const selected = membership.id === context.selected?.membershipId; return <li key={membership.id} className={cn("rounded-xl border p-4", selected ? "border-blue-500 bg-blue-50/50" : "border-slate-200")}><span className="block font-semibold">{membership.organizations.display_name}</span><span className="mt-1 block text-sm text-slate-600">{m.status[membership.organizations.status as keyof typeof m.status] ?? m.status.unknown}</span>{selected ? <Badge className="mt-3">{m.selected}</Badge> : <Link href={`/${locale}/tableau-de-bord?organizationId=${encodeURIComponent(membership.organization_id)}`} className={cn(buttonVariants({ variant: "outline" }), "mt-3 min-h-11 w-full")}>{m.select} {membership.organizations.display_name}</Link>}</li>; })}</ul>}<p className="text-sm text-slate-600">{m.contextLimit}</p><Link href={`/${locale}/organisation${selectedQuery}`} className={cn(buttonVariants({ variant: "outline" }), "min-h-11 w-full sm:w-auto")}>{m.organizationCta}</Link></CardContent></Card>
-    <ModuleHub locale={locale} selectedOrganizationId={context.selected?.organizationId ?? null}/>
-  </div></main>;
+  const now = new Date().toISOString();
+  const [membershipsQuery, platformRoles] = await Promise.all([
+    supabase
+      .from("organization_memberships")
+      .select("id,organization_id,organizations!inner(display_name,status)")
+      .eq("user_id", user.id)
+      .eq("status", "ACTIVE")
+      .order("display_name", { ascending: true, referencedTable: "organizations" })
+      .limit(25),
+    supabase.from("platform_user_roles").select("role_code").eq("user_id", user.id).is("revoked_at", null).limit(20),
+  ]);
+
+  const memberships = membershipRows.safeParse(membershipsQuery.data);
+  const organizationsUnavailable = Boolean(membershipsQuery.error) || !memberships.success;
+  const visibleMemberships = memberships.success
+    ? (() => {
+        const withoutFixtures = memberships.data.filter((membership) => !isCatalogFixtureOrganizationName(membership.organizations.display_name));
+        return withoutFixtures.length > 0 ? withoutFixtures : memberships.data;
+      })()
+    : null;
+  const requestedOrganizationId = typeof query.organizationId === "string" ? query.organizationId : null;
+  const context = resolveOrganizationContext(
+    visibleMemberships
+      ? visibleMemberships.map((membership) => ({
+          membershipId: membership.id,
+          organizationId: membership.organization_id,
+          displayName: membership.organizations.display_name,
+        }))
+      : [],
+    requestedOrganizationId,
+  );
+  const selectedMembership = visibleMemberships?.find((membership) => membership.id === context.selected?.membershipId) ?? null;
+  const m = dashboardHomeCopy[locale];
+  const alternate = locale === "fr" ? "ar" : "fr";
+  const selectedQuery = context.selected ? `?organizationId=${encodeURIComponent(context.selected.organizationId)}` : "";
+  const hasPlatformRole = (platformRoles.data ?? []).length > 0;
+
+  const [membershipRoles, actionCenter] = await Promise.all([
+    context.selected
+      ? supabase.from("organization_member_roles").select("role_code").eq("membership_id", context.selected.membershipId).is("revoked_at", null).limit(20)
+      : Promise.resolve({ data: [] as Array<{ role_code: string }> }),
+    loadUserActionCenterWithinBudget(locale, now, context.selected?.organizationId ?? null),
+  ]);
+  const roleCodes = new Set((membershipRoles.data ?? []).map((row) => String(row.role_code)));
+  const isProviderSpace = [...roleCodes].some((role) => PROVIDER_ROLES.has(role));
+  const isClientSpace = [...roleCodes].some((role) => CLIENT_ROLES.has(role));
+  const preferProvider = isProviderSpace && !isClientSpace;
+
+  const scopedRaw = actionCenter.status === "success" ? filterDashboardActions(actionCenter.value.items, context.selected?.organizationId ?? null) : [];
+  const scopedItems = preferProvider ? filterProviderFacingActions(scopedRaw, hasPlatformRole) : filterClientFacingActions(scopedRaw, hasPlatformRole);
+  const search = typeof query.q === "string" ? query.q.trim().toLowerCase() : "";
+  const searchedItems = search ? scopedItems.filter((item) => `${item.title} ${item.detail} ${item.organizationName ?? ""}`.toLowerCase().includes(search)) : scopedItems;
+  const summary = summarizeDashboardActions(searchedItems, now);
+
+  const switcher = (compact: boolean) => (
+    <OrganizationSwitcher
+      locale={locale}
+      m={m}
+      organizationsUnavailable={organizationsUnavailable}
+      memberships={visibleMemberships}
+      selectedMembershipId={context.selected?.membershipId ?? null}
+      compact={compact}
+    />
+  );
+
+  if (preferProvider) {
+    const snapshot = await loadProviderHomeSnapshot({
+      organizationId: context.selected?.organizationId ?? null,
+      locale,
+      actionItems: searchedItems,
+      now,
+    });
+    const { ProviderDashboardHome } = await import("@/modules/provider/screens/dashboard");
+    return (
+      <>
+        {query.signout === "failed" || context.rejected ? (
+          <div className="space-y-2 px-4 pt-4">
+            {query.signout === "failed" ? <Alert variant="destructive"><AlertDescription>{m.signOutError}</AlertDescription></Alert> : null}
+            {context.rejected ? <Alert variant="destructive"><AlertDescription>{m.contextRejected}</AlertDescription></Alert> : null}
+          </div>
+        ) : null}
+        <ProviderDashboardHome
+          locale={locale}
+          userEmail={user.email ?? null}
+          organizationName={selectedMembership?.organizations.display_name ?? (snapshot.status === "success" ? snapshot.organizationName : null)}
+          selectedQuery={selectedQuery}
+          alternate={alternate}
+          search={typeof query.q === "string" ? query.q : ""}
+          searchedItems={searchedItems}
+          summary={summary}
+          snapshot={snapshot}
+          membershipSwitcher={switcher(false)}
+          signOutAction={signOut}
+        />
+      </>
+    );
+  }
+
+  const isTeamLead = [...roleCodes].some((role) => role === "CLIENT_OWNER" || role === "CLIENT_ADMIN");
+  const snapshot = await loadClientHomeSnapshot({
+    organizationId: context.selected?.organizationId ?? null,
+    locale,
+    actionItems: scopedItems,
+    now,
+    isTeamLead,
+  });
+  const demoHome = applyDemoClientHome({
+    locale,
+    organizationId: context.selected?.organizationId ?? null,
+    organizationName: selectedMembership?.organizations.display_name ?? (snapshot.status === "success" ? snapshot.organizationName : null),
+    selectedQuery,
+    now,
+    items: scopedItems,
+    snapshot,
+  });
+  const visibleItems = search
+    ? demoHome.items.filter((item) => `${item.title} ${item.detail} ${item.organizationName ?? ""}`.toLowerCase().includes(search))
+    : demoHome.items;
+  const demoSummary = summarizeDashboardActions(visibleItems, now);
+  const { ClientDashboardHome } = await import("@/modules/client/screens/dashboard");
+
+  return (
+    <ClientDashboardHome
+      locale={locale}
+      userEmail={user.email ?? null}
+      organizationName={selectedMembership?.organizations.display_name ?? null}
+      selectedOrganizationId={context.selected?.organizationId ?? null}
+      selectedQuery={selectedQuery}
+      alternate={alternate}
+      search={typeof query.q === "string" ? query.q : ""}
+      searchedItems={visibleItems}
+      summary={demoSummary}
+      snapshot={demoHome.snapshot}
+      membershipSwitcher={switcher(true)}
+      actionCenterError={actionCenter.status === "error"}
+      showSignoutError={query.signout === "failed"}
+      contextRejected={context.rejected}
+      signOutAction={signOut}
+      now={now}
+    />
+  );
 }

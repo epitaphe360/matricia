@@ -1,10 +1,69 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { createServerDisputesRepository } from "@/lib/disputes/server-repository";
-import { isLocale } from "@/lib/i18n/locale";
-import { cn } from "@/lib/utils";
-import { getDisputeMessages } from "./messages";
-export default async function DisputesPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string }> }) { const { locale } = await params, { organizationId } = await searchParams; if (!isLocale(locale)) notFound(); const result = await (await createServerDisputesRepository(organizationId)).list(); if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`); if (result.status === "error") throw new Error("DISPUTES_UNAVAILABLE"); const m = getDisputeMessages(locale), query = organizationId ? `?organizationId=${encodeURIComponent(organizationId)}` : ""; return <main className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6"><div className="mx-auto max-w-6xl space-y-6"><header className="flex flex-wrap items-end justify-between gap-4"><div><h1 className="text-3xl font-semibold">{m.title}</h1><p className="mt-2 max-w-3xl text-muted-foreground">{m.intro}</p></div>{result.value.canOpen ? <Link href={`/${locale}/client/litiges/nouveau${query}`} className={cn(buttonVariants(), "min-h-11")}>{m.newCase}</Link> : null}</header>{result.value.cases.length === 0 ? <p className="rounded-xl border bg-card p-6">{m.empty}</p> : <div className="grid gap-4 md:grid-cols-2">{result.value.cases.map((item) => <Card key={item.id}><CardHeader><div className="flex flex-wrap justify-between gap-2"><CardTitle>{item.obligationKey}</CardTitle><Badge>{m.statuses[item.status]}</Badge></div><CardDescription>{m.mission}: <span dir="ltr">{item.missionId}</span></CardDescription></CardHeader><CardContent><p className="line-clamp-3">{item.description}</p><Link href={`/${locale}/client/litiges/${item.id}${query}`} className="mt-4 inline-flex min-h-11 items-center font-medium underline">{m.details}</Link></CardContent></Card>)}</div>}</div></main>; }
+import { resolveClientSpace } from "@/modules/client/data/spaces/context";
+import { spaceCopy } from "@/modules/client/data/spaces/copy";
+import { DisputesBoard } from "@/modules/client/screens/spaces/disputes-board";
+import { ClientAppShell } from "@/modules/client/ui/client-app-shell";
+import { getDisputeMessages } from "@/modules/client/screens/litiges/messages";
+import { createServerDisputesRepository } from "@/modules/shared/lib/disputes/server-repository";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+
+export default async function DisputesPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ organizationId?: string }>;
+}) {
+  const { locale } = await params;
+  const { organizationId } = await searchParams;
+  if (!isLocale(locale)) notFound();
+
+  const space = await resolveClientSpace({ locale, organizationId });
+  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+
+  const repository = await createServerDisputesRepository(space.selectedOrganizationId ?? organizationId);
+  const result = await repository.list();
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error") throw new Error("DISPUTES_UNAVAILABLE");
+
+  const selectedId = result.value.cases[0]?.id;
+  const selected = selectedId ? await repository.detail(selectedId) : { status: "success" as const, value: null };
+  if (selected.status === "error" && selected.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+
+  const m = getDisputeMessages(locale);
+  const c = spaceCopy(locale);
+
+  return (
+    <ClientAppShell
+      locale={locale}
+      selectedQuery={space.selectedQuery}
+      selectedOrganizationId={space.selectedOrganizationId}
+      userEmail={space.userEmail}
+      title={m.title}
+      lead={m.intro}
+      kicker={space.organizationName ?? c.kicker}
+      actions={
+        result.value.canOpen ? (
+          <Link href={`/${locale}/client/litiges/nouveau${space.selectedQuery}`} className="client-cta">
+            {m.newCase}
+          </Link>
+        ) : (
+          <Link href={`/${locale}/contact${space.selectedQuery}`} className="client-cta">
+            {c.contactAssist}
+          </Link>
+        )
+      }
+    >
+      <DisputesBoard
+        locale={locale}
+        query={space.selectedQuery}
+        organizationName={space.organizationName}
+        cases={result.value.cases}
+        selected={selected.status === "success" ? selected.value : null}
+        messages={m}
+        canOpen={result.value.canOpen}
+      />
+    </ClientAppShell>
+  );
+}

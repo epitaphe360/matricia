@@ -3,12 +3,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), refresh: vi.fn() }) }));
-vi.mock("@/lib/i18n/dictionaries", async () => await import("../../../lib/i18n/dictionaries"));
-vi.mock("@/lib/auth/otp", () => ({ normalizeEmail: (value: string) => value.trim().toLowerCase(), normalizeOtp: (value: string) => value }));
-vi.mock("@/lib/supabase/client", () => ({ getSupabaseBrowserClient: () => ({ auth: { verifyOtp: vi.fn(), signInWithPassword: vi.fn() } }) }));
-vi.mock("@/components/ui/button", () => ({ Button: ({ children, variant, ...props }: ComponentPropsWithoutRef<"button"> & { variant?: string }) => <button data-variant={variant} {...props}>{children}</button> }));
-vi.mock("@/components/ui/input", () => ({ Input: (props: ComponentPropsWithoutRef<"input">) => <input {...props} /> }));
-vi.mock("@/components/ui/label", () => ({ Label: ({ children, ...props }: ComponentPropsWithoutRef<"label">) => <label {...props}>{children}</label> }));
+vi.mock("@/modules/shared/lib/i18n/dictionaries", async () => await import("@/modules/shared/lib/i18n/dictionaries"));
+vi.mock("@/modules/shared/lib/auth/otp", () => ({ normalizeEmail: (value: string) => value.trim().toLowerCase(), normalizeOtp: (value: string) => value }));
+vi.mock("@/modules/shared/lib/supabase/client", () => ({ getSupabaseBrowserClient: () => ({ auth: { verifyOtp: vi.fn(), signInWithPassword: vi.fn() } }) }));
+vi.mock("@/modules/shared/ui/button", () => ({ Button: ({ children, variant, ...props }: ComponentPropsWithoutRef<"button"> & { variant?: string }) => <button data-variant={variant} {...props}>{children}</button> }));
+vi.mock("@/modules/shared/ui/input", () => ({ Input: (props: ComponentPropsWithoutRef<"input">) => <input {...props} /> }));
+vi.mock("@/modules/shared/ui/label", () => ({ Label: ({ children, ...props }: ComponentPropsWithoutRef<"label">) => <label {...props}>{children}</label> }));
 vi.mock("./actions", () => ({ requestOtp: vi.fn() }));
 
 import { OtpForm } from "./otp-form";

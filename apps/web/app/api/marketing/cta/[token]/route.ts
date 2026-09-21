@@ -1,7 +1,7 @@
 import { createHmac,randomBytes,randomUUID,timingSafeEqual } from "node:crypto";
 import { isIP } from "node:net";
 import { z } from "zod";
-import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getSupabaseAdminClient } from "@/modules/shared/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 const tokenSchema=z.string().regex(/^[0-9a-f]{128}$/);

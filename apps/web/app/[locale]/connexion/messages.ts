@@ -1,4 +1,4 @@
-import type { Locale } from "@/lib/i18n/locale";
+import type { Locale } from "@/modules/shared/lib/i18n/locale";
 
 const copy = {
   fr: {
@@ -9,6 +9,8 @@ const copy = {
     panelBody: "La connexion protège le contexte de votre diagnostic, de votre besoin et des échanges liés à votre organisation.",
     trust: ["Accès limité à votre organisation", "Historique et décisions traçables", "Parcours disponible en français et en arabe"],
     continuity: "Après connexion, vous reprendrez exactement là où vous vous êtes arrêté.",
+    planIntent: "Offre envisagée",
+    planNote: "Ce choix est conservé pour votre espace. Il ne déclenche ni paiement ni essai.",
     security: "Connexion chiffrée · Aucun mot de passe requis avec le code par courriel",
     resend: "Renvoyer le code",
     resent: "Si cette adresse est admissible, un nouveau code vient d’être envoyé.",
@@ -20,6 +22,8 @@ const copy = {
     signupPageDescription: "Validez votre adresse professionnelle, puis créez ou rejoignez le passeport de votre organisation.",
     clientAccount: "Compte Client",
     providerAccount: "Compte Sous-traitant",
+    demoUnavailable: "La connexion de démonstration n’est pas disponible pour ce profil. Vérifiez le provisionnement local.",
+    demoDisabled: "L’accès de démonstration est désactivé dans cet environnement.",
   },
   ar: {
     brand: "ماتريسيا",
@@ -29,6 +33,8 @@ const copy = {
     panelBody: "يحمي تسجيل الدخول سياق تشخيصك واحتياجك والمراسلات المرتبطة بمؤسستك.",
     trust: ["وصول محصور في مؤسستك", "سجل وقرارات قابلة للتتبع", "مسار متاح بالفرنسية والعربية"],
     continuity: "بعد تسجيل الدخول، ستتابع من النقطة التي توقفت عندها تماماً.",
+    planIntent: "العرض المقصود",
+    planNote: "يُحفظ هذا الاختيار لمساحتكم. لا يفعّل دفعاً ولا تجربة.",
     security: "اتصال مشفر · لا حاجة إلى كلمة مرور عند استخدام الرمز عبر البريد",
     resend: "إعادة إرسال الرمز",
     resent: "إذا كان العنوان مؤهلاً، فقد تم إرسال رمز جديد إليه.",
@@ -40,8 +46,10 @@ const copy = {
     signupPageDescription: "تحقق من بريدك المهني، ثم أنشئ جواز مؤسستك أو اطلب الانضمام إليها.",
     clientAccount: "حساب عميل",
     providerAccount: "حساب مقدم خدمات",
+    demoUnavailable: "تسجيل الدخول التجريبي غير متاح لهذا الملف. تحقق من التجهيز المحلي.",
+    demoDisabled: "تم تعطيل الوصول التجريبي في هذه البيئة.",
   },
-} satisfies Record<Locale, { brand: string; back: string; panelEyebrow: string; panelTitle: string; panelBody: string; trust: readonly string[]; continuity: string; security: string; resend: string; resent: string; loginTitle: string; loginAction: string; signupTitle: string; signupAction: string; signupPageTitle: string; signupPageDescription: string; clientAccount: string; providerAccount: string }>;
+} satisfies Record<Locale, { brand: string; back: string; panelEyebrow: string; panelTitle: string; panelBody: string; trust: readonly string[]; continuity: string; planIntent: string; planNote: string; security: string; resend: string; resent: string; loginTitle: string; loginAction: string; signupTitle: string; signupAction: string; signupPageTitle: string; signupPageDescription: string; clientAccount: string; providerAccount: string; demoUnavailable: string; demoDisabled: string }>;
 
 export function getLoginMessages(locale: Locale) {
   return copy[locale];

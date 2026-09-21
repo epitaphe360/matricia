@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
-import { access, copyFile, mkdir, rm } from "node:fs/promises";
+import { access, copyFile, mkdir, rm, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import postgres from "postgres";
@@ -20,7 +20,9 @@ const { createClient } = requireFromWeb("@supabase/supabase-js");
 const runToken = randomUUID();
 const outputDirectory = resolve(root, "artifacts", "test-results", `p24-p26-completion-${runToken}`);
 const authDirectory = resolve(root, "artifacts", "test-results", `.p24-p26-auth-${runToken}`);
-const expectedTests = 38;
+const smokeOnly = process.argv.includes("--authenticated-route-smoke-only");
+const expectedTests = smokeOnly ? 16 : 54;
+const smokeEvidencePath = resolve(root, "artifacts", "test-results", "authenticated-route-smoke-summary.json");
 
 const hash = (value) => createHash("sha256").update(value).digest("hex");
 
@@ -28,12 +30,32 @@ function combineFailure(current, next, message) {
   return current ? new AggregateError([current, next], message, { cause: current }) : next;
 }
 
-async function provisionProviderAndFranchise(fixture) {
+function sanitizedFailureCode(error) {
+  const sqlState = /^[0-9A-Z_-]{2,24}$/u.test(error?.code ?? "") ? error.code : "UNKNOWN";
+  const constraint = /^[a-z0-9_]{1,120}$/u.test(error?.constraint_name ?? "") ? error.constraint_name : "UNAVAILABLE";
+  return `${sqlState}:${constraint}`;
+}
+
+function sanitizedPlaywrightDiagnostic(output, exitCode) {
+  const clean = output
+    .replace(/\u001b\[[0-9;]*m/gu, "")
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/giu, "[email-redacted]")
+    .replace(/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}/giu, "[uuid-redacted]")
+    .replace(/(?:Bearer\s+)?[A-Za-z0-9_-]{40,}/gu, "[token-redacted]")
+    .replace(/([?&](?:token|key|secret|code|session|state)=)[^\s&]+/giu, "$1[redacted]");
+  const relevant = clean.split(/\r?\n/u).map((line) => line.trim()).filter((line) =>
+    /error|failed|cannot|timeout|timed out|no tests found|browsertype|webserver|enoent|eaddrinuse/iu.test(line),
+  ).slice(0, 8);
+  return relevant.length > 0 ? `exit=${exitCode}; ${relevant.join(" | ").slice(0, 1_500)}` : `exit=${exitCode}; no diagnostic line emitted`;
+}
+
+async function provisionProviderAndFranchise(fixture, onStage = () => {}) {
   const database = fixture.resources.database;
   const providerFranchiseUserId = fixture.resources.userIds[3];
   const foreignUserId = fixture.resources.userIds[1];
   if (!providerFranchiseUserId || !foreignUserId) throw new Error("P24-P26 fixture identities are incomplete");
 
+  onStage("role-fixture-reference-data");
   const [library] = await database`select id from public.catalog_libraries order by code limit 1`;
   const [catalogSource]=await database`select s.id service_id,s.library_id,v.content_hash,v.name_fr from public.catalog_services s join public.catalog_service_versions v on v.id=s.current_published_version_id where s.status='PUBLISHED' order by s.created_at limit 1`;
   const [activeTemplate]=await database`select t.id template_id,v.id template_version_id from public.marketing_templates t join public.marketing_template_versions v on v.id=t.current_version_id where t.template_key='PROBLEM_SOLUTION' and t.status='ACTIVE' limit 1`;
@@ -60,11 +82,13 @@ async function provisionProviderAndFranchise(fixture) {
   // Register the identifier before the transaction so base cleanup remains safe
   // even if a connection failure makes the transaction result ambiguous.
   fixture.resources.organizationIds.push(organizationId);
+  onStage("role-fixture-organization");
   await database.begin(async (transaction) => {
     await transaction`insert into public.organizations(id,legal_name,display_name,status,created_by)
       values(${organizationId}::uuid,${organizationName},${organizationName},'ACTIVE',${providerFranchiseUserId}::uuid)`;
     await transaction`insert into public.organization_memberships(id,organization_id,user_id,status,activated_at)
       values(${membershipId}::uuid,${organizationId}::uuid,${providerFranchiseUserId}::uuid,'ACTIVE',clock_timestamp())`;
+    onStage("role-fixture-franchise");
     await transaction`insert into public.franchises(id,library_id,operator_organization_id,franchise_type,operator_code,territory_code,status,created_by)
       values(${franchiseId}::uuid,${library.id}::uuid,${organizationId}::uuid,'STANDARD','FRANCHISEE',${territoryCode},'CONTRACT_PENDING',${providerFranchiseUserId}::uuid)`;
     await transaction`insert into public.franchise_territory_versions(id,franchise_id,version,territory_code,name_fr,name_ar,scope_snapshot,effective_from,content_hash,created_by)
@@ -88,6 +112,7 @@ async function provisionProviderAndFranchise(fixture) {
       values
         (${membershipId}::uuid,'PROVIDER_OWNER',null,${providerFranchiseUserId}::uuid),
         (${membershipId}::uuid,'FRANCHISE_OWNER',${franchiseId}::uuid,${providerFranchiseUserId}::uuid)`;
+    onStage("role-fixture-workflows");
     await transaction.unsafe("set local session_replication_role='replica'");
     for(const [index,workflow] of workflows.entries()){
       await transaction`insert into public.contracts(id,client_organization_id,provider_organization_id,status,current_version,created_by) values(${workflow.contractId}::uuid,${fixture.manifest.fixtures.organizationA.id}::uuid,${organizationId}::uuid,'ACTIVE',1,${fixture.resources.userIds[0]}::uuid)`;
@@ -97,13 +122,22 @@ async function provisionProviderAndFranchise(fixture) {
       await transaction`insert into public.deliverables(id,mission_id,milestone_id,deliverable_key,label_fr,label_ar,proof_required) values(${workflow.deliverableId}::uuid,${workflow.missionId}::uuid,${workflow.milestoneId}::uuid,${`E2E_D${index+1}`},${`Livrable P25 ${index+1}`},${`تسليم P25 ${index+1}`},true)`;
       await transaction`insert into public.acceptance_checklists(mission_id,deliverable_id,criterion_key) values(${workflow.missionId}::uuid,${workflow.deliverableId}::uuid,'QUALITY')`;
     }
+    onStage("role-fixture-marketing");
     if(marketing.ownsTemplate){
-      await transaction`insert into public.marketing_templates(id,template_key,status,current_version_id,created_by) values(${marketing.templateId}::uuid,'PROBLEM_SOLUTION','ACTIVE',${marketing.templateVersionId}::uuid,${providerFranchiseUserId}::uuid)`;
-      await transaction`insert into public.marketing_template_versions(id,template_id,version,structure,frequency_max_weekly,content_hash,created_by) values(${marketing.templateVersionId}::uuid,${marketing.templateId}::uuid,1,'{"fixture":"P24"}'::jsonb,2,${hash(`${runToken}:template`)},${providerFranchiseUserId}::uuid)`;
+      onStage("role-fixture-marketing-template");
+      await transaction`insert into public.marketing_templates(id,template_key,status,created_by) values(${marketing.templateId}::uuid,'PROBLEM_SOLUTION','DRAFT',${providerFranchiseUserId}::uuid)`;
+      await transaction`insert into public.marketing_template_versions(id,template_id,version,structure,frequency_max_weekly,content_hash,created_by) values(${marketing.templateVersionId}::uuid,${marketing.templateId}::uuid,1,'{"hook":"problem","body":"solution","target_characters":600,"required_media":[],"allowed_ctas":["DIAGNOSTIC"],"forbidden_claims":[],"translation_rules":{"required":true},"repetition_rules":{"maximum":2}}'::jsonb,2,${hash(`${runToken}:template`)},${providerFranchiseUserId}::uuid)`;
+      await transaction`update public.marketing_templates set status='ACTIVE',current_version_id=${marketing.templateVersionId}::uuid where id=${marketing.templateId}::uuid`;
     }
-    await transaction`insert into public.brand_kits(id,organization_id,status,current_version_id,created_by) values(${marketing.brandKitId}::uuid,${organizationId}::uuid,'READY',${marketing.brandKitVersionId}::uuid,${providerFranchiseUserId}::uuid)`;
-    await transaction`insert into public.brand_kit_versions(id,brand_kit_id,version,payload,claims,certifications,content_hash,change_reason,created_by) values(${marketing.brandKitVersionId}::uuid,${marketing.brandKitId}::uuid,1,jsonb_build_object('legal_name',${organizationName},'trade_name',${organizationName},'primary_colors',jsonb_build_array('#123B5D'),'tone',jsonb_build_array('PROFESSIONAL'),'languages',jsonb_build_array('FR','AR'),'primary_cta','DIAGNOSTIC','tracked_url','https://matricia.ma/diagnostic','required_mentions','[]'::jsonb,'forbidden_terms','[]'::jsonb,'approved_hashtags',jsonb_build_array('#Matricia')),'[]'::jsonb,'[]'::jsonb,${hash(`${runToken}:brand`)},'Fixture E2E P24',${providerFranchiseUserId}::uuid)`;
+    onStage("role-fixture-marketing-brand");
+    await transaction`insert into public.brand_kits(id,organization_id,status,created_by) values(${marketing.brandKitId}::uuid,${organizationId}::uuid,'DRAFT',${providerFranchiseUserId}::uuid)`;
+    onStage("role-fixture-marketing-brand-version");
+    await transaction`insert into public.brand_kit_versions(id,brand_kit_id,version,payload,claims,certifications,content_hash,change_reason,created_by) values(${marketing.brandKitVersionId}::uuid,${marketing.brandKitId}::uuid,1,jsonb_build_object('legal_name',${organizationName}::text,'trade_name',${organizationName}::text,'primary_colors',jsonb_build_array('#123B5D'),'tone',jsonb_build_array('PROFESSIONAL'),'languages',jsonb_build_array('FR','AR'),'primary_cta','DIAGNOSTIC','tracked_url','https://matricia.ma/diagnostic','required_mentions','[]'::jsonb,'forbidden_terms','[]'::jsonb,'approved_hashtags',jsonb_build_array('#Matricia')),'[]'::jsonb,'[]'::jsonb,${hash(`${runToken}:brand`)},'Fixture E2E P24',${providerFranchiseUserId}::uuid)`;
+    onStage("role-fixture-marketing-brand-activate");
+    await transaction`update public.brand_kits set status='READY',current_version_id=${marketing.brandKitVersionId}::uuid,row_version=row_version+1 where id=${marketing.brandKitId}::uuid`;
+    onStage("role-fixture-marketing-consent");
     await transaction`insert into public.marketing_consents(id,organization_id,purpose,decision,policy_version,evidence_hash,decided_by) values(${marketing.consentId}::uuid,${organizationId}::uuid,'MARKETING_ANALYTICS','GRANTED','P24-E2E',${hash(`${runToken}:consent`)},${providerFranchiseUserId}::uuid)`;
+    onStage("role-fixture-marketing-campaign");
     await transaction`insert into public.marketing_campaigns(id,organization_id,brand_kit_version_id,mode,title_fr,title_ar,status,audience_snapshot,source_snapshot,created_by) values(${marketing.campaignId}::uuid,${organizationId}::uuid,${marketing.brandKitVersionId}::uuid,'ASSISTED','Campagne P24','حملة P24','DRAFT','{"fixture":"P24"}'::jsonb,'{"fixture":"P24"}'::jsonb,${providerFranchiseUserId}::uuid)`;
   });
 
@@ -174,9 +208,10 @@ async function neutralizeRoleFixture(database, roleFixture) {
     await transaction`delete from public.marketing_content where campaign_id=${roleFixture.marketing.campaignId}::uuid`;
     await transaction`delete from public.marketing_campaigns where id=${roleFixture.marketing.campaignId}::uuid`;
     await transaction`delete from public.marketing_consents where id=${roleFixture.marketing.consentId}::uuid`;
+    await transaction`update public.brand_kits set current_version_id=null,status='SUSPENDED',row_version=row_version+1 where id=${roleFixture.marketing.brandKitId}::uuid`;
     await transaction`delete from public.brand_kit_versions where id=${roleFixture.marketing.brandKitVersionId}::uuid`;
     await transaction`delete from public.brand_kits where id=${roleFixture.marketing.brandKitId}::uuid`;
-    if(roleFixture.marketing.ownsTemplate){await transaction`delete from public.marketing_template_versions where id=${roleFixture.marketing.templateVersionId}::uuid`;await transaction`delete from public.marketing_templates where id=${roleFixture.marketing.templateId}::uuid`;}
+    if(roleFixture.marketing.ownsTemplate){await transaction`update public.marketing_templates set current_version_id=null,status='RETIRED' where id=${roleFixture.marketing.templateId}::uuid`;await transaction`delete from public.marketing_template_versions where id=${roleFixture.marketing.templateVersionId}::uuid`;await transaction`delete from public.marketing_templates where id=${roleFixture.marketing.templateId}::uuid`;}
   });
   await database`update public.franchises
     set status='TERMINATED',updated_at=clock_timestamp(),row_version=row_version+1
@@ -220,62 +255,96 @@ async function runPlaywright(config, fixture, roleFixture, statePaths) {
     E2E_FOREIGN_ORGANIZATION_NAME: fixture.manifest.fixtures.organizationB.name,
     E2E_P25_WORKFLOWS: JSON.stringify(roleFixture.workflows),
     E2E_P28_RUN_TOKEN: runToken,
-    CRON_SECRET: hash(`${runToken}:cron`),
     E2E_CRON_SECRET: hash(`${runToken}:cron`),
     DELIVERY_PROOF_SCANNER_MODE: "SANDBOX",
     E2E_MARKETING_CHAIN_FIXTURE: JSON.stringify({content:{organizationId:roleFixture.organizationId,campaignId:roleFixture.marketing.campaignId,serviceId:roleFixture.marketing.serviceId,libraryId:roleFixture.marketing.libraryId,language:"FR",serviceName:roleFixture.marketing.serviceName,valueProposition:"Une valeur structurée et vérifiable.",primaryCta:"Diagnostiquer",trackedUrl:"https://matricia.ma/diagnostic",approvedHashtags:["#Matricia"],templateKey:"PROBLEM_SOLUTION",sourceHash:roleFixture.marketing.sourceHash,idempotencyKey:randomUUID()},attribution:{organizationId:roleFixture.organizationId,campaignId:roleFixture.marketing.campaignId,contentId:null,eventType:"CTA_CLICKED",source:"linkedin",medium:"social",visitorHash:hash(`${runToken}:visitor`),economicValueMinor:null,occurredAt:new Date().toISOString(),metadata:{utm_campaign:"p24-e2e"},idempotencyKey:randomUUID()}}),
   });
-  const child = spawn(process.execPath, [
-    resolve(root, "node_modules", "@playwright", "test", "cli.js"),
-    "test",
+  const specifications = smokeOnly ? [
+    "tests/e2e/authenticated-route-smoke.spec.ts",
+  ] : [
     "tests/e2e/p24-marketing-completion.spec.ts",
     "tests/e2e/p25-client-provider-completion.spec.ts",
     "tests/e2e/p26-transversal-completion.spec.ts",
     "tests/e2e/p28-reputation-checklists.spec.ts",
+    "tests/e2e/authenticated-route-smoke.spec.ts",
+  ];
+  const child = spawn(process.execPath, [
+    resolve(root, "node_modules", "@playwright", "test", "cli.js"),
+    "test",
+    ...specifications,
     "--workers=1",
     "--reporter=line",
     "--output", outputDirectory,
-  ], { cwd: root, env: environment, stdio: ["ignore", "pipe", "inherit"], shell: false });
+  ], { cwd: root, env: environment, stdio: ["ignore", "pipe", "pipe"], shell: false });
   let playwrightOutput = "";
   child.stdout.setEncoding("utf8");
-  child.stdout.on("data", (chunk) => {
-    playwrightOutput += chunk;
-    process.stdout.write(chunk);
-  });
+  child.stderr.setEncoding("utf8");
+  child.stdout.on("data", (chunk) => { playwrightOutput += chunk; });
+  child.stderr.on("data", (chunk) => { playwrightOutput += chunk; });
   const exitCode = await new Promise((resolveExit, reject) => {
-    child.once("error", reject);
-    child.once("exit", (value, signal) => signal
-      ? reject(new Error("P24-P26 Playwright run was interrupted"))
-      : resolveExit(value ?? 1));
+    child.once("error", (cause) => {
+      const error = new Error("P24-P26 Playwright process could not start", { cause });
+      error.code = typeof cause?.code === "string" ? cause.code : undefined;
+      error.playwrightDiagnostic = sanitizedPlaywrightDiagnostic(`${playwrightOutput}\n${cause?.message ?? "process start failed"}`, "spawn-error");
+      reject(error);
+    });
+    child.once("exit", (value, signal) => {
+      if (!signal) return resolveExit(value ?? 1);
+      const error = new Error("P24-P26 Playwright run was interrupted");
+      error.code = signal;
+      error.playwrightDiagnostic = sanitizedPlaywrightDiagnostic(playwrightOutput, signal);
+      reject(error);
+    });
   });
   const progress = [...playwrightOutput.matchAll(/\[(\d+)\/(\d+)\]/g)];
   const executed = new Set(progress.map((match) => Number(match[1])));
   const totals = new Set(progress.map((match) => Number(match[2])));
   const skipped = /\b\d+\s+skipped\b/i.test(playwrightOutput);
   if (executed.size !== expectedTests || totals.size !== 1 || !totals.has(expectedTests) || skipped) {
-    throw new Error("P24-P26 Playwright report contains missing or skipped tests");
+    const error = new Error("P24-P26 Playwright report contains missing or skipped tests");
+    error.playwrightDiagnostic = sanitizedPlaywrightDiagnostic(playwrightOutput, exitCode);
+    throw error;
   }
   if (exitCode !== 0 || /\b\d+\s+flaky\b/i.test(playwrightOutput)) {
-    throw new Error("P24-P26 Playwright suite did not complete cleanly");
+    const error = new Error("P24-P26 Playwright suite did not complete cleanly");
+    error.playwrightDiagnostic = sanitizedPlaywrightDiagnostic(playwrightOutput, exitCode);
+    throw error;
   }
+  return { executed: executed.size, total: [...totals][0], diagnostic: sanitizedPlaywrightDiagnostic(playwrightOutput, exitCode) };
 }
 
 async function main() {
   let fixture;
   let roleFixture;
   let failure;
+  let failureCode = "UNKNOWN:UNAVAILABLE";
+  let playwrightResult;
+  let failureDiagnostic = null;
+  let remoteCleanupPassed = false;
+  let localCleanupPassed = false;
+  let sharedAuthCleanupPassed = false;
+  let stage = "base-fixture";
   try {
     fixture = await provision();
+    stage = "configuration";
     const config = await loadSafeConfiguration(root);
     await validateFreshManifest(fixture.manifest, config);
-    roleFixture = await provisionProviderAndFranchise(fixture);
+    stage = "role-fixture";
+    roleFixture = await provisionProviderAndFranchise(fixture, (value) => { stage = value; });
+    stage = "role-isolation";
     await proveRoleIsolation(fixture.resources.database, roleFixture);
+    stage = "authentication-states";
     const statePaths = await copyAndVerifyStates(fixture);
-    await runPlaywright(config, fixture, roleFixture, statePaths);
+    stage = "playwright";
+    playwrightResult = await runPlaywright(config, fixture, roleFixture, statePaths);
+    stage = "storage-isolation";
     await proveP25StorageIsolation(fixture.resources.database,roleFixture);
+    stage = "complete";
     console.log(`PASS P24-P26 authenticated E2E suite (${expectedTests} tests, zero skipped)`);
   } catch (error) {
     failure = error;
+    failureCode = sanitizedFailureCode(error);
+    failureDiagnostic = typeof error?.playwrightDiagnostic === "string" ? error.playwrightDiagnostic : null;
   } finally {
     if (fixture && roleFixture) {
       try {
@@ -288,6 +357,7 @@ async function main() {
       try {
         await fixture.cleanup();
         if (fixture.resources.retainedEvidence <= 0) throw new Error("Immutable fixture evidence was not retained");
+        remoteCleanupPassed = true;
         console.log("PASS P24-P26 remote fixtures neutralized");
       } catch (error) {
         failure = combineFailure(failure, error, "P24-P26 run and base-fixture cleanup failed");
@@ -297,20 +367,37 @@ async function main() {
         const expectedSharedAuth = resolve(root, "scripts", "p05-e2e", ".auth");
         if (sharedAuth !== expectedSharedAuth) throw new Error("Refusing unverified P24-P26 shared-auth cleanup");
         await rm(sharedAuth, { recursive: true, force: true });
+        sharedAuthCleanupPassed = true;
       } catch (error) {
         failure = combineFailure(failure, error, "P24-P26 shared authentication cleanup failed");
       }
     }
+    let localCleanupError = false;
     for (const path of [authDirectory, outputDirectory]) {
       try {
         await rm(path, { recursive: true, force: true });
       } catch (error) {
+        localCleanupError = true;
         failure = combineFailure(failure, error, "P24-P26 local evidence cleanup failed");
       }
     }
+    localCleanupPassed = !localCleanupError && sharedAuthCleanupPassed;
   }
+  await writeFile(smokeEvidencePath, `${JSON.stringify({
+    schemaVersion: 1,
+    environment: "SANDBOX",
+    mode: smokeOnly ? "AUTHENTICATED_ROUTE_SMOKE_ONLY" : "FULL_P24_P26",
+    status: failure ? "FAILED" : "PASSED",
+    expectedTests,
+    executedTests: playwrightResult?.executed ?? 0,
+    stage,
+    failureCode: failure ? failureCode : null,
+    diagnostic: failureDiagnostic,
+    cleanup: { remoteFixturesNeutralized: remoteCleanupPassed, localAuthenticationArtifactsRemoved: localCleanupPassed },
+  }, null, 2)}\n`, { mode: 0o600 });
   if (failure) {
-    console.error("FAIL P24-P26 authenticated E2E execution failed; no credential or private fixture detail was printed");
+    if (failureDiagnostic) console.error(`DIAGNOSTIC ${failureDiagnostic}`);
+    console.error(`FAIL P24-P26 authenticated E2E execution failed at ${stage} (${failureCode}); no credential or private fixture detail was printed`);
     process.exitCode = 1;
   }
 }

@@ -1,0 +1,351 @@
+"use client";
+
+import Link from "next/link";
+import { useActionState, useState } from "react";
+import { ArrowLeft, ArrowRight, Info, Scale } from "lucide-react";
+import { formatMinorExact, type QuoteComparison, type QuoteComparisonRow } from "@/modules/client/data/rfq/model";
+import { canApplyDemoOffer } from "@/modules/client/data/rfq/quote-detail-demo";
+import { formatCompletenessBasisPoints, type QuoteCompleteness } from "@/modules/client/data/rfq/quote-completeness";
+import type { ComparisonOfferFacts } from "@/modules/client/data/rfq/comparison-facts";
+import { demoClientSpaces } from "@/modules/client/data/spaces/demo";
+import { spaceCopy } from "@/modules/client/data/spaces/copy";
+import type { Locale } from "@/modules/shared/lib/i18n/locale";
+import type { ClientRfqMessages } from "./messages";
+import { AssistanceCue } from "@/modules/client/screens/diagnostics/assistance-cue";
+import { compareQuotesAction, selectQuoteAction, type ActionState, type ComparisonState } from "./actions";
+
+const compareIdle: ComparisonState = { status: "idle" };
+const actionIdle: ActionState = { status: "idle" };
+
+const WEIGHTS = [
+  { id: "price", key: "weighPrice", value: 30 },
+  { id: "delay", key: "weighDelay", value: 20 },
+  { id: "scope", key: "weighScope", value: 20 },
+  { id: "warranty", key: "weighWarranty", value: 10 },
+  { id: "maintenance", key: "weighMaintenance", value: 10 },
+  { id: "payment", key: "weighPayment", value: 10 },
+] as const;
+
+type WeightKey = (typeof WEIGHTS)[number]["id"];
+
+function letterFor(index: number, locale: Locale) {
+  const letters = locale === "ar" ? ["أ", "ب", "ج", "د", "هـ"] : ["A", "B", "C", "D", "E"];
+  return letters[index] ?? String(index + 1);
+}
+
+function formatDuration(days: number, locale: Locale) {
+  if (days > 0 && days % 7 === 0) {
+    const weeks = days / 7;
+    return locale === "ar" ? `${weeks} أسابيع` : `${weeks} semaine${weeks > 1 ? "s" : ""}`;
+  }
+  return locale === "ar" ? `${days} أيام` : `${days} jours`;
+}
+
+type CompareColumn = {
+  key: string;
+  quoteId: string;
+  quoteVersionId: string;
+  letter: string;
+  tagline: string;
+  recommended: boolean;
+  price: string;
+  taxBase: string;
+  duration: string;
+  deliverables: string[];
+  exclusions: string[];
+  guarantees: string;
+  maintenance: string;
+  payment: string;
+  why: string;
+  expired: boolean;
+  selectable: boolean;
+  completeness: QuoteCompleteness | null;
+};
+
+export function ComparisonPanel({
+  locale,
+  requestId,
+  rfqId,
+  messages,
+  canManage,
+  initialComparison,
+  nowIso,
+  compareKey,
+  selectKeys,
+  selectedQuery,
+  requestTitle,
+  requestHref,
+  organizationName,
+  offerFacts = {},
+  assistanceHref,
+}: {
+  locale: Locale;
+  requestId: string;
+  rfqId: string;
+  messages: ClientRfqMessages;
+  canManage: boolean;
+  initialComparison: QuoteComparison | null;
+  nowIso: string;
+  compareKey: string;
+  selectKeys: string[];
+  selectedQuery: string;
+  requestTitle: string;
+  requestHref: string;
+  organizationName?: string | null;
+  offerFacts?: Record<string, ComparisonOfferFacts>;
+  assistanceHref?: string;
+}) {
+  const [state, action, pending] = useActionState(compareQuotesAction, compareIdle);
+  const [weights, setWeights] = useState<Record<WeightKey, number>>({
+    price: 30,
+    delay: 20,
+    scope: 20,
+    warranty: 10,
+    maintenance: 10,
+    payment: 10,
+  });
+  const c = spaceCopy(locale);
+  const demo = demoClientSpaces(locale, selectedQuery);
+  const rows = state.status === "success" ? state.rows : initialComparison?.rows ?? [];
+  const preferDemo = canApplyDemoOffer(organizationName ?? null) && rows.length === 0;
+  const columns: CompareColumn[] = preferDemo
+    ? demo.compareOffers.map((offer, index) => {
+        const quoteId = offer.slot === "c" ? `demo:${requestId}:c` : `${requestId}-${offer.slot}`;
+        return {
+          key: quoteId,
+          quoteId,
+          quoteVersionId: `${quoteId}-version`,
+          letter: letterFor(index, locale),
+          tagline: offer.tagline,
+          recommended: offer.recommended,
+          price: formatMinorExact(offer.priceMinor, "MAD", locale),
+          taxBase: offer.taxIncl ? c.taxIncl : c.taxExcl,
+          duration: locale === "ar" ? `${offer.weeks} أسابيع` : `${offer.weeks} semaine${offer.weeks > 1 ? "s" : ""}`,
+          deliverables: offer.deliverables,
+          exclusions: offer.exclusions,
+          guarantees: offer.guarantees,
+          maintenance: offer.maintenance,
+          payment: offer.payment,
+          why: offer.why,
+          expired: false,
+          selectable: false,
+          completeness: null,
+        };
+      })
+    : rows.map((row, index) => mapRow(row, index, locale, c, messages, nowIso, offerFacts[row.quoteVersionId]));
+  const snapshotId = state.status === "success" ? state.snapshotId : initialComparison?.snapshotId ?? "";
+  const BackIcon = locale === "ar" ? ArrowRight : ArrowLeft;
+  const askHref = `/${locale}/messagerie${selectedQuery}`;
+
+  return (
+    <div className="client-compare-page">
+      <Link href={requestHref} className="client-text-link">
+        <BackIcon className="size-4" aria-hidden />
+        {c.backQuotes}
+      </Link>
+      <article className="client-card client-compare-request">
+        <div>
+          <p>{c.need}: <strong>{requestTitle}</strong></p>
+          <small>{c.sameScope} · {columns.length} {locale === "ar" ? "عروض" : "offres"}</small>
+        </div>
+        <Link href={requestHref} className="client-soft-link">{c.seeRequest}</Link>
+      </article>
+      {assistanceHref ? <AssistanceCue locale={locale} href={assistanceHref} context="quotes" /> : null}
+      {canManage ? (
+        <form action={action} className="client-compare-refresh">
+          <input type="hidden" name="locale" value={locale} />
+          <input type="hidden" name="requestId" value={requestId} />
+          <input type="hidden" name="rfqId" value={rfqId} />
+          <input type="hidden" name="idempotencyKey" value={compareKey} />
+          <button type="submit" disabled={pending} className="client-ghost-link">
+            {pending ? messages.comparing : initialComparison ? messages.refreshComparison : messages.compare}
+          </button>
+        </form>
+      ) : (
+        <p role="status" className="client-access-note">{messages.readOnly}</p>
+      )}
+      {state.status === "error" ? <p role="alert" className="client-access-note">{messages.actionError}</p> : null}
+      {preferDemo ? <p role="status" className="client-access-note">{messages.demoSelectionDisabled}</p> : <p className="client-access-note">{messages.contactsHidden}</p>}
+      {initialComparison && state.status !== "success" ? (
+        <p className="client-access-note">
+          {messages.snapshot}: <time dateTime={initialComparison.createdAt}>{new Intl.DateTimeFormat(locale === "ar" ? "ar-MA" : "fr-MA", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Casablanca" }).format(new Date(initialComparison.createdAt))}</time>
+        </p>
+      ) : null}
+      {columns.length === 0 ? (
+        <p className="client-card">{messages.noComparison}</p>
+      ) : (
+        <section className="client-compare-layout">
+          <div className="client-compare-grid" aria-live="polite">
+            {columns.map((column, index) => (
+              <QuoteColumn
+                key={column.key}
+                column={column}
+                locale={locale}
+                requestId={requestId}
+                selectedQuery={selectedQuery}
+                messages={messages}
+                canManage={canManage}
+                selectKey={selectKeys[index] ?? selectKeys[0]}
+                snapshotId={snapshotId}
+                askHref={askHref}
+              />
+            ))}
+          </div>
+          <aside className="client-card client-weight-aside">
+            <header>
+              <h2><Scale className="size-4" aria-hidden />{c.weighCriteria}</h2>
+            </header>
+            <p>{c.weighLead}</p>
+            <ul className="client-weight-list">
+              {WEIGHTS.map((item) => (
+                <li key={item.id}>
+                  <label>
+                    <span>{c[item.key]}</span>
+                    <strong dir="ltr">{weights[item.id]} %</strong>
+                    <input
+                      type="range"
+                      min={0}
+                      max={50}
+                      step={5}
+                      value={weights[item.id]}
+                      aria-valuetext={`${weights[item.id]} %`}
+                      onChange={(event) => setWeights((current) => ({ ...current, [item.id]: Number(event.target.value) }))}
+                    />
+                  </label>
+                </li>
+              ))}
+            </ul>
+            <p className="client-weight-note"><Info className="size-4" aria-hidden />{c.weighNote}</p>
+          </aside>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function mapRow(
+  row: QuoteComparisonRow,
+  index: number,
+  locale: Locale,
+  c: ReturnType<typeof spaceCopy>,
+  messages: ClientRfqMessages,
+  nowIso: string,
+  facts?: ComparisonOfferFacts,
+): CompareColumn {
+  const expired = Date.parse(row.validUntil) <= Date.parse(nowIso);
+  const taxZero = row.taxMinor === "0";
+  const complete = !facts || facts.completeness.basisPoints === 10_000;
+  return {
+    key: row.quoteVersionId,
+    quoteId: row.quoteId,
+    quoteVersionId: row.quoteVersionId,
+    letter: letterFor(index, locale),
+    tagline: `${messages.rank} ${row.priceRank}`,
+    recommended: row.priceRank === 1,
+    price: formatMinorExact(row.totalMinor, row.currency, locale),
+    taxBase: taxZero ? c.taxIncl : c.taxExcl,
+    duration: formatDuration(row.durationDays, locale),
+    deliverables: facts?.deliverables.length ? facts.deliverables : [`${row.deliverablesCount} ${messages.deliverables}`],
+    exclusions: facts?.exclusions ?? [],
+    guarantees: facts?.warranty ?? "",
+    maintenance: "",
+    payment: "",
+    why: "",
+    expired,
+    selectable: complete,
+    completeness: facts?.completeness ?? null,
+  };
+}
+
+function QuoteColumn({
+  column,
+  locale,
+  requestId,
+  selectedQuery,
+  messages,
+  canManage,
+  selectKey,
+  snapshotId,
+  askHref,
+}: {
+  column: CompareColumn;
+  locale: Locale;
+  requestId: string;
+  selectedQuery: string;
+  messages: ClientRfqMessages;
+  canManage: boolean;
+  selectKey: string;
+  snapshotId: string;
+  askHref: string;
+}) {
+  const [state, action, pending] = useActionState(selectQuoteAction, actionIdle);
+  const c = spaceCopy(locale);
+  const detailHref = `/${locale}/client/demandes/${requestId}/offres/${column.quoteId}${selectedQuery}`;
+  const canSelect = column.selectable && canManage && !column.expired && Boolean(snapshotId);
+  return (
+    <article className="client-card client-offer-col" data-recommended={column.recommended ? "true" : undefined}>
+      {column.recommended ? <p className="client-offer-badge">{c.recommendedOffer}</p> : null}
+      <header>
+        <h2>{locale === "ar" ? `العرض ${column.letter}` : `Offre ${column.letter}`}</h2>
+        <p>{column.tagline}</p>
+      </header>
+      <dl className="client-offer-facts">
+        <div><dt>{c.providerLabel}</dt><dd>{locale === "ar" ? `العرض ${column.letter}` : `Offre ${column.letter}`}</dd></div>
+        <div><dt>{c.priceMad}</dt><dd dir="ltr">{column.price}</dd></div>
+        <div><dt>{c.taxBase}</dt><dd>{column.taxBase}</dd></div>
+        <div><dt>{c.durationLabel}</dt><dd>{column.duration}</dd></div>
+        {column.completeness ? (
+          <div>
+            <dt>{messages.completeness}</dt>
+            <dd dir="ltr">{formatCompletenessBasisPoints(column.completeness.basisPoints, locale)}</dd>
+          </div>
+        ) : null}
+        <div>
+          <dt>{c.deliverablesIncl}</dt>
+          <dd>
+            <ul>{column.deliverables.map((item) => <li key={item}>{item}</li>)}</ul>
+          </dd>
+        </div>
+        {column.exclusions.length > 0 ? (
+          <div>
+            <dt>{c.exclusions}</dt>
+            <dd>
+              <ul>{column.exclusions.map((item) => <li key={item}>{item}</li>)}</ul>
+            </dd>
+          </div>
+        ) : null}
+        {column.guarantees ? <div><dt>{c.guarantees}</dt><dd>{column.guarantees}</dd></div> : null}
+        {column.why ? <div><dt>{c.whyCompatible}</dt><dd>{column.why}</dd></div> : null}
+      </dl>
+      <div className="client-offer-actions">
+        <Link href={detailHref} className="client-ghost-link">{c.seeDetail}</Link>
+        <Link href={askHref} className="client-soft-link">{c.askQuestion}</Link>
+        {canSelect ? (
+          <form action={action} className="client-offer-select">
+            <input type="hidden" name="locale" value={locale} />
+            <input type="hidden" name="requestId" value={requestId} />
+            <input type="hidden" name="quoteId" value={column.quoteId} />
+            <input type="hidden" name="quoteVersionId" value={column.quoteVersionId} />
+            <input type="hidden" name="comparisonSnapshotId" value={snapshotId} />
+            <input type="hidden" name="idempotencyKey" value={selectKey} />
+            <label>
+              <span>{messages.selectionReason}</span>
+              <textarea name="selectionReason" required minLength={3} maxLength={500} rows={3} />
+            </label>
+            <label>
+              <input type="checkbox" name="confirmSelection" required />
+              <span>{messages.confirmSelection}</span>
+            </label>
+            <button type="submit" disabled={pending} className="client-cta">{pending ? messages.selecting : c.chooseOffer}</button>
+          </form>
+        ) : column.selectable && !column.expired ? (
+          <Link href={detailHref} className="client-ghost-link">{c.seeDetail}</Link>
+        ) : null}
+      </div>
+      {column.completeness && column.completeness.basisPoints < 10_000 ? <p role="status" className="client-access-note">{messages.incompleteQuote}</p> : null}
+      {column.expired ? <p role="status" className="client-access-note">{messages.expiredQuote}</p> : null}
+      {state.status === "error" ? <p role="alert" className="client-access-note">{state.reason === "VALIDATION" ? messages.validation : messages.actionError}</p> : null}
+      {state.status === "success" ? <p role="status" className="client-access-note">{messages.selected}</p> : null}
+    </article>
+  );
+}

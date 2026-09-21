@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 
 const ownerRoles = ["CLIENT_OWNER", "PROVIDER_OWNER", "FRANCHISE_OWNER"] as const;
 

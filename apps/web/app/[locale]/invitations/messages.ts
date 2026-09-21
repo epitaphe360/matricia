@@ -1,4 +1,4 @@
-import type { Locale } from "@/lib/i18n/locale";
+import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import type { InvitationRole, InvitationStatus } from "./actions";
 
 const fr = {

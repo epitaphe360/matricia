@@ -1,8 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { isLocale } from "@/lib/i18n/locale";
+import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
 
 export async function signOut(formData: FormData) {
   const value = formData.get("locale");

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { PaymentGatewayError, type PaymentWebhookVerifier } from "@matricia/infrastructure";
 import { NextResponse } from "next/server";
-import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getSupabaseAdminClient } from "@/modules/shared/lib/supabase/admin";
 
 const maximumBodyBytes = 1_048_576;
 

@@ -1,12 +1,12 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { isLocale, type Locale } from "@/lib/i18n/locale";
-import { cn } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { Badge } from "@/modules/shared/ui/badge";
+import { buttonVariants } from "@/modules/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/ui/card";
+import { isLocale, type Locale } from "@/modules/shared/lib/i18n/locale";
+import { cn } from "@/modules/shared/lib/utils";
 import { listInvitations, type SafeInvitation } from "./actions";
 import { InvitationDecisionForm } from "./invitation-decision-form";
 import { InviteForm } from "./invite-form";

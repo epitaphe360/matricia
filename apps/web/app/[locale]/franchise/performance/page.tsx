@@ -1,2 +1,50 @@
-import{randomUUID}from"node:crypto";import{notFound,redirect}from"next/navigation";import{Alert,AlertDescription,AlertTitle}from"@/components/ui/alert";import{loadFranchiseCrm}from"@/lib/franchise-crm/repository";import{isLocale}from"@/lib/i18n/locale";import{FranchisePerformancePanel}from"./performance-panel";import{getFranchiseCrmMessages}from"./messages";
-export default async function FranchisePerformancePage({params}:{params:Promise<{locale:string}>}){const{locale}=await params;if(!isLocale(locale))notFound();const m=getFranchiseCrmMessages(locale),r=await loadFranchiseCrm();if(r.status==="error"&&r.reason==="UNAUTHENTICATED")redirect(`/${locale}/connexion`);const keys:Record<string,string>={};if(r.status==="success"){r.dashboard.franchises.forEach(f=>{keys[`create:${f.id}`]=randomUUID();keys[`snapshot:${f.id}`]=randomUUID()});r.dashboard.prospects.forEach(p=>{keys[`activity:${p.id}`]=randomUUID();keys[`advance:${p.id}`]=randomUUID()})}return <main className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6 sm:py-8" dir={locale==="ar"?"rtl":"ltr"}><div className="mx-auto max-w-7xl space-y-7"><header><p className="text-xs font-semibold uppercase tracking-[.18em] text-primary">{m.eyebrow}</p><h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{m.title}</h1><p className="mt-3 max-w-3xl leading-7 text-muted-foreground">{m.subtitle}</p></header>{r.status==="error"?<Alert variant="destructive"><AlertTitle>{r.reason==="FORBIDDEN"?m.accessDenied:m.queryFailed}</AlertTitle><AlertDescription>{r.reason}</AlertDescription></Alert>:<FranchisePerformancePanel dashboard={r.dashboard} locale={locale} m={m} keys={keys}/>}</div></main>}
+import { randomUUID } from "node:crypto";
+import { notFound, redirect } from "next/navigation";
+import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { franchiseCopy } from "@/modules/franchise/data/spaces/copy";
+import { loadFranchiseCrm } from "@/modules/franchise/data/crm/repository";
+import { buildFranchiseSpaceBoard } from "@/modules/franchise/data/spaces/live";
+import { PerformanceBoard } from "@/modules/franchise/screens/spaces/boards";
+import { FranchisePerformancePanel } from "@/modules/franchise/screens/performance/performance-panel";
+import { getFranchiseCrmMessages } from "@/modules/franchise/screens/performance/messages";
+import { franchiseMandateName, requireFranchiseLibrary } from "@/modules/franchise/screens/library/page-helper";
+import { FranchiseAppShell } from "@/modules/franchise/ui/franchise-app-shell";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+
+export default async function FranchisePerformancePage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string }> }) {
+  const [{ locale }, query] = await Promise.all([params, searchParams]);
+  if (!isLocale(locale)) notFound();
+  const { space, result: library } = await requireFranchiseLibrary({ locale, organizationId: query.organizationId });
+  const m = getFranchiseCrmMessages(locale);
+  const r = await loadFranchiseCrm();
+  if (r.status === "error" && r.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  const c = franchiseCopy(locale);
+  const mandateName = franchiseMandateName(library);
+  const keys: Record<string, string> = {};
+  if (r.status === "success") {
+    r.dashboard.franchises.forEach((f) => {
+      keys[`create:${f.id}`] = randomUUID();
+      keys[`snapshot:${f.id}`] = randomUUID();
+    });
+    r.dashboard.prospects.forEach((p) => {
+      keys[`activity:${p.id}`] = randomUUID();
+      keys[`advance:${p.id}`] = randomUUID();
+    });
+  }
+  return (
+    <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="performance" title={c.perfTitle} lead={c.perfLead} kicker={c.kicker} mandateName={mandateName}>
+      <PerformanceBoard locale={locale} query={space.selectedQuery} mandateName={mandateName} board={r.status === "success" ? buildFranchiseSpaceBoard({ locale, query: space.selectedQuery, libraryName: mandateName, crm: r.dashboard }) : undefined} />
+      <details id="performance" className="client-ops">
+        <summary>{c.opsPerf}</summary>
+        {r.status === "error" ? (
+          <Alert variant="destructive">
+            <AlertTitle>{r.reason === "FORBIDDEN" ? m.accessDenied : m.queryFailed}</AlertTitle>
+            <AlertDescription>{r.reason}</AlertDescription>
+          </Alert>
+        ) : (
+          <FranchisePerformancePanel dashboard={r.dashboard} locale={locale} m={m} keys={keys} />
+        )}
+      </details>
+    </FranchiseAppShell>
+  );
+}

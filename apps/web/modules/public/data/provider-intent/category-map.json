@@ -1,0 +1,802 @@
+{
+  "IT-AUDIT-SI": {
+    "code": "IT-GOV",
+    "name": "Stratégie et gouvernance SI"
+  },
+  "IT-ARCHI": {
+    "code": "IT-GOV",
+    "name": "Stratégie et gouvernance SI"
+  },
+  "IT-NETWORK": {
+    "code": "IT-INFRA",
+    "name": "Infrastructure, réseau et télécom"
+  },
+  "IT-FIREWALL": {
+    "code": "IT-INFRA",
+    "name": "Infrastructure, réseau et télécom"
+  },
+  "IT-VOIP": {
+    "code": "IT-INFRA",
+    "name": "Infrastructure, réseau et télécom"
+  },
+  "IT-CYBER-AUDIT": {
+    "code": "IT-CYBER",
+    "name": "Cybersécurité et continuité"
+  },
+  "IT-PENTEST": {
+    "code": "IT-CYBER",
+    "name": "Cybersécurité et continuité"
+  },
+  "IT-SOC-MDR": {
+    "code": "IT-CYBER",
+    "name": "Cybersécurité et continuité"
+  },
+  "IT-BACKUP": {
+    "code": "IT-CYBER",
+    "name": "Cybersécurité et continuité"
+  },
+  "IT-BCP-DRP": {
+    "code": "IT-CYBER",
+    "name": "Cybersécurité et continuité"
+  },
+  "IT-CLOUD-MIG": {
+    "code": "IT-CLOUD",
+    "name": "Cloud et collaboration"
+  },
+  "IT-M365": {
+    "code": "IT-CLOUD",
+    "name": "Cloud et collaboration"
+  },
+  "IT-WEB-SHOWCASE": {
+    "code": "IT-DEV",
+    "name": "Développement Web, mobile et logiciels"
+  },
+  "IT-ECOMMERCE": {
+    "code": "IT-DEV",
+    "name": "Développement Web, mobile et logiciels"
+  },
+  "IT-WEB-APP": {
+    "code": "IT-DEV",
+    "name": "Développement Web, mobile et logiciels"
+  },
+  "IT-MOBILE-APP": {
+    "code": "IT-DEV",
+    "name": "Développement Web, mobile et logiciels"
+  },
+  "IT-ERP-CRM": {
+    "code": "IT-DEV",
+    "name": "Développement Web, mobile et logiciels"
+  },
+  "IT-BI": {
+    "code": "IT-DATA",
+    "name": "Data, BI et intelligence artificielle"
+  },
+  "IT-AI-AUTO": {
+    "code": "IT-DATA",
+    "name": "Data, BI et intelligence artificielle"
+  },
+  "IT-CCTV-IOT": {
+    "code": "IT-IOT",
+    "name": "IoT, vidéosurveillance et systèmes connectés"
+  },
+  "COM-MKT-STRAT": {
+    "code": "COM-STRAT",
+    "name": "Stratégie marketing et marque"
+  },
+  "COM-BRAND": {
+    "code": "COM-STRAT",
+    "name": "Stratégie marketing et marque"
+  },
+  "COM-NAMING": {
+    "code": "COM-STRAT",
+    "name": "Stratégie marketing et marque"
+  },
+  "COM-VISUAL-ID": {
+    "code": "COM-DESIGN",
+    "name": "Identité visuelle et design"
+  },
+  "COM-GRAPHIC": {
+    "code": "COM-DESIGN",
+    "name": "Identité visuelle et design"
+  },
+  "COM-COPY": {
+    "code": "COM-CONTENT",
+    "name": "Contenus et rédaction"
+  },
+  "COM-CONTENT-PLAN": {
+    "code": "COM-CONTENT",
+    "name": "Contenus et rédaction"
+  },
+  "COM-SOCIAL-STRAT": {
+    "code": "COM-DIGITAL",
+    "name": "Marketing digital et réseaux sociaux"
+  },
+  "COM-COMMUNITY": {
+    "code": "COM-DIGITAL",
+    "name": "Marketing digital et réseaux sociaux"
+  },
+  "COM-SEO": {
+    "code": "COM-DIGITAL",
+    "name": "Marketing digital et réseaux sociaux"
+  },
+  "COM-EMAIL": {
+    "code": "COM-DIGITAL",
+    "name": "Marketing digital et réseaux sociaux"
+  },
+  "COM-DIGITAL-ADS": {
+    "code": "COM-ADS",
+    "name": "Publicité et acquisition"
+  },
+  "COM-MEDIA": {
+    "code": "COM-ADS",
+    "name": "Publicité et acquisition"
+  },
+  "COM-PHOTO": {
+    "code": "COM-AV",
+    "name": "Photo, vidéo et motion design"
+  },
+  "COM-VIDEO": {
+    "code": "COM-AV",
+    "name": "Photo, vidéo et motion design"
+  },
+  "COM-MOTION": {
+    "code": "COM-AV",
+    "name": "Photo, vidéo et motion design"
+  },
+  "COM-PR": {
+    "code": "COM-PR",
+    "name": "Relations publiques et influence"
+  },
+  "COM-INFLUENCE": {
+    "code": "COM-PR",
+    "name": "Relations publiques et influence"
+  },
+  "COM-EVENT": {
+    "code": "COM-EVENT",
+    "name": "Événementiel, impression et signalétique"
+  },
+  "COM-PRINT-SIGN": {
+    "code": "COM-EVENT",
+    "name": "Événementiel, impression et signalétique"
+  },
+  "ACC-BOOKKEEPING": {
+    "code": "ACC-BOOK",
+    "name": "Comptabilité et clôture"
+  },
+  "ACC-CLEANUP": {
+    "code": "ACC-BOOK",
+    "name": "Comptabilité et clôture"
+  },
+  "ACC-CLOSE": {
+    "code": "ACC-BOOK",
+    "name": "Comptabilité et clôture"
+  },
+  "ACC-FS": {
+    "code": "ACC-BOOK",
+    "name": "Comptabilité et clôture"
+  },
+  "ACC-VAT": {
+    "code": "ACC-TAX",
+    "name": "Fiscalité et déclarations"
+  },
+  "ACC-CORP-TAX": {
+    "code": "ACC-TAX",
+    "name": "Fiscalité et déclarations"
+  },
+  "ACC-TAX-REVIEW": {
+    "code": "ACC-TAX",
+    "name": "Fiscalité et déclarations"
+  },
+  "ACC-TAX-AUDIT": {
+    "code": "ACC-TAX",
+    "name": "Fiscalité et déclarations"
+  },
+  "ACC-BUDGET": {
+    "code": "ACC-CTRL",
+    "name": "Contrôle de gestion et performance"
+  },
+  "ACC-MGMT-CONTROL": {
+    "code": "ACC-CTRL",
+    "name": "Contrôle de gestion et performance"
+  },
+  "ACC-COSTING": {
+    "code": "ACC-CTRL",
+    "name": "Contrôle de gestion et performance"
+  },
+  "ACC-TREASURY": {
+    "code": "ACC-CASH",
+    "name": "Trésorerie et recouvrement"
+  },
+  "ACC-COLLECTION": {
+    "code": "ACC-CASH",
+    "name": "Trésorerie et recouvrement"
+  },
+  "ACC-INVOICING": {
+    "code": "ACC-CASH",
+    "name": "Trésorerie et recouvrement"
+  },
+  "ACC-FIN-MODEL": {
+    "code": "ACC-FIN",
+    "name": "Financement et modélisation"
+  },
+  "ACC-FUNDING": {
+    "code": "ACC-FIN",
+    "name": "Financement et modélisation"
+  },
+  "ACC-AUDIT-PREP": {
+    "code": "ACC-AUDIT",
+    "name": "Audit et due diligence"
+  },
+  "ACC-DUE-DIL": {
+    "code": "ACC-AUDIT",
+    "name": "Audit et due diligence"
+  },
+  "ACC-SOFTWARE": {
+    "code": "ACC-SYS",
+    "name": "Systèmes et digitalisation finance"
+  },
+  "ACC-INVENTORY": {
+    "code": "ACC-SPECIAL",
+    "name": "Opérations comptables spécialisées"
+  },
+  "LEGAL-CREATE": {
+    "code": "LEGAL-CORP",
+    "name": "Droit des sociétés et gouvernance"
+  },
+  "LEGAL-CORP-SECRETARY": {
+    "code": "LEGAL-CORP",
+    "name": "Droit des sociétés et gouvernance"
+  },
+  "LEGAL-GOV": {
+    "code": "LEGAL-CORP",
+    "name": "Droit des sociétés et gouvernance"
+  },
+  "LEGAL-CONTRACT-DRAFT": {
+    "code": "LEGAL-CONTRACT",
+    "name": "Contrats commerciaux"
+  },
+  "LEGAL-CONTRACT-REVIEW": {
+    "code": "LEGAL-CONTRACT",
+    "name": "Contrats commerciaux"
+  },
+  "LEGAL-GTC": {
+    "code": "LEGAL-CONTRACT",
+    "name": "Contrats commerciaux"
+  },
+  "LEGAL-EMPLOYMENT": {
+    "code": "LEGAL-LABOR",
+    "name": "Droit du travail"
+  },
+  "LEGAL-HR-DISPUTE": {
+    "code": "LEGAL-LABOR",
+    "name": "Droit du travail"
+  },
+  "LEGAL-TRADEMARK": {
+    "code": "LEGAL-IP",
+    "name": "Propriété intellectuelle et numérique"
+  },
+  "LEGAL-IP-CONTRACT": {
+    "code": "LEGAL-IP",
+    "name": "Propriété intellectuelle et numérique"
+  },
+  "LEGAL-PRIVACY": {
+    "code": "LEGAL-IP",
+    "name": "Propriété intellectuelle et numérique"
+  },
+  "LEGAL-COMPLIANCE-AUDIT": {
+    "code": "LEGAL-COMP",
+    "name": "Conformité réglementaire et éthique"
+  },
+  "LEGAL-ETHICS": {
+    "code": "LEGAL-COMP",
+    "name": "Conformité réglementaire et éthique"
+  },
+  "LEGAL-LICENSE": {
+    "code": "LEGAL-COMP",
+    "name": "Conformité réglementaire et éthique"
+  },
+  "LEGAL-DEBT-RECOVERY": {
+    "code": "LEGAL-DISPUTE",
+    "name": "Précontentieux et contentieux"
+  },
+  "LEGAL-PRE-LITIGATION": {
+    "code": "LEGAL-DISPUTE",
+    "name": "Précontentieux et contentieux"
+  },
+  "LEGAL-LITIGATION": {
+    "code": "LEGAL-DISPUTE",
+    "name": "Précontentieux et contentieux"
+  },
+  "LEGAL-LEASE": {
+    "code": "LEGAL-REAL",
+    "name": "Immobilier et baux"
+  },
+  "LEGAL-SHA": {
+    "code": "LEGAL-TRANS",
+    "name": "Transactions et partenariats"
+  },
+  "LEGAL-FRANCHISE": {
+    "code": "LEGAL-TRANS",
+    "name": "Transactions et partenariats"
+  },
+  "HR-AUDIT": {
+    "code": "HR-STRAT",
+    "name": "Stratégie et organisation RH"
+  },
+  "HR-WORKFORCE": {
+    "code": "HR-STRAT",
+    "name": "Stratégie et organisation RH"
+  },
+  "HR-JOB-DESC": {
+    "code": "HR-STRAT",
+    "name": "Stratégie et organisation RH"
+  },
+  "HR-RECRUIT": {
+    "code": "HR-REC",
+    "name": "Recrutement et intégration"
+  },
+  "HR-EXEC-SEARCH": {
+    "code": "HR-REC",
+    "name": "Recrutement et intégration"
+  },
+  "HR-ONBOARD": {
+    "code": "HR-REC",
+    "name": "Recrutement et intégration"
+  },
+  "HR-PERFORMANCE": {
+    "code": "HR-PERF",
+    "name": "Performance, compétences et carrière"
+  },
+  "HR-COMPETENCY": {
+    "code": "HR-PERF",
+    "name": "Performance, compétences et carrière"
+  },
+  "HR-SUCCESSION": {
+    "code": "HR-PERF",
+    "name": "Performance, compétences et carrière"
+  },
+  "HR-COMP-BEN": {
+    "code": "HR-COMP",
+    "name": "Rémunération et avantages"
+  },
+  "HR-PAYROLL": {
+    "code": "HR-COMP",
+    "name": "Rémunération et avantages"
+  },
+  "HR-ADMIN": {
+    "code": "HR-ADMIN",
+    "name": "Administration RH et paie"
+  },
+  "HR-TIME": {
+    "code": "HR-ADMIN",
+    "name": "Administration RH et paie"
+  },
+  "HR-TRAIN-NEEDS": {
+    "code": "HR-TRAIN",
+    "name": "Formation et développement"
+  },
+  "HR-TRAIN-DELIVERY": {
+    "code": "HR-TRAIN",
+    "name": "Formation et développement"
+  },
+  "HR-ENGAGEMENT": {
+    "code": "HR-REL",
+    "name": "Relations sociales et engagement"
+  },
+  "HR-RELATIONS": {
+    "code": "HR-REL",
+    "name": "Relations sociales et engagement"
+  },
+  "HR-DISCIPLINE": {
+    "code": "HR-REL",
+    "name": "Relations sociales et engagement"
+  },
+  "HR-HRIS": {
+    "code": "HR-DIGI",
+    "name": "SIRH et digitalisation RH"
+  },
+  "HR-OUTSOURCING": {
+    "code": "HR-DIGI",
+    "name": "SIRH et digitalisation RH"
+  },
+  "INS-RISK-AUDIT": {
+    "code": "INS-RISK",
+    "name": "Audit et cartographie des risques"
+  },
+  "INS-MAP": {
+    "code": "INS-RISK",
+    "name": "Audit et cartographie des risques"
+  },
+  "INS-PROPERTY": {
+    "code": "INS-PROP",
+    "name": "Biens et pertes d’exploitation"
+  },
+  "INS-BI": {
+    "code": "INS-PROP",
+    "name": "Biens et pertes d’exploitation"
+  },
+  "INS-GL": {
+    "code": "INS-LIAB",
+    "name": "Responsabilités"
+  },
+  "INS-PRO-LIAB": {
+    "code": "INS-LIAB",
+    "name": "Responsabilités"
+  },
+  "INS-PRODUCT": {
+    "code": "INS-LIAB",
+    "name": "Responsabilités"
+  },
+  "INS-DNO": {
+    "code": "INS-LIAB",
+    "name": "Responsabilités"
+  },
+  "INS-HEALTH": {
+    "code": "INS-PEOPLE",
+    "name": "Protection des personnes"
+  },
+  "INS-LIFE": {
+    "code": "INS-PEOPLE",
+    "name": "Protection des personnes"
+  },
+  "INS-WORK-ACC": {
+    "code": "INS-PEOPLE",
+    "name": "Protection des personnes"
+  },
+  "INS-CYBER": {
+    "code": "INS-SPEC",
+    "name": "Risques spécialisés"
+  },
+  "INS-CONSTRUCTION": {
+    "code": "INS-SPEC",
+    "name": "Risques spécialisés"
+  },
+  "INS-CREDIT": {
+    "code": "INS-SPEC",
+    "name": "Risques spécialisés"
+  },
+  "INS-FLEET": {
+    "code": "INS-FLEET",
+    "name": "Flotte, transport et logistique"
+  },
+  "INS-CARGO": {
+    "code": "INS-FLEET",
+    "name": "Flotte, transport et logistique"
+  },
+  "INS-CLAIMS": {
+    "code": "INS-CLAIM",
+    "name": "Sinistres et prévention"
+  },
+  "INS-PREVENTION": {
+    "code": "INS-CLAIM",
+    "name": "Sinistres et prévention"
+  },
+  "INS-POLICY-AUDIT": {
+    "code": "INS-PROGRAM",
+    "name": "Programme d’assurance et appels d’offres"
+  },
+  "INS-TENDER": {
+    "code": "INS-PROGRAM",
+    "name": "Programme d’assurance et appels d’offres"
+  },
+  "LOG-PROC-AUDIT": {
+    "code": "LOG-PROC",
+    "name": "Stratégie achats et sourcing"
+  },
+  "LOG-SOURCING-STRAT": {
+    "code": "LOG-PROC",
+    "name": "Stratégie achats et sourcing"
+  },
+  "LOG-SUPPLIER-SEARCH": {
+    "code": "LOG-PROC",
+    "name": "Stratégie achats et sourcing"
+  },
+  "LOG-TENDER": {
+    "code": "LOG-PROC",
+    "name": "Stratégie achats et sourcing"
+  },
+  "LOG-SUP-QUAL": {
+    "code": "LOG-SUP",
+    "name": "Gestion des fournisseurs"
+  },
+  "LOG-SUP-PERF": {
+    "code": "LOG-SUP",
+    "name": "Gestion des fournisseurs"
+  },
+  "LOG-CONTRACT-NEG": {
+    "code": "LOG-SUP",
+    "name": "Gestion des fournisseurs"
+  },
+  "LOG-SPEND-ANALYSIS": {
+    "code": "LOG-SPEND",
+    "name": "Dépenses et performance achats"
+  },
+  "LOG-E-PROC": {
+    "code": "LOG-SPEND",
+    "name": "Dépenses et performance achats"
+  },
+  "LOG-INVENTORY-OPT": {
+    "code": "LOG-INV",
+    "name": "Stocks et prévisions"
+  },
+  "LOG-FORECAST": {
+    "code": "LOG-INV",
+    "name": "Stocks et prévisions"
+  },
+  "LOG-WH-DESIGN": {
+    "code": "LOG-WH",
+    "name": "Entrepôts et opérations"
+  },
+  "LOG-WMS": {
+    "code": "LOG-WH",
+    "name": "Entrepôts et opérations"
+  },
+  "LOG-PICKING": {
+    "code": "LOG-WH",
+    "name": "Entrepôts et opérations"
+  },
+  "LOG-TRANS-TENDER": {
+    "code": "LOG-TRANS",
+    "name": "Transport et distribution"
+  },
+  "LOG-ROUTE": {
+    "code": "LOG-TRANS",
+    "name": "Transport et distribution"
+  },
+  "LOG-CUSTOMS": {
+    "code": "LOG-TRADE",
+    "name": "Import-export et douane"
+  },
+  "LOG-IMPORT": {
+    "code": "LOG-TRADE",
+    "name": "Import-export et douane"
+  },
+  "LOG-SC-DIGITAL": {
+    "code": "LOG-DIGI",
+    "name": "Digitalisation et résilience supply chain"
+  },
+  "LOG-BCP": {
+    "code": "LOG-DIGI",
+    "name": "Digitalisation et résilience supply chain"
+  },
+  "BTP-FEAS": {
+    "code": "BTP-STUDY",
+    "name": "Études et conception"
+  },
+  "BTP-ARCH": {
+    "code": "BTP-STUDY",
+    "name": "Études et conception"
+  },
+  "BTP-STRUCT": {
+    "code": "BTP-STUDY",
+    "name": "Études et conception"
+  },
+  "BTP-GEO": {
+    "code": "BTP-STUDY",
+    "name": "Études et conception"
+  },
+  "BTP-MEP-DESIGN": {
+    "code": "BTP-STUDY",
+    "name": "Études et conception"
+  },
+  "BTP-QS": {
+    "code": "BTP-COST",
+    "name": "Économie de la construction"
+  },
+  "BTP-PM": {
+    "code": "BTP-COST",
+    "name": "Économie de la construction"
+  },
+  "BTP-GC": {
+    "code": "BTP-WORK",
+    "name": "Construction et rénovation"
+  },
+  "BTP-RENOV": {
+    "code": "BTP-WORK",
+    "name": "Construction et rénovation"
+  },
+  "BTP-FITOUT": {
+    "code": "BTP-WORK",
+    "name": "Construction et rénovation"
+  },
+  "BTP-ELEC": {
+    "code": "BTP-MEP",
+    "name": "Lots techniques"
+  },
+  "BTP-PLUMB": {
+    "code": "BTP-MEP",
+    "name": "Lots techniques"
+  },
+  "BTP-HVAC": {
+    "code": "BTP-MEP",
+    "name": "Lots techniques"
+  },
+  "BTP-FIRE": {
+    "code": "BTP-SAFE",
+    "name": "Sécurité et systèmes spéciaux"
+  },
+  "BTP-SECURITY": {
+    "code": "BTP-SAFE",
+    "name": "Sécurité et systèmes spéciaux"
+  },
+  "BTP-SOLAR": {
+    "code": "BTP-ENERGY",
+    "name": "Énergie et durabilité"
+  },
+  "BTP-ENERGY-AUDIT": {
+    "code": "BTP-ENERGY",
+    "name": "Énergie et durabilité"
+  },
+  "BTP-MAINT": {
+    "code": "BTP-FM",
+    "name": "Facility management et maintenance"
+  },
+  "BTP-INSPECTION": {
+    "code": "BTP-REAL",
+    "name": "Immobilier, inspection et aménagement"
+  },
+  "BTP-LANDSCAPE": {
+    "code": "BTP-REAL",
+    "name": "Immobilier, inspection et aménagement"
+  },
+  "QHSE-ISO9001": {
+    "code": "QHSE-QMS",
+    "name": "Qualité et processus"
+  },
+  "QHSE-PROCESS": {
+    "code": "QHSE-QMS",
+    "name": "Qualité et processus"
+  },
+  "QHSE-SUPPLIER-QUALITY": {
+    "code": "QHSE-QMS",
+    "name": "Qualité et processus"
+  },
+  "QHSE-ISO14001": {
+    "code": "QHSE-ENV",
+    "name": "Environnement"
+  },
+  "QHSE-ENV-AUDIT": {
+    "code": "QHSE-ENV",
+    "name": "Environnement"
+  },
+  "QHSE-WASTE": {
+    "code": "QHSE-ENV",
+    "name": "Environnement"
+  },
+  "QHSE-ISO45001": {
+    "code": "QHSE-OHS",
+    "name": "Santé et sécurité au travail"
+  },
+  "QHSE-SAFETY-AUDIT": {
+    "code": "QHSE-OHS",
+    "name": "Santé et sécurité au travail"
+  },
+  "QHSE-RISK-ASSESS": {
+    "code": "QHSE-OHS",
+    "name": "Santé et sécurité au travail"
+  },
+  "QHSE-HSE-PLAN": {
+    "code": "QHSE-OHS",
+    "name": "Santé et sécurité au travail"
+  },
+  "QHSE-HACCP": {
+    "code": "QHSE-FOOD",
+    "name": "Sécurité alimentaire"
+  },
+  "QHSE-ISO22000": {
+    "code": "QHSE-FOOD",
+    "name": "Sécurité alimentaire"
+  },
+  "QHSE-FOOD-AUDIT": {
+    "code": "QHSE-FOOD",
+    "name": "Sécurité alimentaire"
+  },
+  "QHSE-ISO17025": {
+    "code": "QHSE-LAB",
+    "name": "Laboratoires et métrologie"
+  },
+  "QHSE-METROLOGY": {
+    "code": "QHSE-LAB",
+    "name": "Laboratoires et métrologie"
+  },
+  "QHSE-INTERNAL-AUDIT": {
+    "code": "QHSE-AUDIT",
+    "name": "Audits et amélioration"
+  },
+  "QHSE-CAPA": {
+    "code": "QHSE-AUDIT",
+    "name": "Audits et amélioration"
+  },
+  "QHSE-DOC-MGMT": {
+    "code": "QHSE-DOC",
+    "name": "Documentation et digitalisation"
+  },
+  "QHSE-INTEGRATED": {
+    "code": "QHSE-CERT",
+    "name": "Préparation aux certifications"
+  },
+  "QHSE-CERT-PREP": {
+    "code": "QHSE-CERT",
+    "name": "Préparation aux certifications"
+  },
+  "SALES-AUDIT": {
+    "code": "SALES-STRAT",
+    "name": "Stratégie commerciale et marché"
+  },
+  "SALES-GTM": {
+    "code": "SALES-STRAT",
+    "name": "Stratégie commerciale et marché"
+  },
+  "SALES-MARKET-RESEARCH": {
+    "code": "SALES-STRAT",
+    "name": "Stratégie commerciale et marché"
+  },
+  "SALES-PRICING": {
+    "code": "SALES-STRAT",
+    "name": "Stratégie commerciale et marché"
+  },
+  "SALES-PROCESS": {
+    "code": "SALES-PROC",
+    "name": "Processus et performance de vente"
+  },
+  "SALES-PIPELINE": {
+    "code": "SALES-PROC",
+    "name": "Processus et performance de vente"
+  },
+  "SALES-TENDER": {
+    "code": "SALES-PROC",
+    "name": "Processus et performance de vente"
+  },
+  "SALES-CRM-IMPL": {
+    "code": "SALES-CRM",
+    "name": "CRM et automatisation commerciale"
+  },
+  "SALES-SALES-AUTO": {
+    "code": "SALES-CRM",
+    "name": "CRM et automatisation commerciale"
+  },
+  "SALES-LEADGEN": {
+    "code": "SALES-LEAD",
+    "name": "Prospection et génération de leads"
+  },
+  "SALES-TELEMARKETING": {
+    "code": "SALES-LEAD",
+    "name": "Prospection et génération de leads"
+  },
+  "SALES-SCRIPTS": {
+    "code": "SALES-LEAD",
+    "name": "Prospection et génération de leads"
+  },
+  "SALES-ORG": {
+    "code": "SALES-TEAM",
+    "name": "Organisation et compétences commerciales"
+  },
+  "SALES-TRAIN": {
+    "code": "SALES-TEAM",
+    "name": "Organisation et compétences commerciales"
+  },
+  "SALES-KAM": {
+    "code": "SALES-TEAM",
+    "name": "Organisation et compétences commerciales"
+  },
+  "SALES-CHANNEL": {
+    "code": "SALES-CHANNEL",
+    "name": "Canaux, partenaires et export"
+  },
+  "SALES-EXPORT": {
+    "code": "SALES-CHANNEL",
+    "name": "Canaux, partenaires et export"
+  },
+  "SALES-CX-MAP": {
+    "code": "SALES-CX",
+    "name": "Expérience et fidélisation client"
+  },
+  "SALES-LOYALTY": {
+    "code": "SALES-CX",
+    "name": "Expérience et fidélisation client"
+  },
+  "SALES-CUSTOMER-SERVICE": {
+    "code": "SALES-SERVICE",
+    "name": "Service client et centres de contact"
+  }
+}

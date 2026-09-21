@@ -1,2 +1,123 @@
-import{randomUUID}from"node:crypto";import Link from"next/link";import{notFound,redirect}from"next/navigation";import{Alert,AlertDescription,AlertTitle}from"@/components/ui/alert";import{buttonVariants}from"@/components/ui/button";import{loadAdminFinanceDashboard}from"@/lib/admin-finance/repository";import{isLocale}from"@/lib/i18n/locale";import{cn}from"@/lib/utils";import{FinancePanel}from"./finance-panel";import{getAdminFinanceMessages}from"./messages";
-export const dynamic="force-dynamic";export default async function AdminFinancePage({params}:{params:Promise<{locale:string}>}){const{locale}=await params;if(!isLocale(locale))notFound();const result=await loadAdminFinanceDashboard();if(result.status==="error"&&result.reason==="UNAUTHENTICATED")redirect(`/${locale}/connexion`);const m=getAdminFinanceMessages(locale),alternate=locale==="fr"?"ar":"fr";return <main dir={locale==="ar"?"rtl":"ltr"} className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6"><div className="mx-auto max-w-7xl space-y-7"><nav aria-label={m.nav} className="flex justify-between gap-3"><Link href={`/${locale}/tableau-de-bord`} className={cn(buttonVariants({variant:"outline"}),"min-h-11")}>{m.back}</Link><Link href={`/${alternate}/administration/finance`} hrefLang={alternate} lang={alternate} className="min-h-11 px-3 py-2 font-medium text-primary">{m.language}</Link></nav><header><p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{m.eyebrow}</p><h1 className="mt-2 text-3xl font-semibold sm:text-4xl">{m.title}</h1><p className="mt-3 max-w-4xl leading-7 text-muted-foreground">{m.intro}</p></header>{result.status==="error"?<Alert variant="destructive"><AlertTitle>{result.reason==="FORBIDDEN"?m.forbidden:m.unavailable}</AlertTitle><AlertDescription><Link href={`/${locale}/administration/finance`} className={cn(buttonVariants({variant:"outline"}),"mt-3 min-h-11")}>{m.retry}</Link></AlertDescription></Alert>:<FinancePanel locale={locale} dashboard={result.value} m={m} identity={{idempotencyKey:randomUUID(),correlationId:randomUUID()}}/>}</div></main>}
+import { randomUUID } from "node:crypto";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { loadAdminBoxesDashboard } from "@/modules/admin/data/boxes/repository";
+import { loadAdminCommerceCatalog } from "@/modules/admin/data/catalog/repository";
+import { loadAdminClosureDashboard } from "@/modules/admin/data/closure/repository";
+import { loadAdminFinanceDashboard } from "@/modules/admin/data/finance/repository";
+import { loadAdminPnlDashboard } from "@/modules/admin/data/pnl/repository";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+import { BoxesPanel } from "@/modules/admin/screens/finance/boxes-panel";
+import { CommerceCatalogPanel } from "@/modules/admin/screens/finance/commerce-catalog-panel";
+import { ClosurePanel } from "@/modules/admin/screens/finance/closure-panel";
+import { getCommerceMessages } from "@/modules/admin/screens/finance/commerce-messages";
+import { FinancePanel } from "@/modules/admin/screens/finance/finance-panel";
+import { FinanceSorties } from "@/modules/admin/screens/finance/finance-sorties";
+import { getAdminFinanceMessages } from "@/modules/admin/screens/finance/messages";
+import { PnlPanel } from "@/modules/admin/screens/finance/pnl-panel";
+import { AdminModulePage } from "@/modules/admin/ui/admin-module-page";
+
+export const dynamic = "force-dynamic";
+
+export default async function AdminFinancePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ organizationId?: string }>;
+}) {
+  const [{ locale }, query] = await Promise.all([params, searchParams]);
+  if (!isLocale(locale)) notFound();
+  const [result, boxes, pnl, closure, catalog] = await Promise.all([
+    loadAdminFinanceDashboard(),
+    loadAdminBoxesDashboard(),
+    loadAdminPnlDashboard(),
+    loadAdminClosureDashboard(),
+    loadAdminCommerceCatalog(),
+  ]);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  const m = getAdminFinanceMessages(locale);
+  const commerce = getCommerceMessages(locale);
+  const ar = locale === "ar";
+  const auditOrganizationId = query.organizationId
+    ?? (boxes.status === "success" ? boxes.value.wallets[0]?.organization_id ?? null : null)
+    ?? (result.status === "success" ? result.value.subscriptions[0]?.organization_id ?? null : null);
+
+  return (
+    <AdminModulePage locale={locale} active="finance" path="finance" title={m.title} lead={m.intro}>
+      {result.status === "error" ? (
+        <Alert variant="destructive">
+          <AlertTitle>{result.reason === "FORBIDDEN" ? m.forbidden : m.unavailable}</AlertTitle>
+          <AlertDescription>
+            <Link href={`/${locale}/administration/finance`} className="admin-btn-outline mt-3 inline-flex">{m.retry}</Link>
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <div className="space-y-6">
+          <FinanceSorties locale={locale} dashboard={result.value} m={m} />
+          <div className="admin-panel">
+            <FinancePanel locale={locale} dashboard={result.value} m={m} identity={{ idempotencyKey: randomUUID(), correlationId: randomUUID() }} />
+          </div>
+          <section id="boxes" className="scroll-mt-24 rounded-xl border bg-card p-5">
+            <div id="credits" className="scroll-mt-24" />
+            <h2 className="text-xl font-semibold">{commerce.boxes}</h2>
+            {boxes.status === "error" ? (
+              <p className="mt-2 text-sm text-muted-foreground">{boxes.reason === "FORBIDDEN" ? m.forbidden : m.unavailable}</p>
+            ) : (
+              <BoxesPanel
+                locale={locale}
+                dashboard={boxes.value}
+                m={commerce}
+                auditOrganizationId={auditOrganizationId}
+                keys={{
+                  benefit: randomUUID(),
+                  activateBenefit: randomUUID(),
+                  box: randomUUID(),
+                  activateBox: randomUUID(),
+                  link: randomUUID(),
+                  wallet: randomUUID(),
+                  credits: randomUUID(),
+                }}
+              />
+            )}
+          </section>
+          <section id="catalogue-credits" className="scroll-mt-24 rounded-xl border bg-card p-5">
+            <h2 className="text-xl font-semibold">{commerce.packs}</h2>
+            {catalog.status === "error" ? (
+              <p className="mt-2 text-sm text-muted-foreground">{catalog.reason === "FORBIDDEN" ? m.forbidden : m.unavailable}</p>
+            ) : (
+              <CommerceCatalogPanel
+                locale={locale}
+                catalog={catalog.value}
+                wallets={boxes.status === "success" ? boxes.value.wallets : []}
+                m={commerce}
+                auditOrganizationId={auditOrganizationId}
+                keys={{
+                  pack: randomUUID(),
+                  activatePack: randomUUID(),
+                  grantPack: randomUUID(),
+                  promotion: randomUUID(),
+                  activatePromotion: randomUUID(),
+                  grantPromotion: randomUUID(),
+                  parameter: randomUUID(),
+                  activateParameter: randomUUID(),
+                }}
+              />
+            )}
+          </section>
+          {pnl.status === "success" ? <PnlPanel locale={locale} dashboard={pnl.value} m={commerce} keyValue={randomUUID()} /> : <section id="pnl" className="scroll-mt-24 rounded-xl border bg-card p-5"><h2 className="text-xl font-semibold">{commerce.pnl}</h2><p className="mt-2 text-sm text-muted-foreground">{m.unavailable}</p></section>}
+          {closure.status === "success" ? <ClosurePanel locale={locale} dashboard={closure.value} m={commerce} keyValue={randomUUID()} /> : <section id="cloture" className="scroll-mt-24 rounded-xl border bg-card p-5"><h2 className="text-xl font-semibold">{commerce.closure}</h2><p className="mt-2 text-sm text-muted-foreground">{m.unavailable}</p></section>}
+          <section id="centres-couts" className="scroll-mt-24 rounded-xl border bg-card p-5">
+            <h2 className="text-xl font-semibold">{ar ? "مراكز التكلفة" : "Centres de coûts"}</h2>
+            <p className="mt-2 leading-7 text-muted-foreground">
+              {ar
+                ? "لا محرك مراكز تكلفة منفصل هنا. التوزيع يظهر عبر المطابقة والفواتير المفتوحة وكتب الأرباح والخسائر أعلاه."
+                : "Aucun moteur de centres de coûts distinct ici. L’affectation se lit via le rapprochement, les factures ouvertes et les livres P&L ci-dessus."}
+            </p>
+          </section>
+        </div>
+      )}
+    </AdminModulePage>
+  );
+}
