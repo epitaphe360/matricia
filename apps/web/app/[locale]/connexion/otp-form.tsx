@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/modules/shared/lib/supabase/client";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import { getDictionary } from "@/modules/shared/lib/i18n/dictionaries";
-import { applyOtpDigits, normalizeEmail, normalizeOtp } from "@/modules/shared/lib/auth/otp";
+import { applyOtpDigits, emailOtpLength, normalizeEmail, normalizeOtp } from "@/modules/shared/lib/auth/otp";
 import { Button } from "@/modules/shared/ui/button";
 import { Input } from "@/modules/shared/ui/input";
 import { Label } from "@/modules/shared/ui/label";
@@ -117,25 +117,25 @@ export function OtpForm({ locale, nextPath, intent = "login" }: { locale: Locale
     <form onSubmit={verifyCode} className="space-y-5" noValidate aria-busy={status === "pending"}>
       <div className="space-y-2">
         <Label className="text-sm font-semibold text-slate-700" htmlFor="otp">{messages.codeLabel}</Label>
-        <p className="text-sm text-slate-600">{locale === "ar" ? "تم إرسال رمز من 6 أرقام. أدخلوا هذه الأرقام فقط، دون فتح أي رابط في الرسالة." : "Un code à 6 chiffres a été envoyé. Saisissez ces chiffres uniquement, sans ouvrir de lien dans le courriel."}</p>
-        <input id="otp" name="otp" value={token} onChange={(event) => setToken(event.target.value.replace(/\D/g, "").slice(0, 6))} autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required aria-describedby="auth-status" aria-invalid={status === "error"} aria-errormessage={status === "error" ? "auth-status" : undefined} className="sr-only" />
+        <p className="text-sm text-slate-600">{locale === "ar" ? "تم إرسال رمز من 8 أرقام. أدخلوا هذه الأرقام فقط، دون فتح أي رابط في الرسالة." : "Un code à 8 chiffres a été envoyé. Saisissez ces chiffres uniquement, sans ouvrir de lien dans le courriel."}</p>
+        <input id="otp" name="otp" value={token} onChange={(event) => setToken(event.target.value.replace(/\D/g, "").slice(0, emailOtpLength))} autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]{8}" maxLength={emailOtpLength} required aria-describedby="auth-status" aria-invalid={status === "error"} aria-errormessage={status === "error" ? "auth-status" : undefined} className="sr-only" />
         <div className="public-otp-boxes" role="group" aria-label={messages.codeLabel}>
-          {Array.from({ length: 6 }, (_, index) => (
+          {Array.from({ length: emailOtpLength }, (_, index) => (
             <input
               key={index}
               type="text"
               inputMode="numeric"
-              maxLength={6}
+              maxLength={emailOtpLength}
               value={token[index] ?? ""}
               className={status === "error" ? "is-invalid" : undefined}
-              aria-label={`${index + 1} / 6`}
+              aria-label={`${index + 1} / ${emailOtpLength}`}
               onChange={(event) => {
                 const digits = event.target.value.replace(/\D/g, "");
                 const incoming = digits.length > 1 && !(token[index] && digits.length === 2) ? digits : digits.slice(-1);
                 const next = applyOtpDigits(token, index, incoming);
                 setToken(next);
                 const boxes = event.currentTarget.parentElement?.querySelectorAll("input");
-                const focusAt = Math.min(index + Math.max(incoming.length, 1), 5);
+                const focusAt = Math.min(index + Math.max(incoming.length, 1), emailOtpLength - 1);
                 if (incoming && boxes?.[focusAt] instanceof HTMLInputElement) boxes[focusAt].focus();
               }}
               onKeyDown={(event) => {
@@ -145,7 +145,7 @@ export function OtpForm({ locale, nextPath, intent = "login" }: { locale: Locale
                 }
               }}
               onPaste={(event) => {
-                const pasted = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+                const pasted = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, emailOtpLength);
                 if (!pasted) return;
                 event.preventDefault();
                 setToken(pasted);
