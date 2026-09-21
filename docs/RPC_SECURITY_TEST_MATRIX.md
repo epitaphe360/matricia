@@ -4,8 +4,8 @@ Générée par `node scripts/audit-rpc-security.mjs` depuis les métadonnées Su
 
 ## Synthèse
 
-- RPC publiques `SECURITY DEFINER` exécutables par `authenticated` : **311**.
-- Référencées dans au moins un test SQL : **311**.
+- RPC publiques `SECURITY DEFINER` exécutables par `authenticated` : **316**.
+- Référencées dans au moins un test SQL : **316**.
 - Indices positifs et négatifs dans les tests associés : **160**.
 - Sans indice positif : **151**; sans indice négatif : **0**.
 
@@ -28,6 +28,7 @@ Générée par `node scripts/audit-rpc-security.mjs` depuis les métadonnées Su
 | `add_signature_signer(uuid,uuid,uuid,text,text,integer,text,uuid)` | `has_org_role`, `is_active_org_member` | 0109_v41_signature_provider_evidence.test.sql | NON | OUI |
 | `advance_franchise_pipeline(uuid,text,text,jsonb,integer,text,uuid)` | `begin_contract_command`, `canonical_request_hash`, `finish_contract_command`, `franchise_crm_write_access` | 0059_p10_franchise_crm_performance.test.sql | NON | OUI |
 | `advance_organization_exit(uuid,text,text,text,uuid)` | `begin_contract_command`, `canonical_request_hash`, `finish_contract_command`, `has_platform_role` | 0113_v41_resilience_security_registry.test.sql | OUI | OUI |
+| `advance_provider_collection_case(uuid,text,text,text,uuid)` | `begin_provider_billing_command`, `canonical_request_hash`, `finish_provider_billing_command`, `has_platform_role` | 0168_provider_credit_notes_collection.test.sql | NON | OUI |
 | `advance_referral_conversion(uuid,text,jsonb,text,integer,text,uuid)` | `begin_rewards_command`, `canonical_request_hash`, `finish_rewards_command`, `has_org_role`, `has_platform_role`, `rewards_sensitive_aal2` | 0067_rewards_referrals_roi_savings.test.sql, 0069_rewards_referrals_roi_security_hardening.test.sql, 0071_rewards_referral_audience_hardening.test.sql, 0073_referral_conversion_anti_oracle.test.sql | OUI | OUI |
 | `allocate_provider_from_pool(uuid,uuid,numeric,jsonb,text,uuid)` | `begin_volume_command`, `canonical_request_hash`, `finish_volume_command`, `volume_admin_access` | 0049_p12_volume_procurement_pools.test.sql | NON | OUI |
 | `appeal_mission_dispute(uuid,text,jsonb,text,uuid)` | `append_dispute_evidence`, `begin_contract_command`, `canonical_request_hash`, `finish_contract_command`, `is_active_org_member` | 0048_p11_disputes_reassignment.test.sql | NON | OUI |
@@ -117,6 +118,7 @@ Générée par `node scripts/audit-rpc-security.mjs` depuis les métadonnées Su
 | `decide_organization_access_request(uuid,boolean,uuid)` | `has_org_role`, `has_platform_role` | 0010_p04_identity_workflows.test.sql, 0013_p04_role_requests.test.sql | OUI | OUI |
 | `decide_provider_badge(uuid,text,text,text,uuid)` | `begin_provider_reputation_command`, `canonical_request_hash`, `finish_provider_reputation_command`, `has_platform_role` | 0066_provider_reputation_badges_favorites.test.sql, 0137_reputation_badges_checklists_authoritative.test.sql | OUI | OUI |
 | `decide_provider_company(uuid,text,text,timestamp with time zone,text,text,integer,text,uuid)` | `begin_provider_qualification_command`, `can_decide_provider_qualification`, `finish_provider_qualification_command` | 0046_p09_provider_qualification.test.sql | NON | OUI |
+| `decide_provider_payment_plan(uuid,text,text,text,uuid)` | `begin_provider_billing_command`, `canonical_request_hash`, `finish_provider_billing_command`, `has_platform_role` | 0168_provider_credit_notes_collection.test.sql | NON | OUI |
 | `decide_provider_qualification(uuid,text,uuid,integer,jsonb,jsonb,text,text,timestamp with time zone,integer,text,uuid)` | `begin_provider_qualification_command`, `can_decide_provider_qualification`, `finish_provider_qualification_command` | 0046_p09_provider_qualification.test.sql | NON | OUI |
 | `decide_provider_restriction(uuid,uuid,text,text,text,jsonb,text,text,uuid)` | `begin_provider_qualification_command`, `can_decide_provider_qualification`, `finish_provider_qualification_command` | 0046_p09_provider_qualification.test.sql | NON | OUI |
 | `decide_reward_award(uuid,uuid,text,text,text,uuid)` | `begin_rewards_command`, `canonical_request_hash`, `finish_rewards_command`, `rewards_sensitive_aal2` | 0069_rewards_referrals_roi_security_hardening.test.sql, 0071_rewards_referral_audience_hardening.test.sql | OUI | OUI |
@@ -151,6 +153,7 @@ Générée par `node scripts/audit-rpc-security.mjs` depuis les métadonnées Su
 | `initialize_standard_marketing_templates_v1(text,uuid)` | `begin_marketing_worker_command`, `canonical_request_hash`, `finish_marketing_worker_command`, `has_platform_role` | 0133_marketing_content_attribution_completion.test.sql | NON | OUI |
 | `invite_organization_member_by_email(uuid,text,text[],timestamp with time zone,text,uuid)` | `canonical_request_hash`, `has_org_role`, `has_platform_role`, `identity_idempotency_keys` | 0010_p04_identity_workflows.test.sql, 0014_p04_invitation_decline.test.sql, 0015_p04_email_invitations.test.sql, 0018_p04_identity_security_hardening.test.sql | OUI | OUI |
 | `issue_credits(uuid,uuid,text,bigint,timestamp with time zone,uuid,text,bigint,text,text,text,uuid)` | `begin_credit_command`, `canonical_request_hash`, `credits_admin_access`, `finish_credit_command` | 0004_financial_rpcs.test.sql, 0009_p03_financial_concurrency.test.sql, 0055_p08_boxes_credits_security.test.sql, 0067_rewards_referrals_roi_savings.test.sql, 0069_rewards_referrals_roi_security_hardening.test.sql, 0071_rewards_referral_audience_hardening.test.sql | OUI | OUI |
+| `issue_provider_credit_note(uuid,text,date,bigint,bigint,text,text,uuid)` | `begin_provider_billing_command`, `canonical_request_hash`, `finish_provider_billing_command`, `has_platform_role` | 0168_provider_credit_notes_collection.test.sql | NON | OUI |
 | `issue_provider_invoice(uuid,text,date,date,uuid,uuid,uuid,text,uuid)` | `begin_provider_billing_command`, `canonical_request_hash`, `finish_provider_billing_command`, `has_org_role`, `has_platform_role` | 0047_p10_provider_billing_reconciliation.test.sql | NON | OUI |
 | `issue_provider_statement(uuid,text,date,date,character,text,uuid)` | `begin_provider_billing_command`, `canonical_request_hash`, `finish_provider_billing_command`, `has_org_role`, `has_platform_role` | 0047_p10_provider_billing_reconciliation.test.sql | NON | OUI |
 | `issue_purchase_order(uuid,text,text,text,uuid)` | `begin_provider_billing_command`, `canonical_request_hash`, `finish_provider_billing_command`, `has_platform_role` | 0112_v41_finance_workflow_commands.test.sql | OUI | OUI |
@@ -173,6 +176,7 @@ Générée par `node scripts/audit-rpc-security.mjs` depuis les métadonnées Su
 | `mark_outbound_payment_paid(uuid,text,timestamp with time zone,text,uuid,uuid,text,uuid)` | `begin_provider_billing_command`, `canonical_request_hash`, `finish_provider_billing_command`, `has_platform_role` | 0112_v41_finance_workflow_commands.test.sql | OUI | OUI |
 | `mark_service_request_ready(uuid,integer,text,text,uuid)` | `begin_rfq_command`, `can_manage_client_request`, `finish_rfq_command` | 0043_p07_rfq_matching_foundation.test.sql | OUI | OUI |
 | `open_admin_work_item(text,uuid,text,text,text,text,text,text,timestamp with time zone,jsonb,text,text,uuid)` | `begin_admin_command`, `canonical_request_hash`, `finish_admin_command`, `has_platform_role` | 0053_p17_admin_command_center.test.sql | NON | OUI |
+| `open_provider_collection_case(uuid,text,text,uuid)` | `begin_provider_billing_command`, `canonical_request_hash`, `finish_provider_billing_command`, `has_platform_role` | 0168_provider_credit_notes_collection.test.sql | NON | OUI |
 | `open_franchise_pnl_book(uuid,uuid,text,text,text,uuid,text,uuid)` | `begin_contract_command`, `canonical_request_hash`, `finish_contract_command`, `has_platform_role` | 0051_p15_franchise_finance.test.sql | NON | OUI |
 | `open_mission_dispute(uuid,text,text,text,jsonb,jsonb,text,uuid)` | `append_dispute_evidence`, `begin_contract_command`, `canonical_request_hash`, `finish_contract_command`, `has_org_role` | 0048_p11_disputes_reassignment.test.sql | NON | OUI |
 | `open_rfq_message_thread(uuid,uuid,text,text,uuid)` | `begin_internal_message_command`, `can_manage_client_request`, `contains_direct_contact`, `finish_internal_message_command`, `is_provider_actor` | 0153_rpc_negative_coverage_remaining.test.sql, 0154_messaging_comparison_functional.test.sql | OUI | OUI |
@@ -246,6 +250,7 @@ Générée par `node scripts/audit-rpc-security.mjs` depuis les métadonnées Su
 | `request_notification_email_consent(uuid,text,text,uuid)` | `begin_contract_command`, `canonical_request_hash`, `finish_contract_command`, `is_active_org_member` | 0153_rpc_negative_coverage_remaining.test.sql | NON | OUI |
 | `request_organization_export(uuid,jsonb,text,text,text,uuid)` | `begin_contract_command`, `canonical_request_hash`, `finish_contract_command`, `has_org_role`, `has_platform_role`, `v41_json_has_sensitive_keys` | 0113_v41_resilience_security_registry.test.sql | OUI | OUI |
 | `request_privacy_retention_action(uuid,text,text,text,uuid)` | `privacy_manage_access` | 0110_v41_privacy_governance.test.sql | OUI | OUI |
+| `request_provider_payment_plan(uuid,jsonb,text,text,uuid)` | `begin_provider_billing_command`, `canonical_request_hash`, `finish_provider_billing_command`, `has_org_role`, `has_platform_role` | 0168_provider_credit_notes_collection.test.sql | NON | OUI |
 | `request_provider_service(uuid,uuid,text,uuid)` | `begin_provider_qualification_command`, `can_manage_provider`, `finish_provider_qualification_command` | 0046_p09_provider_qualification.test.sql | NON | OUI |
 | `request_quote_revision(uuid,uuid,text,text,uuid)` | `canonical_request_hash`, `has_org_role` | 0044_p07_quotes_comparison.test.sql | NON | OUI |
 | `reserve_benefit_credits(uuid,uuid,uuid,bigint,timestamp with time zone,text,uuid)` | `begin_credit_command`, `canonical_request_hash`, `credits_client_access`, `finish_credit_command` | 0055_p08_boxes_credits_security.test.sql | NON | OUI |

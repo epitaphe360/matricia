@@ -1,12 +1,20 @@
 # Matricia — Project State
 
+## 2026-09-21 — Avoirs, échéanciers et recouvrement prestataire
+
+- ADM-036 : `issue_provider_credit_note` (finance seulement). Journal `PROVIDER_CREDIT_NOTE` inverse les comptes de la facture. Le solde est dérivé (`total − allocations − avoirs`). La facture n’est jamais `UPDATE`. Un avoir après paiement complet est possible tant que la somme des avoirs ≤ total.
+- ADM-037 / ST-032 : `request_provider_payment_plan` (prestataire ou finance, 2 à 12 échéances = solde), `decide_provider_payment_plan` (finance). Un plan `APPROVED` passe le statut dérivé à `PAYMENT_PLAN` et lève le gel J+8. `open_provider_collection_case` défait le plan (`DEFAULTED`) ; `advance_provider_collection_case` ajoute OPEN → FORMAL_NOTICE → COLLECTION → CLOSED sans muter le dossier.
+- UI Admin (avoir, décision d’échéancier, recouvrement) et échéancier prestataire (demande). Sorties finance : libellé `PAYMENT_PLAN`.
+- Preuves : migration `20260921220000`, contrat SQL `0168`, vitest actions/facturation.
+- Lot 9 : **non clos**. Pas de visa indépendant, pas d’E2E-01, pas de `VERIFIED`.
+
 ## 2026-09-21 — Restriction J+8 prestataire (nouvelles opportunités)
 
 - ADM-035 / critère 73 : une facture Matricia échue (`due_on < current_date` et solde > 0) ajoute `OVERDUE_INVOICE` à `provider_service_eligibility_snapshot`. Matching et invitation RFQ excluent le prestataire. Les missions déjà ouvertes ne sont pas mutées ; `financial_status` n’est pas réécrit (une restriction FINANCIAL imposée n’est pas effacée au paiement).
 - Le règlement intégral (allocations = total) lève le gel sans nouvelle date d’échéance. Un paiement partiel ne prolonge pas `due_on`.
 - Clôture admin : `blocks_new_opportunities` sur les factures échues. Facturation prestataire : alerte FR/AR si `paymentStatus=OVERDUE`.
 - Preuves : migration `20260921210000`, contrat SQL `0167`, vitest clôture / facturation.
-- Hors slice : avoirs ADM-036, échéanciers/recouvrement ADM-037, visa Lot 9 / E2E-01 / `VERIFIED`.
+- Hors slice : lecture facture client, paiement d’abonnement réel, visa Lot 9 / E2E-01 / `VERIFIED`.
 
 ## 2026-09-21 — Packs, promotions, paramètres, demande volume, coffre
 
