@@ -28,7 +28,7 @@ export default async function ProviderBillingPage({ params, searchParams }: { pa
         {result.status === "error" ? (
           <Alert variant={result.reason === "NO_BILLING_ORGANIZATION" ? "default" : "destructive"}><AlertTitle>{result.reason === "NO_BILLING_ORGANIZATION" ? m.noOrg : m.loadError}</AlertTitle><AlertDescription>{result.reason}</AlertDescription></Alert>
         ) : (
-          <BillingPanel dashboard={result.dashboard} missions={missions} locale={locale} m={m} keys={Array.from({ length: 5 }, () => crypto.randomUUID())} />
+          <BillingPanel dashboard={result.dashboard} missions={missions} locale={locale} m={m} keys={Array.from({ length: 6 }, () => crypto.randomUUID())} />
         )}
       </details>
     </ProviderAppShell>

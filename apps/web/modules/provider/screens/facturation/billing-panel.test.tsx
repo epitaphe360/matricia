@@ -10,6 +10,7 @@ vi.mock("./actions", () => ({
   reconcilePayment: async () => ({ status: "idle" }),
   recordPayable: async () => ({ status: "idle" }),
   recordPayment: async () => ({ status: "idle" }),
+  requestPaymentPlan: async () => ({ status: "idle" }),
 }));
 
 const dashboard: BillingDashboard = {
@@ -24,12 +25,15 @@ const dashboard: BillingDashboard = {
     totalMinor: "1200",
     paidMinor: "0",
     outstandingMinor: "1200",
+    creditedMinor: "0",
     paymentStatus: "OVERDUE",
     dueOn: "2026-09-13",
   }],
   payments: [],
   allocations: [],
   accounts: [],
+  creditNotes: [],
+  paymentPlans: [],
 };
 
 describe("BillingPanel overdue hold", () => {
@@ -40,7 +44,7 @@ describe("BillingPanel overdue hold", () => {
         missions={[]}
         locale="fr"
         m={getBillingMessages("fr")}
-        keys={["a", "b", "c", "d", "e"]}
+        keys={["a", "b", "c", "d", "e", "f"]}
       />,
     );
     expect(html).toContain('role="alert"');

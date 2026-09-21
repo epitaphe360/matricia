@@ -8,10 +8,12 @@ const dashboard: BillingDashboard = {
   organizationName: "Atlas",
   payables: [{ id: "p1", occurredOn: "2026-09-01", eventType: "COMMISSION_ACCRUAL", currency: "MAD", totalDueMinor: "125050" }],
   statements: [{ id: "s1", number: "REL-1", periodStart: "2026-09-01", periodEnd: "2026-09-30", currency: "MAD", totalMinor: "125050" }],
-  invoices: [{ id: "i1", number: "F-1", currency: "MAD", totalMinor: "125050", paidMinor: "0", outstandingMinor: "125050", paymentStatus: "ISSUED", dueOn: "2026-10-15" }],
+  invoices: [{ id: "i1", number: "F-1", currency: "MAD", totalMinor: "125050", paidMinor: "0", outstandingMinor: "125050", creditedMinor: "0", paymentStatus: "ISSUED", dueOn: "2026-10-15" }],
   payments: [],
   allocations: [],
   accounts: [],
+  creditNotes: [],
+  paymentPlans: [],
 };
 
 describe("provider ledger boards", () => {

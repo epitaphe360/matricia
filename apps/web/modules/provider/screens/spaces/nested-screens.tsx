@@ -261,7 +261,7 @@ export async function ProviderInvoiceSettlementPage({
         query={space.selectedQuery}
         invoiceId={invoiceId}
         invoice={invoice}
-        billingPanel={result.status === "success" ? <ProviderLiveBillingPanel dashboard={result.dashboard} missions={missions} locale={locale as Locale} m={m} keys={Array.from({ length: 5 }, () => randomUUID())} /> : null}
+        billingPanel={result.status === "success" ? <ProviderLiveBillingPanel dashboard={result.dashboard} missions={missions} locale={locale as Locale} m={m} keys={Array.from({ length: 6 }, () => randomUUID())} /> : null}
       />
     </ProviderAppShell>
   );
