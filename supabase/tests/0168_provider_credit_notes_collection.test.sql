@@ -1,6 +1,6 @@
 begin;
 set local search_path = public, extensions;
-select plan(14);
+select plan(15);
 
 select ok((
   select count(*) = 5 and bool_and(p.prosecdef and p.proconfig::text like '%search_path=%')

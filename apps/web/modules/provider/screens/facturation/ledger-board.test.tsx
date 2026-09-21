@@ -1,7 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { BillingDashboard } from "@/modules/provider/data/billing/model";
 import { ProviderLedgerBoard } from "./ledger-board";
+
+vi.mock("./actions", () => ({
+  requestPaymentPlan: async () => ({ status: "idle" }),
+}));
 
 const dashboard: BillingDashboard = {
   organizationId: "11111111-1111-4111-8111-111111111111",
@@ -29,5 +33,12 @@ describe("provider ledger boards", () => {
     const html = renderToStaticMarkup(<ProviderLedgerBoard locale="fr" query="" kind="commissions" dashboard={dashboard} receipts={[]} />);
     expect(html).toContain("Historique des commissions");
     expect(html).toContain("Aucune donnée enregistrée.");
+  });
+
+  it("propose un échéancier sans inventer de dates", () => {
+    const html = renderToStaticMarkup(<ProviderLedgerBoard locale="fr" query="" kind="echeancier" dashboard={dashboard} planKey="11111111-1111-4111-8111-111111111111" />);
+    expect(html).toContain("Demander un échéancier");
+    expect(html).toContain("Deux échéances après aujourd’hui");
+    expect(html).not.toMatch(/\bTODO\b|\bFIXME\b/);
   });
 });
