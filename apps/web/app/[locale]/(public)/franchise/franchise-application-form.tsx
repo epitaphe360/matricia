@@ -5,10 +5,9 @@ import Link from "next/link";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import { submitContactRequest, type ContactActionState } from "../contact/actions";
 import { getPublicProviderTaxonomy } from "@/modules/public/data/provider-intent/model";
+import { moroccoRegionLabel, moroccoRegions } from "@/modules/franchise/data/territories/morocco-regions";
 
 const initial: ContactActionState = { status: "idle" };
-
-const cities = ["Casablanca", "Rabat", "Marrakech", "Tanger", "Fès", "Agadir", "Oujda", "Meknès", "Tétouan", "Autre territoire"];
 const profiles = {
   fr: ["Dirigeant", "Professionnel indépendant", "Porteur de projet", "Autre parcours"],
   ar: ["مسير", "مهني مستقل", "صاحب مشروع", "مسار آخر"],
@@ -24,7 +23,7 @@ const copy = {
     intro: "Remplissez ce formulaire pour nous faire part de votre intérêt. Notre équipe l’examinera avec attention.",
     name: "Nom et prénom",
     email: "Adresse e-mail",
-    city: "Ville / territoire",
+    city: "Territoire",
     profile: "Parcours professionnel",
     domain: "Bibliothèque ou domaine souhaité",
     availability: "Disponibilité estimée",
@@ -45,7 +44,7 @@ const copy = {
     intro: "املؤوا هذا النموذج لإبلاغنا باهتمامكم. ستدرسه فرقنا بعناية.",
     name: "الاسم والنسب",
     email: "البريد الإلكتروني",
-    city: "المدينة / الإقليم",
+    city: "الإقليم",
     profile: "المسار المهني",
     domain: "المكتبة أو المجال المرغوب",
     availability: "التوفر التقديري",
@@ -81,7 +80,7 @@ export function FranchiseApplicationForm({ locale }: { locale: Locale }) {
           const data = new FormData(form);
           const composed = [
             `${messages.name}: ${data.get("displayName")}`,
-            `${messages.city}: ${data.get("zone")}`,
+            `${messages.city}: ${moroccoRegionLabel(String(data.get("zone") ?? ""), "fr")}`,
             `${messages.profile}: ${data.get("profile")}`,
             `${messages.domain}: ${data.get("domain")}`,
             `${messages.availability}: ${data.get("availability")}`,
@@ -110,9 +109,9 @@ export function FranchiseApplicationForm({ locale }: { locale: Locale }) {
           <label className="block font-medium">
             {messages.city} *
             <select name="zone" required className="mt-2 w-full">
-              <option value="">{locale === "ar" ? "اختاروا مدينة أو إقليماً" : "Sélectionnez une ville ou un territoire"}</option>
-              {cities.map((city) => (
-                <option key={city} value={city}>{city}</option>
+              <option value="">{locale === "ar" ? "اختاروا جهة" : "Sélectionnez une région"}</option>
+              {moroccoRegions.map((region) => (
+                <option key={region.code} value={region.code}>{moroccoRegionLabel(region.code, locale)}</option>
               ))}
             </select>
           </label>
