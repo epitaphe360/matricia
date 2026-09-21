@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { formatMinor, type BillingDashboard, type ProviderCommissionReceipt } from "@/modules/provider/data/billing/model";
+import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import { getBillingMessages, type BillingMessages } from "@/modules/provider/screens/facturation/messages";
 import { SchedulePlanForm } from "./schedule-plan-form";
 

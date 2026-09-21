@@ -6,7 +6,7 @@ import { QuestionBuilder } from "@/modules/admin/screens/catalogue/question-buil
 import { RuleBuilder } from "@/modules/admin/screens/catalogue/rule-builder";
 import { getBuilderMessages } from "@/modules/admin/screens/catalogue/messages";
 import { libraryCopy } from "@/modules/franchise/data/library/copy";
-import type { FranchiseCatalogRow, FranchiseLibraryWorkspace, FranchiseQuestionRow } from "@/modules/franchise/data/library/workspace";
+import type { FranchiseCatalogRow, FranchiseLibraryWorkspace, FranchiseQuestionRow } from "@/modules/franchise/data/library/workspace-model";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import { MandateBanner, StatusChip, kindLabel, nextAction } from "./library-boards";
 import { FranchiseScopeInfo, FranchiseSecurityPanel } from "./library-chrome";

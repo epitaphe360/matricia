@@ -1,5 +1,6 @@
 -- Additive follow-up after 20260921200000: version FKs and franchise read of
 -- service-qualification decisions. Tables stay SELECT-only.
+-- Renamed from 20260921220000 to keep a unique version next to provider credit notes.
 
 do $$
 begin

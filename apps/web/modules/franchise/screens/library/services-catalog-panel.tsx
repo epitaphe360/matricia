@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { libraryCopy } from "@/modules/franchise/data/library/copy";
-import type { FranchiseCatalogRow, FranchiseCategoryNode } from "@/modules/franchise/data/library/workspace";
+import type { FranchiseCatalogRow, FranchiseCategoryNode } from "@/modules/franchise/data/library/workspace-model";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import { FranchiseCategoryCreateForm, FranchiseSubcategoryCreateForm } from "./catalog-commands";
 import { KindChip, LanguageMarks, StatusChip, nextAction } from "./library-boards";

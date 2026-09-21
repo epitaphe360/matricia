@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Beaker, BookOpen, ClipboardList, FileText, Globe, Lock, MessageSquare, Scale, Send,  Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { libraryCopy } from "@/modules/franchise/data/library/copy";
-import { catalogStatusLabel, catalogStatusTone, type FranchiseCatalogRow, type FranchiseLibraryWorkspace } from "@/modules/franchise/data/library/workspace";
+import { catalogStatusLabel, catalogStatusTone, type FranchiseCatalogRow, type FranchiseLibraryWorkspace } from "@/modules/franchise/data/library/workspace-model";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import { FranchiseMandatePerimeter, FranchiseRowMenu, validationChipLabel, validationChipTone, workflowChipLabel } from "./library-chrome";
 import { FranchiseCategoryCreateForm, FranchiseHierarchySubmitForm, FranchiseSubcategoryCreateForm } from "./catalog-commands";

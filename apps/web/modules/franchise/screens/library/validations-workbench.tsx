@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { FileText, MessageSquare, Send, BookOpen } from "lucide-react";
 import { libraryCopy } from "@/modules/franchise/data/library/copy";
-import { catalogStatusLabel, type FranchiseCatalogRow, type FranchiseLibraryWorkspace } from "@/modules/franchise/data/library/workspace";
+import { catalogStatusLabel, type FranchiseCatalogRow, type FranchiseLibraryWorkspace } from "@/modules/franchise/data/library/workspace-model";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import { KindChip, MandateBanner, StatusChip, nextAction } from "./library-boards";
 import { FranchiseMandateRail } from "./library-chrome";

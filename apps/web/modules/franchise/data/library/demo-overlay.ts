@@ -1,5 +1,5 @@
 import { canApplyFranchiseSpaceDemo } from "@/modules/franchise/data/spaces/demo";
-import type { FranchiseCatalogRow, FranchiseCategoryNode, FranchiseLibraryWorkspace, FranchiseQuestionRow } from "@/modules/franchise/data/library/workspace";
+import type { FranchiseCatalogRow, FranchiseCategoryNode, FranchiseLibraryWorkspace, FranchiseQuestionRow } from "@/modules/franchise/data/library/workspace-model";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 
 const draftStatuses = new Set(["DRAFT"]);

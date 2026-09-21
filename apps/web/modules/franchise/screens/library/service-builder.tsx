@@ -6,7 +6,7 @@ import { Input } from "@/modules/shared/ui/input";
 import { Label } from "@/modules/shared/ui/label";
 import { Textarea } from "@/modules/shared/ui/textarea";
 import { libraryCopy } from "@/modules/franchise/data/library/copy";
-import type { FranchiseCatalogRow, FranchiseLibraryWorkspace } from "@/modules/franchise/data/library/workspace";
+import type { FranchiseCatalogRow, FranchiseLibraryWorkspace } from "@/modules/franchise/data/library/workspace-model";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import {
   createFranchiseServiceAction,

@@ -102,6 +102,7 @@ describe("provider nested workbenches 09-15", () => {
       totalMinor: "1250",
       paidMinor: "0",
       outstandingMinor: "1250",
+      creditedMinor: "0",
       paymentStatus: "OPEN",
       dueOn: "2026-10-01",
     };
