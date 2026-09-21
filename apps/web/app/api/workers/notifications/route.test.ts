@@ -1,6 +1,6 @@
 import{beforeEach,describe,expect,it,vi}from"vitest";
 const mocks=vi.hoisted(()=>({rpc:vi.fn(),deliver:vi.fn()}));
-vi.mock("@/lib/supabase/admin",()=>({getSupabaseAdminClient:()=>({rpc:mocks.rpc})}));vi.mock("@/lib/notification-delivery/adapter",()=>({deliverNotification:mocks.deliver}));
+vi.mock("@/modules/shared/lib/supabase/admin",()=>({getSupabaseAdminClient:()=>({rpc:mocks.rpc})}));vi.mock("@/modules/shared/lib/notification-delivery/adapter",()=>({deliverNotification:mocks.deliver}));
 vi.mock("node:crypto",async(importOriginal)=>{const original=await importOriginal<typeof import("node:crypto")>();return{...original,randomUUID:()=>"33333333-3333-4333-8333-333333333333"}});
 import{POST}from"./route";
 const secret="n".repeat(32),delivery="11111111-1111-4111-8111-111111111111",lease="22222222-2222-4222-8222-222222222222";

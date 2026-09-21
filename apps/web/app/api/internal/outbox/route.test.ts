@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
 
 const secret = "s".repeat(32);
@@ -20,7 +20,12 @@ function request(body: unknown = envelope, token = secret): Request {
 }
 
 describe("internal outbox receiver", () => {
-  beforeEach(() => { process.env.INTERNAL_WEBHOOK_SECRET = secret; });
+  let write: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    process.env.INTERNAL_WEBHOOK_SECRET = secret;
+    write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+  });
+  afterEach(() => write.mockRestore());
 
   it("rejects unauthorized dispatches", async () => {
     expect((await POST(request(envelope, "bad"))).status).toBe(401);
@@ -30,9 +35,14 @@ describe("internal outbox receiver", () => {
     expect((await POST(request({ ...envelope, correlationId: "invalid" }))).status).toBe(400);
   });
 
-  it("accepts a valid envelope idempotently", async () => {
+  it("observes a valid envelope through the explicit terminal consumer", async () => {
     const response = await POST(request());
     expect(response.status).toBe(202);
-    await expect(response.json()).resolves.toEqual({ outcome: "OUTBOX_EVENT_ACCEPTED", eventId: "42" });
+    expect(response.headers.get("x-matricia-outbox-consumer")).toBe("TERMINAL_OBSERVABILITY");
+    await expect(response.json()).resolves.toEqual({ outcome: "OUTBOX_EVENT_OBSERVED", eventId: "42", consumer: "TERMINAL_OBSERVABILITY" });
+    expect(write).toHaveBeenCalledOnce();
+    const record = JSON.parse(String(write.mock.calls[0]?.[0]));
+    expect(record).toMatchObject({ event: "outbox.event.observed", outcome: "success", aggregate_type: envelope.eventType, data: { eventId: "42", consumer: "TERMINAL_OBSERVABILITY" } });
+    expect(JSON.stringify(record)).not.toContain("organization_id");
   });
 });

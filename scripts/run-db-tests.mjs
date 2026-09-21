@@ -1,5 +1,5 @@
-import { readFile, readdir } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { dirname, relative, resolve, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import postgres from 'postgres';
 
@@ -548,6 +548,18 @@ const files = (await readdir(testDirectory))
   .sort();
 if (files.length === 0) throw new Error('DB_TEST_PATTERN matched no SQL test files');
 let assertions = 0;
+let evidence = null;
+
+const evidencePath = process.env.DB_TEST_EVIDENCE_PATH
+  ? resolve(root, process.env.DB_TEST_EVIDENCE_PATH)
+  : null;
+if (evidencePath) {
+  const allowedDirectory = resolve(root, 'docs', 'evidence');
+  const evidenceRelativePath = relative(allowedDirectory, evidencePath);
+  if (evidenceRelativePath.startsWith(`..${sep}`) || evidenceRelativePath === '..') {
+    throw new Error('DB_TEST_EVIDENCE_PATH must stay inside docs/evidence');
+  }
+}
 
 try {
   await cleanupStaleFinancialConcurrencyFixtures(sql);
@@ -565,6 +577,21 @@ try {
   console.log('PASS credit_idempotency_concurrency (2 connections)');
   console.log('PASS audit_chain_concurrency (2 connections)');
   console.log(`DB tests passed: ${files.length} files, ${assertions} assertions, 4 concurrency scenarios`);
+  evidence = {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    environment: env.APP_ENV,
+    outcome: 'PASS',
+    files,
+    assertions,
+    concurrencyScenarios: 4,
+  };
 } finally {
   await sql.end({ timeout: 2 });
+}
+
+if (evidencePath && evidence) {
+  await mkdir(dirname(evidencePath), { recursive: true });
+  await writeFile(evidencePath, `${JSON.stringify(evidence, null, 2)}\n`, 'utf8');
+  console.log(`Evidence written: ${relative(root, evidencePath)}`);
 }

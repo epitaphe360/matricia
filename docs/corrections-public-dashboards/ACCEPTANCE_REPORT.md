@@ -5,11 +5,11 @@
 | Scénario | Commande / preuve | Résultat |
 |---|---|---|
 | Inventaire du HEAD | `git status`, `git branch --show-current`, `git rev-parse --short HEAD`, inventaire des routes/actions | Base `0bfd967`, branche dédiée, changements utilisateur préservés |
-| Tests workspace | `corepack pnpm test` | PASS — Web 172 fichiers / 714 tests ; Worker 54 ; packages 99 ; total 867 |
+| Tests workspace | `corepack pnpm test` | PASS — Web 182 fichiers / 755 tests ; Worker 54 ; packages 101 ; total 910 |
 | TypeScript strict | `corepack pnpm typecheck` | PASS |
 | Lint | `corepack pnpm lint` | PASS |
 | Build production local | `corepack pnpm build` | PASS, sans déploiement |
-| SQL/RLS/intégration/concurrence | `corepack pnpm test:db` | PASS — 147 fichiers, 3 455 assertions, 4 scénarios de concurrence |
+| SQL/RLS/intégration/concurrence | `corepack pnpm test:db` | PASS — 149 fichiers, 3 488 assertions, 4 scénarios de concurrence |
 | Migrations Supabase development | `supabase db push --linked --dry-run` | PASS — `upToDate: true`, aucune migration/seed/rôle en attente |
 | Parcours publics FR/AR | Playwright public | PASS — 10/10, mobile 360 px et desktop, captures dans les artefacts |
 | Parcours connectés multi-rôle | `node tests/e2e/helpers/v1-critical-flows-run.mjs` | PASS — 24/24, fixtures neutralisées |

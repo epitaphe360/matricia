@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ rpc: vi.fn(), publish: vi.fn(), resolve: vi.fn() }));
-vi.mock("@/lib/supabase/admin", () => ({ getSupabaseAdminClient: () => ({ rpc: mocks.rpc }) }));
-vi.mock("@/lib/marketing-autopilot/credential-resolver", () => ({ resolveSocialCredentialReference: mocks.resolve }));
-vi.mock("@/lib/marketing-autopilot/publisher", () => ({
+vi.mock("@/modules/shared/lib/supabase/admin", () => ({ getSupabaseAdminClient: () => ({ rpc: mocks.rpc }) }));
+vi.mock("@/modules/shared/lib/marketing-autopilot/credential-resolver", () => ({ resolveSocialCredentialReference: mocks.resolve }));
+vi.mock("@/modules/shared/lib/marketing-autopilot/publisher", () => ({
   publicationJobSchema: { safeParse: (value: unknown) => ({ success: true, data: value }) },
   publishScheduledSocial: mocks.publish,
 }));

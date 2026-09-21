@@ -1,29 +1,90 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { buttonVariants } from "@/components/ui/button";
-import { isLocale } from "@/lib/i18n/locale";
-import { cn } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { AccountSecurityPanel } from "./account-security-panel";
 import { getAccountSecurity } from "./actions";
 import { getAccountSecurityMessages } from "./messages";
+import { ConnectedAppShell } from "@/modules/shared/ui/connected-app-shell";
+import { spaceCopy } from "@/modules/client/data/spaces/copy";
+import { SecurityBoard } from "@/modules/client/screens/spaces/security-board";
+import { listMySessions } from "@/app/[locale]/securite/sessions/actions";
+import { listOrganizationRoles } from "@/app/[locale]/organisation/roles/actions";
+import { getRoleMessages } from "@/app/[locale]/organisation/roles/messages";
+import { resolveClientSpace } from "@/modules/client/data/spaces/context";
 
-export default async function AccountSecurityPage({ params }: { params: Promise<{ locale: string }> }) {
+function dateLabel(value: string | null, locale: "fr" | "ar") {
+  if (!value) return "—";
+  const normalized = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(value) ? `${value}Z` : value;
+  const date = new Date(normalized);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat(locale === "fr" ? "fr-MA" : "ar-MA", { dateStyle: "medium", timeStyle: "short" }).format(date);
+}
+
+export default async function AccountSecurityPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ organizationId?: string }>;
+}) {
   const { locale } = await params;
+  const query = await searchParams;
   if (!isLocale(locale)) notFound();
-  const result = await getAccountSecurity();
+  const [result, sessions, roles, space] = await Promise.all([
+    getAccountSecurity(),
+    listMySessions(),
+    listOrganizationRoles(),
+    resolveClientSpace({ locale, organizationId: query.organizationId }),
+  ]);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
   const messages = getAccountSecurityMessages(locale);
-  const alternate = locale === "fr" ? "ar" : "fr";
+  const roleMessages = getRoleMessages(locale);
+  const c = spaceCopy(locale);
   return (
-    <main className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6 sm:py-8">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <header className="space-y-4">
-          <nav aria-label={messages.navigation} className="flex flex-wrap items-center justify-between gap-3"><Link href={`/${locale}/tableau-de-bord`} className={cn(buttonVariants({ variant: "outline" }), "min-h-11")}>{messages.back}</Link><Link href={`/${alternate}/securite/compte`} hrefLang={alternate} className="rounded-md px-3 py-2 text-sm font-medium text-primary">{messages.language}</Link></nav>
-          <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{messages.eyebrow}</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">{messages.title}</h1><p className="mt-3 max-w-3xl text-muted-foreground">{messages.description}</p></div>
-        </header>
-        {result.status === "error" ? <Alert variant="destructive"><AlertTitle>{messages.unavailableTitle}</AlertTitle><AlertDescription><p>{messages.unavailableDescription}</p><Link href={`/${locale}/securite/compte`} className={cn(buttonVariants({ variant: "outline" }), "mt-3 min-h-11")}>{messages.retry}</Link></AlertDescription></Alert> : <AccountSecurityPanel locale={locale} security={result} messages={messages} />}
-      </div>
-    </main>
+    <ConnectedAppShell
+      locale={locale}
+      organizationId={query.organizationId}
+      title={c.orgTitle}
+      lead={c.orgLead}
+      clientActive="company"
+      providerActive="company"
+      franchiseActive="governance"
+    >
+      {result.status === "error" ? (
+        <Alert variant="destructive">
+          <AlertTitle>{messages.unavailableTitle}</AlertTitle>
+          <AlertDescription>{messages.unavailableDescription}</AlertDescription>
+        </Alert>
+      ) : (
+        <SecurityBoard
+          locale={locale}
+          query={space.selectedQuery}
+          organizationName={space.organizationName}
+          organizationId={space.selectedOrganizationId}
+          security={result}
+          sessions={sessions.status === "success" ? sessions.sessions.map((session) => ({
+            id: session.id,
+            isCurrent: session.isCurrent,
+            label: session.userAgent && /Mobile|Android|iPhone|iPad/i.test(session.userAgent)
+              ? (locale === "ar" ? "جهاز جوّال" : "Appareil mobile")
+              : (locale === "ar" ? "جهاز مكتبي" : "Appareil de bureau"),
+            detail: session.userAgent ?? (locale === "ar" ? "وكيل غير متاح" : "Agent indisponible"),
+            lastSeen: dateLabel(session.lastSeenAt, locale),
+          })) : []}
+          members={roles.status === "success" ? roles.memberships.map((member) => ({
+            id: member.id,
+            name: member.isCurrentUser ? (locale === "ar" ? "أنتم" : "Vous") : (member.organizationName ?? roleMessages.anotherMember),
+            role: member.roles[0] ? roleMessages.roles[member.roles[0]] : roleMessages.noRole,
+            status: roleMessages.membershipStatuses[member.status],
+          })) : []}
+        >
+          <details className="client-ops" open>
+            <summary>{messages.mfaTitle}</summary>
+            <AccountSecurityPanel locale={locale} security={result} messages={messages} />
+          </details>
+        </SecurityBoard>
+      )}
+    </ConnectedAppShell>
   );
 }

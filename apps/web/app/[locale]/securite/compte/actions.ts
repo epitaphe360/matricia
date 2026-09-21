@@ -3,9 +3,9 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { getSupabaseAdminClient } from "@/lib/supabase/admin";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { isLocale, type Locale } from "@/lib/i18n/locale";
+import { getSupabaseAdminClient } from "@/modules/shared/lib/supabase/admin";
+import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
+import { isLocale, type Locale } from "@/modules/shared/lib/i18n/locale";
 
 const uuidSchema = z.string().uuid();
 const totpCodeSchema = z.string().regex(/^\d{6}$/);

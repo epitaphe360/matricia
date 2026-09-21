@@ -1,8 +1,8 @@
 import { createPaymentGateway, PaymentGatewayError } from "@matricia/infrastructure";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getPaymentRuntimeConfig, getServerEnvironment } from "@/lib/env";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getPaymentRuntimeConfig, getServerEnvironment } from "@/modules/shared/lib/env";
+import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 
 const inputSchema = z.object({ paymentIntentId: z.string().uuid() }).strict();
 const preparedSchema = z.object({ provider_intent_id: z.string().min(8).max(200), replayed: z.boolean() }).passthrough();

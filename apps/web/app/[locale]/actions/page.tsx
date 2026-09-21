@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { buttonVariants } from "@/components/ui/button";
-import { isLocale } from "@/lib/i18n/locale";
-import { loadUserActionCenter } from "@/lib/action-center/repository";
-import { cn } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { buttonVariants } from "@/modules/shared/ui/button";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+import { loadUserActionCenter } from "@/modules/shared/lib/action-center/repository";
+import { cn } from "@/modules/shared/lib/utils";
 import { ActionsPanel } from "./actions-panel";
 import { getActionCenterMessages } from "./messages";
 

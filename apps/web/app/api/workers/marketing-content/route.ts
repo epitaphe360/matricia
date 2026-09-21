@@ -1,8 +1,8 @@
 import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
-import { serviceContentInput } from "../../../../lib/marketing-autopilot/content-engine";
-import { configuredProviders, generateWithFailover } from "../../../../lib/marketing-autopilot/provider-orchestrator";
-import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { serviceContentInput } from "@/modules/shared/lib/marketing-autopilot/content-engine";
+import { configuredProviders, generateWithFailover } from "@/modules/shared/lib/marketing-autopilot/provider-orchestrator";
+import { getSupabaseAdminClient } from "@/modules/shared/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;

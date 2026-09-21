@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { buttonVariants } from "@/components/ui/button";
-import { loadAdminOperationsDashboard } from "@/lib/admin-operations/repository";
-import { isLocale } from "@/lib/i18n/locale";
-import { cn } from "@/lib/utils";
-import { getAdminOperationsMessages } from "./messages";
-import { OperationsDashboard } from "./operations-dashboard";
+import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { loadAdminOperationsDashboard } from "@/modules/admin/data/operations/repository";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+import { getAdminOperationsMessages } from "@/modules/admin/screens/operations/messages";
+import { OperationsDashboard } from "@/modules/admin/screens/operations/operations-dashboard";
+import { AdminModulePage } from "@/modules/admin/ui/admin-module-page";
 
 export default async function AdminOperationsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -14,10 +13,24 @@ export default async function AdminOperationsPage({ params }: { params: Promise<
   const messages = getAdminOperationsMessages(locale);
   const result = await loadAdminOperationsDashboard();
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
-  const alternate = locale === "fr" ? "ar" : "fr";
-  return <main dir={locale === "ar" ? "rtl" : "ltr"} className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6 sm:py-8"><div className="mx-auto max-w-7xl space-y-7">
-    <nav aria-label={messages.eyebrow} className="flex flex-wrap items-center justify-between gap-3"><Link href={`/${locale}/tableau-de-bord`} className={cn(buttonVariants({ variant: "outline" }), "min-h-11")}>{messages.back}</Link><Link href={`/${alternate}/administration/operations`} hrefLang={alternate} className="min-h-11 rounded-md px-3 py-2 font-medium text-primary focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring">{messages.language}</Link></nav>
-    <header><p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{messages.eyebrow}</p><h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{messages.title}</h1><p className="mt-3 max-w-4xl leading-7 text-muted-foreground">{messages.description}</p></header>
-    {result.status === "error" ? <Alert variant="destructive"><AlertTitle>{result.reason === "FORBIDDEN" ? messages.forbidden : messages.unavailable}</AlertTitle><AlertDescription>{result.reason === "FORBIDDEN" ? messages.forbiddenText : messages.unavailableText}</AlertDescription></Alert> : <OperationsDashboard dashboard={result.value} locale={locale} messages={messages} />}
-  </div></main>;
+
+  return (
+    <AdminModulePage locale={locale} active="settings" path="operations" title={messages.title} lead={messages.description}>
+      {result.status === "error" ? (
+        <Alert variant="destructive">
+          <AlertTitle>{result.reason === "FORBIDDEN" ? messages.forbidden : messages.unavailable}</AlertTitle>
+          <AlertDescription>{result.reason === "FORBIDDEN" ? messages.forbiddenText : messages.unavailableText}</AlertDescription>
+        </Alert>
+      ) : (
+        <div className="admin-panel">
+          <OperationsDashboard dashboard={result.value} locale={locale} messages={messages} />
+        </div>
+      )}
+      <p className="text-sm text-muted-foreground">
+        <Link href={`/${locale}/administration/parcours`} className="font-semibold text-primary underline-offset-4 hover:underline">
+          {locale === "ar" ? "إشراف المسار التجاري" : "Supervision du parcours métier"}
+        </Link>
+      </p>
+    </AdminModulePage>
+  );
 }

@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
   revalidatePath: vi.fn(),
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock("@/modules/shared/lib/supabase/server", () => ({
   getSupabaseServerClient: async () => ({
     auth: {
       getUser: mocks.getUser,
@@ -31,8 +31,8 @@ vi.mock("@/lib/supabase/server", () => ({
     rpc: mocks.rpc,
   }),
 }));
-vi.mock("@/lib/supabase/admin", () => ({ getSupabaseAdminClient: () => ({ rpc: mocks.adminRpc }) }));
-vi.mock("@/lib/i18n/locale", () => ({ isLocale: (value: string) => value === "fr" || value === "ar" }));
+vi.mock("@/modules/shared/lib/supabase/admin", () => ({ getSupabaseAdminClient: () => ({ rpc: mocks.adminRpc }) }));
+vi.mock("@/modules/shared/lib/i18n/locale", () => ({ isLocale: (value: string) => value === "fr" || value === "ar" }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 vi.mock("node:crypto", () => ({ randomUUID: () => "33333333-3333-4333-8333-333333333333" }));
 

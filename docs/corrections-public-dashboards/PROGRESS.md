@@ -11,8 +11,8 @@
 - Client : diagnostics sans identifiants techniques ; opportunité convertie atomiquement en demande ; portefeuille, missions, abonnement, achats groupés, favoris, récompenses et autres lectures principales filtrés par organisation.
 - Sous-traitant : devis multiligne, MAD exact, brouillon/reprise, révision versionnée et idempotence ; qualification par dépôt privé vérifié ; facturation et preuves rendues métier.
 - Franchise/Admin : transitions et preuves de performance lisibles ; anti-abus honnête et idempotent ; approbations financières en montant utilisateur ; clonage, Catalogue, Marketing et qualification administrative sans saisie courante de JSON/hash/UUID/version technique.
-- Migrations additives `194` à `199` et `202` à `204` appliquées au projet Supabase `development`. Dry-run final : base distante à jour.
-- Gates : workspace TypeScript, lint, tests et build PASS ; 867 tests applicatifs PASS ; Playwright public 10/10 PASS ; E2E authentifié 24/24 PASS ; SQL complet 147 fichiers, 3 455 assertions et 4 scénarios de concurrence PASS ; catalogue 10/200/6000 validé ; aucun marqueur incomplet applicatif.
+- Migrations additives `194` à `199` et `202` à `206` appliquées au projet Supabase `development`. Dry-run final : base distante à jour.
+- Gates : workspace TypeScript, lint, tests et build PASS ; 910 tests applicatifs PASS ; Playwright public final 34/34 PASS ; E2E cœur authentifié ciblé 2/2 PASS ; SQL complet 149 fichiers, 3 488 assertions et 4 scénarios de concurrence PASS ; catalogue 10/200/6000 validé ; aucun marqueur incomplet applicatif.
 
 ## Résidus explicitement non fermés
 

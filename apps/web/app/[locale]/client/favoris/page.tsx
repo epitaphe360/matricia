@@ -1,24 +1,52 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { buttonVariants } from "@/components/ui/button";
-import { isLocale } from "@/lib/i18n/locale";
-import { loadClientFavorites, loadFavoriteProviderOptions } from "@/lib/provider-reputation/repository";
-import { cn } from "@/lib/utils";
-import { FavoritesPanel } from "./favorites-panel";
-import { getFavoriteMessages } from "./messages";
+import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { resolveClientSpace } from "@/modules/client/data/spaces/context";
+import { spaceCopy } from "@/modules/client/data/spaces/copy";
+import { FavoritesPanel } from "@/modules/client/screens/favoris/favorites-panel";
+import { getFavoriteMessages } from "@/modules/client/screens/favoris/messages";
+import { ClientAppShell } from "@/modules/client/ui/client-app-shell";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+import { loadClientFavorites, loadFavoriteProviderOptions } from "@/modules/provider/data/reputation/repository";
 
-export default async function FavoritesPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string }> }) {
-  const { locale } = await params, { organizationId } = await searchParams;
+export default async function FavoritesPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ organizationId?: string }>;
+}) {
+  const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
-  const messages = getFavoriteMessages(locale), result = await loadClientFavorites(organizationId);
+  const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
+  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  const messages = getFavoriteMessages(locale);
+  const result = await loadClientFavorites(query.organizationId);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
-  const optionsResult = result.status === "success" && result.dashboard.canManage ? await loadFavoriteProviderOptions(organizationId) : null;
+  const optionsResult = result.status === "success" && result.dashboard.canManage
+    ? await loadFavoriteProviderOptions(query.organizationId)
+    : null;
   const providerOptions = optionsResult?.status === "success" ? optionsResult.options : [];
-  const alternate = locale === "fr" ? "ar" : "fr", organizationQuery = organizationId ? `?organizationId=${encodeURIComponent(organizationId)}` : "";
-  return <main dir={locale === "ar" ? "rtl" : "ltr"} className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6 sm:py-8"><div className="mx-auto max-w-7xl space-y-7">
-    <nav aria-label="Navigation" className="flex flex-wrap items-center justify-between gap-3"><Link href={`/${locale}/tableau-de-bord${organizationQuery}`} className={cn(buttonVariants({ variant: "outline" }), "min-h-11")}>{messages.back}</Link><Link href={`/${alternate}/client/favoris${organizationQuery}`} hrefLang={alternate} className="min-h-11 rounded-md px-3 py-2 font-medium text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">{messages.language}</Link></nav>
-    <header><p className="text-xs font-semibold uppercase tracking-[.18em] text-primary">{result.status === "success" ? result.dashboard.organizationName : "Matricia"}</p><h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{messages.title}</h1><p className="mt-3 max-w-3xl leading-7 text-muted-foreground">{messages.description}</p></header>
-    {result.status === "error" ? <Alert variant={result.reason === "NO_ORGANIZATION" || result.reason === "ORGANIZATION_SELECTION_REQUIRED" ? "default" : "destructive"}><AlertTitle>{result.reason === "NO_ORGANIZATION" || result.reason === "ORGANIZATION_SELECTION_REQUIRED" ? messages.noOrg : messages.loadError}</AlertTitle><AlertDescription>{result.reason}</AlertDescription></Alert> : <FavoritesPanel dashboard={result.dashboard} providerOptions={providerOptions} locale={locale} m={messages} />}
-  </div></main>;
+  return (
+    <ClientAppShell
+      locale={locale}
+      selectedQuery={space.selectedQuery}
+      selectedOrganizationId={space.selectedOrganizationId}
+      userEmail={space.userEmail}
+      active="favorites"
+      title={messages.title}
+      lead={messages.description}
+      kicker={spaceCopy(locale).kicker}
+    >
+      <main className="client-page">
+        {result.status === "error" ? (
+          <Alert variant={result.reason === "NO_ORGANIZATION" || result.reason === "ORGANIZATION_SELECTION_REQUIRED" ? "default" : "destructive"}>
+            <AlertTitle>{result.reason === "NO_ORGANIZATION" || result.reason === "ORGANIZATION_SELECTION_REQUIRED" ? messages.noOrg : messages.loadError}</AlertTitle>
+            <AlertDescription>{result.reason}</AlertDescription>
+          </Alert>
+        ) : (
+          <FavoritesPanel dashboard={result.dashboard} providerOptions={providerOptions} locale={locale} m={messages} />
+        )}
+      </main>
+    </ClientAppShell>
+  );
 }

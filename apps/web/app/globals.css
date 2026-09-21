@@ -2,6 +2,10 @@
 @import "tw-animate-css";
 @import "@matricia/ui/tokens.css";
 
+@source not "../**/*.test.ts";
+@source not "../**/*.test.tsx";
+@source not "../**/*.json";
+
 @utility scrollbar-thin {
   scrollbar-width: thin;
 }

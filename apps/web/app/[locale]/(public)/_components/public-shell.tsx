@@ -1,9 +1,9 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { buttonVariants } from "@/components/ui/button";
-import type { Locale } from "@/lib/i18n/locale";
-import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/modules/shared/ui/button";
+import type { Locale } from "@/modules/shared/lib/i18n/locale";
+import { cn } from "@/modules/shared/lib/utils";
 import type { PublicMessages } from "../messages";
 
 type Props = {

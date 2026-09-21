@@ -2,16 +2,16 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ list: vi.fn(), search: vi.fn(), get: vi.fn() }));
-vi.mock("@/lib/catalogue/repository", () => ({ listPublishedLibraries: mocks.list, searchPublishedCatalog: mocks.search, getPublishedCatalogService: mocks.get }));
-vi.mock("@/lib/i18n/locale", () => ({ isLocale: (value: string) => value === "fr" || value === "ar" }));
-vi.mock("@/lib/catalogue/model", async () => await import("../../../lib/catalogue/model"));
-vi.mock("@/lib/utils", () => ({ cn: (...values: unknown[]) => values.filter(Boolean).join(" ") }));
-vi.mock("@/components/ui/button", () => ({ buttonVariants: () => "button" }));
-vi.mock("@/components/ui/badge", async () => {
+vi.mock("@/modules/shared/lib/catalogue/repository", () => ({ listPublishedLibraries: mocks.list, searchPublishedCatalog: mocks.search, getPublishedCatalogService: mocks.get }));
+vi.mock("@/modules/shared/lib/i18n/locale", () => ({ isLocale: (value: string) => value === "fr" || value === "ar" }));
+vi.mock("@/modules/shared/lib/catalogue/model", async () => await import("@/modules/shared/lib/catalogue/model"));
+vi.mock("@/modules/shared/lib/utils", () => ({ cn: (...values: unknown[]) => values.filter(Boolean).join(" ") }));
+vi.mock("@/modules/shared/ui/button", () => ({ buttonVariants: () => "button" }));
+vi.mock("@/modules/shared/ui/badge", async () => {
   const React = await import("react");
   return { Badge: ({ children, ...props }: React.ComponentProps<"span">) => React.createElement("span", props, children) };
 });
-vi.mock("@/components/ui/alert", async () => {
+vi.mock("@/modules/shared/ui/alert", async () => {
   const React = await import("react");
   const component = (tag: "div" | "strong") => {
     const TestComponent = ({ children, ...props }: React.ComponentProps<"div">) => React.createElement(tag, props, children);
@@ -20,7 +20,7 @@ vi.mock("@/components/ui/alert", async () => {
   };
   return { Alert: component("div"), AlertTitle: component("strong"), AlertDescription: component("div") };
 });
-vi.mock("@/components/ui/card", async () => {
+vi.mock("@/modules/shared/ui/card", async () => {
   const React = await import("react");
   const component = ({ children, ...props }: React.ComponentProps<"div">) => React.createElement("div", props, children);
   return { Card: component, CardContent: component, CardDescription: component, CardHeader: component, CardTitle: component };

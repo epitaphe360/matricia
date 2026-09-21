@@ -3,7 +3,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 
 const answersSchema = z.object({
   goals: z.array(z.enum(["save_time", "control_costs", "grow_sales", "secure_activity", "global_review"])).min(1).max(5),

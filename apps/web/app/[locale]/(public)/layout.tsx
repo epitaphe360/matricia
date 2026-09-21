@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import "@/components/public-site/experience.css";
+import "./experience.css";
 import { notFound } from "next/navigation";
-import { PublicFooter } from "@/components/public-site/public-footer";
-import { PublicNavigation } from "@/components/public-site/public-navigation";
-import { isLocale } from "@/lib/i18n/locale";
-import { localizedRouteMetadata } from "@/lib/seo/metadata";
+import { PublicFooter } from "@/modules/public/ui/site/public-footer";
+import { PublicNavigation } from "@/modules/public/ui/site/public-navigation";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+import { localizedRouteMetadata } from "@/modules/shared/lib/seo/metadata";
 import { getPublicMessages } from "./messages";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function PublicLayout({ children, params }: Readonly<{ children: React.ReactNode; params: Promise<{ locale: string }> }>) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  return <div dir={locale === "ar" ? "rtl" : "ltr"} className="flex min-h-dvh flex-col bg-background text-foreground">
+  return <div dir={locale === "ar" ? "rtl" : "ltr"} className="public-root flex min-h-dvh flex-col text-[#1a2340]">
     <a href="#contenu-principal" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:start-2 z-50 bg-white text-slate-950 p-3">{getPublicMessages(locale).common.skipToContent}</a>
     <PublicNavigation locale={locale}/>
     <div className="flex-1">{children}</div>

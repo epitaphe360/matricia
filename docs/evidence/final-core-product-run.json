@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "environment": "TEST",
+  "generatedAt": "2026-09-15T18:21:10.322Z",
+  "outcome": "PASS",
+  "command": "node tests/e2e/helpers/final-core-product-run.mjs",
+  "stats": {
+    "expected": 3,
+    "unexpected": 0,
+    "flaky": 0,
+    "skipped": 0,
+    "durationMs": 6423
+  },
+  "requirements": [
+    "MAT-FUNC-007",
+    "MAT-FUNC-013",
+    "MAT-FUNC-018",
+    "MAT-FUNC-019"
+  ],
+  "security": [
+    "cross-tenant-deny"
+  ],
+  "cleanup": "verified"
+}

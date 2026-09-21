@@ -1,7 +1,7 @@
 import { randomUUID, timingSafeEqual } from "node:crypto";
-import { resolveSocialCredentialReference } from "@/lib/marketing-autopilot/credential-resolver";
-import { publicationJobSchema, publishScheduledSocial, type PublicationResult } from "@/lib/marketing-autopilot/publisher";
-import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { resolveSocialCredentialReference } from "@/modules/shared/lib/marketing-autopilot/credential-resolver";
+import { publicationJobSchema, publishScheduledSocial, type PublicationResult } from "@/modules/shared/lib/marketing-autopilot/publisher";
+import { getSupabaseAdminClient } from "@/modules/shared/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;

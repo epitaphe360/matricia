@@ -5,19 +5,19 @@ const mocks = vi.hoisted(() => ({
   signInWithOtp: vi.fn(),
 }));
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock("@/modules/shared/lib/supabase/admin", () => ({
   getSupabaseAdminClient: () => ({ rpc: mocks.rpc, auth: { signInWithOtp: mocks.signInWithOtp } }),
 }));
-vi.mock("@/lib/auth/otp", () => ({
+vi.mock("@/modules/shared/lib/auth/otp", () => ({
   normalizeEmail: (value: string) => {
     const normalized = value.trim().toLowerCase();
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized) ? normalized : null;
   },
 }));
-vi.mock("@/lib/i18n/locale", () => ({
+vi.mock("@/modules/shared/lib/i18n/locale", () => ({
   isLocale: (value: string) => value === "fr" || value === "ar",
 }));
-vi.mock("@/lib/env", () => ({
+vi.mock("@/modules/shared/lib/env", () => ({
   getServerEnvironment: () => ({ NEXT_PUBLIC_APP_URL: "https://app.example.test" }),
 }));
 vi.mock("next/headers", () => ({

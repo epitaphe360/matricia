@@ -1,2 +1,42 @@
-import{randomUUID}from"node:crypto";import Link from"next/link";import{notFound,redirect}from"next/navigation";import{Alert,AlertDescription,AlertTitle}from"@/components/ui/alert";import{buttonVariants}from"@/components/ui/button";import{isLocale}from"@/lib/i18n/locale";import{loadProviderAmendments}from"@/lib/provider-missions/amendments";import{loadProviderMissions}from"@/lib/provider-missions/repository";import{cn}from"@/lib/utils";import{ProviderAmendmentPanel}from"./amendment-panel";import{getProviderMissionMessages}from"./messages";import{MissionsPanel}from"./missions-panel";
-export default async function ProviderMissionsPage({params}:{params:Promise<{locale:string}>}){const{locale}=await params;if(!isLocale(locale))notFound();const messages=getProviderMissionMessages(locale),[result,amendments]=await Promise.all([loadProviderMissions(locale),loadProviderAmendments()]);if(result.status==="error"&&result.reason==="UNAUTHENTICATED")redirect(`/${locale}/connexion`);const alternate=locale==="fr"?"ar":"fr";return <main className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6 sm:py-8"><div className="mx-auto max-w-7xl space-y-7"><nav aria-label="Navigation" className="flex flex-wrap items-center justify-between gap-3"><Link href={`/${locale}/tableau-de-bord`} className={cn(buttonVariants({variant:"outline"}),"min-h-11")}>{messages.back}</Link><Link href={`/${alternate}/sous-traitant/missions`} hrefLang={alternate} className="min-h-11 rounded-md px-3 py-2 font-medium text-primary">{messages.language}</Link></nav><header><p className="text-xs font-semibold uppercase tracking-[.18em] text-primary">{messages.eyebrow}</p><h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{messages.title}</h1><p className="mt-3 max-w-3xl leading-7 text-muted-foreground">{messages.description}</p>{result.status==="success"?<p className="mt-3 font-medium">{result.dashboard.organizationName}</p>:null}</header>{result.status==="error"?<Alert variant={result.reason==="NO_PROVIDER_ORGANIZATION"?"default":"destructive"}><AlertTitle>{result.reason==="NO_PROVIDER_ORGANIZATION"?messages.noProvider:messages.loadError}</AlertTitle><AlertDescription>{result.reason}</AlertDescription></Alert>:<><MissionsPanel dashboard={result.dashboard} locale={locale} messages={messages}/>{amendments.status==="success"?<ProviderAmendmentPanel d={amendments.value} locale={locale} keys={Object.fromEntries(amendments.value.items.map(x=>[x.id,randomUUID()]))}/>:null}</>}</div></main>}
+import { randomUUID } from "node:crypto";
+import { notFound, redirect } from "next/navigation";
+import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { resolveProviderSpace } from "@/modules/provider/data/spaces/context";
+import { providerCopy } from "@/modules/provider/data/spaces/copy";
+import { loadProviderAmendments } from "@/modules/provider/data/missions/amendments";
+import { loadProviderMissions } from "@/modules/provider/data/missions/repository";
+import { filterListRows, missionRowsFromDashboard, providerSearchQuery } from "@/modules/provider/data/spaces/list-rows";
+import { ProviderMissionsBoard } from "@/modules/provider/screens/spaces/boards";
+import { ProviderAmendmentPanel } from "@/modules/provider/screens/missions/amendment-panel";
+import { getProviderMissionMessages } from "@/modules/provider/screens/missions/messages";
+import { MissionsPanel } from "@/modules/provider/screens/missions/missions-panel";
+import { ProviderActions, ProviderAppShell } from "@/modules/provider/ui/provider-app-shell";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+
+export default async function ProviderMissionsPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string; q?: string }> }) {
+  const [{ locale }, query] = await Promise.all([params, searchParams]);
+  if (!isLocale(locale)) notFound();
+  const space = await resolveProviderSpace({ locale, organizationId: query.organizationId });
+  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  const messages = getProviderMissionMessages(locale);
+  const c = providerCopy(locale);
+  const [result, amendments] = await Promise.all([loadProviderMissions(locale), loadProviderAmendments()]);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  const boardQuery = providerSearchQuery(space.selectedQuery, { q: query.q });
+  return (
+    <ProviderAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="missions" title={c.misTitle} lead={c.misLead} kicker={c.kicker} actions={<ProviderActions href="#missions-operation" label={c.openMission} />}>
+      <ProviderMissionsBoard locale={locale} query={boardQuery} rows={result.status === "success" ? filterListRows(missionRowsFromDashboard(result.dashboard, locale, space.selectedQuery), query.q ?? "") : []} />
+      <details id="missions-operation" className="client-ops">
+        <summary>{c.opsMissions}</summary>
+        {result.status === "error" ? (
+          <Alert variant={result.reason === "NO_PROVIDER_ORGANIZATION" ? "default" : "destructive"}><AlertTitle>{result.reason === "NO_PROVIDER_ORGANIZATION" ? messages.noProvider : messages.loadError}</AlertTitle><AlertDescription>{result.reason}</AlertDescription></Alert>
+        ) : (
+          <>
+            <MissionsPanel dashboard={result.dashboard} locale={locale} messages={messages} />
+            {amendments.status === "success" ? <ProviderAmendmentPanel d={amendments.value} locale={locale} keys={Object.fromEntries(amendments.value.items.map((item) => [item.id, randomUUID()]))} /> : null}
+          </>
+        )}
+      </details>
+    </ProviderAppShell>
+  );
+}

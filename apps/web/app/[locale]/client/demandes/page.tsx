@@ -1,29 +1,37 @@
-import Link from "next/link";
-import { notFound,redirect } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
-import { Card,CardContent,CardDescription,CardHeader,CardTitle } from "@/components/ui/card";
-import { formatMinorExact } from "@/lib/client-rfq/model";
-import { createServerClientRfqRepository } from "@/lib/client-rfq/server-repository";
-import { isLocale,type Locale } from "@/lib/i18n/locale";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { cn } from "@/lib/utils";
-import { getClientRfqMessages } from "./messages";
+import { notFound, redirect } from "next/navigation";
+import { createServerClientRfqRepository } from "@/modules/client/data/rfq/server-repository";
+import { resolveClientSpace } from "@/modules/client/data/spaces/context";
+import { spaceCopy } from "@/modules/client/data/spaces/copy";
+import { getClientRfqMessages } from "@/modules/client/screens/demandes/messages";
+import { RequestsBoard, SpaceActions, SpaceFilters } from "@/modules/client/screens/spaces/boards";
+import { ClientAppShell } from "@/modules/client/ui/client-app-shell";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
 
-function date(value:string,locale:Locale){return new Intl.DateTimeFormat(locale==="ar"?"ar-MA":"fr-MA",{dateStyle:"medium"}).format(new Date(value))}
-
-export default async function RequestsPage({params,searchParams}:{params:Promise<{locale:string}>;searchParams:Promise<{organizationId?:string}>}){
-  const [{locale},{organizationId}]=await Promise.all([params,searchParams]);if(!isLocale(locale))notFound();
-  const messages=getClientRfqMessages(locale),result=await(await createServerClientRfqRepository()).list();
-  if(result.status==="error"&&result.reason==="UNAUTHENTICATED")redirect(`/${locale}/connexion`);
-  const selected=result.status==="success"&&organizationId&&result.value.organizations.some(item=>item.id===organizationId)?organizationId:null;
-  const client=await getSupabaseServerClient();
-  const intakeQuery=client.from("public_need_intakes").select("id,organization_id,need_text,location_text,timing_text,constraints_text,status,created_at").order("created_at",{ascending:false}).limit(100);
-  const intakeResult=selected?await intakeQuery.eq("organization_id",selected):await intakeQuery;
-  const alternate=locale==="fr"?"ar":"fr",organizationQuery=selected?`?organizationId=${encodeURIComponent(selected)}`:"";
-  return <main className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6" dir={locale==="ar"?"rtl":"ltr"}><div className="mx-auto max-w-6xl space-y-7"><header className="space-y-4"><nav aria-label={messages.navigation} className="flex flex-wrap justify-between gap-3"><Link className={cn(buttonVariants({variant:"outline"}),"min-h-11")} href={`/${locale}/tableau-de-bord${organizationQuery}`}>{messages.back}</Link><Link className="px-3 py-2 text-primary underline" href={`/${alternate}/client/demandes${organizationQuery}`} hrefLang={alternate}>{messages.language}</Link></nav><div><p className="text-xs font-semibold uppercase tracking-[.18em] text-primary">{messages.eyebrow}</p><h1 className="mt-2 text-3xl font-semibold">{messages.title}</h1><p className="mt-3 max-w-3xl text-muted-foreground">{messages.description}</p></div><div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-muted-foreground">{messages.privacy}</p>{result.status==="success"&&result.value.organizations.length>0?<Link className={cn(buttonVariants(),"min-h-11 w-full sm:w-auto")} href={`/${locale}/diagnostic`}>{locale==="fr"?"Analyser une priorité":"تحليل أولوية"}</Link>:null}</div></header>
-    {result.status==="error"?<Card><CardContent className="pt-6"><p role="alert" className="text-destructive">{messages.loadError}</p><Link href={`/${locale}/client/demandes`} className="mt-3 inline-block underline">{messages.retry}</Link></CardContent></Card>:<>
-      <section aria-labelledby="guided-needs"><h2 id="guided-needs" className="text-xl font-semibold">{locale==="fr"?"Besoins enregistrés à structurer":"احتياجات محفوظة للتنظيم"}</h2><p className="mt-2 text-sm text-muted-foreground">{locale==="fr"?"Ces brouillons ne sont ni une consultation envoyée ni un contrat. Matricia doit d’abord confirmer leur périmètre.":"هذه المسودات ليست طلب عرض مرسلاً ولا عقداً. يجب أولاً تأكيد نطاقها."}</p>{intakeResult.error?<p role="alert" className="mt-3 rounded-xl border p-4 text-destructive">{locale==="fr"?"Les besoins enregistrés sont temporairement indisponibles.":"الاحتياجات المحفوظة غير متاحة مؤقتاً."}</p>:!intakeResult.data?.length?<p className="mt-3 rounded-xl border bg-card p-4">{locale==="fr"?"Aucun besoin guidé enregistré.":"لا يوجد احتياج موجه محفوظ."}</p>:<div className="mt-3 grid gap-4 md:grid-cols-2">{intakeResult.data.map(intake=><Card key={intake.id}><CardHeader><div className="flex items-start justify-between gap-3"><CardTitle className="text-lg">{intake.need_text}</CardTitle><Badge variant="secondary">{locale==="fr"?"À structurer":"قيد التنظيم"}</Badge></div><CardDescription>{result.value.organizations.find(org=>org.id===intake.organization_id)?.name??(locale==="fr"?"Organisation":"المؤسسة")} · {date(intake.created_at,locale)}</CardDescription></CardHeader><CardContent><dl className="grid gap-2 text-sm">{intake.location_text?<div><dt className="font-medium">{locale==="fr"?"Lieu / modalité":"المكان / الكيفية"}</dt><dd>{intake.location_text}</dd></div>:null}{intake.timing_text?<div><dt className="font-medium">{locale==="fr"?"Délai visé":"الأجل المستهدف"}</dt><dd>{intake.timing_text}</dd></div>:null}{intake.constraints_text?<div><dt className="font-medium">{locale==="fr"?"Contrainte":"قيد"}</dt><dd>{intake.constraints_text}</dd></div>:null}</dl></CardContent></Card>)}</div>}</section>
-      {result.value.organizations.length===0?<p role="status" className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">{messages.readOnly}</p>:null}{result.value.requests.length===0?<Card><CardContent className="pt-6 text-muted-foreground">{messages.empty}</CardContent></Card>:<div className="grid gap-4 md:grid-cols-2">{result.value.requests.filter(request=>!selected||request.organizationId===selected).map(request=><Card key={request.id}><CardHeader><div className="flex flex-wrap justify-between gap-2"><CardTitle className="line-clamp-2 text-lg">{request.description}</CardTitle><Badge>{messages.statuses[request.status]}</Badge></div><CardDescription>{messages.created}: {date(request.createdAt,locale)}</CardDescription></CardHeader><CardContent className="space-y-4"><dl className="grid grid-cols-2 gap-2 text-sm"><dt className="text-muted-foreground">{messages.budget}</dt><dd dir="ltr">{request.budgetMinor===null?messages.unavailable:formatMinorExact(request.budgetMinor,request.currency,locale)}</dd><dt className="text-muted-foreground">{messages.quotes}</dt><dd>{request.quoteCount}</dd></dl><Link className={cn(buttonVariants({variant:"outline"}),"min-h-11 w-full")} href={`/${locale}/client/demandes/${request.id}${organizationQuery}`}>{messages.view}</Link></CardContent></Card>)}</div>}</>}
-  </div></main>;
+export default async function RequestsPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string }> }) {
+  const [{ locale }, query] = await Promise.all([params, searchParams]);
+  if (!isLocale(locale)) notFound();
+  const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
+  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  const result = await (await createServerClientRfqRepository()).list();
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  const messages = getClientRfqMessages(locale);
+  const c = spaceCopy(locale);
+  const selected = space.selectedOrganizationId;
+  const rows = result.status === "success"
+    ? result.value.requests.filter((request) => !selected || request.organizationId === selected).map((request) => ({
+      id: request.id,
+      title: request.description,
+      status: messages.statuses[request.status],
+      last: new Intl.DateTimeFormat(locale === "ar" ? "ar-MA" : "fr-MA", { dateStyle: "medium" }).format(new Date(request.createdAt)),
+      next: request.quoteCount > 0 ? c.compareCta : c.open,
+      href: `/${locale}/client/demandes/${request.id}${space.selectedQuery}`,
+      tone: (request.quoteCount > 0 ? "mint" : request.status === "DRAFT" ? "violet" : "sky") as "violet" | "sky" | "mint" | "peach",
+    }))
+    : [];
+  const compareHref = rows[0] ? rows[0].href : `/${locale}/client/demandes${space.selectedQuery}`;
+  return (
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="requests" title={c.reqTitle} lead={c.reqLead} kicker={c.kicker} actions={<><SpaceActions href={`/${locale}/besoin${space.selectedQuery}`} label={c.newNeed} /><SpaceActions href={`/${locale}/client/demandes/recurrence${space.selectedQuery}`} label={c.cloneRequest} variant="soft" /><SpaceFilters href="#filtres" label={c.filters} /></>}>
+      <RequestsBoard locale={locale} query={space.selectedQuery} compareHref={compareHref} rows={rows} organizationName={space.organizationName} />
+    </ClientAppShell>
+  );
 }

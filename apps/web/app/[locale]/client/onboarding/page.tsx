@@ -1,18 +1,21 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { isLocale, type Locale } from "@/lib/i18n/locale";
-import { cn } from "@/lib/utils";
-import { listClientOnboarding, type ClientOnboardingOrganization, type ComplianceStatus } from "./actions";
-import { formatVersionMessage, getClientOnboardingMessages, type ClientOnboardingMessages } from "./messages";
-import { ClientProfileForm } from "./profile-form";
-import { ClientDocumentUploadForm } from "./document-upload-form";
-import { SubmitComplianceForm } from "./submit-form";
-import { ClientQuestionResponseForm } from "./question-response-form";
+import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { Badge } from "@/modules/shared/ui/badge";
+import { buttonVariants } from "@/modules/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/ui/card";
+import { isLocale, type Locale } from "@/modules/shared/lib/i18n/locale";
+import { cn } from "@/modules/shared/lib/utils";
+import { listClientOnboarding, type ClientOnboardingOrganization, type ComplianceStatus } from "@/modules/client/screens/onboarding/actions";
+import { formatVersionMessage, getClientOnboardingMessages, type ClientOnboardingMessages } from "@/modules/client/screens/onboarding/messages";
+import { ClientProfileForm } from "@/modules/client/screens/onboarding/profile-form";
+import { ClientDocumentUploadForm } from "@/modules/client/screens/onboarding/document-upload-form";
+import { SubmitComplianceForm } from "@/modules/client/screens/onboarding/submit-form";
+import { ClientQuestionResponseForm } from "@/modules/client/screens/onboarding/question-response-form";
+import { onboardingProgressIndex } from "@/modules/client/screens/onboarding/progress";
+import { resolveClientSpace } from "@/modules/client/data/spaces/context";
+import { ClientAppShell } from "@/modules/client/ui/client-app-shell";
 
 const editableStatuses = new Set<ComplianceStatus>([
   "PROFILE_IN_PROGRESS", "DOCUMENTS_REQUIRED", "QUESTION_REQUIRED", "REJECTED",
@@ -29,10 +32,8 @@ function dateLabel(value: string | null, locale: Locale): string | null {
   }).format(date);
 }
 
-function Progress({ organizationId, status, locale, messages }: { organizationId: string; status: ComplianceStatus | null; locale: Locale; messages: ClientOnboardingMessages }) {
-  const current = status === "VERIFIED" ? 4
-    : status === "UNDER_REVIEW" || status === "QUESTION_REQUIRED" || status === "RESPONSE_RECEIVED" ? 2
-      : status ? 0 : -1;
+function Progress({ organizationId, status, trialStatus, locale, messages }: { organizationId: string; status: ComplianceStatus | null; trialStatus?: "TRIAL_ACTIVE" | "TRIAL_EXPIRED" | null; locale: Locale; messages: ClientOnboardingMessages }) {
+  const current = onboardingProgressIndex(status, trialStatus);
   return (
     <section aria-labelledby={`progress-${organizationId}`} className="space-y-3">
       <h3 id={`progress-${organizationId}`} className="font-semibold">{messages.progressTitle}</h3>
@@ -107,7 +108,7 @@ function OrganizationOnboarding({ organization, locale, messages }: {
             ))}
           </section>
 
-          <Progress organizationId={organization.id} status={complianceCase?.status ?? null} locale={locale} messages={messages} />
+          <Progress organizationId={organization.id} status={complianceCase?.status ?? null} trialStatus={organization.trial?.status ?? null} locale={locale} messages={messages} />
 
           <section aria-labelledby={`case-${organization.id}`} className="space-y-3 rounded-xl border bg-muted/20 p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -123,6 +124,8 @@ function OrganizationOnboarding({ organization, locale, messages }: {
               </dl>
             ) : <p className="text-sm text-muted-foreground">{messages.noCase}</p>}
             {complianceCase?.decisionReasonPublic ? <p role="status" className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm"><span className="font-semibold">{messages.reason} : </span>{complianceCase.decisionReasonPublic}</p> : null}
+            {complianceCase?.status === "VERIFIED" ? <p role="status" className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">{messages.validationResultOk}</p> : null}
+            {complianceCase?.status === "REJECTED" ? <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">{messages.validationResultRejected}</p> : null}
           </section>
 
           <section aria-labelledby={`evidence-${organization.id}`} className="space-y-3">
@@ -187,6 +190,9 @@ function OrganizationOnboarding({ organization, locale, messages }: {
                 <div><dt className="text-muted-foreground">{messages.trialEnds}</dt><dd className="mt-1 font-medium"><time dateTime={organization.trial.endsAt}>{dateLabel(organization.trial.endsAt, locale) ?? messages.unavailable}</time></dd></div>
               </dl>
             ) : <p className="text-sm text-muted-foreground">{messages.trialNotStarted}</p>}
+            {organization.trial?.status === "TRIAL_EXPIRED" ? (
+              <Link href={`/${locale}/client/abonnement`} className={cn(buttonVariants(), "min-h-11 w-full sm:w-auto")}>{messages.reactivateGold}</Link>
+            ) : null}
             <p className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">{messages.noCard}</p>
           </section>
         </CardContent>
@@ -195,30 +201,33 @@ function OrganizationOnboarding({ organization, locale, messages }: {
   );
 }
 
-export default async function ClientOnboardingPage({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params;
+export default async function ClientOnboardingPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string }> }) {
+  const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
+  const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
+  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
   const result = await listClientOnboarding(locale);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
   const messages = getClientOnboardingMessages(locale);
-  const alternate = locale === "fr" ? "ar" : "fr";
   return (
-    <main className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6 sm:py-8">
-      <div className="mx-auto max-w-5xl space-y-8">
-        <header className="space-y-4">
-          <nav aria-label={messages.navigation} className="flex flex-wrap items-center justify-between gap-3">
-            <Link href={`/${locale}/tableau-de-bord`} className={cn(buttonVariants({ variant: "outline" }), "min-h-11")}>{messages.back}</Link>
-            <Link href={`/${alternate}/client/onboarding`} hrefLang={alternate} className="rounded-md px-3 py-2 text-sm font-medium text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">{messages.language}</Link>
-          </nav>
-          <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{messages.eyebrow}</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">{messages.title}</h1><p className="mt-3 max-w-3xl leading-7 text-muted-foreground">{messages.description}</p></div>
-          <p className="rounded-lg border border-primary/20 bg-card p-3 text-sm text-muted-foreground">{messages.privacyNotice}</p>
-        </header>
+    <ClientAppShell
+      locale={locale}
+      selectedQuery={space.selectedQuery}
+      selectedOrganizationId={space.selectedOrganizationId}
+      userEmail={space.userEmail}
+      active="company"
+      title={messages.title}
+      lead={messages.description}
+      kicker={messages.eyebrow}
+    >
+      <main className="client-page space-y-8">
+        <p className="rounded-lg border border-primary/20 bg-card p-3 text-sm text-muted-foreground">{messages.privacyNotice}</p>
         {result.status === "error" ? (
-          <Alert variant="destructive"><AlertTitle>{messages.loadErrorTitle}</AlertTitle><AlertDescription><p>{messages.loadError}</p><Link href={`/${locale}/client/onboarding`} className={cn(buttonVariants({ variant: "outline" }), "mt-3 min-h-11")}>{messages.retry}</Link></AlertDescription></Alert>
+          <Alert variant="destructive"><AlertTitle>{messages.loadErrorTitle}</AlertTitle><AlertDescription><p>{messages.loadError}</p><Link href={`/${locale}/client/onboarding${space.selectedQuery}`} className={cn(buttonVariants({ variant: "outline" }), "mt-3 min-h-11")}>{messages.retry}</Link></AlertDescription></Alert>
         ) : result.organizations.length === 0 ? (
-          <Card><CardHeader><CardTitle>{messages.emptyTitle}</CardTitle><CardDescription>{messages.emptyDescription}</CardDescription></CardHeader><CardContent><Link href={`/${locale}/organisation`} className={cn(buttonVariants(), "min-h-11 w-full sm:w-auto")}>{messages.organizationAction}</Link></CardContent></Card>
+          <Card><CardHeader><CardTitle>{messages.emptyTitle}</CardTitle><CardDescription>{messages.emptyDescription}</CardDescription></CardHeader><CardContent><Link href={`/${locale}/organisation${space.selectedQuery}`} className={cn(buttonVariants(), "min-h-11 w-full sm:w-auto")}>{messages.organizationAction}</Link></CardContent></Card>
         ) : <div className="space-y-10">{result.organizations.map((organization) => <OrganizationOnboarding key={organization.id} organization={organization} locale={locale} messages={messages} />)}</div>}
-      </div>
-    </main>
+      </main>
+    </ClientAppShell>
   );
 }

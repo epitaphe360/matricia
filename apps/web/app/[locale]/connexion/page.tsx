@@ -1,12 +1,28 @@
 import { ArrowLeft, Check, LockKeyhole } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getDictionary } from "@/lib/i18n/dictionaries";
-import { isLocale } from "@/lib/i18n/locale";
+import { getDictionary } from "@/modules/shared/lib/i18n/dictionaries";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { getLoginMessages } from "./messages";
 import { OtpForm } from "./otp-form";
+import { DemoAccess } from "./demo-access";
+import { PublicPhoto } from "@/modules/public/ui/site/public-photo";
 
-export default async function LoginPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ next?: string | string[]; mode?: string; role?: string }> }) {
+function sanitizePlanCode(value: string | string[] | undefined): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const plan = value.trim().slice(0, 64);
+  return /^[A-Z0-9][A-Z0-9._-]{0,63}$/iu.test(plan) ? plan : undefined;
+}
+
+function withQuery(href: string, extras: Record<string, string | undefined>) {
+  const url = new URL(href, "https://matricia.local");
+  for (const [key, value] of Object.entries(extras)) {
+    if (value) url.searchParams.set(key, value);
+  }
+  return `${url.pathname}${url.search}`;
+}
+
+export default async function LoginPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ next?: string | string[]; mode?: string; role?: string; demo?: string; plan?: string | string[] }> }) {
   const { locale } = await params;
   const query = await searchParams;
   if (!isLocale(locale)) notFound();
@@ -15,41 +31,65 @@ export default async function LoginPage({ params, searchParams }: { params: Prom
   const alternate = locale === "fr" ? "ar" : "fr";
   const registration = query.mode === "inscription";
   const registrationRole = query.role === "fournisseur" ? "fournisseur" : "client";
+  const planCode = sanitizePlanCode(query.plan);
   const nextPath = typeof query.next === "string" && query.next.startsWith("/" + locale + "/") && !query.next.startsWith("//") && !query.next.includes("\\") ? query.next : undefined;
   const defaultRegistrationPath = `/${locale}/organisation${registrationRole === "fournisseur" ? "?role=fournisseur" : ""}`;
   const effectiveNextPath = registration ? nextPath ?? defaultRegistrationPath : nextPath;
   const translatedNextPath = effectiveNextPath ? `/${alternate}/${effectiveNextPath.split("/").slice(2).join("/")}` : undefined;
-  const languageQuery = registration ? `?mode=inscription&role=${registrationRole}${translatedNextPath ? `&next=${encodeURIComponent(translatedNextPath)}` : ""}` : translatedNextPath ? `?next=${encodeURIComponent(translatedNextPath)}` : "";
-  const languageHref = `/${alternate}/connexion${languageQuery}`;
+  const languageHref = withQuery(`/${alternate}/connexion`, {
+    mode: registration ? "inscription" : undefined,
+    role: registration ? registrationRole : undefined,
+    next: translatedNextPath,
+    plan: planCode,
+  });
 
-  return <main dir={locale === "ar" ? "rtl" : "ltr"} className="relative min-h-dvh overflow-hidden bg-[#f7f9fc] px-4 py-6 text-[#14213d] sm:px-6 lg:grid lg:place-items-center lg:px-8 lg:py-10">
-    <div aria-hidden="true" className="absolute -end-32 -top-40 size-[32rem] rounded-full bg-blue-100/70 blur-3xl" />
-    <div className="relative mx-auto w-full max-w-6xl">
-      <nav aria-label={chrome.back} className="mb-6 flex items-center justify-between sm:mb-8">
-        <Link href={`/${locale}`} className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-lg font-semibold text-[#0b1739] focus-visible:outline focus-visible:outline-3 focus-visible:outline-blue-700"><span>{chrome.brand}</span></Link>
-        <Link href={languageHref} hrefLang={alternate} className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-blue-700 hover:bg-blue-50">{messages.language}</Link>
-      </nav>
-
-      <div className="grid overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_64px_rgba(7,30,53,.12)] lg:grid-cols-[.9fr_1.1fr]">
-        <aside className="order-2 bg-[#0b1739] p-7 text-white sm:p-10 lg:order-1 lg:p-12" aria-labelledby="login-context-title">
-          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-blue-300 rtl:tracking-normal">{chrome.panelEyebrow}</p>
-          <h2 id="login-context-title" className="mt-5 text-3xl font-semibold leading-tight tracking-[-0.025em] rtl:tracking-normal">{chrome.panelTitle}</h2>
-          <p className="mt-5 leading-7 text-slate-300">{chrome.panelBody}</p>
-          <ul className="mt-9 space-y-4">{chrome.trust.map((item) => <li key={item} className="flex items-start gap-3 text-sm leading-6 text-slate-200"><span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-blue-700"><Check aria-hidden="true" className="size-3.5" /></span><span>{item}</span></li>)}</ul>
-        </aside>
-
-        <section className="order-1 p-6 sm:p-10 lg:order-2 lg:p-12" aria-labelledby="login-title">
-          <div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-blue-50 text-blue-700"><LockKeyhole aria-hidden="true" className="size-5" /></span><span className="text-sm font-semibold uppercase tracking-[0.14em] text-blue-700 rtl:tracking-normal">{messages.eyebrow}</span></div>
-          <h1 id="login-title" className="mt-6 text-3xl font-semibold leading-tight tracking-[-0.03em] sm:text-4xl rtl:tracking-normal">{registration ? chrome.signupPageTitle : messages.title}</h1>
-          <p className="mt-4 max-w-xl leading-7 text-slate-600">{registration ? chrome.signupPageDescription : messages.description}</p>
-          {registration ? <div className="mt-6 grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1" aria-label={chrome.signupTitle}><Link aria-current={registrationRole === "client" ? "page" : undefined} href={`/${locale}/connexion?mode=inscription&role=client${nextPath ? `&next=${encodeURIComponent(nextPath)}` : ""}`} className="min-h-11 rounded-lg px-3 py-3 text-center text-sm font-semibold aria-[current=page]:bg-white aria-[current=page]:text-blue-700 aria-[current=page]:shadow-sm">{chrome.clientAccount}</Link><Link aria-current={registrationRole === "fournisseur" ? "page" : undefined} href={`/${locale}/connexion?mode=inscription&role=fournisseur${nextPath ? `&next=${encodeURIComponent(nextPath)}` : ""}`} className="min-h-11 rounded-lg px-3 py-3 text-center text-sm font-semibold aria-[current=page]:bg-white aria-[current=page]:text-blue-700 aria-[current=page]:shadow-sm">{chrome.providerAccount}</Link></div> : null}
-          {!registration && nextPath ? <p className="mt-5 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-950">{chrome.continuity}</p> : null}
+  return (
+    <main dir={locale === "ar" ? "rtl" : "ltr"} className="public-page px-4 py-8 sm:px-6 lg:px-8">
+      <div className="public-wrap grid gap-10 lg:grid-cols-[.9fr_1.1fr] lg:items-start">
+        <div>
+          <p className="max-w-xl text-4xl font-semibold leading-tight text-[#1a2340]">{locale === "ar" ? "مؤسسات أقوى لمغرب مستدام" : "Des entreprises plus fortes pour un Maroc durable"}</p>
+          <p className="public-lead mt-4">{chrome.panelBody}</p>
+          <PublicPhoto className="mt-8 hidden lg:block" scene="window" caption={chrome.panelTitle} />
+        </div>
+        <section className="public-card max-w-none" aria-labelledby="login-title">
+          <div className="mb-4 flex justify-end">
+            <Link href={languageHref} hrefLang={alternate} className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-[#6d3cc7]">{messages.language}</Link>
+          </div>
+          <p className="journey-eyebrow">{messages.eyebrow}</p>
+          <h1 id="login-title" className="mt-3">{registration ? chrome.signupPageTitle : messages.title}</h1>
+          <p className="public-lead mt-3">{registration ? chrome.signupPageDescription : messages.description}</p>
+          {!registration ? (
+            <ol className="public-auth-steps" aria-label={messages.title}>
+              <li className="is-current"><span>1</span>{locale === "ar" ? "بريدكم" : "Votre email"}</li>
+              <li><span>2</span>{locale === "ar" ? "رمز التحقق" : "Code de vérification"}</li>
+              <li><span>3</span>{locale === "ar" ? "الدخول إلى مساحتكم" : "Accès à votre espace"}</li>
+            </ol>
+          ) : null}
+          {registration ? (
+            <div className="mt-6 grid grid-cols-2 gap-2 rounded-xl bg-[#f7f3ea] p-1" aria-label={chrome.signupTitle}>
+              <Link aria-current={registrationRole === "client" ? "page" : undefined} href={withQuery(`/${locale}/connexion`, { mode: "inscription", role: "client", next: nextPath, plan: planCode })} className="min-h-11 rounded-lg px-3 py-3 text-center text-sm font-semibold aria-[current=page]:bg-white aria-[current=page]:text-[#6d3cc7] aria-[current=page]:shadow-sm">{chrome.clientAccount}</Link>
+              <Link aria-current={registrationRole === "fournisseur" ? "page" : undefined} href={withQuery(`/${locale}/connexion`, { mode: "inscription", role: "fournisseur", next: nextPath, plan: planCode })} className="min-h-11 rounded-lg px-3 py-3 text-center text-sm font-semibold aria-[current=page]:bg-white aria-[current=page]:text-[#6d3cc7] aria-[current=page]:shadow-sm">{chrome.providerAccount}</Link>
+            </div>
+          ) : null}
+          {planCode ? <p role="status" className="mt-5 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-950"><strong>{chrome.planIntent} :</strong> <span dir="ltr">{planCode}</span>. {chrome.planNote}</p> : null}
+          {!registration && nextPath ? <p className="mt-5 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm leading-6">{locale === "ar" ? "كان لديكم طلب قيد الإعداد؟ تشخيصكم واحتياجكم وترشيحكم يُستأنفون تلقائياً بعد الاتصال." : "Vous aviez une demande en cours ? Pas d’inquiétude, votre diagnostic, vos besoins et votre candidature prestataire seront automatiquement repris après cette connexion."}</p> : null}
           <div className="mt-8"><OtpForm locale={locale} nextPath={effectiveNextPath} intent={registration ? "registration" : "login"} /></div>
-          <div className="mt-7 border-t border-slate-200 pt-6 text-center"><p className="text-sm text-slate-600">{registration ? chrome.loginTitle : chrome.signupTitle}</p>{registration ? <Link href={`/${locale}/connexion`} className="mt-2 inline-flex min-h-11 items-center font-semibold text-blue-700 underline-offset-4 hover:underline">{chrome.loginAction}</Link> : <div className="mt-3 flex flex-col justify-center gap-2 sm:flex-row"><Link href={`/${locale}/connexion?mode=inscription&role=client`} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue-700 px-4 font-semibold text-blue-700 hover:bg-blue-50">{chrome.clientAccount}</Link><Link href={`/${locale}/connexion?mode=inscription&role=fournisseur`} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue-700 px-4 font-semibold text-blue-700 hover:bg-blue-50">{chrome.providerAccount}</Link></div>}</div>
+          {!registration && process.env.MATRICIA_DEMO_ACCESS_ENABLED === "true" && process.env.APP_ENV !== "production" ? <DemoAccess locale={locale} /> : null}
+          {!registration && (query.demo === "unavailable" || query.demo === "disabled") ? <p role="alert" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">{query.demo === "disabled" ? chrome.demoDisabled : chrome.demoUnavailable}</p> : null}
+          <ul className="mt-8 space-y-3 text-sm text-slate-600">
+            {(locale === "fr"
+              ? ["Vos données sont protégées", "Authentification par code à usage unique", "Aucune information sur l’existence d’un compte n’est affichée"]
+              : ["بياناتكم محمية", "مصادقة برمز لمرة واحدة", "لا تُعرض أي معلومة عن وجود حساب"]
+            ).map((item) => <li key={item} className="flex items-start gap-2"><Check aria-hidden="true" className="mt-0.5 size-4 text-[#6d3cc7]" /><span>{item}</span></li>)}
+          </ul>
+          <div className="mt-7 border-t border-[#eadfce] pt-6 text-center">
+            <p className="text-sm text-slate-600">{registration ? chrome.loginTitle : chrome.signupTitle}</p>
+            {registration ? <Link href={`/${locale}/connexion`} className="mt-2 inline-flex min-h-11 items-center font-semibold text-[#6d3cc7] underline-offset-4 hover:underline">{chrome.loginAction}</Link> : <div className="mt-3 flex flex-col justify-center gap-2 sm:flex-row"><Link href={withQuery(`/${locale}/inscription`, { role: "client", plan: planCode })} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#6d3cc7] px-4 font-semibold text-[#6d3cc7]">{chrome.clientAccount}</Link><Link href={withQuery(`/${locale}/inscription`, { role: "fournisseur", plan: planCode })} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#6d3cc7] px-4 font-semibold text-[#6d3cc7]">{chrome.providerAccount}</Link></div>}
+          </div>
           <p className="mt-7 flex items-start gap-2 text-sm leading-6 text-slate-500"><LockKeyhole aria-hidden="true" className="mt-0.5 size-4 shrink-0" /><span>{chrome.security}</span></p>
-          <Link href={`/${locale}`} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-blue-700"><ArrowLeft aria-hidden="true" className="size-4 rtl:rotate-180" />{chrome.back}</Link>
+          <Link href={`/${locale}`} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-[#6d3cc7]"><ArrowLeft aria-hidden="true" className="size-4 rtl:rotate-180" />{chrome.back}</Link>
         </section>
       </div>
-    </div>
-  </main>;
+    </main>
+  );
 }

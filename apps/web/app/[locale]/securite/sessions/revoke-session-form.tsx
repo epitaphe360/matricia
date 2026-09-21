@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useId } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/modules/shared/ui/button";
 import { revokeMySession, type RevokeSessionState } from "./actions";
 
 type Messages = {

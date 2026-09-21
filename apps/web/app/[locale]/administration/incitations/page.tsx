@@ -1,2 +1,37 @@
-import{randomUUID}from"node:crypto";import Link from"next/link";import{notFound,redirect}from"next/navigation";import{Alert,AlertDescription}from"@/components/ui/alert";import{buttonVariants}from"@/components/ui/button";import{loadAdminIncentives}from"@/lib/admin-incentives/server-repository";import{isLocale}from"@/lib/i18n/locale";import{cn}from"@/lib/utils";import{IncentivesPanel}from"./incentives-panel";import{messages}from"./messages";
-export default async function Page({params}:{params:Promise<{locale:string}>}){const{locale}=await params;if(!isLocale(locale))notFound();const r=await loadAdminIncentives();if(r.status==="error"&&r.reason==="UNAUTHENTICATED")redirect("/"+locale+"/connexion");const m=messages[locale],alt=locale==="fr"?"ar":"fr";return <main dir={locale==="ar"?"rtl":"ltr"} className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6"><div className="mx-auto max-w-7xl space-y-7"><nav aria-label={m.title} className="flex flex-wrap justify-between gap-3"><Link href={"/"+locale+"/tableau-de-bord"} className={cn(buttonVariants({variant:"outline"}),"min-h-11")}>{m.back}</Link><Link href={"/"+alt+"/administration/incitations"} hrefLang={alt} className="min-h-11 px-3 py-2 text-primary underline">{m.language}</Link></nav><header><h1 className="text-3xl font-semibold">{m.title}</h1><p className="mt-3 max-w-4xl text-muted-foreground">{m.description}</p></header><Alert><AlertDescription>{m.security}</AlertDescription></Alert>{r.status==="error"?<p role="alert" className="text-destructive">{m.loadError}</p>:<IncentivesPanel locale={locale} d={r.value} keys={{rule:randomUUID(),policy:randomUUID(),evaluate:randomUUID(),refresh:randomUUID(),checklist:randomUUID(),decisions:Object.fromEntries(r.value.evaluations.map(x=>[String(x.id),randomUUID()]))}}/>}</div></main>}
+import { randomUUID } from "node:crypto";
+import { notFound, redirect } from "next/navigation";
+import { Alert, AlertDescription } from "@/modules/shared/ui/alert";
+import { loadAdminIncentives } from "@/modules/admin/data/incentives/server-repository";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+import { IncentivesPanel } from "@/modules/admin/screens/incitations/incentives-panel";
+import { messages } from "@/modules/admin/screens/incitations/messages";
+import { AdminModulePage } from "@/modules/admin/ui/admin-module-page";
+
+export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+  const r = await loadAdminIncentives();
+  if (r.status === "error" && r.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  const m = messages[locale];
+  return (
+    <AdminModulePage locale={locale} active="finance" path="incitations" title={m.title} lead={m.description}>
+      <Alert><AlertDescription>{m.security}</AlertDescription></Alert>
+      {r.status === "error" ? (
+        <p role="alert" className="text-destructive">{m.loadError}</p>
+      ) : (
+        <IncentivesPanel
+          locale={locale}
+          d={r.value}
+          keys={{
+            rule: randomUUID(),
+            policy: randomUUID(),
+            evaluate: randomUUID(),
+            refresh: randomUUID(),
+            checklist: randomUUID(),
+            decisions: Object.fromEntries(r.value.evaluations.map((x) => [String(x.id), randomUUID()])),
+          }}
+        />
+      )}
+    </AdminModulePage>
+  );
+}

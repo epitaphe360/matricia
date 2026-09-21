@@ -1,2 +1,44 @@
-import{randomUUID}from"node:crypto";import Link from"next/link";import{notFound,redirect}from"next/navigation";import{Alert,AlertDescription,AlertTitle}from"@/components/ui/alert";import{buttonVariants}from"@/components/ui/button";import{isLocale}from"@/lib/i18n/locale";import{loadProviderQuotes}from"@/lib/provider-quotes/repository";import{cn}from"@/lib/utils";import{getProviderQuoteMessages}from"./messages";import{loadQuotePrefills}from"./prefill";import{QuotePanel}from"./quote-panel";
-export default async function ProviderQuotesPage({params,searchParams}:{params:Promise<{locale:string}>;searchParams:Promise<{organizationId?:string}>}){const{locale}=await params,{organizationId}=await searchParams;if(!isLocale(locale))notFound();const result=await loadProviderQuotes(organizationId);if(result.status==="error"&&result.reason==="UNAUTHENTICATED")redirect(`/${locale}/connexion`);const m=getProviderQuoteMessages(locale),alternate=locale==="fr"?"ar":"fr";const prefills=result.status==="success"?await loadQuotePrefills(result.dashboard.organizationId,result.dashboard.invitations.flatMap(item=>item.quote?.currentVersionId?[{invitationId:item.id,versionId:item.quote.currentVersionId}]:[]),locale):{};return <main dir={locale==="ar"?"rtl":"ltr"} className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6"><div className="mx-auto min-w-0 max-w-6xl space-y-6"><nav aria-label={m.title} className="flex flex-wrap justify-between gap-3"><Link href={`/${locale}/tableau-de-bord`} className={cn(buttonVariants({variant:"outline"}),"min-h-11")}>{m.back}</Link><Link href={`/${alternate}/sous-traitant/devis${result.status==="success"?`?organizationId=${result.dashboard.organizationId}`:""}`} hrefLang={alternate} className="min-h-11 px-3 py-2 text-primary underline">{m.language}</Link></nav><header><p className="text-xs font-semibold uppercase tracking-[.18em] text-primary">{result.status==="success"?result.dashboard.organizationName:m.eyebrow}</p><h1 className="mt-2 text-3xl font-semibold">{m.title}</h1><p className="mt-3 max-w-3xl text-muted-foreground">{m.description}</p></header>{result.status==="success"&&result.dashboard.organizations.length>1?<form method="get" className="flex min-w-0 max-w-full flex-wrap items-end gap-3 rounded-xl border bg-card p-4"><label htmlFor="provider-quote-organization" className="grid min-w-0 max-w-full gap-2 text-sm font-medium">{m.organization}<select id="provider-quote-organization" name="organizationId" defaultValue={result.dashboard.organizationId} className="min-h-11 w-full min-w-0 max-w-full rounded-md border bg-background px-3">{result.dashboard.organizations.map(organization=><option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label><button type="submit" className={cn(buttonVariants(),"min-h-11")}>{m.chooseOrganization}</button></form>:null}{result.status==="error"?<Alert variant="destructive"><AlertTitle>{m.loadError}</AlertTitle><AlertDescription>{m.failed}</AlertDescription></Alert>:<QuotePanel dashboard={result.dashboard} locale={locale} m={m} prefills={prefills} identities={Object.fromEntries(result.dashboard.invitations.map(item=>[item.id,{decision:randomUUID(),revision:randomUUID(),submit:randomUUID(),correlation:randomUUID()}]))}/>}</div></main>}
+import { randomUUID } from "node:crypto";
+import { notFound, redirect } from "next/navigation";
+import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { resolveProviderSpace } from "@/modules/provider/data/spaces/context";
+import { providerCopy } from "@/modules/provider/data/spaces/copy";
+import { loadProviderQuotes } from "@/modules/provider/data/quotes/repository";
+import { filterInvitationsByQuoteTab, filterListRows, providerSearchQuery, quoteRowsFromInvitations } from "@/modules/provider/data/spaces/list-rows";
+import { QuotesBoard } from "@/modules/provider/screens/spaces/boards";
+import { getProviderQuoteMessages } from "@/modules/provider/screens/devis/messages";
+import { loadQuotePrefills } from "@/modules/provider/screens/devis/prefill";
+import { QuotePanel } from "@/modules/provider/screens/devis/quote-panel";
+import { ProviderActions, ProviderAppShell } from "@/modules/provider/ui/provider-app-shell";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+
+export default async function ProviderQuotesPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string; q?: string; tab?: string }> }) {
+  const [{ locale }, query] = await Promise.all([params, searchParams]);
+  if (!isLocale(locale)) notFound();
+  const space = await resolveProviderSpace({ locale, organizationId: query.organizationId });
+  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  const result = await loadProviderQuotes(query.organizationId);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  const m = getProviderQuoteMessages(locale);
+  const c = providerCopy(locale);
+  const boardQuery = providerSearchQuery(space.selectedQuery, { q: query.q, tab: query.tab });
+  const prefills = result.status === "success"
+    ? await loadQuotePrefills(result.dashboard.organizationId, result.dashboard.invitations.flatMap((item) => (item.quote?.currentVersionId ? [{ invitationId: item.id, versionId: item.quote.currentVersionId }] : [])), locale)
+    : {};
+  const rows = result.status === "success"
+    ? filterListRows(quoteRowsFromInvitations(filterInvitationsByQuoteTab(result.dashboard.invitations, query.tab), locale, space.selectedQuery), query.q ?? "")
+    : [];
+  return (
+    <ProviderAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="quotes" title={c.quotesTitle} lead={c.quotesLead} kicker={c.kicker} actions={<ProviderActions href={`/${locale}/sous-traitant/devis/nouveau${space.selectedQuery}`} label={c.createQuote} />}>
+      <QuotesBoard locale={locale} query={boardQuery} rows={rows} tab={query.tab} empty={result.status === "error" ? m.loadError : undefined} />
+      <details id="devis-operation" className="client-ops">
+        <summary>{c.opsQuotes}</summary>
+        {result.status === "error" ? (
+          <Alert variant="destructive"><AlertTitle>{m.loadError}</AlertTitle><AlertDescription>{m.failed}</AlertDescription></Alert>
+        ) : (
+          <QuotePanel dashboard={result.dashboard} locale={locale} m={m} prefills={prefills} identities={Object.fromEntries(result.dashboard.invitations.map((item) => [item.id, { decision: randomUUID(), revision: randomUUID(), submit: randomUUID(), correlation: randomUUID() }]))} />
+        )}
+      </details>
+    </ProviderAppShell>
+  );
+}

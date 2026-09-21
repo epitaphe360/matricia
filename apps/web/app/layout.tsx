@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { directionFor, normalizeLocale } from "@/lib/i18n/locale";
-import { getPublicSiteUrl, publicStructuredData } from "@/lib/seo/metadata";
+import { directionFor, normalizeLocale } from "@/modules/shared/lib/i18n/locale";
+import { getPublicSiteUrl, publicStructuredData } from "@/modules/shared/lib/seo/metadata";
 import "./globals.css";
 
 export const metadata: Metadata = {

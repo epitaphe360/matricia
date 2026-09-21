@@ -42,7 +42,7 @@ test("le changement de langue conserve la route, les paramètres et le brouillon
   await page.getByRole("button", { name: "Continuer" }).click();
   await page.getByRole("link", { name: /AR|العربية/ }).first().click();
   await expect(page).toHaveURL(/\/ar\/diagnostic\?source=design-test/);
-  await expect(page.locator(".journey-progress")).toContainText(/2.*7/);
+  await expect(page.locator(".journey-progress")).toContainText(/2.*8/);
 });
 
 test("les choix simples et les champs libres exposent leur sémantique", async ({ page }) => {

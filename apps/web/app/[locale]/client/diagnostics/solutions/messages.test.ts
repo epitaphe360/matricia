@@ -1,2 +1,0 @@
-import{describe,expect,it}from"vitest";import{messages}from"./messages";
-describe("solution messages",()=>{it("provides complete Arabic labels",()=>{const ar=messages("ar");expect(ar.title).toContain("\u0627\u0644\u062d\u0644\u0648\u0644");expect(ar.levels.ADVANCED).toBeTruthy()});it("provides complete French labels",()=>{expect(messages("fr").submit).toContain("\u0064\u00e9\u0063\u0069\u0073\u0069\u006f\u006e")})});

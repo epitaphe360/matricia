@@ -2,8 +2,8 @@ import { randomUUID } from "node:crypto";
 import { createPaymentGateway, PaymentGatewayError } from "@matricia/infrastructure";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getPaymentRuntimeConfig, getServerEnvironment } from "@/lib/env";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getPaymentRuntimeConfig, getServerEnvironment } from "@/modules/shared/lib/env";
+import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 
 const inputSchema=z.object({organizationId:z.string().uuid(),planVersionId:z.string().uuid(),billingInterval:z.enum(["MONTHLY","ANNUAL"]),idempotencyKey:z.string().uuid(),locale:z.enum(["fr","ar"])});
 const planSchema=z.object({currency:z.string().regex(/^[A-Z]{3}$/u),monthly_price_minor:z.string().regex(/^\d+$/u),annual_price_minor:z.string().regex(/^\d+$/u)});

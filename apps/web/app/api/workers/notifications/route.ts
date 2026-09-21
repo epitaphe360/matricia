@@ -1,6 +1,6 @@
 import { randomUUID,timingSafeEqual } from "node:crypto";
-import { deliverNotification,type NotificationDeliveryJob } from "@/lib/notification-delivery/adapter";
-import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { deliverNotification,type NotificationDeliveryJob } from "@/modules/shared/lib/notification-delivery/adapter";
+import { getSupabaseAdminClient } from "@/modules/shared/lib/supabase/admin";
 
 export const dynamic="force-dynamic";export const maxDuration=60;
 const responseHeaders={"cache-control":"no-store"}as const;

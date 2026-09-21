@@ -9,7 +9,7 @@ const copy = {
     loginTitle: "Connectez-vous à Matricia",
     emailLabel: "Adresse courriel professionnelle",
     onboardingTitle: "Profil et conformité de votre entreprise",
-    administrationTitle: "Conformité des clients",
+    administrationTitle: "Conformité clients",
     mfaTitle: "Sécurité renforcée requise",
     forbiddenTitle: "Accès non autorisé",
     caseTitle: "Dossier de conformité",

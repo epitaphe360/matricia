@@ -1,17 +1,40 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { loadFranchiseDigest } from "@/lib/franchise-digest/repository";
-import { isLocale } from "@/lib/i18n/locale";
-import { FranchiseDigestPanel } from "./digest-panel";
-import { getFranchiseDigestMessages } from "./messages";
+import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { franchiseCopy } from "@/modules/franchise/data/spaces/copy";
+import { loadFranchiseDigest } from "@/modules/franchise/data/digest/repository";
+import { FranchiseHomeBoard } from "@/modules/franchise/screens/spaces/boards";
+import { FranchiseDigestPanel } from "@/modules/franchise/screens/digest/digest-panel";
+import { getFranchiseDigestMessages } from "@/modules/franchise/screens/digest/messages";
+import { franchiseMandateName, requireFranchiseLibrary } from "@/modules/franchise/screens/library/page-helper";
+import { FranchiseAppShell } from "@/modules/franchise/ui/franchise-app-shell";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
 
-export default async function FranchiseDigestPage({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params;
+export default async function FranchiseDigestPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string }> }) {
+  const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
-  const m = getFranchiseDigestMessages(locale), result = await loadFranchiseDigest();
+  const { space, result: library } = await requireFranchiseLibrary({ locale, organizationId: query.organizationId });
+  const m = getFranchiseDigestMessages(locale);
+  const result = await loadFranchiseDigest();
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  const c = franchiseCopy(locale);
+  const mandateName = franchiseMandateName(library);
   const keys: Record<string, string> = {};
   if (result.status === "success") for (const franchise of result.dashboard.franchises) keys[franchise.id] = randomUUID();
-  return <main className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6 sm:py-8" dir={locale === "ar" ? "rtl" : "ltr"}><div className="mx-auto max-w-7xl space-y-7"><header><p className="text-xs font-semibold uppercase tracking-[.18em] text-primary">{m.eyebrow}</p><h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{m.title}</h1><p className="mt-3 max-w-3xl leading-7 text-muted-foreground">{m.subtitle}</p></header>{result.status === "error" ? <Alert variant="destructive"><AlertTitle>{result.reason === "FORBIDDEN" ? m.accessDenied : m.queryFailed}</AlertTitle><AlertDescription>{result.reason === "FORBIDDEN" ? m.forbidden : m.queryFailedBody}</AlertDescription></Alert> : <FranchiseDigestPanel dashboard={result.dashboard} locale={locale} m={m} keys={keys} />}</div></main>;
+  return (
+    <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="home" title={c.homeTitle} lead={c.homeLead} kicker={c.kicker} mandateName={mandateName}>
+      <FranchiseHomeBoard locale={locale} query={space.selectedQuery} mandateName={mandateName} />
+      <details className="client-ops">
+        <summary>{c.opsDigest}</summary>
+        {result.status === "error" ? (
+          <Alert variant="destructive">
+            <AlertTitle>{result.reason === "FORBIDDEN" ? m.accessDenied : m.queryFailed}</AlertTitle>
+            <AlertDescription>{result.reason === "FORBIDDEN" ? m.forbidden : m.queryFailedBody}</AlertDescription>
+          </Alert>
+        ) : (
+          <FranchiseDigestPanel dashboard={result.dashboard} locale={locale} m={m} keys={keys} />
+        )}
+      </details>
+    </FranchiseAppShell>
+  );
 }

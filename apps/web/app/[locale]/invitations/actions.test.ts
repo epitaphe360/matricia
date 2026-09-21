@@ -8,13 +8,13 @@ const mocks = vi.hoisted(() => ({
   revalidatePath: vi.fn(),
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock("@/modules/shared/lib/supabase/server", () => ({
   getSupabaseServerClient: async () => ({ auth: { getUser: mocks.getUser, signInWithOtp: mocks.signInWithOtp }, rpc: mocks.rpc, from: mocks.from }),
 }));
-vi.mock("@/lib/env", () => ({
+vi.mock("@/modules/shared/lib/env", () => ({
   getServerEnvironment: () => ({ NEXT_PUBLIC_APP_URL: "https://app.matricia.test" }),
 }));
-vi.mock("@/lib/i18n/locale", () => ({
+vi.mock("@/modules/shared/lib/i18n/locale", () => ({
   isLocale: (value: string) => value === "fr" || value === "ar",
 }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));

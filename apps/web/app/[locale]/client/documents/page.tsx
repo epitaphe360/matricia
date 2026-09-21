@@ -1,26 +1,24 @@
 import { randomUUID } from "node:crypto";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { buttonVariants } from "@/components/ui/button";
-import { resolveClientOrganizationContext } from "@/lib/client-organization-context";
-import { loadClientDocumentVault } from "@/lib/client-documents/server-repository";
-import { isLocale } from "@/lib/i18n/locale";
-import { cn } from "@/lib/utils";
-import { DocumentVaultPanel } from "./document-vault-panel";
-import { messages } from "./messages";
+import { resolveClientOrganizationContext } from "@/modules/shared/client-organization-context";
+import { isDocumentExpired } from "@/modules/client/data/documents/expiry";
+import { loadClientDocumentVault } from "@/modules/client/data/documents/server-repository";
+import { resolveClientSpace } from "@/modules/client/data/spaces/context";
+import { spaceCopy } from "@/modules/client/data/spaces/copy";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+import { DocumentVaultPanel } from "@/modules/client/screens/documents/document-vault-panel";
+import { DocumentsBoard, SpaceActions } from "@/modules/client/screens/spaces/boards";
+import { ClientAppShell } from "@/modules/client/ui/client-app-shell";
 
-export default async function Page({ params, searchParams }: {
-  params: Promise<{ locale: string }>;
-  searchParams: Promise<{ organizationId?: string }>;
-}) {
-  const { locale } = await params;
-  const { organizationId } = await searchParams;
+export default async function Page({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string }> }) {
+  const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
-  const result = await loadClientDocumentVault(organizationId);
+  const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
+  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  const result = await loadClientDocumentVault(query.organizationId);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
-  const copy = messages[locale], alternate = locale === "fr" ? "ar" : "fr";
-  const context = result.status === "success" ? resolveClientOrganizationContext(result.value.organizations.map((organization) => ({ organization_id: organization.id })), organizationId) : null;
+  const c = spaceCopy(locale);
+  const context = result.status === "success" ? resolveClientOrganizationContext(result.value.organizations.map((organization) => ({ organization_id: organization.id })), query.organizationId) : null;
   const selectedId = context?.status === "success" ? context.membership.organization_id : null;
   const value = result.status === "success" && selectedId ? {
     organizations: result.value.organizations.filter((organization) => organization.id === selectedId),
@@ -28,10 +26,28 @@ export default async function Page({ params, searchParams }: {
     targets: result.value.targets.filter((target) => target.organizationId === selectedId),
     bindings: result.value.bindings.filter((binding) => binding.organizationId === selectedId),
   } : null;
-  const organizationQuery = organizationId ? `?organizationId=${encodeURIComponent(organizationId)}` : "";
-  return <main className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6"><div className="mx-auto max-w-6xl space-y-7">
-    <nav aria-label={copy.nav} className="flex flex-wrap justify-between gap-3"><Link href={`/${locale}/tableau-de-bord${organizationQuery}`} className={cn(buttonVariants({ variant: "outline" }), "min-h-11")}>{copy.back}</Link><Link href={`/${alternate}/client/documents${organizationQuery}`} hrefLang={alternate} className="min-h-11 px-3 py-2 text-primary underline">{copy.language}</Link></nav>
-    <header><p className="text-xs font-semibold uppercase tracking-[.18em] text-primary">{copy.eyebrow}</p><h1 className="mt-2 text-3xl font-semibold">{copy.title}</h1><p className="mt-3 max-w-3xl text-muted-foreground">{copy.description}</p></header>
-    <Alert><AlertDescription>{copy.safety}</AlertDescription></Alert>
-    {result.status === "error" || !value ? <p role="alert" className="text-destructive">{copy.loadError}</p> : <DocumentVaultPanel locale={locale} data={value} keys={{ link: randomUUID(), revoke: Object.fromEntries(value.bindings.map((binding) => [binding.id, randomUUID()])) }}/>}</div></main>;
+  const documents = value?.documents.map((document) => {
+    const binding = value.bindings.find((item) => item.documentId === document.id && !item.revokedAt);
+    const target = binding ? value.targets.find((item) => item.id === binding.targetId) : null;
+    const ext = document.fileName.split(".").pop()?.toLowerCase();
+    const kind = ext === "pdf" ? "pdf" as const : ext === "doc" || ext === "docx" ? "docx" as const : ext === "xls" || ext === "xlsx" ? "xlsx" as const : "file" as const;
+    const expired = isDocumentExpired(document.expiresOn);
+    return {
+      id: document.id,
+      title: document.fileName,
+      folder: target?.label ?? document.type,
+      status: expired ? (locale === "ar" ? "للمراجعة" : "À examiner") : (locale === "ar" ? "مشترك" : "Partagé"),
+      access: locale === "ar" ? "الأشخاص المخوّلون" : "Personnes habilitées",
+      href: `/${locale}/client/documents${space.selectedQuery}`,
+      kind,
+      tone: expired ? "peach" as const : "mint" as const,
+    };
+  }) ?? [];
+  return (
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="documents" title={c.docsTitle} lead={c.docsLead} kicker={c.kicker} actions={<SpaceActions href={`/${locale}/client/onboarding${space.selectedQuery}`} label={c.addDoc} />}>
+      <DocumentsBoard locale={locale} query={space.selectedQuery} organizationName={space.organizationName} documents={documents} toHandle={documents.filter((item) => item.tone === "peach").map((item) => ({ id: item.id, title: item.title, href: item.href, tone: item.tone, action: "examine" as const }))}>
+        {value ? <DocumentVaultPanel locale={locale} data={value} keys={{ link: randomUUID(), revoke: Object.fromEntries(value.bindings.map((binding) => [binding.id, randomUUID()])) }} /> : null}
+      </DocumentsBoard>
+    </ClientAppShell>
+  );
 }

@@ -3,11 +3,11 @@
 import { useActionState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useFormStatus } from "react-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { getDictionary } from "@/lib/i18n/dictionaries";
-import type { Locale } from "@/lib/i18n/locale";
+import { Button } from "@/modules/shared/ui/button";
+import { Input } from "@/modules/shared/ui/input";
+import { Label } from "@/modules/shared/ui/label";
+import { getDictionary } from "@/modules/shared/lib/i18n/dictionaries";
+import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import { createOrRequestOrganization, type OrganizationActionState, type OrganizationField } from "./actions";
 
 const initialState: OrganizationActionState = { status: "idle" };
@@ -36,7 +36,11 @@ export function OrganizationForm({ locale, idempotencyKey, defaultRole = "CLIENT
           <p className="text-sm leading-6 text-muted-foreground">{created ? messages.createdDescription : messages.requestedDescription}</p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
-          <Button asChild><Link href={`/${locale}/tableau-de-bord`}>{messages.backToDashboard}</Link></Button>
+          {created && defaultRole === "CLIENT_OWNER" ? (
+            <Button asChild><Link href={`/${locale}/client/onboarding`}>{messages.continueOnboarding}</Link></Button>
+          ) : (
+            <Button asChild><Link href={`/${locale}/tableau-de-bord`}>{messages.backToDashboard}</Link></Button>
+          )}
           <Button asChild variant="outline"><Link href={`/${locale}/organisation`}>{messages.submitAnother}</Link></Button>
         </div>
       </div>

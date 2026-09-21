@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useActionState, useId, useState } from "react";
-import { Button } from "@/components/ui/button";
-import type { Locale } from "@/lib/i18n/locale";
+import { Button } from "@/modules/shared/ui/button";
+import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import { requestAdditionalRole, type OrganizationRole, type RoleOrganization, type RoleRequestActionState } from "./actions";
 import type { RoleMessages } from "./messages";
 

@@ -5,11 +5,11 @@ vi.mock("@matricia/infrastructure", () => ({
   PaymentGatewayError: class PaymentGatewayError extends Error { constructor(readonly code: string) { super(code); } },
   createPaymentGateway: () => ({ code: "PAYPAL", requestCapture: mocks.requestCapture }),
 }));
-vi.mock("@/lib/env", () => ({
+vi.mock("@/modules/shared/lib/env", () => ({
   getPaymentRuntimeConfig: () => ({}),
   getServerEnvironment: () => ({ NEXT_PUBLIC_APP_URL: "https://app.matricia.test" }),
 }));
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock("@/modules/shared/lib/supabase/server", () => ({
   getSupabaseServerClient: async () => ({ auth: { getUser: mocks.getUser }, rpc: mocks.rpc }),
 }));
 

@@ -1,5 +1,176 @@
 # Matricia — Project State
 
+## 2026-09-21 — Restriction J+8 prestataire (nouvelles opportunités)
+
+- ADM-035 / critère 73 : une facture Matricia échue (`due_on < current_date` et solde > 0) ajoute `OVERDUE_INVOICE` à `provider_service_eligibility_snapshot`. Matching et invitation RFQ excluent le prestataire. Les missions déjà ouvertes ne sont pas mutées ; `financial_status` n’est pas réécrit (une restriction FINANCIAL imposée n’est pas effacée au paiement).
+- Le règlement intégral (allocations = total) lève le gel sans nouvelle date d’échéance. Un paiement partiel ne prolonge pas `due_on`.
+- Clôture admin : `blocks_new_opportunities` sur les factures échues. Facturation prestataire : alerte FR/AR si `paymentStatus=OVERDUE`.
+- Preuves : migration `20260921210000`, contrat SQL `0167`, vitest clôture / facturation.
+- Hors slice : avoirs ADM-036, échéanciers/recouvrement ADM-037, visa Lot 9 / E2E-01 / `VERIFIED`.
+
+## 2026-09-21 — Packs, promotions, paramètres, demande volume, coffre
+
+- ADM-031G/H : brouillon et activation AAL2 des packs et promotions. L’attribution appelle `issue_credits` (`EXTRA_PURCHASE` / `PROMOTION`), sans second ledger. Le plafond bonus actif `CREDIT_PROMOTION_MAX_BONUS` borne la création et l’attribution.
+- ADM-044 : trois paramètres versionnés seulement (`DOCUMENT_EXPIRY_WARNING_DAYS`, `VOLUME_RESERVATION_DEFAULT_TTL_HOURS`, `CREDIT_PROMOTION_MAX_BONUS`). Pas d’éditeur libre.
+- ADM-VOL-002 : `list_admin_volume_demand` compare 12 mois de réservations au forecast négocié.
+- ADM-010 : `list_admin_document_vault` agrège les métadonnées client et prestataire, sans chemin de stockage. L’alerte d’expiration n’existe que si le paramètre est actif.
+- Preuves : migration `20260921170000`, contrat SQL `0166`, tests UI catalogue et demande.
+- Toujours hors signature : visa indépendant, E2E-01, promotion `VERIFIED`, adaptateurs LinkedIn/Meta, PDF fictif, connexion en tant que client.
+
+## 2026-09-21 — Client : RFQ existante + site questionnaire/mission
+
+- `open_service_request_rfq` refuse maintenant via `private.client_may_open_new_service_request` (`CLIENT_REQUEST_NOT_ENTITLED`, 42501). Matching et `mark_ready` inchangés. Rotation 90 jours et éligibilité courante conservées.
+- `start_questionnaire_session` : 7e argument `p_site_id` défaut `null` (une seule signature PostgREST). Audience CLIENT + site ACTIVE de l’organisation, sinon `SITE_NOT_APPLICABLE` / `SITE_SCOPE_DENIED`. Hash d’idempotence sans `site_id` si null (rejeu des clés 6 arguments). UI `/client/questionnaires` transmet le site du portefeuille.
+- `missions.site_id` hérité de la demande contractée (`create_mission` après le wrapper checklist 0191) + rattrapage des missions existantes. FK composite vers `client_sites(id, organization_id)`.
+- Preuves : migration `20260921160000`, contrat SQL `0165`, 0025 signature 7 arguments, vitest start/site/panel.
+- Lot 9 : **non clos**. Pas de visa indépendant, pas d’E2E-01, pas de `VERIFIED` de couverture.
+
+## 2026-09-21 — Client : blocage SQL des nouvelles demandes (reliquat lots 3/5/7)
+
+- Le blocage n’est plus seulement UI : `private.client_may_open_new_service_request` refuse une **nouvelle** demande si abonnement hors `TRIAL_ACTIVE`/`ACTIVE`, essai `TRIAL_EXPIRED` sans Gold `ACTIVE`, ou anomalie `DOCUMENT_EXPIRED` encore `OPEN`/`QUESTIONED`. Statut d’abonnement inconnu = pas de blocage inventé (tests P07).
+- Appliqué dans `create_service_request` et `clone_request_core` (`CLIENT_REQUEST_NOT_ENTITLED`, 42501). Conversion besoin/opportunité inchangée : elles appellent déjà `create_service_request`. Pause/fin de plan récurrent non concernées.
+- UI : `/client/demandes/nouvelle` et `/demandes/recurrence` masquent création/clonage/génération ; historique, pause et fin restent. `42501` → `FORBIDDEN` côté actions. Document expiré : Casablanca `YYYY-MM-DD`, mission non détruite. L’ouverture RFQ et le `site_id` de session sont traités par la migration `20260921160000`.
+- Preuves : migration `20260921150000` (évite la collision volume `20260921140000` / `0163`), contrat SQL `0164`, vitest entitlement / actions / récurrence.
+- Lot 9 : **non clos**. Pas de visa indépendant, pas d’E2E-01, pas de `VERIFIED` de couverture.
+
+## 2026-09-21 — Activation pool volume (ADM-VOL-006)
+
+- Commande `activate_framework_pool` : AAL2 + `begin_volume_command` (le même jeton d’idempotence que le brouillon). DRAFT → `FRAMEWORK_ACTIVE`, puis pool `POOL_ACTIVE` borné par `maximum_units`. Engagement fournisseur facultatif. Un seul pool ouvert par version.
+- Écran Achats groupés : formulaire d’activation distinct du brouillon. Réserve / allocation / consommation inchangées.
+- Preuves : migration `20260921140000`, contrat SQL `0163`, test UI négociations.
+
+## 2026-09-21 — Administration Boxes / P&L / clôture / exceptions / volume
+
+- ADM-031 : commandes versionnées `create_benefit_version`, `create_box_version` (slots), `activate_*` (AAL2, coût plein > attendu ⇒ référence d’approbation), `link_plan_box_rule`, dashboard `list_admin_boxes_dashboard` + `issue_credits` / wallet. Écran Finance `#boxes` / `#credits` (FR/AR, pas d’impersonnation client : simulation = matrice plan↔Box).
+- P&L bibliothèques : `list_admin_pnl_dashboard` + clôture via `close_franchise_profit_period` (règles IT 50/50 et STANDARD 50/25/25 inchangées).
+- Clôture fournisseur : `list_admin_provider_closure_dashboard` + `issue_provider_statement`. Sweep `sweep_admin_exceptions` → file `EXCEPTIONS` (`BILLING_EXCEPTION`, payables non relevés, matching FAILED/NO_CANDIDATE, LOW_STOCK, PAST_DUE).
+- Volume : `create_framework_agreement_draft` + dashboard enrichi (contrats, SKU, rentabilité agrégée).
+- Corrections TS : `PersonRow`/`RequestRow`/`MessageRow` exportés ; `QuotePreview` garde `invitation` nulle.
+- Preuves : migration `20260921120000`, contrat SQL `0162`, tests UI Boxes + mock command center.
+
+## 2026-09-21 — Lots 1 / 4 / 8 / 9 Client (onboarding, contrats, sécurité, preuves)
+
+- Lot 1 : ICE déjà connu → `ACCESS_REQUESTED` sans doublon ; après création Client, CTA vers `/client/onboarding`. Parcours conformité : documents = étape 2, essai seulement après `VERIFIED` + essai actif. Résultat de validation affiché. Essai expiré → réactivation Gold. Le SQL d’activation d’essai n’a pas été modifié (`MAT-FUNC-001` conservé).
+- Lot 4 restant : signature et envoi à la signature sur `/client/contrats` (plus seulement dans le panneau missions), avec `revalidatePath` contrats/missions. Approbations multi-personnes `business_approval_requests` sur `/client/actions` via `decide_business_approval` (AAL2 + rôles de la politique versionnée, aucun paiement autonome).
+- Lot 3 reliquat : barre de progression réelle sur `/besoin` (étapes 1–5, pourcentage entier) ; clonage visible depuis `/client/demandes` vers `clone_service_request` (`/demandes/recurrence`).
+- Lot 5 / 7 reliquat : document expiré → alerte mission (mission non détruite) ; coffre : seuls les documents non expirés sont liables à une demande/mission.
+- Lot 7 original (coffre/finances/Box) : pages déjà dans le shell ; **nouvelle RFQ bloquée en SQL et UI** si abonnement `TRIAL_EXPIRED` / `SUSPENDED` / `PAST_DUE` / `CANCELLED`, essai expiré sans Gold actif, ou document expiré non résolu ; historique conservé. Coffre, crédits, Box, récompenses inchangés.
+- Lot 8 : invitation membre déjà dans l’écran sécurité ; lien préférences notifs (`IMMEDIATE` / `DIGEST` / `DISABLED` par catégorie) vers `/notifications` (déjà `ClientAppShell` via `ConnectedAppShell`).
+- Lot 9 : **non clos**. Pas de visa indépendant, pas d’E2E-01 bout-en-bout exécuté ici, `REQUIREMENTS_COVERAGE` non passé en `VERIFIED`. FR/AR et 360 px des nouveaux panneaux couverts par rendu statique + typecheck ciblé.
+
+## 2026-09-21 — Lot 2 Client (bilan, décisions, assistance 002–006, 009–010, 046)
+
+- Bilan et évolution sur le même parcours : bandeau de continuité sur `/client/diagnostics` (dernier score par bibliothèque, delta entier) et delta du run ouvert, sans overlay illustratif.
+- Recommandations groupées par constat, libellés FR/AR `Conseil / Accompagné / Piloté` (GUIDANCE/ASSISTED/MANAGED). Comparaison Essentielle/Standard/Avancée via `/diagnostics/solutions?anomalyId=` — les deux vocabulaires restent distincts.
+- Questions expirées/expirantes et réévaluations de profil affichées sur le bilan (comptes du questionnaire sélectionné et des candidats assistance), sans charger le corpus 6 000.
+- Assistance contextuelle incrustée bilan / besoin / devis / jalon : suggestions à confirmer ou rejeter, aucune action critique autonome. Bundles : lancement d’un besoin confirmé (`/besoin?q=`), pas de commande silencieuse.
+- Conversion opportunité → demande : `RFQ_READY` pointe vers `/client/demandes/nouvelle?opportunityId=`. `start_questionnaire_session` inchangé (pas de `site_id`).
+- Preuves : helpers journey, AssistanceCue, board continuité, messages FR/AR.
+
+## 2026-09-21 — Lot 6 Client (portefeuille 011, 012, 021, 051, 053)
+
+- Sites : création versionnée `create_client_site` depuis `/client/portefeuille` (code, noms FR/AR, adresse, code région). Affichés sur projets et budgets.
+- Budgets : alertes de consommation en points de base entiers (attention 80 %, enveloppe 100 %, dépassement si net > approuvé). Montants exacts, y compris restant négatif.
+- Calendrier : libellés FR/AR des sources (devis, jalons, factures, documents). Progression projet sans virgule flottante.
+- Demandes : `site_id` transmis dans le payload de conversion (besoin ou opportunité). Préremplissage depuis `diagnostic_runs.site_id` quand le bilan en a un. Zone géographique (`regionCode`) distincte du site d’entreprise.
+- Preuves : tests consommation/progress/site RPC, panneau portefeuille, formulaire demande avec sites.
+- Écart assumé : `start_questionnaire_session` ne prend pas encore `site_id` ; `missions` n’a pas de colonne `site_id` (héritage via la demande). Lot 2 pourra brancher le site au démarrage du questionnaire.
+
+## 2026-09-20 — Lot 7 Client (comparaison et sélection de devis)
+
+- Comparaison Client : score de complétude en points de base entiers, livrables/garanties de la version figée, pas d’identité prestataire. Pondération locale d’analyse sans score automatique.
+- Sélection : motif obligatoire + confirmation humaine. RPC `select_quote_and_notify` enregistre la décision, appelle `select_quote`, puis publie un retour anonymisé (`publish_not_selected_feedback`) aux non retenus sans gagnant ni coordonnées.
+- Démo : colonnes illustratives sans bouton de sélection réelle. Messagerie interne uniquement avant choix.
+- Preuves : contrat SQL 0160, tests complétude/action/formulaire comparaison.
+
+## 2026-09-20 — Lot 5 Client (demande/RFQ depuis besoin confirmé)
+
+- Conversion atomique `create_service_request_from_need_intake` : intake verrouillé, service publié résolu par code métier, questionnaire CLIENT publié de la même bibliothèque, empreintes catalogue/questionnaire serveur, table `public_need_intake_conversions` insert-only (intake inchangé).
+- Aucune ouverture automatique de consultation (`mark_ready` / matching / `open_rfq` restent des actions humaines distinctes). Idempotence par replay de conversion + clé `intake_id`.
+- `/client/demandes/nouvelle?intakeId=&serviceCode=` prépare le brouillon ; `/besoin` propose « Créer une demande de devis » après enregistrement d’un service confirmé.
+- Preuves : contrat SQL 0159, formulaire sans UUID internes, action besoin vs opportunité, extraction du code service depuis le snapshot.
+
+## 2026-09-20 — Lot 3 Client (assistant besoin MAT-FUNC-008)
+
+- Parcours `/besoin` : texte libre borné classé vers des services publiés (`TOKEN_OVERLAP_V1`), confirmation humaine obligatoire, questions discriminantes manquantes, sans création silencieuse de besoin/RFQ.
+- Authentifié : `discover_assistance_scope` (lecture seule, max 20 services / 50 questions) enrichi des libellés FR/AR ; données fraîches `prefill_fact_versions` réutilisées et à confirmer.
+- Public : classement borné sur la projection des 200 services (aucune question du corpus 6 000 chargée). Brouillon autosauvegardé localement (7 jours) ; l’enregistrement compte reste une action distincte.
+- Correction TS prestataire : documents de consultation typés `ConsultationPackDocument` (plus de `doc.id` sur une union démo).
+- Prochaine étape : Lot 5 — demandes/RFQ (conversion brouillon confirmé → consultation, versions catalogue conservées).
+
+## 2026-09-20 — Lot 0 Client (shell Gold Master)
+
+- Espace Client : pages hors chrome rentrées dans `ClientAppShell` (portefeuille, favoris, récurrence, assistance, solutions, achats groupés, onboarding, nouveau litige).
+- Nav Gold Master : 9 liens maquette + Pilotage (À traiter, Contrats, Portefeuille, Crédits & Boxes, Favoris).
+- Routes nouvelles : `/client/actions` (CL-013 / MAT-FUNC-006), `/client/contrats` (CL-028), `/client/recherche` (bandeau global demandes/missions/contrats/documents/messages).
+- Preuves : tests nav/recherche + four-spaces + accueil Client verts. Typecheck web : seules des erreurs prestataire préexistantes (`workbenches.tsx`) restent hors Lot 0.
+- Prochaine étape : Lot 3 — assistant besoin `MAT-FUNC-008` (texte libre → service → questions manquantes) + préremplissage/autosave.
+
+## 2026-09-19 — Restructuration modulaire par espace (5 vagues)
+
+- Architecture cible livrée : **un module par espace** sous `apps/web/modules/`. Les routes `app/[locale]/…` restent des coquilles Next.js (page/layout/loading/error) et délèguent aux écrans du module.
+  - `modules/client` — 143 fichiers (data 23, screens 118) : tableau de bord, diagnostics, demandes, missions, finances, documents, onboarding…
+  - `modules/provider` — 65 fichiers (data 22, screens 41) : qualification, devis, missions, facturation, réputation, planning
+  - `modules/franchise` — 37 fichiers (data 14, screens 23) : accueil, CRM, relances, digest, gouvernance
+  - `modules/admin` — 112 fichiers (data 27, screens 85) : command-center, clients, providers, finance, catalogue, opérations…
+  - `modules/shared` — 191 fichiers : cockpit/shell, UI, i18n, supabase, auth, notifications, contrats, fiscalité…
+  - `modules/public` — 30 fichiers : catalogue public, parcours besoin/fournisseur, site
+- `lib/` et `components/` vidés puis retirés. Alias `@/` résolu en tests via `apps/web/vitest.config.ts`.
+- Preuves : typecheck PASS, ESLint PASS, **816 tests web verts (200 fichiers)**, `release:validate` + `traceability:validate` (76 exigences) PASS.
+- Prochaine étape : extraire les pages publiques restantes vers `modules/public/screens` si le site public doit suivre le même contrat que les 4 espaces.
+
+## 2026-09-18 — Correction UX des tableaux de bord (structure et affichage)
+
+- Déduplication du déroulement Client et Prestataire : suppression des rangées de gros CTA qui doublonnaient le hero et les actions groupées (« Exprimer un besoin » affiché 3 fois), et des liens Messages/Notifications/Profil qui doublonnaient la nav courte dans la barre de recherche.
+- `CockpitActionGroups` : pastille « · » remplacée par une tuile or « ↗ » (`cockpit-action-tile`, miroir RTL) avec chevron dédié.
+- `admin-experience.css` : cartes KPI resserrées (min-height 8,5rem → 6,5rem) avec teintes de fond par tonalité (critique/attention/ok) ; process strip en 2 colonnes sur mobile puis `auto-fit` desktop (fini la colonne unique interminable) ; flux d’activité plus compact. CSS mort (`client-primary-actions`, `provider-primary-actions`) retiré.
+- `admin-module-chrome.test.tsx` réécrit en JSX (corrige `react/no-children-prop` et le typage `children` requis).
+- Preuves : 813+54+4 tests unitaires verts, typecheck/ESLint propres, smoke démo 18/18 routes saines, captures avant/après dans `artifacts/test-results/dashboard-review/`.
+
+## 2026-09-18 — Audit global des portails (cahier des charges Gold Master V4)
+
+- Portails structurels : `catalog:validate` (10 bibliothèques, 200 services, 6000 questions), `spec:validate` (7 registres, 68 fonctions, 63 agents), `traceability:validate` (76 exigences cohérentes), `no-placeholders` et `release:validate` verts.
+- Typecheck tous packages vert ; ESLint vert ; tests unitaires 871 verts (199 fichiers web, 11 worker, 1 ui) ; tests SQL/RLS **159/159 verts** sur la base development ; smoke runtime démo **18/18 routes saines** (4 personas, 360 px) via `tests/e2e/helpers/demo-spaces-smoke-run.mjs`.
+- Corrections appliquées pendant l’audit : état `ProcessStep` `"todo"` renommé `"pending"` (24 fichiers, 42 occurrences — faux positif du validateur anti-placeholder) ; `react/no-children-prop` dans `admin-module-chrome.test.tsx` ; test SQL `0156` aligné sur le durcissement MFA (claims `aal:"aal2"` pour les rôles plateforme) ; dérive de migration comblée — `20260916120000_admin_supervision_projection` vérifiée présente sur development et enregistrée dans `schema_migrations`.
+- Écart assumé vs Definition of Done release : 5/68 exigences `VERIFIED`, 63 `IN_PROGRESS` (implémentation existante, preuves atomiques à compléter) — voir `docs/traceability/REQUIREMENTS_COVERAGE.md`. P01 reste ouverte (contrats atomiques exhaustifs).
+
+## 2026-09-18 — Alignement cockpit SIP des espaces connectés
+
+- Espace franchisé aligné sur le cockpit SIP (hero, KPI, actions groupées, flux d’activité) : nouvel accueil protégé `franchise/accueil` composé sur `loadFranchiseCrm` (prospects, relances, alertes, objectifs, scores) — aucune donnée inventée, aucun faux zéro (`lib/franchise-home/view-model`).
+- Modules `franchise/digest`, `franchise/performance`, `franchise/relances` migrés de l’ancien chrome (`bg-muted/40`) vers `AdminModuleChrome` ; retour des quatre modules vers l’accueil de l’espace. La page publique `/franchise` (candidature) reste inchangée et publique.
+- Hub de modules : route `franchise-home` enregistrée avec libellés FR/AR. Client, Sous-traitant et Administration étaient déjà alignés (aucun changement).
+- Preuves : `lib/franchise-home/view-model.test.ts`, `franchise/accueil/messages.test.ts`, `franchise/cockpit-alignment.test.tsx` ; 48 tests verts, typecheck et ESLint ciblés propres.
+- Validation runtime (2026-09-18) : persona démo `franchise` provisionné sur l’environnement development via `scripts/provision-demo-franchise-persona.mjs` (déterministe, idempotent, identifiants uniquement dans `.env.local`) — franchise ACTIVE « Franchisé · Démo Matricia » (bibliothèque COM, territoire SOUSS versionné), 3 prospects (1 relance en retard), 1 objectif actif, 1 snapshot + 2 alertes ouvertes (1 CRITICAL) adossés à une métrique démo `DEMO_CLIENT_NETWORK`.
+- Accès démo étendu : quatrième persona « Franchisé » sur `/connexion` (`demo-access.tsx`, `demo-actions.ts`, destination `franchise/accueil`, FR/AR, tests mis à jour — 9 tests verts).
+- Revue visuelle `tests/e2e/helpers/franchise-cockpit-review-run.mjs` : connexion réelle par le bouton démo puis 20 captures (5 modules × FR/AR × 360 px/desktop) dans `artifacts/test-results/franchise-cockpit/` — statut 200 partout, aucun débordement horizontal, aucune erreur navigateur ; KPI alimentés par les données réelles (1 relance en retard, 3 prospects, 2 alertes, 1 objectif) et RTL arabe conforme.
+- Prochaine étape : étendre le smoke E2E sandbox (`authenticated-route-smoke.spec.ts`) à la route `franchise/accueil`.
+
+## 2026-09-16 — Site public 10/10 (compose + polish)
+
+- Inventaire `docs/PUBLIC_SITE_VALIDATION.md` (spec 1–14). Nav commune Entreprises/Professionnels/Comment ça marche/Offres/Franchise + CTA Analyser. Accueil : titre cible, 6 étapes, domaines catalogue → `/besoin?library=`, FAQ confiance.
+- Page Entreprises, pages légales (`mentions-legales`, `confidentialite`, `conditions`), footer cohérent, franchise candidature conditionnelle, contact motifs adaptés, offres sans débit (`plan=` conservé).
+- Handoff : brouillons locaux vs compte distingués ; proxy public étendu. Preuves : `page.test.tsx`, `public-navigation.test.tsx`, `entreprises/page.test.tsx`, `public-legal/documents.test.ts`.
+- Re-score A–D ≥ 9/10. Gaps volontaires : branches prédiagnostic déclaratives ; conversion brouillon→RFQ Lot 3.
+
+## 2026-09-16 — Tableau de bord Prestataire 10/10 (compose + polish)
+
+- Inventaire `docs/PROVIDER_DASHBOARD_VALIDATION.md`. Accueil provider-shaped sur `tableau-de-bord` (rôles PROVIDER_*), stages nouveau/qualifié/bloqué avec blockers service≠suspension générale, KPI sans faux zéro (`lib/provider-home`), planning agrégé, shell `provider-shell` sur qualification/devis/facturation/planning.
+- Hub : `provider-planning`. Preuves unitaires view-model. Re-score A–D ≥ 9/10. Gap volontaire : litiges UI provider non inventé.
+
+## 2026-09-16 — Tableau de bord Client 10/10 (compose + polish)
+
+- Même méthode que l’Admin : inventaire `docs/CLIENT_DASHBOARD_VALIDATION.md`, composition sans faux zéros (`lib/client-home`), accueil parcours Analyser→Payer, file situations, KPI cliquables, stages nouveau/actif/équipe, shell `client-shell`, hub `client/finances` (Matricia vs prestataires séparé).
+- Preuves : `lib/client-home/view-model.test.ts`, hub route `client-finances`, nav courte FR/AR.
+- Re-score A–D ≥ 9/10. Gap volontaire : pas d’invention d’encaissement prestataire côté Client.
+
+## 2026-09-16 — Admin supervision 10/10 (compose + polish)
+
+- Sprint 0–5 fermés : inventaire `docs/ADMIN_SUPERVISION_VALIDATION.md`, projection RPC `list_admin_supervision_projection` / `get_admin_organization_fiche`, UI pilotage enrichie, fiche entreprise, parcours RFQ→devis→missions→diagnostics, shell UX commun (`AdminProcessStrip`, `AdminModuleChrome`).
+- Routes hub : `administration/parcours`, `administration/entreprises` (+ fiche `[organizationId]`).
+- Preuves : unit `admin-supervision/repository.test.ts`, `admin-process-strip.test.tsx`, SQL `0156_admin_supervision_projection.test.sql`, smoke routes protégées étendues.
+- Re-score A/B/C/D ≥ 9/10 (détail dans la matrice de validation). Aucun workflow fictif ajouté ; lecture Admin only via security definer.
+- Prochaine étape : appliquer la migration `20260916120000` sur l’environnement de développement, puis smoke Admin démo runtime.
+
 ## 2026-09-14 — Refonte publique, aperçu local
 
 - Direction visuelle reprise suite au rejet utilisateur : blanc/bleu électrique, photographie illustrative originale, titre client/talents/réussite partagée, cartes flottantes et mouvement désactivable. La direction sombre à anneaux a été remplacée.
@@ -836,6 +1007,16 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 
 - Les parcours publics diagnostic, besoin précis, fournisseur, abonnements, contact et authentification sont raccordés jusqu'au dossier autorisé, avec reprise FR/AR et écritures serveur idempotentes.
 - Les espaces Client et Sous-traitant ont reçu les corrections P0 : contexte d'organisation serveur, diagnostics et demandes sans identifiants techniques, devis multiligne exact, qualification documentaire privée et facturation métier. Navigation, Franchise et Administration ont été harmonisées sans affaiblir RLS, AAL2, approbations ou règles financières.
-- Migrations additives `194` à `199` et `202` à `204` appliquées sur Supabase development ; dry-run distant final `upToDate: true`.
-- Gates : workspace 867 tests PASS, TypeScript strict PASS, lint PASS, build PASS ; Playwright public 10/10 PASS ; E2E authentifié 24/24 PASS ; SQL 147 fichiers / 3 455 assertions / 4 scénarios de concurrence PASS ; catalogue 10/200/6000 et absence de placeholders validés.
+- Migrations additives `194` à `199` et `202` à `206` appliquées sur Supabase development ; dry-run distant final `upToDate: true`.
+- Gates : workspace 910 tests PASS, TypeScript strict PASS, lint PASS, build PASS ; Playwright public final 34/34 PASS ; E2E cœur authentifié ciblé 2/2 PASS ; SQL 149 fichiers / 3 488 assertions / 4 scénarios de concurrence PASS ; catalogue 10/200/6000 et absence de placeholders validés.
 - Les résidus (primitive documentaire de preuve de paiement, quelques statuts avancés, revue visuelle authentifiée exhaustive et traçabilité Gold Master `1/76 VERIFIED` avec P01 ouverte) sont explicitement consignés dans `docs/corrections-public-dashboards/PROGRESS.md`. Aucun déploiement production n'a été effectué pendant cette passe.
+
+## Checkpoint audit final et fermeture P1 ciblée — 2026-09-15
+
+- Le déploiement observé a été réconcilié avec `codex/bootstrap-foundation` au SHA `b4050fc3`; la branche d'audit part exactement de ce point. Les onze matrices et rapports demandés sont maintenus sous `docs/`.
+- Home, navigation, diagnostic, besoin précis, services et entrée Prestataire utilisent le catalogue canonique 10/200 sans charger les 6 000 questions. Brouillons, reprise OTP, validation serveur, FR/AR, clavier et responsive 360–1440 ont été renforcés.
+- Qualification Prestataire, capacité `PAUSED`, explications de matching et historique Client sont raccordés. La preuve de paiement Prestataire est désormais archivée dans un objet privé, immuable et tenant-safe avant liaison transactionnelle au ledger.
+- Le formulaire Contact déclenche désormais une notification support idempotente lorsqu'elle est configurée, sans perdre la demande ni annoncer faussement une livraison; Railway utilise `/readiness` au lieu du simple liveness `/health`.
+- Migrations additives `205` à `207` appliquées uniquement sur Supabase development; dry-run final `upToDate=true`. La 207 impose un verdict antivirus immuable CLEAN avant toute écriture comptable de paiement prestataire. Aucune production n'a été modifiée.
+- Gates : build PASS; TypeScript et lint PASS; 910 tests unitaires/intégration PASS; 154 fichiers SQL / 3 590 assertions PASS et 311/311 RPC avec indice DENY; 0154/0155 ciblés et 4 concurrences PASS avec preuves machine, tandis que le replay complet Outbox reste à refaire sans worker development concurrent. E2E publics 34/34 PASS, smoke routes 8/8, E2E authentifiés 3/3 couvrant MAT-FUNC-007/013/018/019 avec fixtures entièrement neutralisées. Traçabilité indépendante actuelle : 5/68 MAT-FUNC V1 VERIFIED.
+- Release non signable à ce checkpoint : P01 et traçabilité `5/76 VERIFIED` (5/68 MAT-FUNC V1), MAT-FUNC-020 E2E rouge, smoke authentifié 16 scénarios non exécuté, 336 validations runtime des matrices, paramètres Auth hébergés et intégrations externes réelles (signature, paiements sandbox, SMTP, scanner/social) restent à prouver. Ces points sont consignés dans `docs/RELEASE_CHECKLIST.md` et `docs/DECISIONS_REQUIRED.md`.

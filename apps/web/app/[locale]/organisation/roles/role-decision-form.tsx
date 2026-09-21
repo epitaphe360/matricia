@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState, useId } from "react";
-import { Button } from "@/components/ui/button";
-import type { Locale } from "@/lib/i18n/locale";
+import { Button } from "@/modules/shared/ui/button";
+import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import { decideRoleRequest, type RoleDecisionActionState } from "./actions";
 import type { RoleMessages } from "./messages";
 

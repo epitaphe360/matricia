@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-import type { Locale } from "@/lib/i18n/locale";
-import type { UserActionCenter } from "@/lib/action-center/model";
+import { Badge } from "@/modules/shared/ui/badge";
+import type { Locale } from "@/modules/shared/lib/i18n/locale";
+import type { UserActionCenter } from "@/modules/shared/lib/action-center/model";
 import type { ActionCenterMessages } from "./messages";
 
 export function ActionsPanel({ center, locale, m }: { center: UserActionCenter; locale: Locale; m: ActionCenterMessages }) {

@@ -1,2 +1,41 @@
-import Link from"next/link";import{randomUUID}from"node:crypto";import{notFound,redirect}from"next/navigation";import{Alert,AlertDescription,AlertTitle}from"@/components/ui/alert";import{buttonVariants}from"@/components/ui/button";import{isLocale}from"@/lib/i18n/locale";import{loadAdminVolume}from"@/lib/admin-volume/repository";import{cn}from"@/lib/utils";import{AdminVolumePanel}from"./admin-volume-panel";import{getMessages}from"./messages";
-export default async function Page({params}:{params:Promise<{locale:string}>}){const{locale}=await params;if(!isLocale(locale))notFound();const m=getMessages(locale),result=await loadAdminVolume();if(result.status==="error"&&result.reason==="UNAUTHENTICATED")redirect(`/${locale}/connexion`);const alternate=locale==="fr"?"ar":"fr";return <main className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6"><div className="mx-auto max-w-7xl space-y-7"><nav className="flex flex-wrap justify-between gap-3" aria-label="Navigation"><Link href={`/${locale}/tableau-de-bord`} className={cn(buttonVariants({variant:"outline"}),"min-h-11")}>{m.back}</Link><Link href={`/${alternate}/administration/achats-groupes`} hrefLang={alternate} className="min-h-11 px-3 py-2 font-medium text-primary">{m.language}</Link></nav><header><p className="text-xs font-semibold uppercase tracking-[.18em] text-primary">{m.eyebrow}</p><h1 className="mt-2 text-3xl font-semibold">{m.title}</h1><p className="mt-3 max-w-4xl text-muted-foreground">{m.description}</p></header>{result.status==="error"?<Alert variant="destructive"><AlertTitle>{result.reason==="FORBIDDEN"?m.forbidden:m.unavailable}</AlertTitle><AlertDescription>{result.reason==="FORBIDDEN"?m.aggregateNotice:m.unavailable}</AlertDescription></Alert>:<AdminVolumePanel locale={locale} dashboard={result.value} m={m} keys={{allocate:randomUUID(),consume:randomUUID()}}/>}</div></main>}
+import { randomUUID } from "node:crypto";
+import { notFound, redirect } from "next/navigation";
+import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+import { loadAdminVolumeDemand } from "@/modules/admin/data/catalog/repository";
+import { loadAdminVolume } from "@/modules/admin/data/volume/repository";
+import { AdminVolumePanel } from "@/modules/admin/screens/achats-groupes/admin-volume-panel";
+import { VolumeDemandPanel } from "@/modules/admin/screens/achats-groupes/volume-demand-panel";
+import { VolumeNegotiatePanel } from "@/modules/admin/screens/achats-groupes/volume-negotiate-panel";
+import { getMessages } from "@/modules/admin/screens/achats-groupes/messages";
+import { AdminModulePage } from "@/modules/admin/ui/admin-module-page";
+
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ organizationId?: string }>;
+}) {
+  const [{ locale }, query] = await Promise.all([params, searchParams]);
+  if (!isLocale(locale)) notFound();
+  const m = getMessages(locale);
+  const [result, demand] = await Promise.all([loadAdminVolume(), loadAdminVolumeDemand()]);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  return (
+    <AdminModulePage locale={locale} active="finance" path="achats-groupes" title={m.title} lead={m.description}>
+      {result.status === "error" ? (
+        <Alert variant="destructive">
+          <AlertTitle>{result.reason === "FORBIDDEN" ? m.forbidden : m.unavailable}</AlertTitle>
+          <AlertDescription>{result.reason === "FORBIDDEN" ? m.aggregateNotice : m.unavailable}</AlertDescription>
+        </Alert>
+      ) : (
+        <>
+          <AdminVolumePanel locale={locale} dashboard={result.value} m={m} keys={{ allocate: randomUUID(), consume: randomUUID() }} />
+          <VolumeNegotiatePanel locale={locale} dashboard={result.value} ownerOrganizationId={query.organizationId ?? result.value.agreements?.[0]?.owner_organization_id ?? null} keys={{ negotiate: randomUUID(), activate: randomUUID() }} />
+          {demand.status === "success" ? <VolumeDemandPanel locale={locale} demand={demand.value} /> : null}
+        </>
+      )}
+    </AdminModulePage>
+  );
+}

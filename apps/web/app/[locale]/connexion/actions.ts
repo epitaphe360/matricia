@@ -1,10 +1,10 @@
 "use server";
 
 import { headers } from "next/headers";
-import { normalizeEmail } from "@/lib/auth/otp";
-import { isLocale, type Locale } from "@/lib/i18n/locale";
-import { getServerEnvironment } from "@/lib/env";
-import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { normalizeEmail } from "@/modules/shared/lib/auth/otp";
+import { isLocale, type Locale } from "@/modules/shared/lib/i18n/locale";
+import { getServerEnvironment } from "@/modules/shared/lib/env";
+import { getSupabaseAdminClient } from "@/modules/shared/lib/supabase/admin";
 
 export type OtpRequestResult = { accepted: true } | { accepted: false; reason: "INVALID_EMAIL" };
 

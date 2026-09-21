@@ -1,2 +1,64 @@
-import { randomUUID } from "node:crypto";import Link from "next/link";import { notFound,redirect } from "next/navigation";import { Badge } from "@/components/ui/badge";import { buttonVariants } from "@/components/ui/button";import { Card,CardContent,CardHeader,CardTitle } from "@/components/ui/card";import { formatMinorExact } from "@/lib/client-rfq/model";import { createServerClientRfqRepository } from "@/lib/client-rfq/server-repository";import { isLocale } from "@/lib/i18n/locale";import { cn } from "@/lib/utils";import { getClientRfqMessages } from "../messages";import { WorkflowActions } from "../workflow-actions";
-export default async function RequestDetailPage({params}:{params:Promise<{locale:string;requestId:string}>}){const{locale,requestId}=await params;if(!isLocale(locale))notFound();const result=await(await createServerClientRfqRepository()).detail(requestId);if(result.status==="error"&&result.reason==="UNAUTHENTICATED")redirect(`/${locale}/connexion`);if(result.status==="error"||!result.value)notFound();const q=result.value;const messages=getClientRfqMessages(locale);return <main className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6"><div className="mx-auto max-w-5xl space-y-6"><Link href={`/${locale}/client/demandes`} className={cn(buttonVariants({variant:"outline"}),"min-h-11")}>{messages.back}</Link><Card><CardHeader><div className="flex flex-wrap justify-between gap-3"><CardTitle>{messages.detailTitle}</CardTitle><Badge>{messages.statuses[q.status]}</Badge></div></CardHeader><CardContent className="space-y-6"><p className="whitespace-pre-wrap leading-7">{q.description}</p><dl className="grid gap-3 text-sm sm:grid-cols-2"><div><dt className="text-muted-foreground">{messages.budget}</dt><dd dir="ltr">{q.budgetMinor===null?messages.unavailable:formatMinorExact(q.budgetMinor,q.currency,locale)}</dd></div><div><dt className="text-muted-foreground">{messages.deadline}</dt><dd>{q.rfqDeadline??messages.unavailable}</dd></div><div><dt className="text-muted-foreground">{messages.quotes}</dt><dd>{q.quoteCount}</dd></div></dl></CardContent></Card>{q.canManage?<section aria-labelledby="workflow"><h2 id="workflow" className="mb-3 text-xl font-semibold">{messages.workflow}</h2><WorkflowActions locale={locale} requestId={q.id} rowVersion={q.rowVersion} status={q.status} matchingRunId={q.matchingRunId} messages={messages} keys={{ready:randomUUID(),match:randomUUID(),open:randomUUID()}}/></section>:<p role="status" className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">{messages.readOnly}</p>}{q.rfqId?<Link className={cn(buttonVariants(),"min-h-11 w-full sm:w-auto")} href={`/${locale}/client/demandes/${q.id}/comparaison?rfq=${q.rfqId}`}>{messages.comparison}</Link>:null}</div></main>}
+import { randomUUID } from "node:crypto";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { Badge } from "@/modules/shared/ui/badge";
+import { resolveClientSpace } from "@/modules/client/data/spaces/context";
+import { spaceCopy } from "@/modules/client/data/spaces/copy";
+import { formatMinorExact } from "@/modules/client/data/rfq/model";
+import { createServerClientRfqRepository } from "@/modules/client/data/rfq/server-repository";
+import { getClientRfqMessages } from "@/modules/client/screens/demandes/messages";
+import { WorkflowActions } from "@/modules/client/screens/demandes/workflow-actions";
+import { MatchingHistory } from "@/modules/client/screens/demandes/request-id/matching-history";
+import { ClientAppShell } from "@/modules/client/ui/client-app-shell";
+import { isLocale } from "@/modules/shared/lib/i18n/locale";
+
+export default async function RequestDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string; requestId: string }>;
+  searchParams: Promise<{ organizationId?: string }>;
+}) {
+  const [{ locale, requestId }, query] = await Promise.all([params, searchParams]);
+  if (!isLocale(locale)) notFound();
+  const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
+  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  const result = await (await createServerClientRfqRepository()).detail(requestId);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" || !result.value) notFound();
+  const q = result.value;
+  const messages = getClientRfqMessages(locale);
+  const c = spaceCopy(locale);
+  const compareHref = q.rfqId
+    ? `/${locale}/client/demandes/${q.id}/offres?rfq=${q.rfqId}${space.selectedOrganizationId ? `&organizationId=${space.selectedOrganizationId}` : ""}`
+    : `/${locale}/client/demandes/${q.id}/offres${space.selectedQuery}`;
+
+  return (
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="requests" title={messages.detailTitle} lead={q.description} kicker={c.kicker}>
+      <main className="client-page">
+        <article className="client-card">
+          <header className="client-priority-head">
+            <h2>{messages.detailTitle}</h2>
+            <Badge>{messages.statuses[q.status]}</Badge>
+          </header>
+          <p className="whitespace-pre-wrap leading-7">{q.description}</p>
+          <dl className="client-fact-grid">
+            <div><small>{messages.budget}</small><span dir="ltr">{q.budgetMinor === null ? messages.unavailable : formatMinorExact(q.budgetMinor, q.currency, locale)}</span></div>
+            <div><small>{messages.deadline}</small><span>{q.rfqDeadline ?? messages.unavailable}</span></div>
+            <div><small>{messages.quotes}</small><span>{q.quoteCount}</span></div>
+          </dl>
+          {q.rfqId ? <Link href={compareHref} className="client-cta mt-4 inline-flex">{messages.comparison}</Link> : null}
+        </article>
+        <MatchingHistory locale={locale} runs={q.matchingHistory} />
+        {q.canManage ? (
+          <section className="client-card" aria-labelledby="workflow">
+            <h2 id="workflow">{messages.workflow}</h2>
+            <WorkflowActions locale={locale} requestId={q.id} rowVersion={q.rowVersion} status={q.status} matchingRunId={q.matchingRunId} messages={messages} keys={{ ready: randomUUID(), match: randomUUID(), open: randomUUID() }} />
+          </section>
+        ) : (
+          <p role="status" className="client-card">{messages.readOnly}</p>
+        )}
+      </main>
+    </ClientAppShell>
+  );
+}

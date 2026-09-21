@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { buildReadinessReport, type DependencyReadiness } from "@matricia/observability";
-import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getSupabaseAdminClient } from "@/modules/shared/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 

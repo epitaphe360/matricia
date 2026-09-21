@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState, useId } from "react";
-import { Button } from "@/components/ui/button";
-import type { Locale } from "@/lib/i18n/locale";
+import { Button } from "@/modules/shared/ui/button";
+import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import { acceptInvitation, declineInvitation, type InvitationActionState } from "./actions";
 import type { InvitationMessages } from "./messages";
 

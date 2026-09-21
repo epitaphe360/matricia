@@ -1,4 +1,4 @@
-import { getRuleValidationMessages } from "./messages";
+import { getRuleValidationMessages } from "@/modules/admin/screens/catalogue/validation/messages";
 
 export default function RuleValidationLoading() {
   const label = `${getRuleValidationMessages("fr").processing} / ${getRuleValidationMessages("ar").processing}`;
