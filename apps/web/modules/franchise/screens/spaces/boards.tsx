@@ -262,11 +262,15 @@ export function PerimeterBoard({ locale, query, mandateName, view, board, organi
         <div className="client-stack">
           <article className="client-card">
             <header><h2>{c.canDo}</h2></header>
-            <ul className="franchise-can">{demo.canDo.map((item) => <li key={item}>{item}</li>)}</ul>
+            {demo.canDo.length === 0
+              ? <p className="client-access-note">{locale === "ar" ? "ستظهر هنا صلاحيات تفويضكم عند توفرها." : "Les droits de votre mandat apparaîtront ici lorsqu’ils seront disponibles."}</p>
+              : <ul className="franchise-can">{demo.canDo.map((item) => <li key={item}>{item}</li>)}</ul>}
           </article>
           <article className="client-card">
             <header><h2>{c.needsVal}</h2></header>
-            <ul className="franchise-cannot">{demo.needsValidation.map((item) => <li key={item}>{item}</li>)}</ul>
+            {demo.needsValidation.length === 0
+              ? <p className="client-access-note">{locale === "ar" ? "لا توجد عمليات معلّقة تتطلب مصادقة إضافية." : "Aucune action en attente de validation supplémentaire."}</p>
+              : <ul className="franchise-cannot">{demo.needsValidation.map((item) => <li key={item}>{item}</li>)}</ul>}
           </article>
           <p className="client-access-note">{c.periNote}</p>
         </div>
@@ -346,24 +350,11 @@ export function NetworkBoard({ locale, query, mandateName, view, itemId, search,
             {view === "capacite" || !view || view === "qualification" ? (
               <section className="franchise-capacity-block">
                 <header><h3>{c.capacityAvailability}</h3></header>
-                <dl className="franchise-props franchise-capacity-stats">
-                  <div><small>{c.teamSize}</small><span dir="ltr">—</span></div>
-                  <div><small>{c.zoneIntervention}</small><span>{c.zoneNational}</span></div>
-                  <div><small>{c.meanDelay}</small><span dir="ltr">—</span></div>
-                  <div><small>{c.globalAvailability}</small><span>{c.availableNow}</span></div>
-                </dl>
-                <p className="client-access-note">{c.weeklyAvailability} — {locale === "ar" ? "غير محسوبة بعد من بيانات القدرة." : "pas encore calculée à partir des données de capacité."}</p>
-                <ul className="franchise-week-bars" aria-hidden="true">
-                  {(locale === "ar"
-                    ? ["إث", "ثلا", "أرب", "خم", "جم", "سب", "أحد"]
-                    : ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
-                  ).map((day) => (
-                    <li key={day}>
-                      <span className="franchise-week-bar" data-empty="true" />
-                      <small>{day}</small>
-                    </li>
-                  ))}
-                </ul>
+                <p className="client-access-note">
+                  {locale === "ar"
+                    ? "حجم الفريق ومتوسط المهلة غير محسوبين بعد من بيانات القدرة الحية."
+                    : "Taille d’équipe et délai moyen ne sont pas encore calculés à partir des données de capacité live."}
+                </p>
               </section>
             ) : null}
             {view === "documents" ? (
@@ -464,13 +455,14 @@ export function NetworkBoard({ locale, query, mandateName, view, itemId, search,
         <Link href={`/${locale}/franchise/fournisseurs${query}`} className="franchise-tool">{c.resetFilters}</Link>
       </form>
       <div className="franchise-net-invite-row" aria-label={c.netInviteRow}>
+        <Link href={`/${locale}/franchise/fournisseurs/inviter${query}`} className="franchise-tool">{c.inviteProvider}</Link>
         <Link href={`/${locale}/franchise/clients/inviter${query}`} className="franchise-tool">{c.inviteClient}</Link>
       </div>
       <section className="franchise-workbench franchise-network-workbench">
         <article className="client-card">
           <header className="client-priority-head">
             <h2>{c.listPros}</h2>
-            <span className="franchise-tool">{c.exportList}</span>
+            <span className="client-access-note">{c.exportList}</span>
           </header>
           <nav className="franchise-inspector-tabs" aria-label={c.netPeople}>
             {tab(`/${locale}/franchise/fournisseurs${query}`, c.all, !view || view === "all")}
@@ -790,8 +782,7 @@ export function QualityBoard({ locale, query, mandateName, view, search, page, b
                     <tr key={row.id}>
                       <td>{row.title}</td>
                       <td>{c.corrective}</td>
-                      <td>—</td>
-                      <td dir="ltr">—</td>
+                      <td colSpan={2}><span className="client-access-note">{locale === "ar" ? "المالك والتواريخ غير متاحين هنا." : "Propriétaire et dates non disponibles ici."}</span></td>
                       <td><span className="client-status-chip" data-tone="peach">{row.status}</span></td>
                       <td>{row.due}</td>
                       <td><Cta href={`/${locale}/franchise/qualite/actions${query}`} soft>{c.open}</Cta></td>
@@ -891,8 +882,12 @@ export function PerformanceBoard({ locale, query, mandateName, view, board }: Sp
   const missionDone = demo.missions.length;
   const qualified = demo.people.filter((row) => matchesNetworkFilter("qualifies", row.stage)).length;
   const peopleCount = demo.people.length;
-  const conversionLabel = integerShare(missionDone, Math.max(requestCount, 1), locale);
-  const capacityLabel = integerShare(qualified, Math.max(peopleCount, 1), locale);
+  const conversionLabel = requestCount === 0 && missionDone === 0
+    ? "—"
+    : integerShare(missionDone, Math.max(requestCount, 1), locale);
+  const capacityLabel = peopleCount === 0
+    ? "—"
+    : integerShare(qualified, Math.max(peopleCount, 1), locale);
   const serviceRows = [
     ...demo.requests.map((row) => ({ id: row.id, title: row.title, demandes: 1, status: row.stage })),
     ...demo.performance.map((row) => ({ id: row.id, title: row.title, demandes: 0, status: row.status })),
@@ -938,15 +933,6 @@ export function PerformanceBoard({ locale, query, mandateName, view, board }: Sp
         <article className="client-card">
           <header><h2>{c.perfResponseDelay}</h2></header>
           <p className="franchise-empty-panel" role="status">{c.perfDelayUnavailable}</p>
-          <ul className="franchise-bar-chart franchise-bar-chart-sky" aria-hidden="true">
-            {serviceRows.slice(0, 5).map((row) => (
-              <li key={`delay-${row.id}`}>
-                <span>{row.title}</span>
-                <span className="franchise-bar-track"><span style={{ width: "0%" }} /></span>
-                <em dir="ltr">—</em>
-              </li>
-            ))}
-          </ul>
         </article>
         <article className="client-card">
           <header className="client-priority-head"><h2>{c.alerts}</h2><em className="client-status-chip" data-tone="peach">{demo.attention.length || 0}</em></header>
@@ -993,7 +979,7 @@ export function PerformanceBoard({ locale, query, mandateName, view, board }: Sp
                     <td dir="ltr">{row.demandes}</td>
                     <td><span className="client-status-chip" data-tone="sky">{row.status}</span></td>
                     <td>—</td>
-                    <td><Cta href={`/${locale}/franchise/performance/indicateurs${query}`} soft>{c.perfSeeDetail}</Cta></td>
+                    <td><Cta href={row.href ?? `/${locale}/franchise/performance${query}`} soft>{c.perfSeeDetail}</Cta></td>
                   </tr>
                 ))}
               </tbody>
@@ -1043,16 +1029,23 @@ export function FollowupsBoard({ locale, query, mandateName, view, page, board }
   const pagedFollowups = paginate(demo.followups, page);
   const pagedJournal = paginate(demo.journal, page);
   const pipeline = view === "pipeline";
+  const startOfToday = new Date();
+  startOfToday.setUTCHours(0, 0, 0, 0);
+  const endOfToday = new Date(startOfToday);
+  endOfToday.setUTCDate(endOfToday.getUTCDate() + 1);
+  const dueMs = (row: { due: string }) => {
+    const ms = Date.parse(row.due);
+    return Number.isFinite(ms) ? ms : null;
+  };
   const stages = [
-    { id: "contact", label: c.stageContact, tone: "violet" as const, rows: demo.followups.filter((_, i) => i % 5 === 0) },
-    { id: "contacted", label: c.stageContacted, tone: "sky" as const, rows: demo.followups.filter((_, i) => i % 5 === 1) },
-    { id: "waiting", label: c.stageWaiting, tone: "peach" as const, rows: demo.followups.filter((_, i) => i % 5 === 2) },
-    { id: "action", label: c.stageAction, tone: "peach" as const, rows: demo.followups.filter((_, i) => i % 5 === 3) },
-    { id: "done", label: c.stageDone, tone: "mint" as const, rows: demo.followups.filter((_, i) => i % 5 === 4 || (demo.followups.length < 5 && i === demo.followups.length - 1)) },
+    { id: "overdue", label: c.overdue, tone: "peach" as const, rows: demo.followups.filter((row) => { const ms = dueMs(row); return ms != null && ms < startOfToday.getTime(); }) },
+    { id: "today", label: c.today, tone: "violet" as const, rows: demo.followups.filter((row) => { const ms = dueMs(row); return ms != null && ms >= startOfToday.getTime() && ms < endOfToday.getTime(); }) },
+    { id: "upcoming", label: c.upcoming, tone: "mint" as const, rows: demo.followups.filter((row) => { const ms = dueMs(row); return ms != null && ms >= endOfToday.getTime(); }) },
+    { id: "unscheduled", label: locale === "ar" ? "بدون موعد" : "Sans échéance", tone: "sky" as const, rows: demo.followups.filter((row) => dueMs(row) == null) },
   ];
-  const overdue = demo.followups.filter((row) => row.tone === "peach").length;
-  const today = demo.followups.filter((row) => row.tone === "violet").length;
-  const upcoming = demo.followups.filter((row) => row.tone === "sky").length;
+  const overdue = stages[0]!.rows.length;
+  const today = stages[1]!.rows.length;
+  const upcoming = stages[2]!.rows.length;
   return (
     <main className="client-page">
       <Banner locale={locale} query={query} mandateName={mandateName} />
@@ -1090,7 +1083,11 @@ export function FollowupsBoard({ locale, query, mandateName, view, page, board }
                     <em dir="ltr">{stage.rows.length}</em>
                   </header>
                   <ul>
-                    {(stage.rows.length ? stage.rows : demo.followups.slice(0, 1)).map((row) => (
+                    {stage.rows.length === 0 ? (
+                      <li className="franchise-kanban-card franchise-kanban-empty">
+                        <small className="client-access-note">{n.emptyColumn}</small>
+                      </li>
+                    ) : stage.rows.map((row) => (
                       <li key={`${stage.id}-${row.id}`} className="franchise-kanban-card">
                         <strong>{row.title}</strong>
                         <small>{row.action}</small>
@@ -1292,15 +1289,15 @@ export function FranchiseFinanceBoard({ locale, query, mandateName, view, board,
       <section className="franchise-treat">
         <article className="franchise-kpi-tile" data-tone="sky">
           <span className="franchise-kpi-icon" data-tone="sky"><FileText className="size-4" aria-hidden /></span>
-          <span><strong>{c.docsExamine}</strong><small>{demo.finance[0]?.title ?? c.emptyFinance}</small></span>
+          <span><strong dir="ltr">{statements.length}</strong><small>{c.statements}</small></span>
         </article>
         <article className="franchise-kpi-tile" data-tone="peach">
           <span className="franchise-kpi-icon" data-tone="peach"><ShieldCheck className="size-4" aria-hidden /></span>
-          <span><strong>{c.valsPending}</strong><small>{demo.finance[1]?.title ?? c.emptyFinance}</small></span>
+          <span><strong dir="ltr">{fees.length}</strong><small>{c.entryFee}</small></span>
         </article>
         <article className="franchise-kpi-tile" data-tone="mint">
           <span className="franchise-kpi-icon" data-tone="mint"><FileText className="size-4" aria-hidden /></span>
-          <span><strong>{c.statements}</strong><small>{demo.finance.find((row) => row.amount)?.title ?? demo.finance[2]?.title ?? c.emptyFinance}</small></span>
+          <span><strong dir="ltr">{payouts.length}</strong><small>{c.payments}</small></span>
         </article>
       </section>
       <section className="franchise-workbench">
@@ -1369,7 +1366,11 @@ export function DocumentsBoard({ locale, query, mandateName, view, search, page,
   const n = libraryCopy(locale);
   const demo = resolveBoard({ locale, query, board });
   const needle = (search ?? "").trim().toLocaleLowerCase();
-  const source = view === "renouvellements" ? demo.renewals : demo.documents;
+  const source = view === "renouvellements"
+    ? demo.renewals
+    : view === "verifier"
+      ? demo.documents.filter((row) => row.status.toLowerCase().includes("vérif") || row.status.toLowerCase().includes("تحقق") || row.status.toLowerCase().includes("examiner"))
+      : demo.documents;
   const filtered = source.filter((row) => !needle || `${row.title} ${row.owner} ${row.status}`.toLocaleLowerCase().includes(needle));
   const paged = paginate(filtered, page);
   const rows = paged.rows;
@@ -1383,13 +1384,12 @@ export function DocumentsBoard({ locale, query, mandateName, view, search, page,
     <main className="client-page franchise-docs-page">
       <div className="franchise-section-head franchise-section-head-actions">
         <span className="client-access-note franchise-secure-chip"><Lock className="size-4" aria-hidden /> {c.secureStorage}</span>
-        <Link href={`/${locale}/franchise/documents${query}`} className="franchise-tool franchise-tool-primary">{c.addDocument}</Link>
+        <p className="client-access-note">{locale === "ar" ? "إضافة وثيقة غير متاحة من هذه الشاشة بعد." : "L’ajout de document n’est pas encore branché ici."}</p>
       </div>
       <nav className="franchise-pill-tabs" aria-label={n.documentsTitle}>
         <Link href={`/${locale}/franchise/documents${query}`} className="franchise-pill-tab" data-active={!view ? "true" : undefined}><span>{c.allDocuments}</span><em dir="ltr">{demo.documents.length}</em></Link>
-        <Link href={`/${locale}/franchise/documents${query}`} className="franchise-pill-tab"><span>{c.toVerify}</span><em dir="ltr">{toVerify}</em></Link>
+        <Link href={`/${locale}/franchise/documents${query}?vue=verifier`} className="franchise-pill-tab" data-active={view === "verifier" ? "true" : undefined}><span>{c.toVerify}</span><em dir="ltr">{toVerify}</em></Link>
         <Link href={`/${locale}/franchise/documents/renouvellements${query}`} className="franchise-pill-tab" data-active={view === "renouvellements" ? "true" : undefined}><span>{c.expiringSoon}</span><em dir="ltr">{expiring}</em></Link>
-        <Link href={`/${locale}/franchise/documents${query}`} className="franchise-pill-tab"><span>{c.archived}</span><em dir="ltr">0</em></Link>
       </nav>
       <div className="franchise-toolbar">
         <form action={`/${locale}/franchise/documents`} method="get" className="franchise-search">
@@ -1462,12 +1462,7 @@ export function DocumentsBoard({ locale, query, mandateName, view, search, page,
           </article>
           <article className="client-card">
             <header><h2>{c.accessHistory}</h2></header>
-            <ul className="client-feed">
-              {(demo.messages.slice(0, 3).length ? demo.messages.slice(0, 3) : []).map((row) => (
-                <li key={row.id}><span className="franchise-kpi-icon" data-tone={row.tone}>{row.title.slice(0, 1)}</span><span><strong>{row.title}</strong><small>{row.meta}</small></span></li>
-              ))}
-            </ul>
-            {demo.messages.length === 0 ? <p className="franchise-empty-panel">{n.noMessages}</p> : null}
+            <p className="franchise-empty-panel">{locale === "ar" ? "لا سجل وصول متاح هنا بعد." : "Aucun historique d’accès disponible ici pour le moment."}</p>
           </article>
         </aside>
       </section>
@@ -1565,20 +1560,12 @@ export function MessagesBoard({ locale, query, mandateName, view, search, page, 
                   <Cta href={selected.href} soft>{locale === "ar" ? "عرض الملف" : "Voir la demande"}</Cta>
                 </p>
                 <div className="franchise-chat-log">
-                  <p className="franchise-chat-day" aria-hidden>{locale === "ar" ? "اليوم" : "Aujourd’hui"}</p>
-                  <p className="franchise-chat-bubble" data-side="in">{locale === "ar" ? "نشارككم الملف المطلوب للمراجعة." : "Nous vous transmettons le dossier demandé pour revue."}</p>
-                  <p className="franchise-chat-bubble" data-side="out">{locale === "ar" ? "شكراً، سنراجع الوثائق في نطاق التفويض." : "Merci, nous relisons les pièces dans le périmètre du mandat."}</p>
-                  <p className="franchise-chat-bubble" data-side="in">{selected.title}</p>
+                  <p className="client-access-note" role="status">
+                    {locale === "ar"
+                      ? "المحادثة التفصيلية غير متاحة بعد على هذه الشاشة. افتحوا الملف المرتبط للمتابعة."
+                      : "La conversation détaillée n’est pas encore branchée ici. Ouvrez le dossier lié pour poursuivre."}
+                  </p>
                 </div>
-                <form className="franchise-chat-composer">
-                  <label className="sr-only" htmlFor="franchise-msg">{c.composeMessage}</label>
-                  <textarea id="franchise-msg" rows={3} placeholder={c.composeMessage} />
-                  <div className="franchise-builder-actions">
-                    <button type="button" className="franchise-tool">{c.attachFile}</button>
-                    <span className="client-access-note"><Lock className="size-4" aria-hidden /> {c.secureMessage}</span>
-                    <button type="button" className="franchise-tool franchise-tool-primary">{c.send}</button>
-                  </div>
-                </form>
               </>
             ) : <p>{n.emptyMessagesLead}</p>}
           </article>
@@ -1587,7 +1574,6 @@ export function MessagesBoard({ locale, query, mandateName, view, search, page, 
             {selected ? (
               <dl className="franchise-props">
                 <div><small>{c.object}</small><span>{selected.meta}</span></div>
-                <div><small>{c.state}</small><span className="client-status-chip" data-tone="sky">{locale === "ar" ? "جارٍ" : "En cours"}</span></div>
               </dl>
             ) : <p className="client-access-note">{c.scopeNote}</p>}
             <h3>{c.authorizedParticipants}</h3>

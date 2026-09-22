@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { Badge } from "@/modules/shared/ui/badge";
 import { buttonVariants } from "@/modules/shared/ui/button";
@@ -33,7 +34,7 @@ export default async function SessionsPage({ params, searchParams }: { params: P
   const query = await searchParams;
   if (!isLocale(locale)) notFound();
   const result = await listMySessions();
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/securite/sessions` }));
   const messages = getDictionary(locale).sessions;
   const c = spaceCopy(locale);
   const alternate = locale === "fr" ? "ar" : "fr";

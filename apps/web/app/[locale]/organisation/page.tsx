@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Button } from "@/modules/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/ui/card";
 import { getDictionary } from "@/modules/shared/lib/i18n/dictionaries";
@@ -20,7 +21,7 @@ export default async function OrganizationPage({ params, searchParams }: { param
   if (!isLocale(locale)) notFound();
   const supabase = await getSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect(`/${locale}/connexion`);
+  if (!user) redirect(connexionHref(locale, { next: `/${locale}/organisation` }));
   const messages = getDictionary(locale).organization;
   const alternate = locale === "fr" ? "ar" : "fr";
   const defaultRole = query.role === "fournisseur" ? "PROVIDER_OWNER" : query.role === "franchise" ? "FRANCHISE_OWNER" : "CLIENT_OWNER";
@@ -46,7 +47,7 @@ export default async function OrganizationPage({ params, searchParams }: { param
     );
   }
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/organisation` }));
   const c = spaceCopy(locale);
   const roles = await listOrganizationRoles();
   const roleMessages = getRoleMessages(locale);

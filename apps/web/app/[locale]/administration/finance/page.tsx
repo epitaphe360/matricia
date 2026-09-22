@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { loadMyPlatformAccess, mfaRequiredMessage } from "@/modules/shared/lib/account-security/platform-access";
 import { loadAdminBoxesDashboard } from "@/modules/admin/data/boxes/repository";
@@ -39,7 +40,7 @@ export default async function AdminFinancePage({
     loadAdminCommerceCatalog(),
     loadMyPlatformAccess(),
   ]);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/finance` }));
   const m = getAdminFinanceMessages(locale);
   const commerce = getCommerceMessages(locale);
   const c = adminCopy(locale);

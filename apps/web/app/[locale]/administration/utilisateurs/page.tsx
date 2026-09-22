@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Download, UserPlus } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { resolveAdminSpace } from "@/modules/admin/data/spaces/context";
 import { actorCopy } from "@/modules/admin/data/spaces/actors-copy";
 import { loadAdminActorDirectory } from "@/modules/admin/data/spaces/actors-repository";
@@ -18,7 +19,7 @@ export default async function AdminUsersPage({
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveAdminSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/administration/utilisateurs` }));
   const directory = await loadAdminActorDirectory();
   const a = actorCopy(locale);
   const alternate = locale === "ar" ? "fr" : "ar";

@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { listOrganizationRoles } from "@/app/[locale]/organisation/roles/actions";
 import { resolveProviderSpace } from "@/modules/provider/data/spaces/context";
 import { getPurchaseMessages, ProviderPurchasesBoard } from "@/modules/provider/screens/achats/purchases-board";
@@ -19,9 +20,9 @@ export default async function ProviderPurchasesPage({
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveProviderSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/achats` }));
   const roles = await listOrganizationRoles();
-  if (roles.status === "error" && roles.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (roles.status === "error" && roles.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/achats` }));
   const organizationId = space.selectedOrganizationId ?? (roles.status === "success" ? roles.organizations[0]?.id : null);
   const current = roles.status === "success" ? roles.organizations.find((item) => item.id === organizationId) ?? roles.organizations[0] : null;
   const hasClient = current?.currentRoles.some((role) => CLIENT_ROLES.has(role)) ?? false;

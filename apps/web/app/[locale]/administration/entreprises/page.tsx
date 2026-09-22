@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Download, Plus } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { loadAdminCommandCenter } from "@/modules/admin/data/command-center/repository";
 import { loadAdminSupervisionDashboard } from "@/modules/admin/data/supervision/repository";
@@ -21,9 +22,9 @@ export default async function AdminEntreprisesPage({
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveAdminSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/administration/entreprises` }));
   const [result, command] = await Promise.all([loadAdminSupervisionDashboard(100), loadAdminCommandCenter()]);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/entreprises` }));
   const c = adminCopy(locale);
   const alternate = locale === "fr" ? "ar" : "fr";
   const rows = result.status === "success" ? mapAdminOrgRows(result.value.organizations, locale) : [];

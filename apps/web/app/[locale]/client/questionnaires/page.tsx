@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { createServerQuestionnaireSessionsRepository } from "@/modules/shared/lib/questionnaire-sessions/server-repository";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
@@ -17,11 +18,11 @@ export default async function ClientQuestionnairesPage({ params, searchParams }:
   const { session, organizationId } = await searchParams;
   if (!isLocale(locale)) notFound();
   const space = await resolveClientSpace({ locale, organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/questionnaires` }));
   const messages = getQuestionnaireMessages(locale);
   const repository = await createServerQuestionnaireSessionsRepository();
   const [result, portfolio] = await Promise.all([repository.load(session, organizationId), loadClientPortfolio(organizationId ?? space.selectedOrganizationId ?? undefined)]);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/client/questionnaires` }));
   const sites = portfolio.status === "success" ? portfolio.value.sites.map((site) => ({ id: site.id, nameFr: site.nameFr, nameAr: site.nameAr })) : [];
   const alternate = locale === "fr" ? "ar" : "fr";
   const query = new URLSearchParams({ ...(session ? { session } : {}), ...(organizationId ? { organizationId } : {}) }).toString();

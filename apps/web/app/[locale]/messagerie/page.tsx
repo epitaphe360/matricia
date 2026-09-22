@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Badge } from "@/modules/shared/ui/badge";
 import { createInternalMessagingRepository } from "@/modules/shared/lib/internal-messaging/server-repository";
 import { resolveWorkspaceShell } from "@/modules/shared/lib/connected-space/workspace-shell";
@@ -68,12 +69,12 @@ export default async function MessagingPage({ params, searchParams }: { params: 
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/messagerie` }));
   const [result, workspaceShell] = await Promise.all([
     (await createInternalMessagingRepository()).load(query.fil),
     resolveWorkspaceShell(space.selectedOrganizationId),
   ]);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/messagerie` }));
   const m = getMessagingMessages(locale);
   const c = spaceCopy(locale);
   const threads =

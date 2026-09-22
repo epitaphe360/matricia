@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { buttonVariants } from "@/modules/shared/ui/button";
 import { adminV41Modules, type AdminV41Module } from "@/modules/admin/data/v41/model";
@@ -19,7 +20,7 @@ export default async function AdminV41Page({ params }: { params: Promise<{ local
   if (!isLocale(locale) || !adminV41Modules.includes(module as AdminV41Module)) notFound();
   const selected = module as AdminV41Module;
   const [result, validations] = await Promise.all([loadAdminV41Overview(), loadAdminV41ExternalValidations()]);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/v4-1/${module}` }));
   const m = getAdminV41Messages(locale);
   return (
     <AdminModulePage locale={locale} active="settings" path={`v4-1/${selected}`} title={m.title} lead={m.intro}>

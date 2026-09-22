@@ -185,9 +185,12 @@ export function JalonsBoard({
                 </div>
               </div>
               <div className="client-jalon-actions">
-                <Link href={`/${locale}/client/missions${query}`} className="client-jalon-btn" data-tone="mint">{c.acceptJalon}</Link>
+                {selectedLive && selectedLive.status === "SUBMITTED" ? (
+                  <p className="client-access-note">{locale === "ar" ? "سجّلوا قراركم في النموذج أعلاه." : "Enregistrez votre décision dans le formulaire ci-dessus."}</p>
+                ) : (
+                  <p className="client-access-note">{locale === "ar" ? "لا يوجد قرار معلّق على هذا المعلم." : "Aucune décision en attente sur ce jalon."}</p>
+                )}
                 <Link href={`/${locale}/messagerie${query}`} className="client-jalon-btn" data-tone="peach">{c.requestChanges}</Link>
-                <Link href={`/${locale}/client/litiges${query}`} className="client-jalon-btn" data-tone="rose">{c.rejectWithReason}</Link>
               </div>
             </>
           ) : <p>{messages.empty}</p>}

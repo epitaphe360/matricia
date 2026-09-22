@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { ClientOfferDetailView } from "@/modules/client/screens/demandes/offer-detail";
 import { ClientAppShell } from "@/modules/client/ui/client-app-shell";
 import { loadClientOfferDetail } from "@/modules/client/data/rfq/quote-detail-repository";
@@ -28,7 +29,7 @@ export default async function OfferDetailPage({
     organizationQuery: selectedQuery,
     organizationName,
   });
-  if (result.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (result.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/demandes/${requestId}/offres/${quoteId}` }));
   if (result.status === "not_found") notFound();
   if (result.status === "error") {
     return (

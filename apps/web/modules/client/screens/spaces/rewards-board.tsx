@@ -30,7 +30,7 @@ export function RewardsBoard({
   const conversions = dashboard.conversions;
   const link = dashboard.links.find((item) => item.status === "ACTIVE") ?? dashboard.links[0];
   const snapshot = dashboard.roiSnapshots[0];
-  const inviteHref = link ? `/${locale}/client/recompenses${query}#parrainages` : `/${locale}/client/recompenses${query}#regles`;
+  const inviteHref = `/${locale}/client/recompenses${query}#regles`;
   const ambassador = conversions.some((item) => item.conversion_stage === "ACTIVE");
   const engaged = dashboard.grants.length > 0;
   return (
@@ -39,7 +39,7 @@ export function RewardsBoard({
         <article className="client-card" id="badges">
           <header className="client-priority-head">
             <h2>{c.badgesTitle}</h2>
-            <a href="#badges" className="client-text-link">{c.seeBadges}</a>
+            <a href="#badges" className="client-text-link" aria-current="page">{c.seeBadges}</a>
           </header>
           <ul className="client-brief-kpis">
             <li className="client-kpi-card"><span className="client-feed-icon" data-tone="mint"><Award className="size-4" aria-hidden /></span><strong>{c.ambassador}</strong><small>{ambassador ? c.obtained : c.inProgressBadge}</small></li>
@@ -62,14 +62,20 @@ export function RewardsBoard({
           </ol>
           <p><Link2 className="size-4" aria-hidden /> {c.inviteLink}</p>
           <p dir="ltr">{link ? link.referral_code : (locale === "ar" ? "يُنشأ الرابط بعد تفعيل رمز إحالة." : "Le lien apparaît après création d’un code d’invitation.")}</p>
-          <Link href={inviteHref} className="client-cta"><Share2 className="size-4" aria-hidden />{c.inviteContact}</Link>
+          {link ? (
+            <p className="client-access-note" role="status">
+              {locale === "ar" ? "شاركوا رمز الإحالة أعلاه مع جهة الاتصال." : "Partagez le code d’invitation ci-dessus avec votre contact."}
+            </p>
+          ) : (
+            <Link href={inviteHref} className="client-cta"><Share2 className="size-4" aria-hidden />{c.inviteContact}</Link>
+          )}
         </article>
       </section>
       <section className="client-board client-board-compare">
         <article className="client-card" id="parrainages">
           <header className="client-priority-head">
             <h2>{c.referralStatus}</h2>
-            <a href="#parrainages" className="client-text-link">{c.seeHistory}</a>
+            <span className="client-text-link" aria-hidden>{c.seeHistory}</span>
           </header>
           {conversions.length === 0 ? <p>{locale === "ar" ? "لا إحالات ظاهرة بعد." : "Aucun parrainage visible pour le moment."}</p> : (
             <div className="client-table-wrap">
@@ -80,7 +86,7 @@ export function RewardsBoard({
                     <tr key={item.id}>
                       <td>{item.conversion_stage}</td>
                       <td><span className="client-status-chip" data-tone="mint">{item.conversion_stage}</span></td>
-                      <td><a href="#parrainages" className="client-text-link">{c.open}</a></td>
+                      <td><span className="client-access-note" dir="ltr">{item.id.slice(0, 8)}</span></td>
                     </tr>
                   ))}
                 </tbody>

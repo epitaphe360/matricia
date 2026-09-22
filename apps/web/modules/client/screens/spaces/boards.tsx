@@ -589,11 +589,12 @@ export function DocumentsBoard({ locale, query, children, organizationName, docu
             )}
           </article>
           <article className="client-card">
-            <div className="client-drop">
+            <div className="client-drop" role="note">
               <Cloud className="size-6" aria-hidden />
               <p>{c.drop}</p>
               <small>{c.formats}</small>
             </div>
+            <p className="client-access-note">{locale === "ar" ? "إيداع الملفات يتم من تفاصيل الطلب أو المهمة المعنية." : "Le dépôt de fichiers se fait depuis le dossier de demande ou de mission concerné."}</p>
             <p className="client-verified">{c.verified}</p>
           </article>
         </div>
@@ -607,6 +608,7 @@ export function DocumentsBoard({ locale, query, children, organizationName, docu
           <a href="#documents-recents" aria-current="page">{c.all}</a>
           <Link href={`/${locale}/client/demandes${query}`}>{c.requestsTab}</Link>
           <Link href={`/${locale}/client/missions${query}`}>{c.missionsTab}</Link>
+          <Link href={`/${locale}/client/contrats${query}`}>{c.contractsTab}</Link>
           <Link href={`/${locale}/client/documents${query}`}>{c.contractsTab}</Link>
         </nav>
         {recentRows.length === 0 ? <p>{c.emptyBoard}</p> : (
@@ -634,13 +636,13 @@ export function FinancesBoard({ locale, query, organizationName, rows }: { local
           <span className="client-feed-icon" data-tone="violet"><FileText className="size-4" aria-hidden /></span>
           <h2>{c.invoices}</h2>
           <p>{c.invoiceLead}</p>
-          <Cta href={`/${locale}/client/documents${query}`} tone="violet">{c.open}</Cta>
+          <Cta href={`/${locale}/client/abonnement${query}`} tone="violet">{c.open}</Cta>
         </article>
         <article className="client-card client-kpi-card">
           <span className="client-feed-icon" data-tone="peach"><FileText className="size-4" aria-hidden /></span>
           <h2>{c.payments}</h2>
           <p>{c.paymentLead}</p>
-          <Cta href={`/${locale}/client/missions${query}`} tone="peach">{c.open}</Cta>
+          <Cta href={`/${locale}/client/abonnement${query}#plans`} tone="peach">{c.open}</Cta>
         </article>
         <article className="client-card client-kpi-card">
           <span className="client-feed-icon" data-tone="mint"><FileText className="size-4" aria-hidden /></span>
@@ -651,7 +653,7 @@ export function FinancesBoard({ locale, query, organizationName, rows }: { local
       </section>
       <section className="client-board client-board-compare">
         <article className="client-card">
-          <header><h2>{c.finDocs}</h2></header>
+          <header className="client-priority-head"><h2>{c.finDocs}</h2><Link href={`/${locale}/client/abonnement${query}`} className="client-text-link">{c.seeAllToHandle}</Link></header>
           <p>{c.finDocsLead}</p>
           {list.length === 0 ? <p>{c.emptyBoard}</p> : (
             <div className="client-table-wrap">
@@ -671,7 +673,7 @@ export function FinancesBoard({ locale, query, organizationName, rows }: { local
               </table>
             </div>
           )}
-          <Link href={`/${locale}/client/documents${query}`} className="client-text-link">{c.seeAllFin}</Link>
+          <Link href={`/${locale}/client/abonnement${query}`} className="client-text-link">{c.seeAllFin}</Link>
         </article>
         <div className="client-stack">
           <article className="client-card">
@@ -708,9 +710,20 @@ export function CompanyBoard({ locale, query, organizationName, alternate, peopl
           <header className="client-priority-head"><h2>{c.orgInfo}</h2><Cta href={`/${locale}/organisation${query}#modifier`}>{c.modify}</Cta></header>
           <dl className="client-fact-grid client-org-grid">
             <div><small>{c.legalName}</small><span>{legalName}</span></div>
-            <div><small>{c.address}</small><span>{demoOn ? (locale === "ar" ? "الدار البيضاء، المغرب" : "Casablanca, Maroc") : "—"}</span></div>
-            <div><small>{c.orgActivity}</small><span>{demoOn ? demo.understood.activity : "—"}</span></div>
-            <div><small>{c.contacts}</small><span>{demoOn ? (locale === "ar" ? "عبر فضاء ماتريسيا" : "Via l’espace Matricia") : "—"}</span></div>
+            {demoOn ? (
+              <>
+                <div><small>{c.address}</small><span>{locale === "ar" ? "الدار البيضاء، المغرب" : "Casablanca, Maroc"}</span></div>
+                <div><small>{c.orgActivity}</small><span>{demo.understood.activity}</span></div>
+                <div><small>{c.contacts}</small><span>{locale === "ar" ? "عبر فضاء ماتريسيا" : "Via l’espace Matricia"}</span></div>
+              </>
+            ) : (
+              <div>
+                <small>{locale === "ar" ? "الملف" : "Compléter"}</small>
+                <span className="client-access-note">
+                  {locale === "ar" ? "العنوان والنشاط وجهات الاتصال تُدار من تعديل المؤسسة." : "Adresse, activité et contacts se gèrent depuis la modification de l’entreprise."}
+                </span>
+              </div>
+            )}
           </dl>
         </article>
         <article className="client-card">

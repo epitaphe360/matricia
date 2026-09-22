@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { expiredDocuments } from "@/modules/client/data/documents/expiry";
 import { loadClientDocumentVault } from "@/modules/client/data/documents/server-repository";
@@ -24,11 +25,11 @@ export default async function ClientRecurringPage({
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/demandes/recurrence` }));
   const messages = getClientRecurringMessages(locale);
   const c = spaceCopy(locale);
   const result = await (await createServerClientRecurringRepository()).load(query.organizationId);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/client/demandes/recurrence` }));
   const entitlementOrgId = space.selectedOrganizationId ?? query.organizationId;
   const [subscription, vault] = entitlementOrgId
     ? await Promise.all([loadSubscriptionDashboard(entitlementOrgId), loadClientDocumentVault(entitlementOrgId)])

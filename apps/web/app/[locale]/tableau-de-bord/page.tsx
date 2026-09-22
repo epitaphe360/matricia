@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Building2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { z } from "zod";
 import { Alert, AlertDescription } from "@/modules/shared/ui/alert";
 import { dashboardHomeCopy, isCatalogFixtureOrganizationName, resolveOrganizationContext } from "@/modules/shared/module-hub-copy";
@@ -120,10 +121,10 @@ export default async function DashboardPage({
   if (!isLocale(locale)) notFound();
 
   const access = await loadMyPlatformAccess();
-  if (access.status === "error" && access.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (access.status === "error" && access.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/tableau-de-bord` }));
   const supabase = access.status === "ok" ? access.client : await getSupabaseServerClient();
   const userId = access.status === "ok" ? access.userId : null;
-  if (!userId) redirect(`/${locale}/connexion`);
+  if (!userId) redirect(connexionHref(locale, { next: `/${locale}/tableau-de-bord` }));
 
   const now = new Date().toISOString();
   const membershipsQuery = await supabase

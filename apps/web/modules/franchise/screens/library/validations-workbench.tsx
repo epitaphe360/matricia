@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Eye, Lock, Pencil } from "lucide-react";
+import { Lock, Pencil } from "lucide-react";
 import { libraryCopy } from "@/modules/franchise/data/library/copy";
 import { catalogStatusLabel, type FranchiseCatalogRow, type FranchiseLibraryWorkspace } from "@/modules/franchise/data/library/workspace-model";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
@@ -174,7 +174,7 @@ export function FranchiseValidationsWorkbench({
           </div>
           <div className="franchise-toolbar">
             {selected ? <Link href={selected.href} className="franchise-tool"><Pencil className="size-4" aria-hidden /> {c.fixDraft}</Link> : null}
-            <button type="button" className="franchise-tool" disabled><Eye className="size-4" aria-hidden /> {c.seeApproved}</button>
+            <p className="client-access-note">{c.seeApproved}</p>
           </div>
         </aside>
       </section>

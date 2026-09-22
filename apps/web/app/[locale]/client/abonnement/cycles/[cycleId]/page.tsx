@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { resolveClientSpace } from "@/modules/client/data/spaces/context";
 import { spaceCopy } from "@/modules/client/data/spaces/copy";
 import { SubscriptionInvoice } from "@/modules/client/screens/abonnement/subscription-invoice";
@@ -17,9 +18,9 @@ export default async function SubscriptionInvoicePage({
   const { organizationId } = await searchParams;
   if (!isLocale(locale)) notFound();
   const space = await resolveClientSpace({ locale, organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/abonnement/cycles/${cycleId}` }));
   const result = await loadSubscriptionDashboard(organizationId ?? space.selectedOrganizationId ?? undefined);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/client/abonnement/cycles/${cycleId}` }));
   const c = spaceCopy(locale);
   if (result.status === "error") {
     return (

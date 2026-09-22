@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { loadNotificationCenter } from "@/modules/shared/lib/notifications/repository";
@@ -17,7 +18,7 @@ export default async function NotificationsPage({
   if (!isLocale(locale)) notFound();
   const m = getNotificationMessages(locale);
   const result = await loadNotificationCenter(locale);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/notifications` }));
   return (
     <ConnectedAppShell
       locale={locale}

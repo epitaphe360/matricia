@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { loadAdminCommandCenter } from "@/modules/admin/data/command-center/repository";
 import { resolveAdminSpace } from "@/modules/admin/data/spaces/context";
@@ -20,11 +21,11 @@ export default async function AdminCommandCenterPage({
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveAdminSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/administration/command-center` }));
   const m = getCommandCenterMessages(locale);
   const c = adminCopy(locale);
   const [result, supervision] = await Promise.all([loadAdminCommandCenter(), loadAdminSupervisionDashboard(50)]);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/command-center` }));
   const alternate = locale === "fr" ? "ar" : "fr";
   const keyCount = result.status === "success" ? result.dashboard.workItems.length * 2 + result.dashboard.actions.length + 1 : 1;
   const enrichment = supervision.status === "success" ? supervision.value.work_enrichment : {};

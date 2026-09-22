@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { ArrowRight, BookmarkPlus, Pencil, Target, UserPlus } from "lucide-react";
 import { resolveClientSpace } from "@/modules/client/data/spaces/context";
 import { spaceCopy } from "@/modules/client/data/spaces/copy";
@@ -17,10 +18,10 @@ export default async function SolutionsPage({ params, searchParams }: { params: 
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/diagnostics/solutions` }));
   const m = messages(locale);
   const result = await (await createServerSolutionInsightsRepository()).list();
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/client/diagnostics/solutions` }));
   const shell = (title: string | undefined, lead: string | undefined, children: ReactNode) => (
     <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="needs" title={title} lead={lead} kicker={spaceCopy(locale).kicker}>{children}</ClientAppShell>
   );

@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { clientDashboardCopy } from "@/modules/client/data/home/copy";
 import { searchClientWorkspace } from "@/modules/client/data/search/workspace-search";
 import { resolveClientSpace } from "@/modules/client/data/spaces/context";
@@ -17,7 +18,7 @@ export default async function ClientSearchPage({
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/recherche` }));
   const q = typeof query.q === "string" ? query.q : "";
   const result = await searchClientWorkspace({
     locale,

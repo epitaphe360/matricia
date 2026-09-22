@@ -66,7 +66,7 @@ export function SecurityBoard({
           <p className="client-access-note">{organizationName ? `${organizationName} · ${c.orgActive}` : c.orgTitle}</p>
         </div>
         <Link href={`/${locale}/organisation${query}`} className="client-ghost-link">{c.publicProfile}</Link>
-        <Link href={`/${locale}/notifications${query}`} className="client-text-link">{c.notificationPrefs}</Link>
+        <span className="client-access-note">{c.notificationPrefs}</span>
       </header>
       <OrganizationTabs locale={locale} query={query} active="security" />
       <section className="client-board" id="securite">

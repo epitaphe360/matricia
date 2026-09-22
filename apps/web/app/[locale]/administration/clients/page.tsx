@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Download, UserPlus } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { resolveAdminSpace } from "@/modules/admin/data/spaces/context";
 import { actorCopy } from "@/modules/admin/data/spaces/actors-copy";
@@ -21,9 +22,9 @@ export default async function AdminClientsPage({
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveAdminSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/administration/clients` }));
   const directory = await loadAdminClientDirectory(locale);
-  if (directory.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (directory.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/clients` }));
   const a = actorCopy(locale);
   const m = getAdminClientMessages(locale);
   const alternate = locale === "ar" ? "fr" : "ar";

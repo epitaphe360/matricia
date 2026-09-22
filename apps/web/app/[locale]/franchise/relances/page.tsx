@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { franchiseCopy } from "@/modules/franchise/data/spaces/copy";
 import { loadFranchiseFollowups } from "@/modules/franchise/data/followups/repository";
@@ -17,7 +18,7 @@ export default async function FranchiseFollowupsPage({ params, searchParams }: {
   const { space, result: library } = await requireFranchiseLibrary({ locale, organizationId: query.organizationId });
   const m = getFollowupMessages(locale);
   const r = await loadFranchiseFollowups();
-  if (r.status === "error" && r.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (r.status === "error" && r.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/franchise/relances` }));
   const c = franchiseCopy(locale);
   const mandateName = franchiseMandateName(library);
   return (

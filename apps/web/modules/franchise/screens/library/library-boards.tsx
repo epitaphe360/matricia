@@ -48,8 +48,9 @@ export function StatusChip({ status, locale }: { status: string; locale: Locale 
 }
 
 export function LanguageMarks({ item }: { item: FranchiseCatalogRow }) {
-  const hasFr = Boolean(item.nameFr) || item.kind === "RULE" || item.status === "PUBLISHED";
-  const hasAr = Boolean(item.nameAr) || item.kind === "RULE";
+  const hasFr = Boolean(item.nameFr);
+  const hasAr = Boolean(item.nameAr);
+  if (!hasFr && !hasAr) return <span className="franchise-langs"><span className="client-access-note">—</span></span>;
   return (
     <span className="franchise-langs">
       {hasFr ? <span className="franchise-lang">FR</span> : null}
@@ -73,19 +74,18 @@ export function FranchiseLibraryHomeBoard({ locale, query, workspace }: { locale
   const queue = [...workspace.questionnaires, ...workspace.services, ...workspace.rules]
     .filter((item) => item.status !== "ARCHIVED" && item.status !== "RETIRED")
     .slice(0, 8);
-  const treatItems = [
-    ...queue.slice(0, 3).map((item, index) => ({ href: item.href, title: item.title, tone: (["peach", "sky", "violet"] as const)[index] ?? "peach" })),
-    { href: `/${locale}/franchise/questionnaires${query}`, title: c.addAr, tone: "violet" as const },
-    { href: `/${locale}/franchise/validations${query}`, title: c.submit, tone: "mint" as const },
-    { href: `/${locale}/franchise/regles${query}#simulation`, title: c.simulate, tone: "sky" as const },
-  ].slice(0, 5);
+  const treatItems = queue.slice(0, 5).map((item, index) => ({
+    href: item.href,
+    title: item.title,
+    tone: (["peach", "sky", "violet", "mint", "peach"] as const)[index] ?? "peach",
+  }));
   const activity = [...workspace.questionnaires, ...workspace.services, ...workspace.rules, ...workspace.releases.map((item) => ({ id: item.id, title: item.key, status: item.status, href: `/${locale}/franchise/validations${query}`, kind: "QUESTIONNAIRE" as const }))]
     .slice(0, 5);
   const kpis = [
     { label: c.drafts, help: c.draftsHelp, value: workspace.counts.drafts, href: `/${locale}/franchise/validations/brouillons${query}`, source: c.kpiSourceValidations },
     { label: c.inReview, help: c.inReviewHelp, value: workspace.counts.inReview, href: `/${locale}/franchise/validations/en-cours${query}`, source: c.kpiSourceValidations },
     { label: c.returns, help: c.returnsHelp, value: workspace.counts.returns, href: `/${locale}/franchise/validations/corrections${query}`, source: c.kpiSourceValidations },
-    { label: c.published, help: c.publishedHelp, value: workspace.counts.published, href: `/${locale}/franchise/validations/publications${query}`, source: c.kpiSourceDemandes },
+    { label: c.published, help: c.publishedHelp, value: workspace.counts.published, href: `/${locale}/franchise/validations/publications${query}`, source: c.kpiSourceValidations },
   ];
   return (
     <main className="client-page franchise-home-page">
@@ -218,7 +218,9 @@ export function FranchiseLibraryHomeBoard({ locale, query, workspace }: { locale
           <article className="client-card">
             <header className="client-priority-head"><h2>{c.treatNow}</h2><Link href={`/${locale}/franchise/validations${query}`} className="client-soft-link">{c.seeAll}</Link></header>
             <ul className="franchise-dot-list">
-              {treatItems.map((item) => (
+              {treatItems.length === 0 ? (
+                <li><span className="client-access-note">{c.noActivity}</span></li>
+              ) : treatItems.map((item) => (
                 <li key={`${item.href}-${item.title}`}>
                   <span className="franchise-dot" data-tone={item.tone} />
                   <strong>{item.title}</strong>
@@ -494,7 +496,7 @@ export function FranchiseWorkQueueBoard({
                       <td>{item.versionLabel ?? "—"}</td>
                       <td><LanguageMarks item={item} /></td>
                       <td><em className="client-status-chip" data-tone={catalogStatusTone(item.status)}>{workflowChipLabel(item.status, locale)}</em></td>
-                      <td><span className="franchise-due">{c.queueSortDue}</span></td>
+                      <td><span className="franchise-due">—</span></td>
                       <td>
                         <span className="franchise-next-cell">
                           <small>{nextAction(item.status, locale)}</small>

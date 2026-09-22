@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { ActionPanel } from "@/modules/client/screens/litiges/action-panel";
 import { getDisputeMessages } from "@/modules/client/screens/litiges/messages";
 import { resolveClientSpace } from "@/modules/client/data/spaces/context";
@@ -25,11 +26,11 @@ export default async function DisputePage({
   const { organizationId } = await searchParams;
   if (!isLocale(locale)) notFound();
   const space = await resolveClientSpace({ locale, organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/litiges/${caseId}` }));
   const repository = await createServerDisputesRepository(space.selectedOrganizationId ?? organizationId);
   const [list, result] = await Promise.all([repository.list(), repository.detail(caseId)]);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
-  if (list.status === "error" && list.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/client/litiges/${caseId}` }));
+  if (list.status === "error" && list.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/client/litiges/${caseId}` }));
   if (result.status === "error" || !result.value) notFound();
   const d = result.value;
   const m = getDisputeMessages(locale);

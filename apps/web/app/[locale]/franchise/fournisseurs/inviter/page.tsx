@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { loadFranchiseCrm } from "@/modules/franchise/data/crm/repository";
 import { franchiseCopy } from "@/modules/franchise/data/spaces/copy";
@@ -15,7 +16,7 @@ export default async function FranchiseInvitePage({ params, searchParams }: { pa
   if (!isLocale(locale)) notFound();
   const { space, result } = await requireFranchiseLibrary({ locale, organizationId: query.organizationId });
   const crm = await loadFranchiseCrm();
-  if (crm.status === "error" && crm.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (crm.status === "error" && crm.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/franchise/fournisseurs/inviter` }));
   const c = franchiseCopy(locale);
   const mandateName = franchiseMandateName(result);
   const writable = crm.status === "success" ? crm.dashboard.franchises.find((item) => item.canWrite && item.territory) : null;

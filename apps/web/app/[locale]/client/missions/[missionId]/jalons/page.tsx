@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { resolveClientSpace } from "@/modules/client/data/spaces/context";
 import { spaceCopy } from "@/modules/client/data/spaces/copy";
@@ -23,7 +24,7 @@ export default async function ClientMissionJalonsPage({
   const [{ locale, missionId }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale) || !missionId) notFound();
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/missions/${missionId}/jalons` }));
   const messages = getMissionMessages(locale);
   const c = spaceCopy(locale);
   const [result, amendments] = await Promise.all([loadContractMissions(locale, query.organizationId), loadClientAmendments(query.organizationId)]);

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { franchiseCopy } from "@/modules/franchise/data/spaces/copy";
 import { loadFranchiseDashboard } from "@/modules/franchise/data/governance/repository";
@@ -17,7 +18,7 @@ export default async function FranchiseGovernancePage({ params, searchParams }: 
   const { space, result: library } = await requireFranchiseLibrary({ locale, organizationId: query.organizationId });
   const messages = getFranchiseMessages(locale);
   const result = await loadFranchiseDashboard(locale);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/franchise/gouvernance` }));
   const c = franchiseCopy(locale);
   const mandateName = franchiseMandateName(library);
   const keys: Record<string, string> = { invitation: randomUUID() };

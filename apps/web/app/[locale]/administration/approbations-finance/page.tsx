@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { z } from "zod";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
@@ -17,7 +18,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
   if (!isLocale(locale)) notFound();
   const c = await getSupabaseServerClient();
   const { data: auth } = await c.auth.getUser();
-  if (!auth.user) redirect(`/${locale}/connexion`);
+  if (!auth.user) redirect(connexionHref(locale, { next: `/${locale}/administration/approbations-finance` }));
   const [q, f, mc, mi, pe] = await Promise.all([
     c.from("business_approval_requests").select("id,status,row_version,resource_type,resource_id").order("requested_at", { ascending: false }).limit(300),
     c.from("provider_commission_forecasts").select("id,mission_id,estimated_commission_minor,currency").order("created_at", { ascending: false }).limit(300),

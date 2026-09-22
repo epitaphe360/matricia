@@ -118,14 +118,35 @@ export function ProviderHomeBoard({
     ? (snapshot?.status === "success" ? snapshot.capacity : { status: c.capacityUnset, domains: c.capacityUnset, zones: c.capacityUnset })
     : demo.capacity;
   const capacityStatus = capacityStatusLabel(capacity.status, locale, c.capacityUnset);
-  const showProfileCallout = snapshot?.status !== "success" || snapshot.stage !== "qualified";
-  const journey = demo.journey.map((step) => {
-    if (snapshot?.status !== "success") return step;
-    if (snapshot.stage === "qualified" && step.id === "j2") return { ...step, state: "done" as const, detail: locale === "ar" ? "مكتمل" : "Complété" };
-    if (snapshot.stage === "qualified" && step.id === "j3") return { ...step, state: "current" as const, detail: locale === "ar" ? "جارٍ" : "En cours" };
-    if (snapshot.stage === "blocked" && step.id === "j2") return { ...step, state: "current" as const };
-    return step;
-  });
+  const showProfileCallout =
+    snapshot === undefined ||
+    (snapshot.status === "success" && snapshot.stage !== "qualified");
+  const journey = (() => {
+    const fr = locale === "fr";
+    const stage = snapshot?.status === "success" ? snapshot.stage : null;
+    const pending = fr ? "À venir" : "قادمة";
+    const done = fr ? "Complété" : "مكتمل";
+    const current = fr ? "En cours" : "جارٍ";
+    const unknown = fr ? "Non disponible" : "غير متاح";
+    return [
+      { id: "j1", title: fr ? "Profil" : "الملف", detail: stage ? done : unknown, state: (stage ? "done" : "todo") as const },
+      {
+        id: "j2",
+        title: fr ? "Qualification" : "التأهيل",
+        detail: stage === "qualified" ? done : stage === "blocked" || stage === "new" ? current : unknown,
+        state: (stage === "qualified" ? "done" : stage ? "current" : "todo") as const,
+      },
+      {
+        id: "j3",
+        title: fr ? "Opportunités" : "الفرص",
+        detail: stage === "qualified" ? current : pending,
+        state: (stage === "qualified" ? "current" : "todo") as const,
+      },
+      { id: "j4", title: fr ? "Devis" : "العروض", detail: pending, state: "todo" as const },
+      { id: "j5", title: fr ? "Missions" : "المهام", detail: pending, state: "todo" as const },
+      { id: "j6", title: fr ? "Réputation" : "السمعة", detail: pending, state: "todo" as const },
+    ];
+  })();
   return (
     <main className="client-page provider-home">
       {showProfileCallout ? (
@@ -221,7 +242,7 @@ export function ProviderHomeBoard({
             <li><span><strong>{c.domains}</strong><small>{capacity.domains}</small></span></li>
             <li><span><strong>{c.zones}</strong><small>{capacity.zones}</small></span></li>
           </ul>
-          <Cta href={`/${locale}/sous-traitant/services${query}`} soft>{c.refresh}</Cta>
+          <Cta href={`/${locale}/sous-traitant/qualification${query}#capacite`} soft>{c.refresh}</Cta>
         </article>
         <article className="client-card provider-reputation-card">
           <header><h2><Star aria-hidden className="size-4" />{c.reputation}</h2></header>
@@ -649,13 +670,12 @@ export function ProviderMissionsBoard({ locale, query, rows }: { locale: Locale;
           </div>
           <header><h2>{c.prepareDeliverable}</h2></header>
           <p>{c.prepareDeliverableLead}</p>
-          <Link href={`/${locale}/sous-traitant/missions${query}#missions-operation`} className="client-drop">
-            <Cloud className="size-6" aria-hidden />
-            <p>{c.addProof}</p>
-            <small>{c.proofFormats}</small>
-          </Link>
-          <p className="client-verified">{c.shareSecureLead}</p>
-          <Cta href={`/${locale}/sous-traitant/missions${query}#missions-operation`}>{c.addProof}</Cta>
+          <p className="client-access-note" role="status">
+            {locale === "ar"
+              ? "إيداع الإثبات يتم من ملف المهمة، وليس من منطقة السحب هنا."
+              : "Le dépôt de preuve se fait depuis le dossier de mission, pas depuis une zone de dépôt ici."}
+          </p>
+          <Cta href={`/${locale}/sous-traitant/missions${query}`}>{c.seeAllMissions}</Cta>
         </article>
         <div className="client-stack">
           <article className="client-card">
@@ -760,10 +780,10 @@ export function ProviderDocumentsBoard({
                 {rows.map((document) => (
                   <tr key={document.id}>
                     <td>{document.code}</td>
-                    <td>{c.qualification}</td>
+                    <td>{document.kind}</td>
                     <td><span className="client-status-chip" data-tone={documentTone(document.status)}>{getProviderStatusLabel(locale, document.status)}</span></td>
                     <td>{c.docsPrivate}</td>
-                    <td><Cta href={qualifyHref}>{documentTone(document.status) === "mint" ? c.open : c.replace}</Cta></td>
+                    <td><Cta href={`${qualifyHref}`}>{documentTone(document.status) === "mint" ? c.open : c.replace}</Cta></td>
                   </tr>
                 ))}
               </tbody>
@@ -915,7 +935,7 @@ export function ReputationBoard({ locale, query, dashboard }: { locale: Locale; 
             {reviews.map((row) => (
               <li key={row.id}>
                 <span><strong>{row.title}</strong><small>{row.status}</small></span>
-                <Cta href={row.action === "reply" ? `/${locale}/sous-traitant/messages${query}` : `/${locale}/sous-traitant/missions${query}`} soft={row.action === "reply"}>{row.action === "reply" ? c.reply : c.seeDetail}</Cta>
+                <Cta href={row.action === "reply" ? `/${locale}/sous-traitant/messages${query}` : `/${locale}/sous-traitant/reputation${query}#retours`} soft={row.action === "reply"}>{row.action === "reply" ? c.reply : c.seeDetail}</Cta>
               </li>
             ))}
           </ul>

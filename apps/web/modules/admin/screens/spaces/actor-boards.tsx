@@ -518,10 +518,7 @@ export function ClientFicheBoard({
         <a href={`${base}${query}`} aria-current="page">{c.overview}</a>
         <a href={`/${locale}/administration/entreprises/${org.id}/modifier${query}`}>{locale === "ar" ? "ملف المؤسسة" : "Profil entreprise"}</a>
         <a href={`/${locale}/administration/conformite-clients${query}`}>{c.compliance}</a>
-        <a href={`/${locale}/administration/parcours${query}`}>{a.diagnostic}</a>
-        <a href={`/${locale}/administration/parcours${query}`}>{c.requests}</a>
-        <a href={`/${locale}/administration/parcours${query}`}>{c.missions}</a>
-        <a href={`${base}${query}#documents`}>{c.documents}</a>
+        <a href={`/${locale}/administration/parcours${query}`}>{locale === "ar" ? "المسارات" : "Parcours"}</a>
         <a href={`/${locale}/administration/finance${query}`}>{c.boxes}</a>
         <a href={`/${locale}/administration/finance${query}`}>{c.navFinance}</a>
         <a href={`/${locale}/administration/operations${query}`}>{c.audit}</a>
@@ -542,7 +539,7 @@ export function ClientFicheBoard({
             <div><dt>{c.legal}</dt><dd>{org.legal_name}</dd></div>
             <div><dt>{c.legalForm}</dt><dd>{type}</dd></div>
             <div><dt>{c.activity}</dt><dd>{org.display_name}</dd></div>
-            <div><dt>{c.address}</dt><dd>{org.country_code}</dd></div>
+            <div><dt>{locale === "ar" ? "البلد" : "Pays"}</dt><dd>{org.country_code}</dd></div>
           </dl>
           <Cta href={`/${locale}/administration/entreprises/${org.id}/modifier${query}`}>{a.seeProfile}</Cta>
         </article>
@@ -579,7 +576,7 @@ export function ClientFicheBoard({
             <li><span><strong>{c.state}</strong><small>{org.status}</small></span></li>
             <li><span><strong>{c.ids}</strong><small dir="ltr">{org.id.slice(0, 8)}…</small></span></li>
           </ul>
-          <Cta href={`${base}${query}#documents`}>{a.manageDocs}</Cta>
+          <Cta href={`/${locale}/administration/entreprises/${org.id}/modifier${query}`}>{a.manageDocs}</Cta>
         </article>
         <article className="client-card">
           <header><h2>{c.requests}</h2></header>
@@ -592,7 +589,7 @@ export function ClientFicheBoard({
         <article className="client-card">
           <header><h2>{c.boxes}</h2></header>
           <ul className="client-feed">
-            <li><span><strong>{c.plan}</strong><small>{fiche.subscriptions[0]?.status ?? c.unknownPlan}</small></span></li>
+            <li><span><strong>{c.plan}</strong><small>{fiche.subscriptions[0]?.status ?? "—"}</small></span></li>
             <li><span><strong>{c.nextBill}</strong><small>{fiche.subscriptions[0]?.current_period_end ?? "—"}</small></span></li>
           </ul>
           <Cta href={`/${locale}/administration/finance${query}`}>{a.managePlan}</Cta>

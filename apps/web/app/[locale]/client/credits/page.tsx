@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { ReactNode } from "react";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Badge } from "@/modules/shared/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/ui/card";
 import { resolveClientOrganizationContext } from "@/modules/shared/client-organization-context";
@@ -21,9 +22,9 @@ export default async function Credits({ params, searchParams }: { params: Promis
   const { organizationId } = await searchParams;
   if (!isLocale(locale)) notFound();
   const space = await resolveClientSpace({ locale, organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/credits` }));
   const result = await (await createServerCreditsRepository(organizationId)).load();
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/client/credits` }));
   const m = messages(locale);
   const c = spaceCopy(locale);
   const shell = (body: ReactNode) => (

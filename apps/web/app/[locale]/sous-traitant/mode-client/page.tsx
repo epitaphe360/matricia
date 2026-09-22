@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { listOrganizationRoles } from "@/app/[locale]/organisation/roles/actions";
 import { resolveProviderSpace } from "@/modules/provider/data/spaces/context";
 import { ActivateClientRoleForm } from "@/modules/provider/screens/mode-client/activate-form";
@@ -19,9 +20,9 @@ export default async function ProviderModeClientPage({
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveProviderSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/mode-client` }));
   const roles = await listOrganizationRoles();
-  if (roles.status === "error" && roles.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (roles.status === "error" && roles.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/mode-client` }));
   const organizationId = space.selectedOrganizationId ?? (roles.status === "success" ? roles.organizations[0]?.id : null);
   const current = roles.status === "success" ? roles.organizations.find((item) => item.id === organizationId) ?? roles.organizations[0] : null;
   const hasClient = current?.currentRoles.some((role) => CLIENT_ROLES.has(role)) ?? false;

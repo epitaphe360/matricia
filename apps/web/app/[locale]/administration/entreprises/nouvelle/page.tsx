@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { resolveAdminSpace } from "@/modules/admin/data/spaces/context";
 import { adminCopy } from "@/modules/admin/data/spaces/copy";
 import { CreateOrganizationForm } from "@/modules/admin/screens/spaces/org-forms";
@@ -15,7 +16,7 @@ export default async function AdminEnterpriseCreatePage({
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveAdminSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/administration/entreprises/nouvelle` }));
   const c = adminCopy(locale);
   const alternate = locale === "fr" ? "ar" : "fr";
 

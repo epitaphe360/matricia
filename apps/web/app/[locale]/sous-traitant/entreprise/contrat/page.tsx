@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { loadProviderDashboard } from "@/modules/provider/data/qualification/repository";
 import { resolveProviderSpace } from "@/modules/provider/data/spaces/context";
 import { getProviderStatusLabel } from "@/modules/provider/screens/qualification/messages";
@@ -16,9 +17,9 @@ export default async function ProviderPartnerContractPage({
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveProviderSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/entreprise/contrat` }));
   const result = await loadProviderDashboard();
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/entreprise/contrat` }));
   const profile = result.status === "success" ? result.dashboard.profile : null;
   const proofs = result.status === "success" ? result.dashboard.documents.filter((item) => item.kind === "PARTNER_CONTRACT") : [];
   const status = profile?.partnerContractStatus ?? "NOT_SIGNED";

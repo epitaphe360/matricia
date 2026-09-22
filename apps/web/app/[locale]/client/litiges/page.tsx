@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { resolveClientSpace } from "@/modules/client/data/spaces/context";
 import { spaceCopy } from "@/modules/client/data/spaces/copy";
 import { DisputesBoard } from "@/modules/client/screens/spaces/disputes-board";
@@ -20,11 +21,11 @@ export default async function DisputesPage({
   if (!isLocale(locale)) notFound();
 
   const space = await resolveClientSpace({ locale, organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/litiges` }));
 
   const repository = await createServerDisputesRepository(space.selectedOrganizationId ?? organizationId);
   const result = await repository.list();
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/client/litiges` }));
   const m = getDisputeMessages(locale);
   const c = spaceCopy(locale);
   if (result.status === "error") {
@@ -37,7 +38,7 @@ export default async function DisputesPage({
 
   const selectedId = result.value.cases[0]?.id;
   const selected = selectedId ? await repository.detail(selectedId) : { status: "success" as const, value: null };
-  if (selected.status === "error" && selected.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (selected.status === "error" && selected.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/client/litiges` }));
 
   return (
     <ClientAppShell

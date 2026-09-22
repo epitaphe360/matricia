@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { AccountSecurityPanel } from "./account-security-panel";
@@ -36,8 +37,8 @@ export default async function AccountSecurityPage({
     listOrganizationRoles(),
     resolveClientSpace({ locale, organizationId: query.organizationId }),
   ]);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/securite/compte` }));
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/securite/compte` }));
   const messages = getAccountSecurityMessages(locale);
   const roleMessages = getRoleMessages(locale);
   const c = spaceCopy(locale);

@@ -190,11 +190,18 @@ export function ConsultationDetailWorkbench({
             <article className="client-card provider-fit">
               <CardHead icon={<Settings2 className="size-4" />}>{w.consultFitTitle}</CardHead>
               <p>{w.consultFitLead}</p>
+              <p className="client-access-note" role="status">
+                {locale === "ar"
+                  ? "لا تُعرض هنا نتيجة أهلية تلقائية. راجعوا نطاق الدعوة والوثائق أعلاه."
+                  : "Aucune compatibilité automatique n’est calculée ici. Relisez le périmètre et les documents de l’invitation."}
+              </p>
               <ul className="client-feed">
-                <li><Check className="size-4" aria-hidden /><span>{w.consultFitService}</span></li>
-                <li><Check className="size-4" aria-hidden /><span>{w.consultFitZone}</span></li>
-                <li><Check className="size-4" aria-hidden /><span>{w.consultFitDocs}</span></li>
-                <li><Check className="size-4" aria-hidden /><span>{w.consultFitRule}</span></li>
+                {invitation?.regionCode && invitation.regionCode !== "—" ? (
+                  <li><span><strong>{w.consultFitZone}</strong><small>{invitation.regionCode}</small></span></li>
+                ) : null}
+                {documents.length > 0 ? (
+                  <li><span><strong>{w.consultFitDocs}</strong><small dir="ltr">{documents.length}</small></span></li>
+                ) : null}
               </ul>
             </article>
           </div>
@@ -214,9 +221,10 @@ export function ConsultationDetailWorkbench({
           <article className="client-card">
             <header><h3>{w.consultCalendar}</h3></header>
             <ol className="client-journey provider-timeline">
-              <li data-state="done"><span><Check className="size-4" aria-hidden /></span><small>{w.consultPublished}</small></li>
-              <li data-state="done"><span><Check className="size-4" aria-hidden /></span><small>{w.consultQuestionsDue}</small></li>
-              <li data-state="current"><span><Calendar className="size-4" aria-hidden /></span><small>{w.consultQuoteDue}<em dir="ltr">{deadline}</em></small></li>
+              <li data-state={invitation ? "current" : "todo"}>
+                <span><Calendar className="size-4" aria-hidden /></span>
+                <small>{w.consultQuoteDue}<em dir="ltr">{deadline}</em></small>
+              </li>
               <li data-state="todo"><span /><small>{w.consultAnalysis}</small></li>
               <li data-state="todo"><span /><small>{w.consultDecision}</small></li>
             </ol>
@@ -456,16 +464,18 @@ export function MissionDeliveryWorkbench({
           <h3>{title}</h3>
           <div className="provider-chip-row">
             <span className="client-status-chip" data-tone="mint">{mission?.status ?? w.missionInProgress}</span>
-            <span className="provider-meta-chip">{w.missionContractSigned}</span>
+            {mission?.status && /SIGN|ACCEPT|ACTIVE|SIGNED/i.test(mission.status) ? (
+              <span className="provider-meta-chip">{w.missionContractSigned}</span>
+            ) : null}
           </div>
         </div>
         <div>
           <h4>{w.missionClientAccess}</h4>
           <ul className="client-feed provider-access-checks">
-            <li><Check className="size-4" aria-hidden /><span>{w.missionAccessDeliverables}</span></li>
-            <li><Check className="size-4" aria-hidden /><span>{w.missionAccessMessages}</span></li>
-            <li><Check className="size-4" aria-hidden /><span>{w.missionAccessDocs}</span></li>
-            <li><Check className="size-4" aria-hidden /><span>{w.missionAccessMilestones}</span></li>
+            <li><Link href={`/${locale}/sous-traitant/missions/${missionId}${query}`}><span>{w.missionAccessDeliverables}</span></Link></li>
+            <li><Link href={messagesHref}><span>{w.missionAccessMessages}</span></Link></li>
+            <li><Link href={`/${locale}/sous-traitant/documents${query}`}><span>{w.missionAccessDocs}</span></Link></li>
+            <li><Link href={`/${locale}/sous-traitant/missions/${missionId}${query}`}><span>{w.missionAccessMilestones}</span></Link></li>
           </ul>
         </div>
       </article>

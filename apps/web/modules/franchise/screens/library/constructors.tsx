@@ -11,8 +11,6 @@ import {
   Plus,
   RotateCcw,
   Send,
-  Smartphone,
-  Trash2,
 } from "lucide-react";
 import { QuestionnaireBuilder } from "@/modules/admin/screens/catalogue/questionnaire-builder";
 import { QuestionBuilder } from "@/modules/admin/screens/catalogue/question-builder";
@@ -158,16 +156,15 @@ export function FranchiseServiceConstructor({
             <ul>
               {deliverables.map((item) => (
                 <li key={item}>
-                  <span className="franchise-drag-handle" aria-hidden />
                   <strong>{item}</strong>
-                  <button type="button" className="franchise-icon-btn" aria-label={locale === "ar" ? "حذف" : "Retirer"}>
-                    <Trash2 className="size-3.5" aria-hidden />
-                  </button>
                 </li>
               ))}
             </ul>
-            <button type="button" className="franchise-tool franchise-tool-ghost"><Plus className="size-4" aria-hidden /> {c.addDeliverable}</button>
-            <p className="client-access-note">{c.addDeliverableHint}</p>
+            {deliverables.length === 0 ? (
+              <p className="client-access-note">{locale === "ar" ? "لا مخرجات معلنة بعد." : "Aucun livrable déclaré pour le moment."}</p>
+            ) : (
+              <p className="client-access-note">{c.addDeliverableHint}</p>
+            )}
           </section>
         </article>
         <aside className="client-card franchise-client-preview">
@@ -392,8 +389,7 @@ export function FranchiseClientPreviewBranches({
           <header className="client-priority-head">
             <h2>{c.clientPreview}</h2>
             <nav className="franchise-device-toggle" aria-label={c.deviceToggle}>
-              <button type="button" data-active="true"><Monitor className="size-4" aria-hidden /> {c.deviceDesktop}</button>
-              <button type="button"><Smartphone className="size-4" aria-hidden /> {c.deviceMobile}</button>
+              <span data-active="true"><Monitor className="size-4" aria-hidden /> {c.deviceDesktop}</span>
             </nav>
           </header>
           <div className="franchise-client-frame">
@@ -411,8 +407,9 @@ export function FranchiseClientPreviewBranches({
                   ))}
                 </ul>
                 <div className="franchise-preview-nav">
-                  <button type="button" className="franchise-tool" disabled>{c.previous}</button>
-                  <button type="button" className="franchise-tool franchise-tool-primary">{c.nextStep}</button>
+                  <p className="client-access-note">
+                    {locale === "ar" ? "معاينة ثابتة للسؤال الحالي." : "Aperçu statique de la question courante."}
+                  </p>
                 </div>
               </div>
             ) : <p>{c.emptyQuestions}</p>}

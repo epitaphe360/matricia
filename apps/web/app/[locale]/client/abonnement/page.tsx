@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { resolveClientSpace } from "@/modules/client/data/spaces/context";
 import { spaceCopy } from "@/modules/client/data/spaces/copy";
 import { getSubscriptionMessages } from "@/modules/client/screens/abonnement/messages";
@@ -16,13 +17,13 @@ export default async function SubscriptionPage({ params, searchParams }: { param
   const { organizationId } = await searchParams;
   if (!isLocale(locale)) notFound();
   const space = await resolveClientSpace({ locale, organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/abonnement` }));
   const [result, creditsResult, roles] = await Promise.all([
     loadSubscriptionDashboard(organizationId),
     createServerCreditsRepository(organizationId).then((repository) => repository.load()),
     listOrganizationRoles(),
   ]);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/client/abonnement` }));
   const messages = getSubscriptionMessages(locale);
   const c = spaceCopy(locale);
   if (result.status === "error") {
@@ -46,8 +47,8 @@ export default async function SubscriptionPage({ params, searchParams }: { param
         query={space.selectedQuery}
         dashboard={result.dashboard}
         credits={{
-          balance: wallets[0]?.balance ?? "0",
-          unitCode: wallets[0]?.unitCode ?? "CRD",
+          balance: wallets[0]?.balance ?? "—",
+          unitCode: wallets[0]?.unitCode ?? "—",
           memberCount: members.length,
           boxes: boxes.map((box) => {
             const version = catalog.find((item) => item.id === box.boxVersionId);
@@ -66,7 +67,7 @@ export default async function SubscriptionPage({ params, searchParams }: { param
           })),
         }}
       >
-        <details className="client-ops">
+        <details className="client-ops" id="plans" open>
           <summary>{messages.plans}</summary>
           <SubscriptionPanel dashboard={result.dashboard} locale={locale} messages={messages} keys={keys} />
         </details>

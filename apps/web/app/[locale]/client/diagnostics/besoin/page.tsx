@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { ArrowLeft, ArrowRight, Target } from "lucide-react";
 import { resolveClientSpace } from "@/modules/client/data/spaces/context";
 import { spaceCopy } from "@/modules/client/data/spaces/copy";
@@ -17,7 +18,7 @@ export default async function PriorityToNeedPage({
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/diagnostics/besoin` }));
   const c = spaceCopy(locale);
   const needHref = `/${locale}/besoin?source=diagnostic&priority=${encodeURIComponent(query.priority ?? "")}${space.selectedOrganizationId ? `&organizationId=${space.selectedOrganizationId}` : ""}`;
   const backHref = query.runId

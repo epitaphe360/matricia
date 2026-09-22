@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { mfaRequiredMessage } from "@/modules/shared/lib/account-security/platform-access";
 import { loadAdminOperationsDashboard } from "@/modules/admin/data/operations/repository";
@@ -13,7 +14,7 @@ export default async function AdminOperationsPage({ params }: { params: Promise<
   if (!isLocale(locale)) notFound();
   const messages = getAdminOperationsMessages(locale);
   const result = await loadAdminOperationsDashboard();
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/operations` }));
 
   return (
     <AdminModulePage locale={locale} active="settings" path="operations" title={messages.title} lead={messages.description} hubGroup="ops">

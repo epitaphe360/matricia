@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { resolveAdminSpace } from "@/modules/admin/data/spaces/context";
 import { adminCopy } from "@/modules/admin/data/spaces/copy";
@@ -17,9 +18,9 @@ export default async function AdminEnterpriseArchivePage({
   const [{ locale, organizationId }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveAdminSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/administration/entreprises/${organizationId}/archiver` }));
   const result = await loadAdminOrganizationFiche(organizationId);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/entreprises/${organizationId}/archiver` }));
   if (result.status === "error" && result.reason === "NOT_FOUND") notFound();
   const c = adminCopy(locale);
   const alternate = locale === "fr" ? "ar" : "fr";

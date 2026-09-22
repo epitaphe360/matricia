@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { isDocumentExpired } from "@/modules/client/data/documents/expiry";
 import { loadClientDocumentVault } from "@/modules/client/data/documents/server-repository";
 import { resolveClientSpace } from "@/modules/client/data/spaces/context";
@@ -12,9 +13,9 @@ export default async function ClientFinancesPage({ params, searchParams }: { par
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/finances` }));
   const result = await loadClientDocumentVault(query.organizationId);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/client/finances` }));
   const c = spaceCopy(locale);
   const context = result.status === "success"
     ? resolveClientOrganizationContext(result.value.organizations.map((organization) => ({ organization_id: organization.id })), query.organizationId)

@@ -1,6 +1,7 @@
 import { ArrowLeft, CheckCircle2, CircleMinus, Layers3 } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { Badge } from "@/modules/shared/ui/badge";
 import { buttonVariants } from "@/modules/shared/ui/button";
@@ -22,7 +23,7 @@ export default async function PublishedServicePage({ params, searchParams }: {
   const result = query.releaseId
     ? await getPublishedCatalogService({ locale, releaseId: query.releaseId, librarySlug, serviceSlug })
     : { status: "success" as const, detail: null };
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/catalogue/${librarySlug}/${serviceSlug}` }));
   const alternate = locale === "fr" ? "ar" : "fr";
 
   if (result.status === "error") {

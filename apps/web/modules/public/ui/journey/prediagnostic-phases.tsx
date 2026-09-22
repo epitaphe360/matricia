@@ -27,6 +27,7 @@ import {
   Users,
 } from "lucide-react";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { getPublicJourneyCopy } from "@/modules/public/data/journey/copy";
 import { diagnosticQuestionIds as questionIds, type DiagnosticAnswer as Answer, type DiagnosticQuestionId as QuestionId, type StoredDiagnostic as Stored } from "./diagnostic-storage";
 import styles from "./diagnostic-premium.module.css";
@@ -546,19 +547,22 @@ export function SaveView({
   const [organizationId, setOrganizationId] = useState(organizations[0]?.id ?? "");
   const [saveState, submitSave, savePending] = useActionState(saveAction ?? (async () => ({ status: "error", reason: "UNAVAILABLE" } as SaveState)), { status: "idle" } as SaveState);
   useEffect(() => { if (saveState.status === "success") onSaved(); }, [saveState.status, onSaved]);
-  const diagnosticHref = `/${locale}/client/diagnostics`;
-  const next = `/${locale}/connexion?mode=inscription&role=client&next=${encodeURIComponent(diagnosticHref)}`;
   const selected = organizations.find((item) => item.id === organizationId);
   const completeAnswers = questionIds.every((id) => answers[id] !== undefined);
 
   if (!authenticated) {
+    const resumeHref = `/${locale}/diagnostic`;
+    const signupHref = connexionHref(locale, { mode: "inscription", role: "client", next: resumeHref });
+    const loginHref = connexionHref(locale, { next: resumeHref });
     return (
       <PageChrome locale={locale}>
         <Hero eyebrow={copy.resultEyebrow} title={copy.saveTitle} intro={copy.saveIntro} script={copy.scriptNote} />
         <section className={styles.card}>
           <p className={styles.heroIntro}>{copy.loginNote}</p>
+          <p className={styles.heroIntro} style={{ marginTop: 12 }}>{copy.saveAuthChoice}</p>
           <div className={styles.stackActions} style={{ maxWidth: 420 }}>
-            <Link className={styles.primaryWide} href={next}>{copy.save}<ArrowRight className="rtl-mirror" size={16} aria-hidden="true" /></Link>
+            <Link className={styles.primaryWide} href={signupHref}>{copy.saveCreateAccount}<ArrowRight className="rtl-mirror" size={16} aria-hidden="true" /></Link>
+            <Link className={styles.secondaryWide} href={loginHref}>{copy.saveExistingAccount}</Link>
             <button type="button" className={styles.secondaryWide} onClick={onBack}><ArrowLeft className="rtl-mirror" size={16} aria-hidden="true" />{copy.backToResult}</button>
           </div>
         </section>

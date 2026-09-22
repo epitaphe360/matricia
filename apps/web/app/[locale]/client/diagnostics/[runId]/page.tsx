@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { createServerDiagnosticsRepository } from "@/modules/shared/lib/diagnostics-opportunities/server-repository";
 import { createServerAssistedIntelligenceRepository } from "@/modules/shared/lib/assisted-intelligence/server-repository";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
@@ -15,12 +16,12 @@ export default async function Result({ params, searchParams }: { params: Promise
   const [{ locale, runId }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/diagnostics/${runId}` }));
   const [result, assistanceResult] = await Promise.all([
     (await createServerDiagnosticsRepository()).detail(runId),
     createServerAssistedIntelligenceRepository().then((repository) => repository.dashboard()),
   ]);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/client/diagnostics/${runId}` }));
   if (result.status === "error" || !result.value) notFound();
   const detail = result.value;
   const m = messages(locale);

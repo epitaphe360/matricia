@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { resolveProviderSpace } from "@/modules/provider/data/spaces/context";
 import { getProviderDisputeMessages } from "@/modules/provider/screens/litiges/messages";
 import { ProviderAppShell } from "@/modules/provider/ui/provider-app-shell";
@@ -16,10 +17,10 @@ export default async function ProviderDisputesPage({
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveProviderSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/litiges` }));
   const repository = await createServerDisputesRepository(space.selectedOrganizationId ?? query.organizationId, "provider");
   const result = await repository.list();
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/litiges` }));
   const m = getProviderDisputeMessages(locale);
   if (result.status === "error") {
     return (
@@ -30,7 +31,7 @@ export default async function ProviderDisputesPage({
   }
   const selectedId = result.value.cases[0]?.id;
   const selected = selectedId ? await repository.detail(selectedId) : { status: "success" as const, value: null };
-  if (selected.status === "error" && selected.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (selected.status === "error" && selected.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/litiges` }));
   return (
     <ProviderAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="disputes" title={m.title} lead={m.intro}>
       <DisputesBoard

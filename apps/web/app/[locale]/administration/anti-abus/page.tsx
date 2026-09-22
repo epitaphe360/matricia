@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { hasPlatformRole, loadMyPlatformAccess, mfaRequiredMessage } from "@/modules/shared/lib/account-security/platform-access";
@@ -12,7 +13,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const access = await loadMyPlatformAccess();
-  if (access.status === "error" && access.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (access.status === "error" && access.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/anti-abus` }));
   const client = access.status === "ok" ? access.client : null;
   const needsMfa = access.status === "ok" && hasPlatformRole(access.roles, [...MUTATION_ROLES, "COMPLIANCE_MANAGER", "READ_ONLY_AUDITOR"]) && !access.requirementSatisfied;
   const [rules, cases] = client && !needsMfa

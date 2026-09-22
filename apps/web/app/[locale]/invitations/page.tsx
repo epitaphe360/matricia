@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { Badge } from "@/modules/shared/ui/badge";
 import { buttonVariants } from "@/modules/shared/ui/button";
@@ -61,7 +62,7 @@ export default async function InvitationsPage({ params }: { params: Promise<{ lo
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const result = await listInvitations();
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/invitations` }));
   const messages = getInvitationMessages(locale);
   const alternate = locale === "fr" ? "ar" : "fr";
 

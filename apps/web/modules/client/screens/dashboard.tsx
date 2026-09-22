@@ -311,7 +311,7 @@ export function ClientDashboardHome({
                 <div className="client-decisions-ring-wrap">
                   <div
                     className="client-decisions-ring"
-                    style={{ "--decisions-fill": `${Math.min(100, pendingDecisions * 20 + 12)}%` } as CSSProperties}
+                    style={{ "--decisions-fill": `${pendingDecisions === 0 ? 0 : Math.min(100, pendingDecisions * 20 + 12)}%` } as CSSProperties}
                     role="img"
                     aria-label={`${pendingDecisions} ${c.decisionsPending}`}
                   >
@@ -426,16 +426,25 @@ export function ClientDashboardHome({
                 </>
               )}
             </Link>
+            {insights.messagesToHandle != null && insights.messagesToHandle > 0 ? (
             <Link href={`/${locale}/messagerie${selectedQuery}`} className="client-card client-insight-kpi" data-tone="mint">
+              <span className="client-feed-icon" data-tone="mint" aria-hidden><MessageSquare className="size-4" /></span>
+              <h2>{c.unreadMessages}</h2>
+              <strong dir="ltr">{insights.messagesToHandle}</strong>
+              <p>{messages[0]?.title ?? c.messagesContinue}</p>
+            </Link>
+            ) : (
+            <div className="client-card client-insight-kpi" data-tone="mint">
               <span className="client-feed-icon" data-tone="mint" aria-hidden><MessageSquare className="size-4" /></span>
               <h2>{c.unreadMessages}</h2>
               {insights.messagesToHandle === null ? <p>{c.unavailable}</p> : (
                 <>
-                  <strong dir="ltr">{insights.messagesToHandle}</strong>
-                  <p>{messages[0]?.title ?? c.messagesContinue}</p>
+                  <strong dir="ltr">0</strong>
+                  <p>{c.messagesContinue}</p>
                 </>
               )}
-            </Link>
+            </div>
+            )}
             <aside className="client-card client-home-art" aria-hidden>
               <img src="/scenes/medina-terrace.png" alt="" />
               <p>{c.orgCaption}</p>

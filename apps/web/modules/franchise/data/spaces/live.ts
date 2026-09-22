@@ -54,17 +54,22 @@ export function emptyFranchiseSpaces(locale: Locale, query: string): FranchiseSp
   const demo = demoFranchiseSpaces(locale, query);
   return {
     ...demo,
-    treat: demo.treat,
-    pipeline: demo.pipeline.map((step) => ({ ...step, detail: step.detail, status: locale === "ar" ? "—" : "—" })),
+    // Never leak invented narrative CTAs / rights from the demo seed.
+    treat: [],
+    pipeline: demo.pipeline.map((step) => ({ ...step, detail: "—", status: "—" })),
     attention: [],
     homeRequests: [],
     homePros: [],
     homeGov: [],
+    canDo: [],
+    needsValidation: [],
+    rights: [],
+    periHistory: [],
     perimeter: {
-      territory: locale === "ar" ? "—" : "—",
-      domains: locale === "ar" ? "—" : "—",
-      mandate: locale === "ar" ? "—" : "—",
-      status: locale === "ar" ? "—" : "—",
+      territory: "—",
+      domains: "—",
+      mandate: "—",
+      status: "—",
     },
     canWrite: false,
     people: [] as PersonRow[],
@@ -270,7 +275,7 @@ export function buildFranchiseSpaceBoard(input: {
       status: item.severity,
       next: item.metricCode ?? item.status,
       tone: item.severity === "CRITICAL" ? "peach" as const : item.severity === "WARNING" ? "violet" as const : "sky" as const,
-      href: `/${locale}/franchise/performance${q}`,
+      href: `/${locale}/franchise/qualite${q}`,
     })),
     ...(input.operations?.anomalies ?? []).map((item) => ({
       id: item.id,
@@ -298,12 +303,26 @@ export function buildFranchiseSpaceBoard(input: {
       : prospect?.type === "CLIENT"
         ? `/${locale}/franchise/demandes/${prospect.id}${q}`
         : `/${locale}/franchise/fournisseurs${q}`;
+    const dueAt = item.nextFollowupAt ?? null;
+    const dueMs = dueAt ? Date.parse(dueAt) : Number.NaN;
+    const now = Date.now();
+    const startOfToday = new Date();
+    startOfToday.setUTCHours(0, 0, 0, 0);
+    const endOfToday = new Date(startOfToday);
+    endOfToday.setUTCDate(endOfToday.getUTCDate() + 1);
+    let tone: FranchiseSpaceBoardData["followups"][number]["tone"] = "sky";
+    if (Number.isFinite(dueMs)) {
+      if (dueMs < startOfToday.getTime()) tone = "peach";
+      else if (dueMs < endOfToday.getTime()) tone = "violet";
+      else tone = "mint";
+    }
+    void now;
     return {
       id: "id" in item && typeof item.id === "string" ? item.id : String(index),
       title: "displayName" in item ? item.displayName : "",
-      due: (item.nextFollowupAt ?? "").slice(0, 10) || "—",
+      due: (dueAt ?? "").slice(0, 10) || "—",
       action: c.contact,
-      tone: (tones[index % tones.length] ?? "sky") as FranchiseSpaceBoardData["followups"][number]["tone"],
+      tone,
       href,
     };
   });
@@ -542,7 +561,7 @@ export function buildFranchiseSpaceBoard(input: {
   ].filter((item): item is NonNullable<typeof item> => Boolean(item));
   const live: FranchiseSpaceBoardData = {
     ...empty,
-    treat: treat.length ? treat : empty.treat,
+    treat,
     attention: [
       ...quality.slice(0, 2).map((item) => ({ id: item.id, title: item.title, href: `/${locale}/franchise/qualite${q}` })),
       ...followups.slice(0, 2).map((item) => ({ id: item.id, title: item.title, href: `/${locale}/franchise/relances${q}` })),

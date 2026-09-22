@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription } from "@/modules/shared/ui/alert";
 import { mfaRequiredMessage } from "@/modules/shared/lib/account-security/platform-access";
 import { loadAdminIncentives } from "@/modules/admin/data/incentives/server-repository";
@@ -12,7 +13,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const r = await loadAdminIncentives();
-  if (r.status === "error" && r.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (r.status === "error" && r.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/incitations` }));
   const m = messages[locale];
   return (
     <AdminModulePage locale={locale} active="finance" path="incitations" title={m.title} lead={m.description}>

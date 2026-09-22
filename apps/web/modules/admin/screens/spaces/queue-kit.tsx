@@ -227,7 +227,7 @@ function RowMenu({ locale, query, space, row, resourceType }: { locale: Locale; 
         <Link href={spaceHref(locale, space, query, row.id, "modifier")}><Pencil className="size-3.5" aria-hidden />{t(locale, "Modifier", "تعديل")}</Link>
         <Link href={examineHref}><Search className="size-3.5" aria-hidden />{t(locale, "Examiner", "معاينة")}</Link>
         <ActorIntentForm locale={locale} organizationId={row.organizationId} resourceId={row.id} resourceType={resourceType} intent="SUSPEND_ENTITY" reason="Suspension demandée depuis la liste d’administration." label={t(locale, "Suspendre", "تعليق")} />
-        <ActorIntentForm locale={locale} organizationId={row.organizationId} resourceId={row.id} resourceType={resourceType} intent="SUSPEND_ENTITY" reason="Archivage demandé depuis la liste d’administration." label={t(locale, "Archiver", "أرشفة")} tone="danger" />
+        <ActorIntentForm locale={locale} organizationId={row.organizationId} resourceId={row.id} resourceType={resourceType} intent="RESTRICT_ENTITY" reason="Restriction / archivage demandé depuis la liste d’administration. Aucune suppression définitive." label={t(locale, "Archiver", "أرشفة")} tone="danger" />
       </div>
     </details>
   );

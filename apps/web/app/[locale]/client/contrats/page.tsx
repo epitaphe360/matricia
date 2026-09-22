@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { clientDashboardCopy } from "@/modules/client/data/home/copy";
 import { resolveClientSpace } from "@/modules/client/data/spaces/context";
@@ -26,7 +27,7 @@ export default async function ClientContractsPage({
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/contrats` }));
   const c = clientDashboardCopy[locale];
   const spaceC = spaceCopy(locale);
   const messages = getMissionMessages(locale);

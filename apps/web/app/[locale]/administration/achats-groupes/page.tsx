@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { loadAdminVolumeDemand } from "@/modules/admin/data/catalog/repository";
@@ -21,7 +22,7 @@ export default async function Page({
   if (!isLocale(locale)) notFound();
   const m = getMessages(locale);
   const [result, demand] = await Promise.all([loadAdminVolume(), loadAdminVolumeDemand()]);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/achats-groupes` }));
   return (
     <AdminModulePage locale={locale} active="finance" path="achats-groupes" title={m.title} lead={m.description}>
       {result.status === "error" ? (

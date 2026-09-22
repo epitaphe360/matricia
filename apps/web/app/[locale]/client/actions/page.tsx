@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { loadUserActionCenterWithinBudget } from "@/modules/shared/lib/action-center/repository";
 import { filterDashboardActions } from "@/modules/shared/lib/action-center/dashboard-summary";
 import { filterClientFacingActions } from "@/modules/client/data/home/view-model";
@@ -22,7 +23,7 @@ export default async function ClientActionsPage({
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/actions` }));
   const now = new Date().toISOString();
   const [result, approvals] = await Promise.all([
     loadUserActionCenterWithinBudget(locale, now, space.selectedOrganizationId),

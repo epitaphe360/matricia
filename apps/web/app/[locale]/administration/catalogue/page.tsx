@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { buttonVariants } from "@/modules/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/modules/shared/ui/card";
@@ -33,7 +34,7 @@ export default async function CatalogueReleaseAdministrationPage({ params, searc
   const selectedServiceId = queryValue(query.service);
   const repository = await createServerCatalogBuilderRepository();
   const result = await repository.loadWorkspace(libraryId);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/catalogue` }));
   const messages = getBuilderMessages(locale);
   const validationMessages = getRuleValidationMessages(locale);
   const c = adminCopy(locale);

@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { z } from "zod";
 import { resolveAdminSpace } from "@/modules/admin/data/spaces/context";
 import { actorCopy } from "@/modules/admin/data/spaces/actors-copy";
@@ -17,7 +18,7 @@ export default async function AdminUserRolesPage({
   const [{ locale, userId }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale) || !z.string().uuid().safeParse(userId).success) notFound();
   const space = await resolveAdminSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/administration/utilisateurs/${userId}/roles` }));
   const result = await loadAdminActorUser(userId);
   const row = result.rows[0];
   if (!row) notFound();

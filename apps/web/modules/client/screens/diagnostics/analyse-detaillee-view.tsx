@@ -268,7 +268,7 @@ export function AnalyseDetailleeView({ detail, locale, m, solutionsHref, assista
           <Link href={evolutionHref}>{t.history}</Link>
         </nav>
         <div className="diag-conn-actions">
-          <button type="button" className="diag-conn-btn-outline"><Download size={15} aria-hidden />{t.download}</button>
+          <Link href={assistanceHref} className="diag-conn-btn-outline"><Download size={15} aria-hidden />{t.download}</Link>
           <Link href={assistanceHref} className="diag-conn-btn"><Share2 size={15} aria-hidden />{t.share}</Link>
         </div>
       </div>

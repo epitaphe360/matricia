@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { resolveAdminSpace } from "@/modules/admin/data/spaces/context";
 import { actorCopy } from "@/modules/admin/data/spaces/actors-copy";
@@ -20,9 +21,9 @@ export default async function AdminClientFichePage({
   const [{ locale, organizationId }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveAdminSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/administration/clients/${organizationId}` }));
   const result = await loadAdminOrganizationFiche(organizationId);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/clients/${organizationId}` }));
   if (result.status === "error" && result.reason === "NOT_FOUND" && !canApplyAdminDemo()) notFound();
   const demoFiche = result.status === "error" && canApplyAdminDemo() ? demoOrganizationFiche(organizationId) : null;
   const fiche = result.status === "success" ? result.value : demoFiche;

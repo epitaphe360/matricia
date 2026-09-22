@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { loadMarketingGovernance } from "@/modules/shared/lib/marketing-autopilot/governance-repository";
@@ -14,7 +15,7 @@ export default async function MarketingAutopilotPage({ params }: { params: Promi
   if (!isLocale(locale)) notFound();
   const m = getMarketingMessages(locale);
   const [result, governance] = await Promise.all([loadMarketingDashboard(), loadMarketingGovernance()]);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/marketing-autopilot` }));
   const keys: Record<string, string> = {
     consent: randomUUID(),
     campaign: randomUUID(),
