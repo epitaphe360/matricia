@@ -1,8 +1,7 @@
-import { isDemoClientHomeEnabled } from "@/modules/client/data/home/demo-scenario";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 
 export function canApplyProviderSpaceDemo(_organizationName?: string | null) {
-  return isDemoClientHomeEnabled();
+  return false;
 }
 
 export function demoProviderSpaces(locale: Locale, query: string) {

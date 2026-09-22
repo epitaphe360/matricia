@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { formatMinor, type BillingDashboard } from "@/modules/provider/data/billing/model";
 import { providerCopy } from "@/modules/provider/data/spaces/copy";
 import { providerSearchQuery, type ProviderListRow } from "@/modules/provider/data/spaces/list-rows";
-import { demoProviderSpaces } from "@/modules/provider/data/spaces/demo";
+import { canApplyProviderSpaceDemo, demoProviderSpaces } from "@/modules/provider/data/spaces/demo";
 import type { ProviderHomeSnapshot } from "@/modules/provider/data/home/repository";
 import { toProviderPriorityRows, type ProviderPrioritySituation } from "@/modules/provider/data/home/view-model";
 import type { ProviderDashboard, ProviderDocument, ProviderService } from "@/modules/provider/data/qualification/model";
@@ -83,7 +83,7 @@ export function ProviderHomeBoard({
 }) {
   const c = providerCopy(locale);
   const demo = demoProviderSpaces(locale, query);
-  const live = actionItems !== undefined;
+  const live = actionItems !== undefined || !canApplyProviderSpaceDemo();
   const liveTreat = toProviderPriorityRows((actionItems ?? []).slice(0, 4), locale, query).map((row, index) => ({
     id: row.id,
     title: row.title,
@@ -216,7 +216,7 @@ export function ProviderHomeBoard({
 export function QualificationBoard({ locale, query, dashboard }: { locale: Locale; query: string; dashboard?: ProviderDashboard | null }) {
   const c = providerCopy(locale);
   const demo = demoProviderSpaces(locale, query);
-  const live = dashboard !== undefined;
+  const live = dashboard !== undefined || !canApplyProviderSpaceDemo();
   const services = dashboard?.services ?? [];
   const documents = dashboard?.documents ?? [];
   const overall = dashboard?.profile?.overallStatus;
@@ -312,9 +312,10 @@ export function QualificationBoard({ locale, query, dashboard }: { locale: Local
 export function ServicesBoard({ locale, query, services, domain }: { locale: Locale; query: string; services?: readonly ProviderService[]; domain?: string }) {
   const c = providerCopy(locale);
   const demo = demoProviderSpaces(locale, query);
-  const live = services !== undefined;
+  const live = services !== undefined || !canApplyProviderSpaceDemo();
+  const declared = services ?? [];
   const groups = live
-    ? [...services.reduce((map, service) => {
+    ? [...declared.reduce((map, service) => {
         const label = locale === "ar" ? service.libraryLabel.ar : service.libraryLabel.fr;
         const current = map.get(label) ?? [];
         current.push(service);
@@ -324,13 +325,13 @@ export function ServicesBoard({ locale, query, services, domain }: { locale: Loc
     : [];
   const visibleGroups = live && domain ? groups.filter((group) => group.domain === domain) : groups;
   const capacityLead = live
-    ? (services[0] ? `${services[0].capacityStatus}${services[0].leadTimeDays !== null ? ` · ${services[0].leadTimeDays} j` : ""}` : "—")
+    ? (declared[0] ? `${declared[0].capacityStatus}${declared[0].leadTimeDays !== null ? ` · ${declared[0].leadTimeDays} j` : ""}` : "—")
     : demo.capacity.status;
   const delayLead = live
-    ? (services[0]?.leadTimeDays !== null && services[0] ? `${services[0].leadTimeDays} j` : "—")
+    ? (declared[0]?.leadTimeDays !== null && declared[0] ? `${declared[0].leadTimeDays} j` : "—")
     : c.indicativeDelay;
   const skillOptions = live
-    ? services.map((item) => ({ id: item.id, title: locale === "ar" ? item.label.ar : item.label.fr, href: `/${locale}/sous-traitant/qualification${query}#capacite` }))
+    ? declared.map((item) => ({ id: item.id, title: locale === "ar" ? item.label.ar : item.label.fr, href: `/${locale}/sous-traitant/qualification${query}#capacite` }))
     : demo.services.flatMap((group) => group.items.map((item) => ({ id: item.id, title: item.title, href: `/${locale}/sous-traitant/qualification${query}#capacite` })));
   return (
     <main className="client-page">
@@ -409,7 +410,7 @@ export function ServicesBoard({ locale, query, services, domain }: { locale: Loc
 export function ConsultationsBoard({ locale, query, rows, empty, tab }: { locale: Locale; query: string; rows?: readonly ProviderListRow[]; empty?: string; tab?: string }) {
   const c = providerCopy(locale);
   const demo = demoProviderSpaces(locale, query);
-  const list = rows ?? demo.consultRows;
+  const list = rows ?? (canApplyProviderSpaceDemo() ? demo.consultRows : []);
   const current = tab || "all";
   return (
     <main className="client-page">
@@ -479,7 +480,7 @@ export function ConsultationsBoard({ locale, query, rows, empty, tab }: { locale
 export function QuotesBoard({ locale, query, rows, empty, tab }: { locale: Locale; query: string; rows?: readonly ProviderListRow[]; empty?: string; tab?: string }) {
   const c = providerCopy(locale);
   const demo = demoProviderSpaces(locale, query);
-  const list = rows ?? demo.quotes;
+  const list = rows ?? (canApplyProviderSpaceDemo() ? demo.quotes : []);
   const current = tab || "all";
   return (
     <main className="client-page">
@@ -547,8 +548,8 @@ export function QuotesBoard({ locale, query, rows, empty, tab }: { locale: Local
 export function ProviderMissionsBoard({ locale, query, rows }: { locale: Locale; query: string; rows?: readonly ProviderListRow[] }) {
   const c = providerCopy(locale);
   const demo = demoProviderSpaces(locale, query);
-  const live = rows !== undefined;
-  const list = rows ?? demo.missions;
+  const live = rows !== undefined || !canApplyProviderSpaceDemo();
+  const list = rows ?? (canApplyProviderSpaceDemo() ? demo.missions : []);
   return (
     <main className="client-page">
       <section className="client-board client-board-compare">
@@ -718,7 +719,7 @@ export function ProviderDocumentsBoard({
 export function BillingBoard({ locale, query, dashboard }: { locale: Locale; query: string; dashboard?: BillingDashboard | null }) {
   const c = providerCopy(locale);
   const demo = demoProviderSpaces(locale, query);
-  const live = dashboard !== undefined;
+  const live = dashboard !== undefined || !canApplyProviderSpaceDemo();
   return (
     <main className="client-page">
       <section className="client-space-kpis">
@@ -785,7 +786,7 @@ export function BillingBoard({ locale, query, dashboard }: { locale: Locale; que
 export function ReputationBoard({ locale, query, dashboard }: { locale: Locale; query: string; dashboard?: ProviderReputationDashboard | null }) {
   const c = providerCopy(locale);
   const demo = demoProviderSpaces(locale, query);
-  const live = dashboard !== undefined;
+  const live = dashboard !== undefined || !canApplyProviderSpaceDemo();
   const reviews = live
     ? (dashboard?.feedback ?? []).map((item, index) => ({
         id: `${item.publishedAt}-${index}`,
@@ -831,7 +832,7 @@ export function ReputationBoard({ locale, query, dashboard }: { locale: Locale; 
             {reviews.map((row) => (
               <li key={row.id}>
                 <span><strong>{row.title}</strong><small>{row.status}</small></span>
-                <Cta href={`/${locale}/sous-traitant/reputation${query}`} soft={row.action === "reply"}>{row.action === "reply" ? c.reply : c.seeDetail}</Cta>
+                <Cta href={row.action === "reply" ? `/${locale}/sous-traitant/messages${query}` : `/${locale}/sous-traitant/missions${query}`} soft={row.action === "reply"}>{row.action === "reply" ? c.reply : c.seeDetail}</Cta>
               </li>
             ))}
           </ul>

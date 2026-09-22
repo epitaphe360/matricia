@@ -39,13 +39,15 @@ describe("provider dashboard mockups", () => {
 
   it("ouvre les listes vers des pages de détail 09-15", () => {
     const demo = demoProviderSpaces("fr", "");
-    expect(demo.consultRows[0]?.href).toContain("/sous-traitant/consultations/cr1");
-    expect(demo.quotes[0]?.href).toContain("/sous-traitant/devis/d1");
-    expect(demo.quotes[1]?.href).toContain("/revision");
-    expect(demo.missions[0]?.href).toContain("/sous-traitant/missions/m1");
+    expect(demo.consultRows[0]?.href).toContain("/sous-traitant/consultations");
+    expect(demo.quotes[0]?.href).toContain("/sous-traitant/devis");
+    expect(demo.missions[0]?.href).toContain("/sous-traitant/missions");
     const lists = renderToStaticMarkup(<ConsultationsBoard locale="fr" query="" />) + renderToStaticMarkup(<QuotesBoard locale="fr" query="" />);
-    expect(lists).toContain("/sous-traitant/consultations/cr1");
+    expect(lists).toContain("Aucune consultation dans votre périmètre.");
+    expect(lists).toContain("Aucun devis enregistré.");
     expect(lists).toContain("/sous-traitant/devis/nouveau");
+    expect(lists).not.toContain("/sous-traitant/consultations/cr1");
+    expect(lists).not.toContain("/sous-traitant/devis/d1");
   });
 
   it("couvre les écrans imbriqués par des pages dédiées", () => {

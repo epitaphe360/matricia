@@ -83,7 +83,7 @@ export function DiagnosticsBoard({
 }) {
   const c = spaceCopy(locale);
   const demo = demoClientSpaces(locale, "");
-  const analyseHref = "#analyse";
+  const analyseHref = evolutionHref;
   const preferDemo = canApplyClientSpaceDemo(organizationName ?? null) && findings.length === 0;
   const priorities = preferDemo
     ? demo.priorities.map((row) => ({
@@ -601,7 +601,7 @@ export function CompanyBoard({ locale, query, organizationName, alternate }: { l
       <OrganizationTabs locale={locale} query={query} active="profile" />
       <section className="client-board" id="sites">
         <article className="client-card">
-          <header className="client-priority-head"><h2>{c.orgInfo}</h2><Cta href={`#modifier`}>{c.modify}</Cta></header>
+          <header className="client-priority-head"><h2>{c.orgInfo}</h2><Cta href={`/${locale}/organisation${query}#modifier`}>{c.modify}</Cta></header>
           <dl className="client-fact-grid client-org-grid">
             <div><small>{c.legalName}</small><span>{legalName}</span></div>
             <div><small>{c.address}</small><span>{demoOn ? (locale === "ar" ? "الدار البيضاء، المغرب" : "Casablanca, Maroc") : "—"}</span></div>
@@ -624,7 +624,7 @@ export function CompanyBoard({ locale, query, organizationName, alternate }: { l
             <h2>{c.people}</h2>
             <div className="client-offer-actions">
               <Cta href={`/${locale}/organisation/roles${query}`}>{c.manageAccess}</Cta>
-              <Cta href={`/${locale}/organisation/roles${query}`} soft>{c.invite}</Cta>
+              <Cta href={`/${locale}/securite/compte${query}#invitation`} soft>{c.invite}</Cta>
             </div>
           </header>
           <ul className="client-feed">
@@ -647,20 +647,8 @@ export function CompanyBoard({ locale, query, organizationName, alternate }: { l
             </div>
           </div>
           <p><strong>{c.commPrefs}</strong></p>
-          <ul className="client-toggle-list">
-            <li>
-              <span><strong>{c.news}</strong><small>{c.newsLead}</small></span>
-              <input type="checkbox" defaultChecked name="news" aria-label={c.news} />
-            </li>
-            <li>
-              <span><strong>{c.projectUpdates}</strong><small>{c.projectUpdatesLead}</small></span>
-              <input type="checkbox" defaultChecked name="projects" aria-label={c.projectUpdates} />
-            </li>
-            <li>
-              <span><strong>{c.advice}</strong><small>{c.adviceLead}</small></span>
-              <input type="checkbox" name="advice" aria-label={c.advice} />
-            </li>
-          </ul>
+          <p>{c.newsLead}</p>
+          <Cta href={`/${locale}/notifications${query}`}>{c.openPreferences}</Cta>
         </article>
       </section>
       <footer className="client-space-footer">
@@ -675,19 +663,26 @@ export function CompanyBoard({ locale, query, organizationName, alternate }: { l
   );
 }
 
-export function MessagesBoard({ locale, query, children, threads, organizationName }: { locale: Locale; query: string; children: ReactNode; threads?: Array<{ id: string; title: string; meta: string; href: string }>; organizationName?: string | null }) {
+export function MessagesBoard({ locale, query, search, children, threads, organizationName }: { locale: Locale; query: string; search?: string; children: ReactNode; threads?: Array<{ id: string; title: string; meta: string; href: string }>; organizationName?: string | null }) {
   const c = spaceCopy(locale);
   const demo = demoClientSpaces(locale, query);
-  const preferDemo = canApplyClientSpaceDemo(organizationName ?? null);
-  const inbox = preferDemo ? demo.inbox : threads ?? [];
+  const liveThreads = threads ?? [];
+  const showDemo = canApplyClientSpaceDemo(organizationName ?? null) && liveThreads.length === 0;
+  const needle = (search ?? "").trim().toLocaleLowerCase();
+  const inbox = (showDemo ? demo.inbox : liveThreads).filter((item) => !needle || `${item.title} ${item.meta}`.toLocaleLowerCase().includes(needle));
+  const organizationId = new URLSearchParams(query.replace(/^\?/, "")).get("organizationId");
   return (
     <main className="client-page">
       <div className="client-msg-grid">
         <article className="client-card">
-          <label className="client-top-search"><Search className="size-4" aria-hidden /><span className="sr-only">{c.searchThread}</span><input placeholder={c.searchThread} /></label>
+          <form className="client-top-search" action={`/${locale}/messagerie`} method="get" role="search">
+            {organizationId ? <input type="hidden" name="organizationId" value={organizationId} /> : null}
+            <Search className="size-4" aria-hidden />
+            <label><span className="sr-only">{c.searchThread}</span><input name="q" defaultValue={search} placeholder={c.searchThread} /></label>
+          </form>
           <nav className="client-tabs" aria-label={c.msgTitle}>
-            <a href="#messages-inbox" aria-current="page">{c.all}</a>
-            <Link href={`/${locale}/messagerie${query}`}>{c.unread}</Link>
+            <Link href={`/${locale}/messagerie${query}`} aria-current={search ? undefined : "page"}>{c.all}</Link>
+            <Link href={`/${locale}/notifications${query}`}>{c.unread}</Link>
             <Link href={`/${locale}/client/demandes${query}`}>{c.linked}</Link>
           </nav>
           <ul className="client-feed" id="messages-inbox">
@@ -697,7 +692,7 @@ export function MessagesBoard({ locale, query, children, threads, organizationNa
           </ul>
         </article>
         <article className="client-card client-msg-thread">
-          {preferDemo ? (
+          {showDemo ? (
             <>
               <header className="client-priority-head">
                 <h2>{c.threadTitle} — {demo.thread.folder}</h2>
@@ -711,24 +706,13 @@ export function MessagesBoard({ locale, query, children, threads, organizationNa
                 ))}
               </ol>
               <p className="client-access-note">{c.accessNote}</p>
-              <form className="client-composer" action={`/${locale}/messagerie${query}`} method="get">
-                <label>
-                  <span className="sr-only">{c.write}</span>
-                  <textarea name="corps" placeholder={c.write} required rows={2} />
-                </label>
-                <div>
-                  <Link href={`/${locale}/client/documents${query}`} className="client-ghost-link">{c.attach}</Link>
-                  <button type="submit" className="client-cta">{c.send}</button>
-                </div>
-              </form>
             </>
-          ) : (
-            children
-          )}
+          ) : null}
+          {children}
         </article>
         <article className="client-card">
           <header><h2>{c.context}</h2></header>
-          {preferDemo ? (
+          {showDemo ? (
             <>
               <p><strong>{demo.thread.folder}</strong></p>
               <ul className="client-feed">

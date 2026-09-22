@@ -1,23 +1,44 @@
 .client-workspace {
   --ad-forest: #053528;
   --ad-gold: #e8d5b5;
-  --client-cream: #f4f1fb;
-  --client-ink: #14151c;
-  --client-muted: #6b6d78;
-  --client-line: #e6e4f0;
-  --client-cta: #5b4bdb;
+  --client-cream: #fbfaf8;
+  --client-ink: #111a36;
+  --client-muted: #42506c;
+  --client-line: rgb(17 26 54 / 11%);
+  --client-cta: #6f46e8;
   --client-cta-ink: #fff;
-  --client-soft: #ece8ff;
+  --client-soft: #f0ebff;
+  --home-coral: #ff665f;
+  --home-magenta: #c42bd6;
+  --home-action: linear-gradient(105deg, var(--home-coral), #f04784 58%, var(--home-magenta));
+  --primary: #6f46e8;
+  --primary-foreground: #ffffff;
+  --ring: #6f46e8;
+  --background: #fbfaf8;
+  --foreground: #111a36;
+  --card: #ffffff;
+  --card-foreground: #111a36;
+  --muted-foreground: #42506c;
+  --border: rgb(17 26 54 / 11%);
+  --color-primary: #6f46e8;
+  --color-primary-foreground: #ffffff;
+  --color-ring: #6f46e8;
+  --color-background: #fbfaf8;
+  --color-foreground: #111a36;
+  --color-card: #ffffff;
+  --color-card-foreground: #111a36;
+  --color-muted-foreground: #42506c;
+  --color-border: rgb(17 26 54 / 11%);
   position: relative;
   isolation: isolate;
   min-height: 100dvh;
   display: grid;
   overflow: clip;
   background:
-    radial-gradient(circle at 92% 8%, rgb(232 212 168 / 28%) 0%, transparent 32%),
-    radial-gradient(circle at 88% 0%, rgb(91 75 219 / 10%) 0%, transparent 42%),
-    var(--client-cream);
+    radial-gradient(circle at 8% 8%, rgb(196 43 214 / 7%) 0%, transparent 22rem),
+    linear-gradient(180deg, #fff 0%, var(--client-cream) 54%, #fff 100%);
   color: var(--client-ink);
+  font-family: Inter, "Noto Sans Arabic", system-ui, sans-serif;
 }
 
 @media (min-width: 960px) {
@@ -166,7 +187,7 @@
   background-image: url("/scene/pattern-bl.png");
   background-size: contain;
   background-position: left bottom;
-  opacity: 0.92;
+  opacity: 0.28;
 }
 
 .client-scene-palms {
@@ -178,7 +199,7 @@
   background-size: contain;
   background-position: right top;
   transform: scaleX(-1);
-  opacity: 0.9;
+  opacity: 0.22;
 }
 
 .client-scene-pattern {
@@ -192,7 +213,7 @@
   background-size: contain;
   background-repeat: no-repeat;
   background-position: right bottom;
-  opacity: 0.88;
+  opacity: 0.22;
   pointer-events: none;
 }
 
@@ -255,18 +276,28 @@
 
 .client-space-label {
   margin: 0 0 0.35rem;
-  color: var(--client-muted);
-  font-size: 0.68rem;
-  font-weight: 650;
-  letter-spacing: 0.14em;
+  color: #5d3fd3;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
-.client-mast h1 {
+.client-mast h1,
+.client-hello h1 {
   margin: 0;
-  font-size: clamp(1.85rem, 3.6vw, 2.45rem);
-  line-height: 1.08;
-  letter-spacing: -0.035em;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.85rem, 3.6vw, 2.7rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+[dir="rtl"] .client-space-label,
+[dir="rtl"] .client-mast h1,
+[dir="rtl"] .client-hello h1 {
+  font-family: "Noto Sans Arabic", sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .client-mast p {
@@ -505,10 +536,7 @@
 }
 
 .client-hello h1 {
-  margin: 0;
   font-size: clamp(1.8rem, 4vw, 2.7rem);
-  line-height: 1.1;
-  letter-spacing: -0.03em;
 }
 
 .client-hello p {
@@ -525,8 +553,9 @@ button.client-cta {
   min-height: 2.85rem;
   border: 0;
   border-radius: 999px;
-  background: var(--client-cta);
+  background: var(--home-action);
   color: var(--client-cta-ink);
+  box-shadow: 0 16px 34px rgb(231 65 114 / 22%);
   padding: 0 1.05rem;
   text-decoration: none;
   font-weight: 650;
@@ -535,9 +564,10 @@ button.client-cta {
 
 .client-card {
   border: 1px solid var(--client-line);
-  border-radius: 22px;
+  border-radius: 24px;
   background: #fff;
   padding: 0.95rem 1.05rem 1.05rem;
+  box-shadow: 0 18px 44px rgb(22 29 53 / 6%);
 }
 
 .client-card header {
@@ -558,7 +588,14 @@ button.client-cta {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  font-size: 1.05rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.2rem;
+  letter-spacing: -0.03em;
+}
+
+[dir="rtl"] .client-card h2 {
+  font-family: "Noto Sans Arabic", sans-serif;
+  letter-spacing: 0;
 }
 
 .client-board {
@@ -1797,12 +1834,13 @@ button.client-cta {
   justify-content: center;
   gap: 0.4rem;
   min-height: 2.7rem;
-  border-radius: 14px;
+  border-radius: 999px;
   background: var(--client-cta);
+  background-image: var(--home-action);
   color: #fff;
   padding: 0 1rem;
   text-decoration: none;
-  font-weight: 650;
+  font-weight: 750;
 }
 
 .client-orient {
@@ -1905,8 +1943,9 @@ button.client-cta {
   min-height: 2.85rem;
   border-radius: 999px;
   padding: 0 1.15rem;
-  background: #e07a5f;
+  background: var(--home-action);
   color: #fff;
+  box-shadow: 0 16px 34px rgb(231 65 114 / 22%);
   font-weight: 650;
   text-decoration: none;
 }

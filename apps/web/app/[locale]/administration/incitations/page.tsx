@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
 import { Alert, AlertDescription } from "@/modules/shared/ui/alert";
+import { mfaRequiredMessage } from "@/modules/shared/lib/account-security/platform-access";
 import { loadAdminIncentives } from "@/modules/admin/data/incentives/server-repository";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { IncentivesPanel } from "@/modules/admin/screens/incitations/incentives-panel";
@@ -17,7 +18,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
     <AdminModulePage locale={locale} active="finance" path="incitations" title={m.title} lead={m.description}>
       <Alert><AlertDescription>{m.security}</AlertDescription></Alert>
       {r.status === "error" ? (
-        <p role="alert" className="text-destructive">{m.loadError}</p>
+        <p role="alert" className="text-destructive">{r.reason === "MFA_REQUIRED" ? mfaRequiredMessage(locale) : m.loadError}</p>
       ) : (
         <IncentivesPanel
           locale={locale}

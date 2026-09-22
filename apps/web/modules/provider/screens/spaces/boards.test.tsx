@@ -16,19 +16,21 @@ describe("provider space boards", () => {
       renderToStaticMarkup(<ReputationBoard locale="fr" query="" />),
     ].join("\n");
     expect(html).toContain("À traiter maintenant");
-    expect(html).toContain("Répondre à une consultation");
+    expect(html).toContain("Aucune action à traiter pour le moment.");
+    expect(html).not.toContain("Répondre à une consultation");
     expect(html).toContain("Complétez votre profil");
     expect(html).toContain("Checklist de qualification");
     expect(html).toContain("Vos services déclarés");
-    expect(html).toContain("Appui et conseil");
+    expect(html).toContain("Aucun service n’est encore déclaré.");
+    expect(html).not.toContain("Appui et conseil");
     expect(html).toContain("Créer une proposition structurée");
-    expect(html).toContain("Accompagnement stratégique");
+    expect(html).not.toContain("Accompagnement stratégique");
     expect(html).toContain("RC_ATLAS");
     expect(html).toContain("Privé");
     expect(html).not.toContain("Extrait d’immatriculation");
     expect(html).toContain("Rapprochement et paiements");
     expect(html).toContain("Comment les retours apparaissent");
-    expect(html).toContain("/sous-traitant/consultations/cr1");
+    expect(html).not.toContain("/sous-traitant/consultations/cr1");
     expect(html).toContain("/sous-traitant/devis/nouveau");
     expect(html).not.toMatch(/exemple illustratif/i);
   });

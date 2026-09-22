@@ -55,4 +55,4 @@ export type AdminGovernanceDashboard = {
 
 export type AdminGovernanceResult =
   | { status: "success"; value: AdminGovernanceDashboard }
-  | { status: "error"; reason: "UNAUTHENTICATED" | "FORBIDDEN" | "UNAVAILABLE" | "INVALID_RESPONSE" };
+  | { status: "error"; reason: "UNAUTHENTICATED" | "MFA_REQUIRED" | "FORBIDDEN" | "UNAVAILABLE" | "INVALID_RESPONSE" };

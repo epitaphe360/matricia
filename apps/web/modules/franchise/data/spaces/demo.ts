@@ -1,8 +1,7 @@
-import { isDemoClientHomeEnabled } from "@/modules/client/data/home/demo-scenario";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 
 export function canApplyFranchiseSpaceDemo(_organizationName?: string | null) {
-  return isDemoClientHomeEnabled();
+  return false;
 }
 
 export type Tone = "mint" | "peach" | "violet" | "sky";
@@ -15,7 +14,7 @@ export type DocumentRow = { id: string; title: string; owner: string; status: st
 export type MessageRow = { id: string; title: string; meta: string; href: string; tone: Tone };
 export type NoticeRow = { id: string; title: string; meta: string; href: string };
 export type SupervisionRow = { id: string; title: string; status: string; meta?: string; href: string; tone?: Tone; rowVersion?: number };
-export type QualityRow = { id: string; title: string; type: string; status: string; next: string; tone: Tone };
+export type QualityRow = { id: string; title: string; type: string; status: string; next: string; tone: Tone; href?: string };
 export type FinanceKind = "statement" | "entryFee" | "payout" | "preStatement";
 export type FinanceRow = { id: string; title: string; object: string; status: string; auth: string; tone: Tone; amount?: string; kind?: FinanceKind };
 
@@ -123,10 +122,10 @@ export function demoFranchiseSpaces(locale: Locale, query: string) {
       { id: "n2", title: fr ? "Conseil Anfa" : "استشارة أنفا", meta: fr ? "Aujourd’hui" : "اليوم", href: `/${locale}/franchise/relances${q}` },
     ] as NoticeRow[],
     quality: [
-      { id: "q1", title: fr ? "Dossier — Conseil stratégique" : "ملف — استشارة استراتيجية", type: fr ? "Pièce" : "وثيقة", status: fr ? "À vérifier" : "للتحقق", next: fr ? "Consulter le dossier" : "عرض الملف", tone: "peach" as const },
-      { id: "q2", title: fr ? "Qualification — Digital Maarif" : "تأهيل — رقمي المعاريف", type: fr ? "Qualification" : "تأهيل", status: fr ? "Complément demandé" : "تكملة مطلوبة", next: fr ? "Relancer le professionnel" : "متابعة المهني", tone: "sky" as const },
-      { id: "q3", title: fr ? "Preuve de mission — Studio Atlas" : "دليل مهمة — ستوديو أطلس", type: fr ? "Preuve" : "دليل", status: fr ? "En revue" : "قيد المراجعة", next: fr ? "Motiver la décision" : "تعليل القرار", tone: "violet" as const },
-      { id: "q4", title: fr ? "Incident signalé — Anfa" : "حادثة مبلغ عنها — أنفا", type: fr ? "Incident" : "حادثة", status: fr ? "Décision communiquée" : "قرار مبلَّغ", next: fr ? "Consulter la traçabilité" : "عرض التتبع", tone: "mint" as const },
+      { id: "q1", title: fr ? "Dossier — Conseil stratégique" : "ملف — استشارة استراتيجية", type: fr ? "Pièce" : "وثيقة", status: fr ? "À vérifier" : "للتحقق", next: fr ? "Consulter le dossier" : "عرض الملف", tone: "peach" as const, href: `/${locale}/franchise/documents${q}` },
+      { id: "q2", title: fr ? "Qualification — Digital Maarif" : "تأهيل — رقمي المعاريف", type: fr ? "Qualification" : "تأهيل", status: fr ? "Complément demandé" : "تكملة مطلوبة", next: fr ? "Relancer le professionnel" : "متابعة المهني", tone: "sky" as const, href: `/${locale}/franchise/fournisseurs${q}` },
+      { id: "q3", title: fr ? "Preuve de mission — Studio Atlas" : "دليل مهمة — ستوديو أطلس", type: fr ? "Preuve" : "دليل", status: fr ? "En revue" : "قيد المراجعة", next: fr ? "Motiver la décision" : "تعليل القرار", tone: "violet" as const, href: `/${locale}/franchise/qualite${q}` },
+      { id: "q4", title: fr ? "Incident signalé — Anfa" : "حادثة مبلغ عنها — أنفا", type: fr ? "Incident" : "حادثة", status: fr ? "Décision communiquée" : "قرار مبلَّغ", next: fr ? "Consulter la traçabilité" : "عرض التتبع", tone: "mint" as const, href: `/${locale}/franchise/qualite/incidents${q}` },
     ] as QualityRow[],
     obligations: [
       { id: "o1", title: fr ? "Documents" : "وثائق", detail: fr ? "Suivi des documents attendus et de leur disponibilité." : "متابعة الوثائق المنتظرة وتوفرها." },

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { mfaRequiredMessage } from "@/modules/shared/lib/account-security/platform-access";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { resolveAdminSpace } from "@/modules/admin/data/spaces/context";
 import { isAdminSpaceId, isReservedView, type AdminSpaceId } from "@/modules/admin/data/spaces/admin-nav";
@@ -153,6 +154,12 @@ export async function renderAdminSpacePage({
       kicker={row ? row.status : undefined}
       actions={specialKind ? <SpecialBoardActions locale={locale} kind={specialKind} /> : <SpaceHeaderActions locale={locale} query={admin.selectedQuery} spec={spec} />}
     >
+      {snapshot.reason === "MFA_REQUIRED" ? (
+        <Alert variant="destructive">
+          <AlertTitle>{mfaRequiredMessage(locale)}</AlertTitle>
+          <AlertDescription>{locale === "ar" ? "الملفات تبقى مخفية حتى تفعيل العامل الثاني." : "Les files restent masquées tant que le second facteur n’est pas actif."}</AlertDescription>
+        </Alert>
+      ) : null}
       {snapshot.reason === "FORBIDDEN" && snapshot.rows.length === 0 ? (
         <Alert variant="destructive">
           <AlertTitle>{locale === "ar" ? "وصول غير مسموح" : "Accès non autorisé"}</AlertTitle>

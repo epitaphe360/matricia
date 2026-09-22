@@ -81,12 +81,12 @@ describe("client space boards", () => {
     ].join("\n");
     expect(html).toContain("Vos priorités du moment");
     expect(html).toContain("Ce que Matricia a compris");
-    expect(html).toContain("Structurer votre organisation");
-    expect(html).toContain("Continuer");
+    expect(html).not.toContain("Structurer votre organisation");
     expect(html).toContain("Toutes vos demandes");
-    expect(html).toContain("Conseil stratégique");
+    expect(html).toContain("Demande de démonstration à ignorer");
+    expect(html).not.toContain("Conseil stratégique");
     expect(html).toContain("Tous les statuts");
-    expect(html).toContain("Valider un livrable");
+    expect(html).not.toContain("Valider un livrable");
     expect(html).toContain("Documents récents par dossier");
     expect(html).toContain("Factures à examiner");
     expect(html).toContain("client-kpi-cta");
@@ -94,19 +94,18 @@ describe("client space boards", () => {
     expect(html).toContain("Inviter une personne");
     expect(html).toContain("Profil entreprise");
     expect(html).toContain("Personnes et rôles");
-    expect(html).toContain("Échange lié à un dossier");
+    expect(html).toContain("conversation réelle");
+    expect(html).not.toContain("Échange lié à un dossier");
     expect(html).toContain("Client · Communication");
-    expect(html).not.toContain("Demande de démonstration à ignorer");
     expect(html).not.toMatch(/exemple illustratif/i);
-    expect(html).toContain("lucide-file-plus-2");
+    expect(html).toContain("Aucun élément à afficher pour le moment.");
     expect(renderToStaticMarkup(<SpaceActions href="/fr/besoin" label="Créer un besoin" />)).toContain("client-cta");
     const disputes = renderToStaticMarkup(
       <DisputesBoard locale="fr" query="" organizationName="Client · Communication" cases={[]} selected={null} messages={getDisputeMessages("fr")} canOpen />,
     );
-    expect(disputes).toContain("Mes litiges");
-    expect(disputes).toContain("Retard de livraison livrables");
-    expect(disputes).toContain("Soumettre ma réponse");
-    expect(disputes).toContain("Contacter l’assistance");
+    expect(disputes).toContain("Aucun litige accessible.");
+    expect(disputes).toContain("Ouvrir un litige");
+    expect(disputes).not.toContain("Retard de livraison livrables");
     expect(disputes).not.toMatch(/exemple illustratif/i);
   });
 
@@ -196,8 +195,8 @@ describe("client space boards", () => {
     expect(follow).not.toMatch(/exemple illustratif/i);
     const jalons = renderToStaticMarkup(<JalonsBoard locale="fr" query="" organizationName="Client · Communication" mission={null} messages={getMissionMessages("fr")} />);
     expect(jalons).toContain("Jalons et livrables");
-    expect(jalons).toContain("Diagnostic initial");
-    expect(jalons).toContain("Accepter");
+    expect(jalons).toContain("Aucun élément disponible.");
+    expect(jalons).not.toContain("Diagnostic initial");
     const sub = renderToStaticMarkup(
       <SubscriptionBoard locale="fr" query="" dashboard={emptySubscription} credits={{ balance: "0", unitCode: "CRD", memberCount: 1, boxes: [], operations: [] }} />,
     );

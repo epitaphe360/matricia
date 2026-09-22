@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ getUser: vi.fn(), from: vi.fn(), selects: [] as string[] }));
+const mocks = vi.hoisted(() => ({ getUser: vi.fn(), from: vi.fn(), rpc: vi.fn(), selects: [] as string[] }));
 vi.mock("@/modules/shared/lib/supabase/server", () => ({
-  getSupabaseServerClient: async () => ({ auth: { getUser: mocks.getUser }, from: mocks.from }),
+  getSupabaseServerClient: async () => ({ auth: { getUser: mocks.getUser }, from: mocks.from, rpc: mocks.rpc }),
 }));
 
 import { loadAdminCommandCenter } from "./repository";
@@ -31,8 +31,8 @@ describe("loadAdminCommandCenter", () => {
   beforeEach(() => {
     mocks.selects.length = 0;
     mocks.getUser.mockReset().mockResolvedValue({ data: { user: { id: userId } } });
+    mocks.rpc.mockReset().mockResolvedValue({ data: [{ requirement_satisfied: true, matched_role_codes: ["MATRICIA_ADMIN"] }], error: null });
     mocks.from.mockReset().mockImplementation((table: string) => {
-      if (table === "platform_user_roles") return thenable({ data: [{ role_code: "MATRICIA_ADMIN" }], error: null });
       if (table === "admin_work_items") return thenable({
         data: [{
           id: workId, queue_version_id: queueId, organization_id: null, source_kind: "EXCEPTION", resource_type: "provider_profile",
@@ -68,10 +68,20 @@ describe("loadAdminCommandCenter", () => {
 
   it("fails closed on a work-item query error", async () => {
     mocks.from.mockImplementation((table: string) => {
-      if (table === "platform_user_roles") return thenable({ data: [{ role_code: "MATRICIA_ADMIN" }], error: null });
       if (table === "admin_work_items") return thenable({ data: null, error: { code: "PGRST200" } });
       return thenable({ data: [], error: null });
     });
     await expect(loadAdminCommandCenter()).resolves.toEqual({ status: "error", reason: "QUERY_FAILED" });
+  });
+
+  it("demande le second facteur avant de lire les files", async () => {
+    mocks.rpc.mockResolvedValue({ data: [{ requirement_satisfied: false, matched_role_codes: ["MATRICIA_ADMIN"] }], error: null });
+    await expect(loadAdminCommandCenter()).resolves.toEqual({ status: "error", reason: "MFA_REQUIRED" });
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+
+  it("refuse un compte sans rôle plateforme", async () => {
+    mocks.rpc.mockResolvedValue({ data: [{ requirement_satisfied: true, matched_role_codes: [] }], error: null });
+    await expect(loadAdminCommandCenter()).resolves.toEqual({ status: "error", reason: "FORBIDDEN" });
   });
 });

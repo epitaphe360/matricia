@@ -29,13 +29,13 @@ describe("overlayFranchiseLibraryDemo", () => {
     delete process.env.APP_ENV;
   });
 
-  it("remplit la bibliothèque mandatée vide en démo, sans exemple illustratif", () => {
+  it("ne remplit pas une bibliothèque vide avec un catalogue inventé", () => {
     process.env.MATRICIA_DEMO_ACCESS_ENABLED = "true";
     process.env.APP_ENV = "development";
     const filled = overlayFranchiseLibraryDemo(empty, "fr");
-    expect(filled.services.length).toBeGreaterThan(0);
-    expect(filled.questionnaires[0]?.title).toBe("Diagnostic SI");
-    expect(filled.counts.drafts).toBeGreaterThan(0);
+    expect(filled.services).toHaveLength(0);
+    expect(filled.questionnaires).toHaveLength(0);
+    expect(filled.counts.drafts).toBe(0);
     expect(JSON.stringify(filled)).not.toMatch(/exemple illustratif/i);
   });
 

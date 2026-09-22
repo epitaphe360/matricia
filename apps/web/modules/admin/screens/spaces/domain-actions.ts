@@ -3,7 +3,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
+import { hasPlatformRole, loadMyPlatformAccess } from "@/modules/shared/lib/account-security/platform-access";
 import { outcomeSchema, uuidSchema } from "@/modules/shared/lib/disputes/model";
 
 export type DomainActionState = { status: "idle" } | { status: "success" } | { status: "error"; reason: string };
@@ -11,13 +11,11 @@ export type DomainActionState = { status: "idle" } | { status: "success" } | { s
 const idleRoles = new Set(["SUPER_ADMIN", "MATRICIA_ADMIN", "DISPUTE_MANAGER"]);
 
 async function platformCanDecide() {
-  const client = await getSupabaseServerClient();
-  const { data: auth } = await client.auth.getUser();
-  if (!auth.user) return { ok: false as const, reason: "UNAUTHENTICATED", client };
-  const roles = await client.from("platform_user_roles").select("role_code").eq("user_id", auth.user.id).is("revoked_at", null).limit(20);
-  if (roles.error) return { ok: false as const, reason: "UNAVAILABLE", client };
-  const allowed = (roles.data ?? []).some((row) => idleRoles.has(String(row.role_code)));
-  return allowed ? { ok: true as const, client } : { ok: false as const, reason: "FORBIDDEN", client };
+  const access = await loadMyPlatformAccess();
+  if (access.status === "error") return { ok: false as const, reason: access.reason === "UNAUTHENTICATED" ? "UNAUTHENTICATED" : "UNAVAILABLE" };
+  if (!hasPlatformRole(access.roles, [...idleRoles])) return { ok: false as const, reason: "FORBIDDEN" };
+  if (!access.requirementSatisfied) return { ok: false as const, reason: "MFA_REQUIRED" };
+  return { ok: true as const, client: access.client };
 }
 
 export async function decideAdminDispute(_: DomainActionState, form: FormData): Promise<DomainActionState> {

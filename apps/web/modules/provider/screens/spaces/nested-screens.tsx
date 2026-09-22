@@ -43,7 +43,6 @@ import { listOrganizationRoles } from "@/app/[locale]/organisation/roles/actions
 import { getRoleMessages } from "@/app/[locale]/organisation/roles/messages";
 
 const recordId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
-const demoId = /^[a-z]{1,8}-?[a-z0-9]{0,12}$/iu;
 
 type Search = Promise<{ organizationId?: string; rfq?: string }>;
 
@@ -88,8 +87,7 @@ export async function ProviderConsultationDetailPage({
         },
       }
     : null;
-  const knownDemo = demoId.test(consultationId);
-  if (!invitation && recordId.test(consultationId) && !knownDemo) {
+  if (!invitation) {
     return (
       <ProviderAppShell locale={locale as Locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="consult" title={w.consultDetailTitle} lead={w.outOfScopeLead}>
         <ProviderOutOfScope locale={locale as Locale} query={space.selectedQuery} />
@@ -128,8 +126,7 @@ export async function ProviderQuoteWorkbenchPage({
   const result = await loadProviderQuotes(query.organizationId);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
   const invitation = result.status === "success" ? findInvitation(result.dashboard, quoteId) : null;
-  const knownDemo = quoteId === "nouveau" || demoId.test(quoteId);
-  if (!invitation && recordId.test(quoteId) && !knownDemo) {
+  if (quoteId !== "nouveau" && !invitation) {
     return (
       <ProviderAppShell locale={locale as Locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="quotes" title={w.outOfScope} lead={w.outOfScopeLead}>
         <ProviderOutOfScope locale={locale as Locale} query={space.selectedQuery} />
@@ -166,8 +163,7 @@ export async function ProviderQuotePreviewPage({
   const result = await loadProviderQuotes(query.organizationId);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
   const invitation = result.status === "success" ? findInvitation(result.dashboard, quoteId) : null;
-  const knownDemo = demoId.test(quoteId);
-  if (!invitation && recordId.test(quoteId) && !knownDemo) {
+  if (!invitation) {
     return (
       <ProviderAppShell locale={locale as Locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="quotes" title={w.outOfScope} lead={w.outOfScopeLead}>
         <ProviderOutOfScope locale={locale as Locale} query={space.selectedQuery} />
@@ -209,8 +205,7 @@ export async function ProviderMissionDeliveryPage({
   const result = await loadProviderMissions(locale as Locale);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
   const mission = result.status === "success" ? result.dashboard.missions.find((item) => item.id === missionId) ?? null : null;
-  const knownDemo = demoId.test(missionId);
-  if (!mission && recordId.test(missionId) && !knownDemo) {
+  if (!mission) {
     return (
       <ProviderAppShell locale={locale as Locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="missions" title={w.outOfScope} lead={w.outOfScopeLead}>
         <ProviderOutOfScope locale={locale as Locale} query={space.selectedQuery} />
@@ -244,8 +239,7 @@ export async function ProviderInvoiceSettlementPage({
   const result = await loadProviderBilling();
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
   const invoice = result.status === "success" ? result.dashboard.invoices.find((item) => item.id === invoiceId || item.number === invoiceId) ?? null : null;
-  const knownDemo = demoId.test(invoiceId);
-  if (!invoice && recordId.test(invoiceId) && !knownDemo) {
+  if (!invoice) {
     return (
       <ProviderAppShell locale={locale as Locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="billing" title={w.outOfScope} lead={w.outOfScopeLead}>
         <ProviderOutOfScope locale={locale as Locale} query={space.selectedQuery} />

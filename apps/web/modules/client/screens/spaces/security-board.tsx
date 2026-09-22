@@ -161,7 +161,7 @@ export function SecurityBoard({
             </div>
           )}
         </article>
-        <article className="client-card">
+        <article className="client-card" id="invitation">
           <header><h2>{c.inviteMember}</h2></header>
           <p>{c.accessNote}</p>
           <MemberInviteForm locale={locale} organizationId={organizationId ?? null} />

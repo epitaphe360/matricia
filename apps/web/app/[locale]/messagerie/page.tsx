@@ -64,7 +64,7 @@ function ConversationPanel({
   );
 }
 
-export default async function MessagingPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ fil?: string; organizationId?: string }> }) {
+export default async function MessagingPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ fil?: string; organizationId?: string; q?: string }> }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
@@ -87,7 +87,7 @@ export default async function MessagingPage({ params, searchParams }: { params: 
       : [];
 
   const board = (
-    <MessagesBoard locale={locale} query={space.selectedQuery} threads={threads} organizationName={space.organizationName}>
+    <MessagesBoard locale={locale} query={space.selectedQuery} search={query.q} threads={threads} organizationName={space.organizationName}>
       <ConversationPanel locale={locale} m={m} result={result} />
     </MessagesBoard>
   );

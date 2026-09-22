@@ -270,6 +270,7 @@ export function buildFranchiseSpaceBoard(input: {
       status: item.severity,
       next: item.metricCode ?? item.status,
       tone: item.severity === "CRITICAL" ? "peach" as const : item.severity === "WARNING" ? "violet" as const : "sky" as const,
+      href: `/${locale}/franchise/performance${q}`,
     })),
     ...(input.operations?.anomalies ?? []).map((item) => ({
       id: item.id,
@@ -278,6 +279,7 @@ export function buildFranchiseSpaceBoard(input: {
       status: item.severity,
       next: item.status,
       tone: item.severity === "CRITICAL" || item.severity === "HIGH" ? "peach" as const : "violet" as const,
+      href: `/${locale}/franchise/qualite/anomalies${q}`,
     })),
   ];
   const performance = objectives.map((item) => ({
@@ -295,7 +297,7 @@ export function buildFranchiseSpaceBoard(input: {
       ? `/${locale}/franchise/fournisseurs/${prospect.id}${q}`
       : prospect?.type === "CLIENT"
         ? `/${locale}/franchise/demandes/${prospect.id}${q}`
-        : `/${locale}/franchise/relances${q}`;
+        : `/${locale}/franchise/fournisseurs${q}`;
     return {
       id: "id" in item && typeof item.id === "string" ? item.id : String(index),
       title: "displayName" in item ? item.displayName : "",

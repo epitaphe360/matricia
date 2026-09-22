@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { mfaRequiredMessage } from "@/modules/shared/lib/account-security/platform-access";
 import { loadAdminBoxesDashboard } from "@/modules/admin/data/boxes/repository";
 import { loadAdminCommerceCatalog } from "@/modules/admin/data/catalog/repository";
 import { loadAdminClosureDashboard } from "@/modules/admin/data/closure/repository";
@@ -48,7 +49,7 @@ export default async function AdminFinancePage({
     <AdminModulePage locale={locale} active="finance" path="finance" title={m.title} lead={m.intro}>
       {result.status === "error" ? (
         <Alert variant="destructive">
-          <AlertTitle>{result.reason === "FORBIDDEN" ? m.forbidden : m.unavailable}</AlertTitle>
+          <AlertTitle>{result.reason === "MFA_REQUIRED" ? mfaRequiredMessage(locale) : result.reason === "FORBIDDEN" ? m.forbidden : m.unavailable}</AlertTitle>
           <AlertDescription>
             <Link href={`/${locale}/administration/finance`} className="admin-btn-outline mt-3 inline-flex">{m.retry}</Link>
           </AlertDescription>

@@ -18,5 +18,5 @@ export const adminFinanceDashboardSchema = z.object({
 
 export const reconciliationSchema = z.object({ paymentId: adminFinanceUuid, invoiceId: adminFinanceUuid, amountMinor: exactMinor.refine((value) => BigInt(value) > BigInt(0)), idempotencyKey: adminFinanceUuid, correlationId: adminFinanceUuid }).strict();
 export type AdminFinanceDashboard = z.infer<typeof adminFinanceDashboardSchema>;
-export type AdminFinanceError = "UNAUTHENTICATED" | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_RESPONSE" | "CONFLICT" | "UNAVAILABLE";
+export type AdminFinanceError = "UNAUTHENTICATED" | "MFA_REQUIRED" | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_RESPONSE" | "CONFLICT" | "UNAVAILABLE";
 export type AdminFinanceResult<T> = { status: "success"; value: T } | { status: "error"; reason: AdminFinanceError };

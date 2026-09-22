@@ -1,16 +1,17 @@
 import{approvalRows,baselineRows,conversionEventRows,conversionRows,decisionRows,grantRows,linkRows,membership,membershipRoleRows,platformRoleRows,recommendationRows,roiRows,ruleRows,sourceEventRows,submissionRows,walletRows,type RewardsDashboard}from"./model";
 import{resolveClientOrganizationContext}from"@/modules/shared/client-organization-context";
-import{getSupabaseServerClient}from"@/modules/shared/lib/supabase/server";
+import{loadMyPlatformAccess}from"@/modules/shared/lib/account-security/platform-access";
 
 type Result={status:"success";dashboard:RewardsDashboard}|{status:"error";reason:"UNAUTHENTICATED"|"NO_ORGANIZATION"|"ORGANIZATION_SELECTION_REQUIRED"|"FORBIDDEN_ORGANIZATION"|"QUERY_FAILED"|"INVALID_RESPONSE"};
 const sensitiveRoles=new Set(["SUPER_ADMIN","MATRICIA_ADMIN","FINANCE_MANAGER","COMPLIANCE_MANAGER"]),financeRoles=new Set(["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_ACCOUNTING"]),referralRoles=new Set(["FRANCHISE_OWNER","FRANCHISE_MANAGER","CLIENT_OWNER","CLIENT_ADMIN"]);
 
 export async function loadRewardsDashboard(requestedOrganizationId?:string):Promise<Result>{
- const c=await getSupabaseServerClient(),{data:auth}=await c.auth.getUser();if(!auth.user)return{status:"error",reason:"UNAUTHENTICATED"};
+ const access=await loadMyPlatformAccess();if(access.status==="error")return{status:"error",reason:access.reason==="UNAUTHENTICATED"?"UNAUTHENTICATED":access.reason==="INVALID_RESPONSE"?"INVALID_RESPONSE":"QUERY_FAILED"};
+ const c=access.client,auth={user:{id:access.userId}};
  const memberQuery=await c.from("organization_memberships").select("id,organization_id,organizations!inner(display_name)").eq("user_id",auth.user.id).eq("status","ACTIVE").limit(100);if(memberQuery.error)return{status:"error",reason:"QUERY_FAILED"};const members=membership.array().max(100).safeParse(memberQuery.data);if(!members.success)return{status:"error",reason:"INVALID_RESPONSE"};const context=resolveClientOrganizationContext(members.data,requestedOrganizationId);if(context.status==="error")return{status:"error",reason:context.reason==="NO_CLIENT_ORGANIZATION"?"NO_ORGANIZATION":context.reason};const member=context.membership,org=member.organization_id;
  const aalPromise=c.auth.mfa.getAuthenticatorAssuranceLevel();
  const queries=await Promise.all([
-  c.from("organization_member_roles").select("membership_id,role_code,revoked_at").eq("membership_id",member.id).is("revoked_at",null),c.from("platform_user_roles").select("role_code").eq("user_id",auth.user.id).is("revoked_at",null),
+  c.from("organization_member_roles").select("membership_id,role_code,revoked_at").eq("membership_id",member.id).is("revoked_at",null),Promise.resolve({data:(access.requirementSatisfied?[...access.roles]:[]).map((role_code)=>({role_code})),error:null}),
   c.from("reward_rule_versions").select("id,rule_code,version_number,status,trigger_event,audience_type,bonus_credits,per_recipient_cap_credits,global_cap_credits,window_days,cooldown_hours,credit_validity_days,eligibility_rule,requires_approval,effective_from,effective_until,content_hash,change_reason").order("rule_code").order("version_number",{ascending:false}),
   c.from("reward_grants").select("id,rule_version_id,rule_code,trigger_reference_type,trigger_reference_id,eligibility_evidence,quantity,credit_ledger_entry_id,credit_lot_id,approval_reference,granted_at").eq("organization_id",org).order("granted_at",{ascending:false}).limit(100),
   c.from("referral_links").select("id,referral_code,audience_type,campaign_reference,status,expires_at,max_conversions,created_at").eq("source_organization_id",org).order("created_at",{ascending:false}).limit(100),

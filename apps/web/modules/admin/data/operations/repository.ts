@@ -1,9 +1,8 @@
 import { z } from "zod";
-import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
+import { hasPlatformRole, loadMyPlatformAccess } from "@/modules/shared/lib/account-security/platform-access";
 import type { AdminOperationsResult, SafeAuditEvent } from "./model";
 
 const allowedRoles = ["SUPER_ADMIN", "MATRICIA_ADMIN", "READ_ONLY_AUDITOR"] as const;
-const roleRow = z.object({ role_code: z.enum(allowedRoles) }).strict();
 const bigintId = z.union([z.string().regex(/^\d+$/), z.number().int().nonnegative()]).transform(String);
 const auditRow = z.object({
   id: bigintId,
@@ -24,19 +23,15 @@ function classify(action: string): SafeAuditEvent["signal"] {
 }
 
 export async function loadAdminOperationsDashboard(): Promise<AdminOperationsResult> {
-  const client = await getSupabaseServerClient();
-  const { data: auth } = await client.auth.getUser();
-  if (!auth.user) return { status: "error", reason: "UNAUTHENTICATED" };
-
-  const rolesQuery = await client.from("platform_user_roles").select("role_code")
-    .eq("user_id", auth.user.id).is("revoked_at", null).in("role_code", [...allowedRoles]).limit(3);
-  if (rolesQuery.error) return { status: "error", reason: "UNAVAILABLE" };
-  const roles = z.array(roleRow).safeParse(rolesQuery.data);
-  if (!roles.success) return { status: "error", reason: "INVALID_RESPONSE" };
-  if (roles.data.length === 0) return { status: "error", reason: "FORBIDDEN" };
+  const access = await loadMyPlatformAccess();
+  if (access.status === "error") {
+    return { status: "error", reason: access.reason === "UNAUTHENTICATED" ? "UNAUTHENTICATED" : access.reason === "INVALID_RESPONSE" ? "INVALID_RESPONSE" : "UNAVAILABLE" };
+  }
+  if (!hasPlatformRole(access.roles, allowedRoles)) return { status: "error", reason: "FORBIDDEN" };
+  if (!access.requirementSatisfied) return { status: "error", reason: "MFA_REQUIRED" };
 
   // Deliberately excludes organization/user identifiers, IP, user-agent and metadata/payload.
-  const eventsQuery = await client.from("audit_events")
+  const eventsQuery = await access.client.from("audit_events")
     .select("id,actor_type,action,resource_type,correlation_id,occurred_at,event_hash")
     .order("occurred_at", { ascending: false }).order("id", { ascending: false }).limit(200);
   if (eventsQuery.error) return { status: "error", reason: "UNAVAILABLE" };

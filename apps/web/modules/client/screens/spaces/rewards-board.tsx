@@ -80,7 +80,7 @@ export function RewardsBoard({
                     <tr key={item.id}>
                       <td>{item.conversion_stage}</td>
                       <td><span className="client-status-chip" data-tone="mint">{item.conversion_stage}</span></td>
-                      <td><a href={`#conversion-${item.id}`} className="client-text-link">{c.open}</a></td>
+                      <td><a href="#regles" className="client-text-link">{c.open}</a></td>
                     </tr>
                   ))}
                 </tbody>

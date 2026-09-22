@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
+import { hasPlatformRole, loadMyPlatformAccess } from "@/modules/shared/lib/account-security/platform-access";
 import { publicationUuidSchema, releaseStatusSchema, rollbackInputSchema, type PublicationDashboard, type PublicationResult } from "./model";
 
 const libraryRow = z.object({ id: publicationUuidSchema, code: z.string().min(2).max(80), status: z.string().min(2).max(30), row_version: z.number().int().positive(), current_release_id: publicationUuidSchema.nullable() }).strict();
@@ -9,25 +9,16 @@ const releaseRow = z.object({
   requires_central_approval: z.boolean(), effective_from: z.string().min(10), created_at: z.string().min(10), approved_at: z.string().min(10).nullable(),
   published_at: z.string().min(10).nullable(), retired_at: z.string().min(10).nullable(), row_version: z.number().int().positive(),
 }).strict();
-const roleRow = z.object({ role_code: z.enum(["SUPER_ADMIN", "MATRICIA_ADMIN", "LIBRARY_MANAGER"]) }).strict();
 const rollbackOutput = z.object({ outcome: z.literal("CATALOG_ROLLBACK_SCHEDULED"), release_id: publicationUuidSchema, rollback_target_release_id: publicationUuidSchema, snapshot_hash: z.string().regex(/^[0-9a-f]{64}$/u) }).strict();
 const catalogueRoles = ["SUPER_ADMIN", "MATRICIA_ADMIN", "LIBRARY_MANAGER"] as const;
 const rollbackRoles = new Set(["SUPER_ADMIN", "MATRICIA_ADMIN"]);
 
 async function accessContext() {
-  const client = await getSupabaseServerClient();
-  const { data: auth, error: authError } = await client.auth.getUser();
-  if (authError || !auth.user) return { status: "error", reason: "UNAUTHENTICATED" } as const;
-  const [roleQuery, aalQuery] = await Promise.all([
-    client.from("platform_user_roles").select("role_code").eq("user_id", auth.user.id).is("revoked_at", null).in("role_code", [...catalogueRoles]).limit(10),
-    client.auth.mfa.getAuthenticatorAssuranceLevel(),
-  ]);
-  if (roleQuery.error || aalQuery.error) return { status: "error", reason: "UNAVAILABLE" } as const;
-  const roles = z.array(roleRow).max(10).safeParse(roleQuery.data);
-  if (!roles.success) return { status: "error", reason: "INVALID_RESPONSE" } as const;
-  if (roles.data.length === 0) return { status: "error", reason: "FORBIDDEN" } as const;
-  const aal = aalQuery.data.currentLevel === "aal2" ? "aal2" : "aal1";
-  return { status: "success", client, aal, canRollback: aal === "aal2" && roles.data.some((role) => rollbackRoles.has(role.role_code)) } as const;
+  const access = await loadMyPlatformAccess();
+  if (access.status === "error") return { status: "error", reason: access.reason === "UNAUTHENTICATED" ? "UNAUTHENTICATED" : access.reason === "INVALID_RESPONSE" ? "INVALID_RESPONSE" : "UNAVAILABLE" } as const;
+  if (!hasPlatformRole(access.roles, catalogueRoles)) return { status: "error", reason: "FORBIDDEN" } as const;
+  const aal = access.requirementSatisfied ? "aal2" : "aal1";
+  return { status: "success", client: access.client, aal, canRollback: aal === "aal2" && [...access.roles].some((role) => rollbackRoles.has(role)) } as const;
 }
 
 export async function loadPublicationDashboard(): Promise<PublicationResult<PublicationDashboard>> {

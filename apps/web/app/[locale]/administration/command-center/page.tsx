@@ -43,7 +43,7 @@ export default async function AdminCommandCenterPage({
     >
       {result.status === "error" ? (
         <Alert variant="destructive">
-          <AlertTitle>{result.reason === "FORBIDDEN" ? m.forbiddenPage : m.loadError}</AlertTitle>
+          <AlertTitle>{result.reason === "FORBIDDEN" ? m.forbiddenPage : result.reason === "MFA_REQUIRED" ? m.mfaRequired : m.loadError}</AlertTitle>
           <AlertDescription>{result.reason}</AlertDescription>
         </Alert>
       ) : (

@@ -21,7 +21,7 @@ export type SpaceRow = {
 };
 
 export type SpaceSnapshot = {
-  reason: "OK" | "FORBIDDEN" | "UNAVAILABLE" | "INVALID_RESPONSE" | null;
+  reason: "OK" | "FORBIDDEN" | "MFA_REQUIRED" | "UNAVAILABLE" | "INVALID_RESPONSE" | null;
   rows: SpaceRow[];
   treat: SpaceRow[];
   supervision: AdminSupervisionDashboard | null;
@@ -51,6 +51,8 @@ export async function loadAdminSpaceSnapshot(locale: Locale, space: AdminSpaceId
 
   if (supervision.status === "error" && supervision.reason === "FORBIDDEN") snapshot.reason = "FORBIDDEN";
   if (supervision.status === "error" && (supervision.reason === "UNAVAILABLE" || supervision.reason === "INVALID_RESPONSE")) snapshot.reason = supervision.reason;
+  if (providers && providers.status === "error") snapshot.reason = providers.reason === "MFA_REQUIRED" ? "MFA_REQUIRED" : providers.reason === "FORBIDDEN" ? "FORBIDDEN" : "UNAVAILABLE";
+  if (governance && governance.status === "error") snapshot.reason = governance.reason === "MFA_REQUIRED" ? "MFA_REQUIRED" : governance.reason === "FORBIDDEN" ? "FORBIDDEN" : governance.reason === "INVALID_RESPONSE" ? "INVALID_RESPONSE" : "UNAVAILABLE";
 
   const dash = snapshot.supervision;
   const providerDash = snapshot.providers;
@@ -314,6 +316,7 @@ export async function loadAdminSpaceSnapshot(locale: Locale, space: AdminSpaceId
 }
 
 function overlayDemo(locale: Locale, space: AdminSpaceId, query: string, snapshot: SpaceSnapshot) {
+  if (snapshot.reason === "MFA_REQUIRED" || snapshot.reason === "UNAVAILABLE" || snapshot.reason === "INVALID_RESPONSE") return snapshot;
   if (snapshot.rows.length > 0 || !canApplyAdminDemo()) return snapshot;
   snapshot.rows = buildDemoSpaceRows(locale, space, query);
   snapshot.treat = snapshot.rows.filter((row) => row.treat);

@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { uuidSchema } from "@/modules/shared/lib/catalogue-builder/model";
-import { getServerEnvironment } from "@/modules/shared/lib/env";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 
@@ -341,12 +340,11 @@ export async function inviteFranchiseMandateMember(_: FranchiseCommandState, for
   });
   if (result.status !== "success") return result;
   const client = await getSupabaseServerClient();
-  const environment = getServerEnvironment();
   const { error: deliveryError } = await client.auth.signInWithOtp({
     email: parsed.data.invitedEmail,
     options: {
       shouldCreateUser: true,
-      emailRedirectTo: `${environment.NEXT_PUBLIC_APP_URL}/${parsed.data.locale}/invitations`,
+      data: { locale: parsed.data.locale },
     },
   });
   if (deliveryError) return { status: "error", reason: "FAILED" };

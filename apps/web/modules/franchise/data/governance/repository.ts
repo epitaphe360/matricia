@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
+import { loadMyPlatformAccess } from "@/modules/shared/lib/account-security/platform-access";
 import { sumExact, type FranchiseDashboard } from "./model";
 
 const id = z.string().uuid(), minor = z.union([z.string().regex(/^-?\d+$/), z.number().int().safe()]), ledgerId = z.union([z.string().regex(/^\d+$/), z.number().int().safe()]);
@@ -21,9 +21,10 @@ const ledger = z.object({ id: ledgerId, book_id: id, closure_version_id: id.null
 export type FranchiseLoadResult = { status: "success"; dashboard: FranchiseDashboard } | { status: "error"; reason: "UNAUTHENTICATED" | "FORBIDDEN" | "QUERY_FAILED" | "INVALID_RESPONSE" };
 
 export async function loadFranchiseDashboard(locale: "fr" | "ar"): Promise<FranchiseLoadResult> {
-  const client = await getSupabaseServerClient(), { data: auth } = await client.auth.getUser(); if (!auth.user) return { status: "error", reason: "UNAUTHENTICATED" };
-  const platform = await client.from("platform_user_roles").select("role_code").eq("user_id", auth.user.id).is("revoked_at", null).limit(20); if (platform.error) return { status: "error", reason: "QUERY_FAILED" };
-  const roles = new Set((platform.data ?? []).map((value: { role_code: string }) => value.role_code));
+  const access = await loadMyPlatformAccess();
+  if (access.status === "error") return { status: "error", reason: access.reason };
+  const client = access.client;
+  const roles = access.requirementSatisfied ? access.roles : new Set<string>();
   const [fs, ls, ts, ms, aps, decisionsResult, ins, rs, bs, fees, cs, als, ledgers, feeLedgersResult] = await Promise.all([
     client.from("franchises").select("id,library_id,operator_organization_id,franchise_type,operator_code,territory_code,status,current_mandate_version_id,row_version").order("created_at", { ascending: false }).limit(100),
     client.from("catalog_libraries").select("id,code").limit(100),

@@ -4,9 +4,6 @@ const mocks = vi.hoisted(() => ({ getUser: vi.fn(), rpc: vi.fn(), signInWithOtp:
 vi.mock("@/modules/shared/lib/supabase/server", () => ({
   getSupabaseServerClient: async () => ({ auth: { getUser: mocks.getUser, signInWithOtp: mocks.signInWithOtp }, rpc: mocks.rpc }),
 }));
-vi.mock("@/modules/shared/lib/env", () => ({
-  getServerEnvironment: () => ({ NEXT_PUBLIC_APP_URL: "https://app.matricia.test" }),
-}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import {
@@ -157,7 +154,7 @@ describe("franchise remaining command actions", () => {
     }));
     expect(mocks.signInWithOtp).toHaveBeenCalledWith(expect.objectContaining({
       email: "expert@example.invalid",
-      options: expect.objectContaining({ emailRedirectTo: "https://app.matricia.test/fr/invitations" }),
+      options: { shouldCreateUser: true, data: { locale: "fr" } },
     }));
   });
 

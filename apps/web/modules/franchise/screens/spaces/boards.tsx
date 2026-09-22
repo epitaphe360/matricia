@@ -91,6 +91,11 @@ function resolveBoard(props: SpaceBoardProps) {
   return canApplyFranchiseSpaceDemo() ? demoFranchiseSpaces(props.locale, props.query) : emptyFranchiseSpaces(props.locale, props.query);
 }
 
+function pipelineDestination(locale: string, query: string, id: string) {
+  const path = id === "p1" ? "fournisseurs" : id === "p2" ? "demandes" : id === "p3" ? "demandes/missions" : id === "p4" ? "qualite" : "performance/indicateurs";
+  return `/${locale}/franchise/${path}${query}`;
+}
+
 function Cta({ href, children, soft = false }: { href: string; children: ReactNode; soft?: boolean }) {
   return <Link href={href} className={soft ? "client-soft-link" : "franchise-tool"}>{children}<ArrowRight className="size-4 rtl:rotate-180" aria-hidden /></Link>;
 }
@@ -547,7 +552,7 @@ export function QualityBoard({ locale, query, mandateName, view, search, page, b
                       <td>{c.corrective}</td>
                       <td><span className="client-status-chip" data-tone="peach">{row.status}</span></td>
                       <td>{row.due}</td>
-                      <td><Cta href={`/${locale}/franchise/gouvernance${query}`} soft>{c.open}</Cta></td>
+                      <td><Cta href={`/${locale}/franchise/qualite/actions${query}`} soft>{c.open}</Cta></td>
                     </tr>
                   ))
                 ) : view === "anomalies" || view === "recommandations" || view === "opportunites" || view === "definitions" || view === "risques" || view === "incidents" ? (
@@ -570,7 +575,7 @@ export function QualityBoard({ locale, query, mandateName, view, search, page, b
                     <td>{row.type}</td>
                     <td><span className="client-status-chip" data-tone={row.tone}>{row.status}</span></td>
                     <td>{row.next}</td>
-                    <td><Cta href={`/${locale}/franchise/gouvernance${query}`} soft>{c.open}</Cta></td>
+                    <td><Cta href={row.href ?? `/${locale}/franchise/qualite${query}`} soft>{c.open}</Cta></td>
                   </tr>
                 ))}
               </tbody>
@@ -618,7 +623,7 @@ export function PerformanceBoard({ locale, query, mandateName, view, board }: Sp
       <Banner locale={locale} query={query} mandateName={mandateName} />
       <section className="franchise-treat">
         {demo.pipeline.slice(0, 3).map((item) => (
-          <Link key={item.id} href={`/${locale}/franchise/performance${query}`} className="franchise-kpi-tile" data-tone={item.tone}>
+          <Link key={item.id} href={pipelineDestination(locale, query, item.id)} className="franchise-kpi-tile" data-tone={item.tone}>
             <span className="franchise-kpi-icon" data-tone={item.tone}><FileText className="size-4" aria-hidden /></span>
             <span><strong>{item.title}</strong><small>{item.detail}</small></span>
             <em className="client-status-chip" data-tone={item.tone}>{item.status}</em>
@@ -656,7 +661,7 @@ export function PerformanceBoard({ locale, query, mandateName, view, board }: Sp
                     <td>{row.title}</td>
                     <td><span className="client-status-chip" data-tone="sky">{row.status}</span></td>
                     <td>{row.next}</td>
-                    <td><Cta href={`/${locale}/franchise/performance${query}`} soft>{c.open}</Cta></td>
+                    <td><Cta href={view === "indicateurs" ? `/${locale}/franchise/qualite${query}` : `/${locale}/franchise/performance/indicateurs${query}`} soft>{c.open}</Cta></td>
                   </tr>
                 ))}
               </tbody>
@@ -721,7 +726,7 @@ export function FollowupsBoard({ locale, query, mandateName, view, page, board }
                       <td><span className="franchise-row-title"><span className="franchise-kpi-icon" data-tone={row.tone}><Bell className="size-4" aria-hidden /></span>{row.title}</span></td>
                       <td><span className="client-status-chip" data-tone={row.tone}>{row.due}</span></td>
                       <td>{row.action}</td>
-                      <td><Cta href={row.href ?? `/${locale}/franchise/relances${query}#relances`} soft>{c.open}</Cta></td>
+                      <td><Cta href={row.href ?? `/${locale}/franchise/fournisseurs${query}`} soft>{c.open}</Cta></td>
                     </tr>
                   ))}
                 </tbody>
@@ -733,7 +738,7 @@ export function FollowupsBoard({ locale, query, mandateName, view, page, board }
         <article className="client-card">
           <header><h2>{c.rule}</h2></header>
           <p>{c.ruleLead}</p>
-          <Link href={`/${locale}/franchise/relances${query}#relances`} className="franchise-tool franchise-tool-primary">{c.proposeRule}</Link>
+          {view === "pipeline" ? null : <Link href={`/${locale}/franchise/relances/pipeline${query}`} className="franchise-tool franchise-tool-primary">{c.proposeRule}</Link>}
           {view === "pipeline" ? <p className="client-access-note">{c.ruleLead}</p> : null}
           <p className="client-access-note">{c.scopeNote}</p>
         </article>
@@ -774,7 +779,7 @@ export function GovernanceBoard({ locale, query, mandateName, view, board }: Spa
                     <td>{row.title}</td>
                     <td>{row.type}</td>
                     <td><span className="client-status-chip" data-tone="peach">{row.status}</span></td>
-                    <td><Cta href={`/${locale}/franchise/gouvernance${query}#gouvernance`} soft>{c.prepare}</Cta></td>
+                    <td>{view === "approbations" ? row.status : <Cta href={`/${locale}/franchise/gouvernance/approbations${query}`} soft>{c.prepare}</Cta>}</td>
                   </tr>
                 ))}
               </tbody>

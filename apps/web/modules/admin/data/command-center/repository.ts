@@ -4,7 +4,11 @@ import type { AdminCommandCenter } from "./model";
 
 const id = z.string().uuid();
 const queue = z.object({ id, queue_key: z.string(), label_fr: z.string(), label_ar: z.string() });
-const platformRole = z.object({ role_code: z.string() }).strict();
+const security = z.object({
+  requirement_satisfied: z.boolean(),
+  matched_role_codes: z.array(z.string()),
+}).passthrough();
+const commandRoles = ["SUPER_ADMIN", "MATRICIA_ADMIN", "COMPLIANCE_MANAGER", "FINANCE_MANAGER", "DISPUTE_MANAGER", "LIBRARY_MANAGER", "SUPPORT_AGENT", "READ_ONLY_AUDITOR"] as const;
 const work = z.object({
   id,
   queue_version_id: id,
@@ -35,18 +39,19 @@ const action = z.object({
   requested_at: z.string(),
   row_version: z.number().int().positive(),
 });
-export type AdminLoadResult = { status: "success"; dashboard: AdminCommandCenter } | { status: "error"; reason: "UNAUTHENTICATED" | "FORBIDDEN" | "QUERY_FAILED" | "INVALID_RESPONSE" };
+export type AdminLoadResult = { status: "success"; dashboard: AdminCommandCenter } | { status: "error"; reason: "UNAUTHENTICATED" | "MFA_REQUIRED" | "FORBIDDEN" | "QUERY_FAILED" | "INVALID_RESPONSE" };
 
 export async function loadAdminCommandCenter(): Promise<AdminLoadResult> {
   const client = await getSupabaseServerClient();
   const { data: auth } = await client.auth.getUser();
   if (!auth.user) return { status: "error", reason: "UNAUTHENTICATED" };
-  const roleQuery = await client.from("platform_user_roles").select("role_code").eq("user_id", auth.user.id).is("revoked_at", null).in("role_code", ["SUPER_ADMIN", "MATRICIA_ADMIN", "COMPLIANCE_MANAGER", "FINANCE_MANAGER", "DISPUTE_MANAGER", "LIBRARY_MANAGER", "SUPPORT_AGENT", "READ_ONLY_AUDITOR"]).limit(20);
-  if (roleQuery.error) return { status: "error", reason: "QUERY_FAILED" };
-  const roleRows = z.array(platformRole).safeParse(roleQuery.data);
-  if (!roleRows.success) return { status: "error", reason: "INVALID_RESPONSE" };
-  if (roleRows.data.length === 0) return { status: "error", reason: "FORBIDDEN" };
-  const roles = new Set(roleRows.data.map((item) => item.role_code));
+  const securityResult = await client.rpc("get_my_account_security_requirement");
+  if (securityResult.error) return { status: "error", reason: "QUERY_FAILED" };
+  const requirements = z.array(security).safeParse(securityResult.data);
+  if (!requirements.success || requirements.data.length !== 1) return { status: "error", reason: "INVALID_RESPONSE" };
+  const roles = new Set(requirements.data[0]!.matched_role_codes.filter((role) => commandRoles.includes(role as (typeof commandRoles)[number])));
+  if (roles.size === 0) return { status: "error", reason: "FORBIDDEN" };
+  if (!requirements.data[0]!.requirement_satisfied) return { status: "error", reason: "MFA_REQUIRED" };
   const readOnly = roles.has("READ_ONLY_AUDITOR") && ![...roles].some((item) => item !== "READ_ONLY_AUDITOR");
   const central = roles.has("SUPER_ADMIN") || roles.has("MATRICIA_ADMIN");
   const canRequest = !readOnly && [...roles].some((item) => ["SUPER_ADMIN", "MATRICIA_ADMIN", "COMPLIANCE_MANAGER", "FINANCE_MANAGER", "DISPUTE_MANAGER", "LIBRARY_MANAGER", "SUPPORT_AGENT"].includes(item));

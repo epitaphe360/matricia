@@ -1,7 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { overlayFranchiseLibraryDemo } from "@/modules/franchise/data/library/demo-overlay";
 import { FranchiseLibraryHomeBoard } from "./library-boards";
 import { validationChipLabel } from "./library-chrome";
 import { FranchiseQuestionnairesWorkbench, FranchiseRulesWorkbench, FranchiseServicesWorkbench } from "./library-workbenches";
@@ -41,15 +40,32 @@ const empty: FranchiseLibraryWorkspace = {
   releases: [],
 };
 
+const catalog: FranchiseLibraryWorkspace = {
+  ...empty,
+  counts: { drafts: 0, inReview: 1, published: 0, returns: 0 },
+  services: [{
+    id: "33333333-3333-4333-8333-333333333333",
+    kind: "SERVICE",
+    title: "Sauvegarde gérée",
+    code: "IT-BACKUP",
+    status: "IN_REVIEW",
+    versionLabel: "v1",
+    href: "/fr/franchise/services",
+    category: "Infrastructure",
+    subcategory: "Sauvegarde",
+    subcategoryId: "sub-1",
+    description: "Sauvegarde managée",
+    nameFr: "Sauvegarde gérée",
+    nameAr: "نسخ احتياطي مُدار",
+  }],
+};
+
 const command = { idempotencyKey: "11111111-1111-4111-8111-111111111111", correlationId: "11111111-1111-4111-8111-111111111112" };
 const splitPattern = /50\s*%|Hatim Ahmitech|Jalil-NEOXA/;
 
 describe("alignement maquettes franchise (00–03)", () => {
   it("reproduit la structure accueil bibliothèque mandatée", () => {
-    process.env.MATRICIA_DEMO_ACCESS_ENABLED = "true";
-    process.env.APP_ENV = "development";
-    const workspace = overlayFranchiseLibraryDemo(empty, "fr");
-    const html = renderToStaticMarkup(<FranchiseLibraryHomeBoard locale="fr" query="" workspace={workspace} />);
+    const html = renderToStaticMarkup(<FranchiseLibraryHomeBoard locale="fr" query="" workspace={catalog} />);
     expect(html).toContain("franchise-kpi-tile");
     expect(html).toContain("franchise-pipe-icon");
     expect(html).toContain("File de travail");
@@ -58,14 +74,10 @@ describe("alignement maquettes franchise (00–03)", () => {
     expect(html).toContain("franchise-mandate-ok");
     expect(html).not.toMatch(/exemple illustratif/i);
     expect(html).not.toMatch(splitPattern);
-    delete process.env.MATRICIA_DEMO_ACCESS_ENABLED;
-    delete process.env.APP_ENV;
   });
 
   it("reproduit services, questionnaires et règles en trois colonnes", () => {
-    process.env.MATRICIA_DEMO_ACCESS_ENABLED = "true";
-    process.env.APP_ENV = "development";
-    const workspace = overlayFranchiseLibraryDemo(empty, "fr");
+    const workspace = catalog;
     const services = renderToStaticMarkup(
       <FranchiseServicesWorkbench locale="fr" query="" workspace={workspace} selectedId={workspace.services[0]!.id} createMode={false} organizationId={null} commandIdentity={command} />,
     );
@@ -86,8 +98,6 @@ describe("alignement maquettes franchise (00–03)", () => {
     expect(rules).toContain("franchise-workbench");
     expect(rules).toContain("franchise-mandate-banner");
     expect(validationChipLabel("IN_REVIEW", "fr")).toBe("Soumise");
-    delete process.env.MATRICIA_DEMO_ACCESS_ENABLED;
-    delete process.env.APP_ENV;
   });
 
   it("le shell franchise reprend le chrome Figma", async () => {
@@ -128,11 +138,8 @@ describe("alignement visuel des autres écrans franchise", () => {
   });
 
   it("aligne validations, documents, messages et gouvernance sans affichage de répartition", () => {
-    process.env.MATRICIA_DEMO_ACCESS_ENABLED = "true";
-    process.env.APP_ENV = "development";
-    const workspace = overlayFranchiseLibraryDemo(empty, "fr");
     const html = [
-      renderToStaticMarkup(<FranchiseValidationsWorkbench locale="fr" query="" workspace={workspace} commandIdentity={command} />),
+      renderToStaticMarkup(<FranchiseValidationsWorkbench locale="fr" query="" workspace={catalog} commandIdentity={command} />),
       renderToStaticMarkup(<DocumentsBoard locale="fr" query="" mandateName="Informatique" />),
       renderToStaticMarkup(<MessagesBoard locale="fr" query="" mandateName="Informatique" />),
       renderToStaticMarkup(<GovernanceBoard locale="fr" query="" mandateName="Informatique" />),
@@ -147,8 +154,6 @@ describe("alignement visuel des autres écrans franchise", () => {
     expect(html).toContain("Aucun montant, solde ou donnée financière");
     expect(html).toContain("Aucun service approuvé n’est prêt à publier");
     expect(html).not.toMatch(splitPattern);
-    delete process.env.MATRICIA_DEMO_ACCESS_ENABLED;
-    delete process.env.APP_ENV;
   });
 
   it("résout toutes les destinations NAVIGATION imbriquées", () => {
