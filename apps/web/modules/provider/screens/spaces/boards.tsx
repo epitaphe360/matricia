@@ -128,23 +128,24 @@ export function ProviderHomeBoard({
     const done = fr ? "Complété" : "مكتمل";
     const current = fr ? "En cours" : "جارٍ";
     const unknown = fr ? "Non disponible" : "غير متاح";
+    type JourneyState = "done" | "current" | "todo";
     return [
-      { id: "j1", title: fr ? "Profil" : "الملف", detail: stage ? done : unknown, state: (stage ? "done" : "todo") as const },
+      { id: "j1", title: fr ? "Profil" : "الملف", detail: stage ? done : unknown, state: (stage ? "done" : "todo") as JourneyState },
       {
         id: "j2",
         title: fr ? "Qualification" : "التأهيل",
         detail: stage === "qualified" ? done : stage === "blocked" || stage === "new" ? current : unknown,
-        state: (stage === "qualified" ? "done" : stage ? "current" : "todo") as const,
+        state: (stage === "qualified" ? "done" : stage ? "current" : "todo") as JourneyState,
       },
       {
         id: "j3",
         title: fr ? "Opportunités" : "الفرص",
         detail: stage === "qualified" ? current : pending,
-        state: (stage === "qualified" ? "current" : "todo") as const,
+        state: (stage === "qualified" ? "current" : "todo") as JourneyState,
       },
-      { id: "j4", title: fr ? "Devis" : "العروض", detail: pending, state: "todo" as const },
-      { id: "j5", title: fr ? "Missions" : "المهام", detail: pending, state: "todo" as const },
-      { id: "j6", title: fr ? "Réputation" : "السمعة", detail: pending, state: "todo" as const },
+      { id: "j4", title: fr ? "Devis" : "العروض", detail: pending, state: "todo" as JourneyState },
+      { id: "j5", title: fr ? "Missions" : "المهام", detail: pending, state: "todo" as JourneyState },
+      { id: "j6", title: fr ? "Réputation" : "السمعة", detail: pending, state: "todo" as JourneyState },
     ];
   })();
   return (

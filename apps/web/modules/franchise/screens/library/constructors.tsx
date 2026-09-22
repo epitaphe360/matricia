@@ -160,11 +160,7 @@ export function FranchiseServiceConstructor({
                 </li>
               ))}
             </ul>
-            {deliverables.length === 0 ? (
-              <p className="client-access-note">{locale === "ar" ? "لا مخرجات معلنة بعد." : "Aucun livrable déclaré pour le moment."}</p>
-            ) : (
-              <p className="client-access-note">{c.addDeliverableHint}</p>
-            )}
+            <p className="client-access-note">{c.addDeliverableHint}</p>
           </section>
         </article>
         <aside className="client-card franchise-client-preview">

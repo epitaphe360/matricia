@@ -314,7 +314,7 @@ export function buildFranchiseSpaceBoard(input: {
     if (Number.isFinite(dueMs)) {
       if (dueMs < startOfToday.getTime()) tone = "peach";
       else if (dueMs < endOfToday.getTime()) tone = "violet";
-      else tone = "mint";
+      else tone = "sky";
     }
     void now;
     return {

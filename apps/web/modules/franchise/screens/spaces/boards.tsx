@@ -889,8 +889,8 @@ export function PerformanceBoard({ locale, query, mandateName, view, board }: Sp
     ? "—"
     : integerShare(qualified, Math.max(peopleCount, 1), locale);
   const serviceRows = [
-    ...demo.requests.map((row) => ({ id: row.id, title: row.title, demandes: 1, status: row.stage })),
-    ...demo.performance.map((row) => ({ id: row.id, title: row.title, demandes: 0, status: row.status })),
+    ...demo.requests.map((row) => ({ id: row.id, title: row.title, demandes: 1, status: row.stage, href: `/${locale}/franchise/demandes/${row.id}${query}` })),
+    ...demo.performance.map((row) => ({ id: row.id, title: row.title, demandes: 0, status: row.status, href: `/${locale}/franchise/performance${query}` })),
   ].slice(0, 8);
   const maxDemandes = Math.max(1, ...serviceRows.map((row) => row.demandes));
   const shareRows = demo.people
@@ -973,13 +973,13 @@ export function PerformanceBoard({ locale, query, mandateName, view, board }: Sp
                   ))
                 ) : serviceRows.length === 0 && demo.performance.length === 0 ? (
                   <tr><td colSpan={5}>{c.emptyPerformance}</td></tr>
-                ) : (serviceRows.length ? serviceRows : demo.performance.map((row) => ({ id: row.id, title: row.title, demandes: 0, status: row.status }))).map((row) => (
+                ) : (serviceRows.length ? serviceRows : demo.performance.map((row) => ({ id: row.id, title: row.title, demandes: 0, status: row.status, href: `/${locale}/franchise/performance${query}` }))).map((row) => (
                   <tr key={row.id}>
                     <td>{row.title}</td>
                     <td dir="ltr">{row.demandes}</td>
                     <td><span className="client-status-chip" data-tone="sky">{row.status}</span></td>
                     <td>—</td>
-                    <td><Cta href={row.href ?? `/${locale}/franchise/performance${query}`} soft>{c.perfSeeDetail}</Cta></td>
+                    <td><Cta href={row.href} soft>{c.perfSeeDetail}</Cta></td>
                   </tr>
                 ))}
               </tbody>
@@ -1024,6 +1024,7 @@ export function PerformanceBoard({ locale, query, mandateName, view, board }: Sp
 
 export function FollowupsBoard({ locale, query, mandateName, view, page, board }: SpaceBoardProps) {
   const c = franchiseCopy(locale);
+  const n = libraryCopy(locale);
   const demo = resolveBoard({ locale, query, board });
   const followPath = view ? `/${locale}/franchise/relances/${view}` : `/${locale}/franchise/relances`;
   const pagedFollowups = paginate(demo.followups, page);
