@@ -155,7 +155,7 @@ function matchesNetworkFilter(view: string | null | undefined, stage?: string) {
   return true;
 }
 
-function resolveBoard(props: SpaceBoardProps) {
+function resolveBoard(props: SpaceBoardProps): FranchiseSpaceBoardData {
   if (props.board) return props.board;
   return canApplyFranchiseSpaceDemo() ? demoFranchiseSpaces(props.locale, props.query) : emptyFranchiseSpaces(props.locale, props.query);
 }
@@ -486,7 +486,7 @@ export function NetworkBoard({ locale, query, mandateName, view, itemId, search,
                 {people.length === 0 ? (
                   <tr><td colSpan={8}>{c.emptyPeople}</td></tr>
                 ) : people.map((row) => (
-                  <tr key={row.id} data-selected={selected?.id === row.id ? "true" : undefined}>
+                  <tr key={row.id} data-selected={itemId != null && itemId === row.id ? "true" : undefined}>
                     <td><span className="franchise-row-title"><span className="franchise-kpi-icon" data-tone={row.tone}>{row.name.slice(0, 1)}</span>{row.name}</span></td>
                     <td><em className="franchise-kind-chip">{row.services}</em></td>
                     <td><span className="client-status-chip" data-tone={row.tone}>{row.status}</span></td>
