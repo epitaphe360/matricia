@@ -219,7 +219,14 @@ export async function loadFranchiseLibraryWorkspace(input: { locale: "fr" | "ar"
   const locale = input.locale;
   const namedLibrary = libraryVersions.find((item) => item.id === library.data[0]!.current_published_version_id) ?? libraryVersions.find((item) => item.id === library.data[0]!.current_draft_version_id) ?? libraryVersions[0];
   const q = "";
-  const pickName = (version: { name_fr: string; name_ar: string } | undefined, fallback: string) => version ? (locale === "ar" ? version.name_ar : version.name_fr) : fallback;
+  const pickName = (version: { name_fr: string; name_ar: string } | undefined, fallback: string) => {
+    if (!version) return fallback;
+    const primary = locale === "ar" ? version.name_ar : version.name_fr;
+    const secondary = locale === "ar" ? version.name_fr : version.name_ar;
+    const trimmed = primary?.trim();
+    if (trimmed && trimmed !== fallback) return trimmed;
+    return secondary?.trim() || fallback;
+  };
   const namedCategory = (item: z.infer<typeof categoryRow>) => pickName(categoryVersions.find((value) => value.id === item.current_published_version_id) ?? categoryVersions.find((value) => value.id === item.current_draft_version_id), item.code);
   const namedSubcategory = (item: z.infer<typeof subcategoryRow>) => pickName(subcategoryVersions.find((value) => value.id === item.current_published_version_id) ?? subcategoryVersions.find((value) => value.id === item.current_draft_version_id), item.code);
   const categories: FranchiseCategoryNode[] = categoryItems.filter((item) => item.library_id === libraryId).map((item) => {
@@ -251,7 +258,7 @@ export async function loadFranchiseLibraryWorkspace(input: { locale: "fr" | "ar"
     return {
       id: item.id,
       kind: "SERVICE",
-      title: version ? (locale === "ar" ? version.name_ar : version.name_fr) : item.code,
+      title: pickName(version, item.code),
       code: item.code,
       status: version?.status ?? item.status,
       versionLabel: version ? `v${version.version}` : null,
@@ -293,7 +300,15 @@ export async function loadFranchiseLibraryWorkspace(input: { locale: "fr" | "ar"
     return {
       id: item.id,
       kind: "QUESTIONNAIRE",
-      title: version ? (locale === "ar" ? version.title_ar : version.title_fr) : item.code,
+      title: version
+        ? (() => {
+            const primary = locale === "ar" ? version.title_ar : version.title_fr;
+            const secondary = locale === "ar" ? version.title_fr : version.title_ar;
+            const trimmed = primary?.trim();
+            if (trimmed && trimmed !== item.code) return trimmed;
+            return secondary?.trim() || item.code;
+          })()
+        : item.code,
       code: item.code,
       status: version?.status ?? item.status,
       versionLabel: version ? `v${version.version}` : null,
@@ -369,7 +384,9 @@ export async function loadFranchiseLibraryWorkspace(input: { locale: "fr" | "ar"
         type: selected.franchise_type,
         libraryId,
         libraryCode: library.data[0].code,
-        libraryName: namedLibrary ? (locale === "ar" ? namedLibrary.name_ar : namedLibrary.name_fr) : library.data[0].code,
+        libraryName: namedLibrary
+          ? pickName(namedLibrary, library.data[0].code)
+          : library.data[0].code,
         libraryStatus: library.data[0].status,
         libraryRowVersion: library.data[0].row_version,
         currentReleaseId: library.data[0].current_release_id,

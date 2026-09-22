@@ -279,6 +279,34 @@
 .journey-links a,.journey-links button{display:inline-flex;min-height:44px;align-items:center;gap:6px;border:0;background:transparent;color:var(--jp-blue);cursor:pointer;font:inherit;font-weight:700;text-decoration:underline;text-underline-offset:4px}
 .premium-nav{position:sticky;top:0;z-index:40;border-bottom:1px solid #eadfce;background:rgb(247 243 234 / .94);backdrop-filter:blur(16px)}
 .premium-nav-inner{display:flex;width:min(100% - 40px,1180px);min-height:72px;margin-inline:auto;align-items:center;justify-content:space-between;gap:16px}
+.public-root:has(.home-premium-page){background:none}
+.public-root:has(.home-premium-page) .premium-nav{border-bottom-color:transparent;background:transparent;backdrop-filter:none}
+.public-root:has(.home-premium-page) .premium-nav-inner{width:min(100% - 40px,1630px)}
+.public-root:has(.home-premium-page) .premium-nav-tagline{display:none}
+.public-root:has(.home-premium-page) .premium-nav-action{
+  background:linear-gradient(97deg,#f66b3e 0%,#e0209b 52%,#a413e2 100%);
+  box-shadow:0 12px 26px rgb(190 32 140 / .28);
+}
+.public-root:has(.home-premium-page) .premium-nav-action:hover{background:linear-gradient(97deg,#f7784d 0%,#e534a6 52%,#ae2ae6 100%);transform:translateY(-1px)}
+.public-root:has(.home-premium-page) .premium-nav-login{border-color:rgb(20 28 80 / .14);background:rgb(255 255 255 / .9);color:#1a2340}
+.public-root:has(.home-premium-page) .premium-lang{
+  gap:8px;border:1px solid rgb(20 28 80 / .1);border-radius:999px;background:rgb(255 255 255 / .72);padding:0 12px
+}
+.public-root:has(.home-premium-page) .premium-lang::after{content:"▾";color:rgb(26 35 64 / .55);font-size:.7rem}
+.public-root:has(.diagnostic-premium-page){background:#fff}
+.public-root:has(.diagnostic-premium-page) .premium-nav{border-bottom-color:transparent;background:transparent;backdrop-filter:none}
+.public-root:has(.diagnostic-premium-page) .premium-nav-inner{width:min(100% - 48px,1180px)}
+.public-root:has(.diagnostic-premium-page) .premium-nav-tagline{display:none}
+.public-root:has(.diagnostic-premium-page) .premium-nav-action{
+  background:linear-gradient(97deg,#f66b3e 0%,#e0209b 52%,#a413e2 100%);
+  box-shadow:0 12px 26px rgb(190 32 140 / .28);
+}
+.public-root:has(.diagnostic-premium-page) .premium-nav-action:hover{background:linear-gradient(97deg,#f7784d 0%,#e534a6 52%,#ae2ae6 100%);transform:translateY(-1px)}
+.public-root:has(.diagnostic-premium-page) .premium-nav-login{border-color:rgb(20 28 80 / .14);background:rgb(255 255 255 / .92);color:#1a2340}
+.public-root:has(.diagnostic-premium-page) .premium-lang{
+  gap:8px;border:0;border-radius:0;background:transparent;padding:0 8px
+}
+.public-root:has(.diagnostic-premium-page) .public-footer{display:none}
 .premium-nav-link,.premium-mobile-nav-link{display:flex;min-height:44px;align-items:center;border-radius:8px;color:rgb(26 35 64 / .78);font-size:.875rem;font-weight:600;text-decoration:none}
 .premium-nav-link{padding:10px}
 .premium-mobile-nav-link{padding:8px 12px}

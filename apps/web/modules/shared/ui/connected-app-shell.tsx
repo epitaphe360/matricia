@@ -50,5 +50,5 @@ export async function ConnectedAppShell({
   if (kind === "franchise") {
     return <FranchiseAppShell {...shared} active={franchiseActive} />;
   }
-  return <ClientAppShell {...shared} active={clientActive} />;
+  return <ClientAppShell {...shared} organizationName={space.organizationName} active={clientActive} />;
 }

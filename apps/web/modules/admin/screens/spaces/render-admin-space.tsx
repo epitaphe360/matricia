@@ -31,6 +31,7 @@ export async function renderAdminSpacePage({
   action,
   organizationId,
   q,
+  vue,
 }: {
   locale: string;
   space: string;
@@ -38,6 +39,7 @@ export async function renderAdminSpacePage({
   action?: string;
   organizationId?: string;
   q?: string;
+  vue?: string;
 }) {
   if (!isLocale(localeParam) || !isAdminSpaceId(spaceParam)) notFound();
   const locale = localeParam;
@@ -84,7 +86,7 @@ export async function renderAdminSpacePage({
   let body;
   if (view === "queue") {
     body = (
-      <SpaceQueueBoard locale={locale} query={admin.selectedQuery} space={space} rows={snapshot.rows} treat={snapshot.treat} search={q}>
+      <SpaceQueueBoard locale={locale} query={admin.selectedQuery} space={space} rows={snapshot.rows} treat={snapshot.treat} search={q} vue={vue}>
         {space === "providers" && snapshot.providers ? (
           <details className="client-ops">
             <summary>{getAdminProviderMessages(locale).title}</summary>

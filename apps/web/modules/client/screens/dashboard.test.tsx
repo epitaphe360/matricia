@@ -93,15 +93,17 @@ describe("ClientDashboardHome", () => {
 
     expect(html).toContain("Bonjour, Epitaphe Market.");
     expect(html).toContain("À traiter maintenant");
-    expect(html).toContain("Votre dossier en cours");
+    expect(html).toContain("Déploiement de la marque");
     expect(html).toContain("Comparer ce qui compte");
     expect(html).toContain("Offre A");
-    expect(html).toContain("Déploiement de la marque");
+    expect(html).toContain("Périmètre");
+    expect(html).toContain("Conditions");
+    expect(html).toContain("De l’ambition aux réalisations");
+    expect(html).toContain("Propulsons le savoir-faire marocain.");
     expect(html).toContain("Prochain jalon");
     expect(html).toContain("Documents à examiner");
     expect(html).toContain("Messages non lus");
     expect(html).toContain("L’avancement de vos projets");
-    expect(html).toContain("Périmètre");
     expect(html).toContain("client-home-spark");
     expect(html).toContain("Bilan &amp; besoins");
     expect(html).toContain("Récompenses");

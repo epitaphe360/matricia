@@ -59,7 +59,7 @@ export function ProviderPurchasesBoard({
   const m = getPurchaseMessages(locale);
   if (!hasClientRole) {
     return (
-      <main className="client-page">
+      <main className="client-page provider-purchases">
         <article className="client-card">
           <header><h2>{m.title}</h2></header>
           <p>{m.needClient}</p>
@@ -71,7 +71,7 @@ export function ProviderPurchasesBoard({
   const current = subscription?.subscription;
   const plan = current?.currentPlan;
   return (
-    <main className="client-page">
+    <main className="client-page provider-purchases">
       <section className="client-board client-board-compare">
         <article className="client-card">
           <header className="client-priority-head">

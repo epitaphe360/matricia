@@ -32,6 +32,7 @@ describe("admin dashboard mockups", () => {
     expect(parcours.some((link) => link.href.includes("/administration/litiges"))).toBe(true);
     expect(adminCopy("fr").navHome).toBeTruthy();
     expect(buildAdminNav("fr", "")).toHaveLength(7);
+    expect(buildAdminNav("fr", "").find((item) => item.key === "parcours")?.href).toContain("/administration/parcours");
   });
 
   it("couvre les 57 maquettes 00-56 avec un écran list/detail/decision", () => {
@@ -131,15 +132,22 @@ describe("admin dashboard mockups", () => {
     const catalogue = readFileSync(new URL("../../../app/[locale]/administration/catalogue/page.tsx", import.meta.url), "utf8");
     const operations = readFileSync(new URL("./operations/operations-dashboard.tsx", import.meta.url), "utf8");
     const commandCenter = readFileSync(new URL("../../../app/[locale]/administration/command-center/page.tsx", import.meta.url), "utf8");
+    const parcours = readFileSync(new URL("../../../app/[locale]/administration/parcours/page.tsx", import.meta.url), "utf8");
     expect(finance).toContain('id="boxes"');
     expect(finance).toContain('id="credits"');
     expect(finance).toContain('id="centres-couts"');
+    expect(finance).toContain('hubGroup="finance"');
     expect(catalogue).toContain('id="domaines"');
     expect(catalogue).toContain('id="questions"');
     expect(catalogue).toContain('id="questionnaires"');
+    expect(catalogue).toContain('hubGroup="catalog"');
     expect(operations).toContain('id="outbox"');
     expect(operations).toContain('id="webhooks"');
     expect(operations).toContain('id="parametres"');
-    expect(commandCenter.indexOf("CommandCenterPanel")).toBeLessThan(commandCenter.indexOf("AdminDirectoryBoard"));
+    expect(parcours).toContain("AdminHubBoard");
+    expect(parcours).toContain('groupId="parcours"');
+    expect(commandCenter.indexOf("<AdminDirectoryBoard")).toBeLessThan(commandCenter.indexOf("<CommandCenterPanel"));
+    expect(commandCenter).toContain('title={c.space}');
+    expect(commandCenter).toContain("id=\"command-today\"");
   });
 });

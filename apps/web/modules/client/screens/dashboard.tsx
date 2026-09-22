@@ -1,8 +1,8 @@
 import Link from "next/link";
 import {
   ArrowRight,
+  ArrowUpRight,
   Bell,
-  Building2,
   CalendarDays,
   CheckCircle2,
   CircleDollarSign,
@@ -10,7 +10,6 @@ import {
   FileText,
   MessageSquare,
   Paperclip,
-  Plus,
   Scale,
   Search,
   Sparkles,
@@ -97,6 +96,7 @@ export function ClientDashboardHome({
   alternate,
   search,
   searchedItems,
+  summary,
   snapshot,
   membershipSwitcher,
   actionCenterError,
@@ -156,9 +156,11 @@ export function ClientDashboardHome({
       ]
     : [];
   const progressMax = progressRows.reduce((max, row) => Math.max(max, row.value), 1);
+  const notifCount = summary.total > 0 ? Math.min(summary.total, 9) : 0;
 
   const helloName = organizationName?.trim() || space.space;
   const messagesUnread = insights.messagesToHandle !== null && insights.messagesToHandle > 0;
+  const accountInitial = (organizationName?.trim()?.slice(0, 2) || userEmail?.slice(0, 1) || "M").toUpperCase();
 
   return (
     <div dir={locale === "ar" ? "rtl" : "ltr"} className="client-workspace">
@@ -171,7 +173,10 @@ export function ClientDashboardHome({
           </span>
         </Link>
         <ClientWorkspaceNav locale={locale} selectedQuery={selectedQuery} messagesUnread={messagesUnread} active="home" />
-        <p className="client-side-foot"><span aria-hidden>◆</span>{c.brandFooter}</p>
+        <figure className="client-side-art">
+          <img src="/scenes/arch-city.png" alt="" width={220} height={120} />
+          <figcaption>{c.brandFooter}</figcaption>
+        </figure>
       </aside>
 
       <div className="client-frame">
@@ -180,7 +185,7 @@ export function ClientDashboardHome({
           <div className="client-scene-palms" />
           <div className="client-scene-pattern" />
         </div>
-        <div className="client-topbar">
+        <div className="client-topbar client-home-topbar">
           <div className="client-top-org">{membershipSwitcher}</div>
           <form className="client-top-search client-shell-search" method="get" action={`/${locale}/client/recherche`} role="search" aria-label={c.searchLabel}>
             {selectedOrganizationId ? <input type="hidden" name="organizationId" value={selectedOrganizationId} /> : null}
@@ -188,22 +193,29 @@ export function ClientDashboardHome({
             <label className="sr-only" htmlFor="client-home-search">{c.searchLabel}</label>
             <input id="client-home-search" name="q" defaultValue={search} placeholder={c.searchSpace} />
           </form>
-          <Link href={`/${alternate}/tableau-de-bord${selectedQuery}`} hrefLang={alternate} lang={alternate} className="client-lang-pair">{c.languagePair}</Link>
-          <Link href={`/${locale}/notifications${selectedQuery}`} className="client-icon-btn" aria-label={c.notifications}><Bell className="size-4" /></Link>
-          <span className="client-space-chip"><Building2 className="size-3.5" aria-hidden />{space.space}</span>
-          <details className="client-account">
-            <summary aria-label={c.accountMenu}>{userEmail?.slice(0, 1).toUpperCase() ?? "M"}</summary>
-            <div>
-              <p dir="ltr">{userEmail ?? "—"}</p>
-              <Link href={`/${alternate}/tableau-de-bord${selectedQuery}`} hrefLang={alternate} lang={alternate}>{c.languagePair}</Link>
-              <Link href={`/${locale}/notifications${selectedQuery}`}>{c.notifications}</Link>
-              <Link href={`/${locale}/securite/sessions`}>{m.sessionsCta}</Link>
-              <form action={signOutAction}>
-                <input type="hidden" name="locale" value={locale} />
-                <Button type="submit" className="client-ghost-btn">{m.signOut}</Button>
-              </form>
-            </div>
-          </details>
+          <div className="client-top-actions">
+            <Link href={`/${locale}/notifications${selectedQuery}`} className="client-icon-btn" aria-label={c.notifications}>
+              <Bell className="size-4" />
+              {notifCount > 0 ? <span className="client-icon-badge" aria-hidden>{notifCount}</span> : null}
+            </Link>
+            <Link href={`/${alternate}/tableau-de-bord${selectedQuery}`} hrefLang={alternate} lang={alternate} className="client-lang-pair">{c.languagePair}</Link>
+            <details className="client-account client-account-named">
+              <summary aria-label={c.accountMenu}>
+                <span className="client-account-avatar" aria-hidden>{accountInitial}</span>
+                <span className="client-account-label">{helloName}</span>
+              </summary>
+              <div>
+                <p dir="ltr">{userEmail ?? "—"}</p>
+                <Link href={`/${alternate}/tableau-de-bord${selectedQuery}`} hrefLang={alternate} lang={alternate}>{c.languagePair}</Link>
+                <Link href={`/${locale}/notifications${selectedQuery}`}>{c.notifications}</Link>
+                <Link href={`/${locale}/securite/sessions`}>{m.sessionsCta}</Link>
+                <form action={signOutAction}>
+                  <input type="hidden" name="locale" value={locale} />
+                  <Button type="submit" className="client-ghost-btn">{m.signOut}</Button>
+                </form>
+              </div>
+            </details>
+          </div>
         </div>
 
         <header className="client-mast client-home-mast">
@@ -213,10 +225,10 @@ export function ClientDashboardHome({
           </div>
           <div className="client-home-mast-actions">
             <Link href={`/${locale}/besoin${selectedQuery}`} className="client-need-cta">
-              <Plus aria-hidden className="size-4" />
               {c.primaryNeed}
+              <ArrowUpRight aria-hidden className="size-4 rtl:-scale-x-100" />
             </Link>
-            <small className="client-hello-kicker">{c.orgCaption}</small>
+            <p className="client-ambition-script">{c.ambitionScript}</p>
           </div>
         </header>
 
@@ -226,17 +238,18 @@ export function ClientDashboardHome({
 
           <section className="client-home-hero">
             <article className="client-card client-featured" aria-labelledby="featured-project">
-              <header>
-                <h2 id="featured-project">{c.featuredProject}</h2>
-                {project ? <span className="client-status-pill" data-tone="mint">{featuredStatusLabel(project.status, c)}</span> : null}
-              </header>
               {project ? (
                 <>
+                  <header>
+                    <span className="client-status-pill" data-tone={(project.status === "QUOTES_RECEIVED" || project.status === "CLIENT_REVIEW") ? "violet" : "mint"}>{featuredStatusLabel(project.status, c)}</span>
+                  </header>
                   <div className="client-featured-head">
-                    <strong>{project.title}</strong>
+                    <h2 id="featured-project">{project.title}</h2>
                     {project.quoteCount > 0 ? (
-                      <p dir="ltr">{project.quoteCount} {c.stepQuotes.toLowerCase()} · {c.createdOn} {new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(project.createdAt))}</p>
-                    ) : null}
+                      <p>{comparison?.description || `${project.quoteCount} ${c.stepQuotes.toLowerCase()}`}</p>
+                    ) : (
+                      <p>{c.featuredProject}</p>
+                    )}
                   </div>
                   {homeSteps ? (
                     <ol className="client-home-pipeline">
@@ -254,13 +267,19 @@ export function ClientDashboardHome({
                   <Link href={project.href} className="client-text-link">{c.seeProject}<ArrowRight aria-hidden className="size-4 rtl:rotate-180" /></Link>
                 </>
               ) : (
-                <p>{c.noProject} <Link href={`/${locale}/besoin${selectedQuery}`}>{c.primaryNeed}</Link></p>
+                <>
+                  <header>
+                    <h2 id="featured-project">{c.featuredProject}</h2>
+                  </header>
+                  <p>{c.noProject} <Link href={`/${locale}/besoin${selectedQuery}`}>{c.primaryNeed}</Link></p>
+                </>
               )}
             </article>
 
             <article className="client-card" aria-labelledby="treat-now">
               <header>
                 <h2 id="treat-now"><Zap aria-hidden className="size-4" />{c.treatNow}</h2>
+                <span className="client-card-meta" dir="ltr">{priorityRows.length}</span>
                 <Link href={`/${locale}/client/actions${selectedQuery}`} className="client-text-link">{c.actionsTitle}<ArrowRight aria-hidden className="size-4 rtl:rotate-180" /></Link>
               </header>
               {actionCenterError ? <p role="alert">{m.feedError}</p> : priorityRows.length === 0 ? (
@@ -298,8 +317,9 @@ export function ClientDashboardHome({
                   >
                     <span dir="ltr">{pendingDecisions}</span>
                   </div>
-                  <p>{pendingDecisions} {c.decisionsPending}</p>
+                  <p><strong dir="ltr">{pendingDecisions}</strong> {c.decisionsPending}</p>
                   <small>{c.decisionsCaption}</small>
+                  <em className="client-decisions-script">{c.decisionsScript}</em>
                   {pendingDecisions > 0 ? (
                     <Link href={`/${locale}/client/demandes${selectedQuery}`} className="client-text-link">{c.openItem}<ArrowRight aria-hidden className="size-4 rtl:rotate-180" /></Link>
                   ) : null}
@@ -322,7 +342,13 @@ export function ClientDashboardHome({
                     {progressRows.map((row, index) => {
                       const y = 100 - Math.round((row.value / progressMax) * 72);
                       const color = index === 0 ? "#7c6bf0" : index === 1 ? "#e07a5f" : "#2f9d64";
-                      return <polyline key={row.label} fill="none" stroke={color} strokeWidth="3" points={`16,100 112,${y + 8} 208,${y} 304,${Math.max(28, y - 10)}`} />;
+                      const points = `16,100 112,${y + 8} 208,${y} 304,${Math.max(28, y - 10)}`;
+                      return (
+                        <g key={row.label}>
+                          <polyline fill={`${color}22`} stroke="none" points={`${points} 304,110 16,110`} />
+                          <polyline fill="none" stroke={color} strokeWidth="3" points={points} />
+                        </g>
+                      );
                     })}
                   </svg>
                   <ul className="client-home-progress">
@@ -345,20 +371,29 @@ export function ClientDashboardHome({
                     const maxDeliverables = Math.max(...comparison.columns.map((item) => item.deliverablesCount), 1);
                     const durations = comparison.columns.map((item) => item.durationDays).filter((value) => value > 0);
                     const minDays = durations.length > 0 ? Math.min(...durations) : 0;
+                    const prices = comparison.columns.map((item) => Number(item.totalMinor) || 0).filter((value) => value > 0);
+                    const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
                     const scopePct = Math.round((column.deliverablesCount / maxDeliverables) * 100);
                     const delayPct = column.durationDays > 0 && minDays > 0 ? Math.round((minDays / column.durationDays) * 100) : 0;
+                    const price = Number(column.totalMinor) || 0;
+                    const termsPct = price > 0 && minPrice > 0 ? Math.round((minPrice / price) * 100) : 0;
                     return (
                       <div key={column.quoteId} className="client-home-criteria-offer">
                         <strong>{column.label || (index === 0 ? c.offerA : c.offerB)}</strong>
                         <div className="client-home-bar-row">
                           <span>{c.scope}</span>
                           <div className="client-home-bar-track" aria-hidden><span data-offer={index === 0 ? "a" : "b"} style={{ width: `${scopePct}%` }} /></div>
-                          <em dir="ltr">{column.deliverablesCount}</em>
+                          <em dir="ltr">{scopePct}%</em>
                         </div>
                         <div className="client-home-bar-row">
                           <span>{c.timeline}</span>
                           <div className="client-home-bar-track" aria-hidden><span data-offer={index === 0 ? "a" : "b"} style={{ width: `${delayPct}%` }} /></div>
-                          <em dir="ltr">{column.durationDays} {c.days}</em>
+                          <em dir="ltr">{delayPct}%</em>
+                        </div>
+                        <div className="client-home-bar-row">
+                          <span>{c.terms}</span>
+                          <div className="client-home-bar-track" aria-hidden><span data-offer={index === 0 ? "a" : "b"} data-tone="mint" style={{ width: `${termsPct}%` }} /></div>
+                          <em dir="ltr">{termsPct}%</em>
                         </div>
                       </div>
                     );
@@ -402,11 +437,15 @@ export function ClientDashboardHome({
               )}
             </Link>
             <aside className="client-card client-home-art" aria-hidden>
+              <img src="/scenes/medina-terrace.png" alt="" />
               <p>{c.orgCaption}</p>
             </aside>
           </section>
 
-          <p className="client-home-footer-strip">{c.homeFooterStrip}</p>
+          <footer className="client-home-footer-strip">
+            <p>{c.homeFooterStrip}</p>
+            <p className="client-home-footer-right">{c.homeFooterRight}</p>
+          </footer>
 
           {snapshot.status === "error" ? <p className="admin-notice">{c.snapshotError}</p> : null}
         </main>

@@ -33,7 +33,7 @@ export default async function ClientMissionJalonsPage({
   const mission = dashboard?.missions[0] ?? null;
 
   return (
-    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="missions" title={c.jalonsTitle} lead={c.jalonsLead} kicker={c.kicker}>
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="missions" title={c.jalonsTitle} lead={c.jalonsLead} kicker={c.kicker}>
       <JalonsBoard locale={locale} query={space.selectedQuery} organizationName={space.organizationName} mission={mission} messages={messages} assistanceHref={`/${locale}/client/diagnostics/assistance${space.selectedQuery}`}>
         {result.status === "error" ? (
           <Alert><AlertTitle>{messages.noOrg}</AlertTitle><AlertDescription>{result.reason}</AlertDescription></Alert>

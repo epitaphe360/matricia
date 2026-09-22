@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { FileText, MessageSquare, Send, BookOpen } from "lucide-react";
+import { Eye, Lock, Pencil } from "lucide-react";
 import { libraryCopy } from "@/modules/franchise/data/library/copy";
 import { catalogStatusLabel, type FranchiseCatalogRow, type FranchiseLibraryWorkspace } from "@/modules/franchise/data/library/workspace-model";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
-import { KindChip, MandateBanner, StatusChip, nextAction } from "./library-boards";
-import { FranchiseMandateRail } from "./library-chrome";
+import { KindChip, LanguageMarks, MandateBanner, nextAction } from "./library-boards";
 import { FranchisePublishReleaseForm } from "./catalog-commands";
 
 export const FRANCHISE_VALIDATION_BUCKETS: Record<string, string[] | null> = {
@@ -15,9 +14,6 @@ export const FRANCHISE_VALIDATION_BUCKETS: Record<string, string[] | null> = {
   publications: ["PUBLISHED"],
   historique: null,
 };
-
-const bucketIcons = [FileText, Send, MessageSquare, BookOpen] as const;
-const bucketTones = ["violet", "peach", "mint", "sky"] as const;
 
 function bucketLabel(key: string, locale: Locale) {
   const c = libraryCopy(locale);
@@ -34,6 +30,12 @@ function filterRows(rows: FranchiseCatalogRow[], bucket: string | null) {
   if (!bucket || allowed === undefined) return rows;
   if (allowed === null) return rows;
   return rows.filter((item) => allowed.includes(item.status));
+}
+
+function reviewStatus(status: string, locale: Locale) {
+  const c = libraryCopy(locale);
+  if (status === "DRAFT") return c.notSubmitted;
+  return catalogStatusLabel(status, locale);
 }
 
 export function FranchiseValidationsWorkbench({
@@ -53,102 +55,128 @@ export function FranchiseValidationsWorkbench({
 }) {
   const c = libraryCopy(locale);
   const all = [...workspace.services, ...workspace.questionnaires, ...workspace.rules];
-  const rows = filterRows(all, bucket);
-  const counts = {
-    brouillons: filterRows(all, "brouillons").length,
-    "en-cours": filterRows(all, "en-cours").length,
-    corrections: filterRows(all, "corrections").length,
-    publications: filterRows(all, "publications").length,
-  };
-  const kpis = [
-    { key: "brouillons", label: c.bucketDrafts, value: counts.brouillons, help: c.draftsHelp },
-    { key: "en-cours", label: c.bucketReview, value: counts["en-cours"], help: c.inReviewHelp },
-    { key: "corrections", label: c.bucketCorrections, value: counts.corrections, help: c.returnsHelp },
-    { key: "publications", label: c.bucketPublished, value: counts.publications, help: c.publishedHelp },
-  ] as const;
+  const activeBucket = bucket && bucket in FRANCHISE_VALIDATION_BUCKETS ? bucket : "brouillons";
+  const rows = filterRows(all, activeBucket);
+  const selected = rows[0] ?? null;
+  const bucketKeys = Object.keys(FRANCHISE_VALIDATION_BUCKETS);
   return (
     <main className="client-page">
       <MandateBanner locale={locale} name={workspace.mandate.libraryName} />
-      <section className="franchise-treat">
-        {kpis.map((item, index) => {
-          const Icon = bucketIcons[index] ?? FileText;
-          return (
-            <Link key={item.key} href={`/${locale}/franchise/validations/${item.key}${query}`} className="franchise-kpi-tile" data-tone={bucketTones[index]}>
-              <span className="franchise-kpi-icon"><Icon className="size-4" aria-hidden /></span>
-              <span>
-                <strong>{item.label}</strong>
-                <small><bdi dir="ltr">{item.value}</bdi> · {item.help}</small>
-              </span>
-            </Link>
-          );
-        })}
-      </section>
-      <ol className="franchise-mini-pipe">
-        {c.validationSteps.map(([title, text], index) => (
-          <li key={title} data-active={index === 0 ? "true" : undefined}>
-            <em>{index + 1}</em>
-            <strong>{title}</strong>
-            <small>{text}</small>
-          </li>
+      <nav className="franchise-pill-tabs" aria-label={c.validationsTitle}>
+        {bucketKeys.map((key) => (
+          <Link
+            key={key}
+            href={`/${locale}/franchise/validations/${key}${query}`}
+            className="franchise-pill-tab"
+            data-active={activeBucket === key ? "true" : undefined}
+          >
+            <span>{bucketLabel(key, locale)}</span>
+            <em dir="ltr">{key === "historique" ? all.length : filterRows(all, key).length}</em>
+          </Link>
         ))}
-      </ol>
-      <section className="franchise-workbench">
-        <article className="client-card">
-          <header><h2>{c.validationsTitle}</h2></header>
-          <ul className="franchise-bucket-nav">
-            {Object.keys(FRANCHISE_VALIDATION_BUCKETS).map((key) => (
-              <li key={key}>
-                <Link href={`/${locale}/franchise/validations/${key}${query}`} data-active={bucket === key ? "true" : undefined}>
-                  <span>{bucketLabel(key, locale)}</span>
-                  <small dir="ltr">{key === "historique" ? all.length : filterRows(all, key).length}</small>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </article>
+      </nav>
+      <section className="franchise-validation-grid">
         <article className="client-card">
           <header className="client-priority-head">
-            <h2>{bucket ? bucketLabel(bucket, locale) : c.queue}</h2>
+            <h2>{c.queueItems} <small dir="ltr">({rows.length})</small></h2>
           </header>
+          <form className="franchise-filters" action={`/${locale}/franchise/validations/${activeBucket}`} method="get">
+            <label>
+              <span className="sr-only">{c.kind}</span>
+              <select name="type" defaultValue="all"><option value="all">{c.queueAllTypes}</option></select>
+            </label>
+            <label>
+              <span className="sr-only">{c.category}</span>
+              <select name="category" defaultValue="all"><option value="all">{c.categoriesOfLibrary}</option></select>
+            </label>
+            <label className="franchise-search">
+              <span className="sr-only">{c.search}</span>
+              <input name="q" placeholder={c.search} />
+            </label>
+          </form>
           {rows.length === 0 ? <p>{c.emptyQueue}</p> : (
             <div className="client-table-wrap client-compare">
               <table className="client-space-table">
                 <thead>
                   <tr>
-                    <th>{c.element}</th>
                     <th>{c.kind}</th>
+                    <th>{c.element}</th>
                     <th>{c.version}</th>
-                    <th>{c.validation}</th>
+                    <th>{c.languages}</th>
+                    <th>{c.modifiedOn}</th>
+                    <th>{c.reviewStatus}</th>
+                    <th>{c.lastComment}</th>
                     <th>{c.next}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((item) => (
-                    <tr key={`${item.kind}-${item.id}`}>
-                      <td><strong>{item.title}</strong></td>
+                  {rows.map((item, index) => (
+                    <tr key={`${item.kind}-${item.id}`} data-selected={index === 0 ? "true" : undefined}>
                       <td><KindChip kind={item.kind} locale={locale} /></td>
-                      <td>{item.versionLabel ?? "—"}</td>
-                      <td><StatusChip status={item.status} locale={locale} /></td>
-                      <td><Link href={item.href}>{nextAction(item.status, locale)}</Link></td>
+                      <td>
+                        <strong>{item.title}</strong>
+                        <small>{item.subcategory ?? item.category ?? workspace.mandate.libraryName}</small>
+                      </td>
+                      <td><span className="franchise-version-chip" dir="ltr">{item.versionLabel ?? "v1.0"}</span></td>
+                      <td><LanguageMarks item={item} /></td>
+                      <td>—</td>
+                      <td><em className="client-status-chip" data-tone={item.status === "DRAFT" ? "sky" : "peach"}>{reviewStatus(item.status, locale)}</em></td>
+                      <td>—</td>
+                      <td>
+                        <Link href={item.href} className="franchise-tool franchise-tool-primary">
+                          {item.status === "DRAFT" ? c.submitRow : nextAction(item.status, locale)}
+                        </Link>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-          {workspace.releases.length > 0 ? (
-            <ul className="client-feed">
-              {workspace.releases.map((item) => (
-                <li key={item.id}><span><strong dir="ltr">{item.key}</strong><small>{catalogStatusLabel(item.status, locale)}</small></span></li>
-              ))}
-            </ul>
-          ) : null}
-          {commandIdentity && (bucket === "approuves" || bucket === "publications" || !bucket) ? (
+          {commandIdentity && (activeBucket === "approuves" || activeBucket === "publications") ? (
             <FranchisePublishReleaseForm locale={locale} workspace={workspace} commandIdentity={commandIdentity} organizationId={organizationId} />
           ) : null}
           <p className="client-access-note">{c.clientsNote}</p>
         </article>
-        <FranchiseMandateRail locale={locale} name={workspace.mandate.libraryName} />
+        <aside className="client-card franchise-review-panel">
+          <header>
+            <h2>{c.reviewPanel}</h2>
+            {selected ? (
+              <p>
+                <KindChip kind={selected.kind} locale={locale} />
+                <strong>{selected.title}</strong>
+                <small>{selected.versionLabel ?? "v1.0"} · {selected.subcategory ?? selected.category ?? workspace.mandate.libraryName}</small>
+              </p>
+            ) : <p>{c.emptyQueue}</p>}
+          </header>
+          <p className="franchise-mandate-banner" role="note">
+            <Lock className="size-3.5" aria-hidden />
+            <span>{c.scope} {workspace.mandate.libraryName}</span>
+          </p>
+          <nav className="franchise-inspector-tabs" aria-label={c.reviewPanel}>
+            <span data-active="true">{c.reviewTimeline}</span>
+            <span>{c.reviewDetails}</span>
+          </nav>
+          <ol className="franchise-review-steps">
+            {c.validationSteps.map(([title, text], index) => (
+              <li key={title} data-done={index === 0 ? "true" : undefined}>
+                <em aria-hidden>{index === 0 ? "✓" : index + 1}</em>
+                <span>
+                  <strong>{title}</strong>
+                  <small>{text}</small>
+                </span>
+              </li>
+            ))}
+          </ol>
+          <div className="franchise-comment-box">
+            <strong>{c.lastComment}</strong>
+            <p>{c.noComment}</p>
+          </div>
+          <div className="franchise-toolbar">
+            {selected ? <Link href={selected.href} className="franchise-tool"><Pencil className="size-4" aria-hidden /> {c.fixDraft}</Link> : null}
+            <button type="button" className="franchise-tool" disabled><Eye className="size-4" aria-hidden /> {c.seeApproved}</button>
+          </div>
+        </aside>
       </section>
     </main>
   );

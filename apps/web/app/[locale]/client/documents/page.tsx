@@ -44,7 +44,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     };
   }) ?? [];
   return (
-    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="documents" title={c.docsTitle} lead={c.docsLead} kicker={c.kicker} actions={<SpaceActions href={`/${locale}/client/onboarding${space.selectedQuery}`} label={c.addDoc} />}>
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="documents" title={c.docsTitle} lead={c.docsLead} kicker={c.kicker} actions={<SpaceActions href={`/${locale}/client/onboarding${space.selectedQuery}`} label={c.addDoc} />}>
       <DocumentsBoard locale={locale} query={space.selectedQuery} organizationName={space.organizationName} documents={documents} toHandle={documents.filter((item) => item.tone === "peach").map((item) => ({ id: item.id, title: item.title, href: item.href, tone: item.tone, action: "examine" as const }))}>
         {value ? <DocumentVaultPanel locale={locale} data={value} keys={{ link: randomUUID(), revoke: Object.fromEntries(value.bindings.map((binding) => [binding.id, randomUUID()])) }} /> : null}
       </DocumentsBoard>

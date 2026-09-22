@@ -152,10 +152,7 @@ describe("franchise remaining command actions", () => {
       p_invited_email: "expert@example.invalid",
       p_role_codes: ["FRANCHISE_EXPERT"],
     }));
-    expect(mocks.signInWithOtp).toHaveBeenCalledWith(expect.objectContaining({
-      email: "expert@example.invalid",
-      options: { shouldCreateUser: true, data: { locale: "fr" } },
-    }));
+    expect(mocks.signInWithOtp).not.toHaveBeenCalled();
   });
 
   it("propose un achat volume sans créer de contrat-cadre", async () => {

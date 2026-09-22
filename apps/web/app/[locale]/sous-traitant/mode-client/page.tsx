@@ -35,7 +35,7 @@ export default async function ProviderModeClientPage({
 
   return (
     <ProviderAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="modeClient" title={copy.title} lead={copy.lead}>
-      <main className="client-page">
+      <main className="client-page provider-mode-client">
         <section className="client-board client-board-compare">
           <article className="client-card">
             <header><h2>{copy.current}</h2></header>

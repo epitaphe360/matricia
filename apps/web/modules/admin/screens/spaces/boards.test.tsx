@@ -43,10 +43,15 @@ describe("admin space boards", () => {
     ].join("\n");
     expect(html).toContain("Acteurs &amp; accès");
     expect(html).toContain("Actions sensibles");
+    expect(html).toContain("Toutes les pages d’administration");
+    expect(html).toContain("Créer");
+    expect(html).toContain("Archiver / restaurer");
     expect(html).toContain("Client · Communication");
     expect(html).toContain("Studio Atlas");
     expect(html).toContain("Aucune suppression définitive");
     expect(html).toContain("À traiter");
+    expect(html).toContain('data-tone="amber"');
+    expect(html).toContain('data-tone="plum"');
     expect(html).not.toMatch(/exemple illustratif/i);
   });
 });

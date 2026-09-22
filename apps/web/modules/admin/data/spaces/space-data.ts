@@ -316,11 +316,12 @@ export async function loadAdminSpaceSnapshot(locale: Locale, space: AdminSpaceId
 }
 
 function overlayDemo(locale: Locale, space: AdminSpaceId, query: string, snapshot: SpaceSnapshot) {
-  if (snapshot.reason === "MFA_REQUIRED" || snapshot.reason === "UNAVAILABLE" || snapshot.reason === "INVALID_RESPONSE") return snapshot;
+  if (snapshot.reason === "MFA_REQUIRED" || snapshot.reason === "UNAVAILABLE" || snapshot.reason === "INVALID_RESPONSE" || snapshot.reason === "FORBIDDEN") {
+    return snapshot;
+  }
   if (snapshot.rows.length > 0 || !canApplyAdminDemo()) return snapshot;
   snapshot.rows = buildDemoSpaceRows(locale, space, query);
   snapshot.treat = snapshot.rows.filter((row) => row.treat);
-  if (snapshot.reason === "FORBIDDEN") snapshot.reason = null;
   return snapshot;
 }
 

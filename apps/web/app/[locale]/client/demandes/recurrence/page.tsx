@@ -46,7 +46,7 @@ export default async function ClientRecurringPage({
       locale={locale}
       selectedQuery={space.selectedQuery}
       selectedOrganizationId={space.selectedOrganizationId}
-      userEmail={space.userEmail}
+      userEmail={space.userEmail} organizationName={space.organizationName}
       active="requests"
       title={messages.title}
       lead={messages.description}

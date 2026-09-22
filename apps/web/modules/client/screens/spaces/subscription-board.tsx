@@ -82,43 +82,45 @@ export function SubscriptionBoard({
             </div>
           )}
         </article>
-        <div className="client-stack" id="credits">
-          <article className="client-card">
-            <header className="client-priority-head">
-              <h2>{c.myCredits}</h2>
-              <Link href={`/${locale}/client/credits${query}`} className="client-text-link">{c.seeAll}</Link>
-            </header>
-            <p>{c.creditExplain}</p>
-            <p><strong dir="ltr">{credits.balance} {credits.unitCode}</strong></p>
-            {credits.operations.length === 0 ? null : (
-              <ul className="client-feed">
-                {credits.operations.slice(0, 4).map((item) => (
-                  <li key={item.id}><Link href={item.href}><span>{item.title}</span><em dir="ltr">{item.quantity}</em></Link></li>
-                ))}
-              </ul>
-            )}
-            <Link href={`/${locale}/client/credits${query}`} className="client-cta">{c.seeCredits}</Link>
-          </article>
-          <article className="client-card" id="boxes">
-            <header className="client-priority-head">
-              <h2>{c.myBoxes}</h2>
-              <Link href={`/${locale}/client/credits${query}`} className="client-text-link">{c.seeAllBoxes}</Link>
-            </header>
-            {credits.boxes.length === 0 ? <p>{locale === "ar" ? "لا صندوق ظاهر لهذه المؤسسة." : "Aucune Box visible pour cette organisation."}</p> : (
-              <ul className="client-feed">
-                {credits.boxes.map((box) => (
-                  <li key={box.id}><Link href={box.href}><Boxes className="size-4" aria-hidden /><span>{box.name}</span><em dir="ltr">{box.budget}</em></Link></li>
-                ))}
-              </ul>
-            )}
-          </article>
-        </div>
       </section>
-      <article className="client-card">
-        <p><Sparkles className="size-4" aria-hidden /> {c.moreThanSub}</p>
-        <p>{c.creditKnowHow}</p>
-        <Link href={`/${locale}/contact${query}`} className="client-soft-link">{c.contactAssist}</Link>
-      </article>
+      <section className="client-board client-board-compare" id="credits">
+        <article className="client-card">
+          <header className="client-priority-head">
+            <h2>{c.myCredits}</h2>
+            <Link href={`/${locale}/client/credits${query}`} className="client-text-link">{c.seeAll}</Link>
+          </header>
+          <p>{c.creditExplain}</p>
+          <p><strong dir="ltr">{credits.balance} {credits.unitCode}</strong></p>
+          {credits.operations.length === 0 ? null : (
+            <ul className="client-feed">
+              {credits.operations.slice(0, 4).map((item) => (
+                <li key={item.id}><Link href={item.href}><span>{item.title}</span><em dir="ltr">{item.quantity}</em></Link></li>
+              ))}
+            </ul>
+          )}
+          <Link href={`/${locale}/client/credits${query}`} className="client-cta">{c.seeCredits}</Link>
+        </article>
+        <article className="client-card" id="boxes">
+          <header className="client-priority-head">
+            <h2>{c.myBoxes}</h2>
+            <Link href={`/${locale}/client/credits${query}`} className="client-text-link">{c.seeAllBoxes}</Link>
+          </header>
+          {credits.boxes.length === 0 ? <p>{locale === "ar" ? "لا صندوق ظاهر لهذه المؤسسة." : "Aucune Box visible pour cette organisation."}</p> : (
+            <ul className="client-feed">
+              {credits.boxes.map((box) => (
+                <li key={box.id}><Link href={box.href}><Boxes className="size-4" aria-hidden /><span>{box.name}</span><em dir="ltr">{box.budget}</em></Link></li>
+              ))}
+            </ul>
+          )}
+        </article>
+      </section>
+      <section className="client-board">
+        <article className="client-card">
+          <p><Sparkles className="size-4" aria-hidden /> {c.moreThanSub}</p>
+          <p>{c.creditKnowHow}</p>
+          <Link href={`/${locale}/contact${query}`} className="client-soft-link">{c.contactAssist}</Link>
+        </article>
+      </section>
       <div id="plans">{children}</div>
     </main>
   );

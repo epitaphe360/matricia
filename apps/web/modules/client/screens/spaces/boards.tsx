@@ -8,10 +8,27 @@ import { OrganizationTabs } from "./organization-tabs";
 import { JourneyGlyph } from "@/modules/shared/ui/journey-glyph";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 
-function Cta({ href, children, soft = false, tone }: { href: string; children: ReactNode; soft?: boolean; tone?: "violet" | "peach" | "mint" }) {
-  const className = tone ? "client-kpi-cta" : soft ? "client-soft-link" : "client-ghost-link";
-  return <Link href={href} className={className} data-tone={tone}>{children}<ArrowRight className="size-4 rtl:rotate-180" aria-hidden /></Link>;
+function Cta({
+  href,
+  children,
+  soft = false,
+  tone,
+}: {
+  href: string;
+  children: ReactNode;
+  soft?: boolean;
+  tone?: "violet" | "peach" | "mint" | "sky";
+}) {
+  const className = tone && !soft ? "client-kpi-cta" : soft ? "client-soft-link" : "client-ghost-link";
+  return (
+    <Link href={href} className={className} data-tone={tone}>
+      {children}
+      <ArrowRight className="size-4 rtl:rotate-180" aria-hidden />
+    </Link>
+  );
 }
+
+const PRIORITY_TONES = ["peach", "violet", "sky"] as const;
 
 function FileGlyph({ kind }: { kind: "pdf" | "docx" | "xlsx" | "file" | "message" | "folder" }) {
   const label = kind === "pdf" ? "PDF" : kind === "docx" ? "W" : kind === "xlsx" ? "X" : kind === "message" ? "M" : kind === "folder" ? "D" : "F";
@@ -119,68 +136,152 @@ export function DiagnosticsBoard({
       <section className="client-board client-board-compare">
         <article className="client-card">
           <header>
-            <h2>{c.diagNow}</h2>
-            {score ? <p><strong dir="ltr">{score}/100</strong>{ratingLabel ? ` · ${ratingLabel}` : ""}</p> : <p>{c.diagNowLead}</p>}
+            <h2>
+              <Target className="size-4" aria-hidden />
+              {c.diagNow}
+            </h2>
+            {score ? (
+              <p>
+                <strong dir="ltr">{score}/100</strong>
+                {ratingLabel ? ` · ${ratingLabel}` : ""}
+              </p>
+            ) : (
+              <p>{c.diagNowLead}</p>
+            )}
           </header>
           {libraryScores.length > 0 ? (
             <dl className="client-fact-grid">
               {libraryScores.map((item) => (
-                <div key={item.key}><small>{item.key}</small><span dir="ltr">{item.score}/100</span></div>
+                <div key={item.key}>
+                  <small>{item.key}</small>
+                  <span dir="ltr">{item.score}/100</span>
+                </div>
               ))}
             </dl>
           ) : null}
           {priorities.length === 0 ? (
             <div className="client-offer-actions">
-              <Cta href={questionnaireHref} soft>{c.startQuestionnaire}</Cta>
+              <Cta href={questionnaireHref} soft>
+                {c.startQuestionnaire}
+              </Cta>
               {hasSubmittedAssessment ? <Cta href={analyseHref}>{c.computeAnalysis}</Cta> : null}
             </div>
-          ) : priorities.map((row, index) => (
-            <div key={row.id} className="client-priority-card">
-              <div className="client-priority-head">
-                <strong><span className="client-num">{index + 1}</span>{row.title}</strong>
-                <Cta href={row.href} soft={row.cta !== "need"}>{row.cta === "need" ? c.describeNeed : c.seePlan}</Cta>
-              </div>
-              <dl className="client-fact-grid">
-                <div><small>{c.constat}</small><span>{row.constat}</span></div>
-                <div><small>{c.impact}</small><span>{row.impact}</span></div>
-                <div><small>{c.recommended}</small><span>{row.action}</span></div>
-                <div><small>{c.why}</small><span>{row.why}</span></div>
-              </dl>
-            </div>
-          ))}
+          ) : (
+            priorities.map((row, index) => {
+              const tone = PRIORITY_TONES[index % PRIORITY_TONES.length];
+              return (
+                <div key={row.id} className="client-priority-card" data-tone={tone}>
+                  <div className="client-priority-head">
+                    <strong>
+                      <span className="client-num" data-tone={tone}>
+                        {index + 1}
+                      </span>
+                      {row.title}
+                    </strong>
+                    <Cta href={row.href} soft tone={tone}>
+                      {row.cta === "need" ? c.describeNeed : c.seePlan}
+                    </Cta>
+                  </div>
+                  <dl className="client-fact-grid">
+                    <div>
+                      <small>{c.constat}</small>
+                      <span>{row.constat}</span>
+                    </div>
+                    <div>
+                      <small>{c.impact}</small>
+                      <span>{row.impact}</span>
+                    </div>
+                    <div>
+                      <small>{c.recommended}</small>
+                      <span>{row.action}</span>
+                    </div>
+                    <div>
+                      <small>{c.why}</small>
+                      <span>{row.why}</span>
+                    </div>
+                  </dl>
+                </div>
+              );
+            })
+          )}
         </article>
         <div className="client-stack">
           <article className="client-card">
-            <header><h2>{c.understood}</h2></header>
+            <header>
+              <h2>{c.understood}</h2>
+            </header>
             <p>{c.understoodLead}</p>
             <ul className="client-feed">
-              <li><span className="client-feed-icon" data-tone="violet"><Briefcase className="size-4" aria-hidden /></span><span><strong>{c.activity}</strong><small>{understood.activity}</small></span></li>
-              <li><span className="client-feed-icon" data-tone="sky"><Target className="size-4" aria-hidden /></span><span><strong>{c.objectives}</strong><small>{understood.objectives}</small></span></li>
-              <li><span className="client-feed-icon" data-tone="mint"><Goal className="size-4" aria-hidden /></span><span><strong>{c.attention}</strong><small>{understood.attention}</small></span></li>
+              <li>
+                <span className="client-feed-icon" data-tone="violet">
+                  <Briefcase className="size-4" aria-hidden />
+                </span>
+                <span>
+                  <strong>{c.activity}</strong>
+                  <small>{understood.activity}</small>
+                </span>
+              </li>
+              <li>
+                <span className="client-feed-icon" data-tone="sky">
+                  <Target className="size-4" aria-hidden />
+                </span>
+                <span>
+                  <strong>{c.objectives}</strong>
+                  <small>{understood.objectives}</small>
+                </span>
+              </li>
+              <li>
+                <span className="client-feed-icon" data-tone="mint">
+                  <Goal className="size-4" aria-hidden />
+                </span>
+                <span>
+                  <strong>{c.attention}</strong>
+                  <small>{understood.attention}</small>
+                </span>
+              </li>
             </ul>
             <div className="client-offer-actions">
               <Cta href={questionnaireHref}>{c.modify}</Cta>
-              <Cta href={analyseHref} soft>{c.validate}</Cta>
+              <Cta href={analyseHref} soft>
+                {c.validate}
+              </Cta>
             </div>
           </article>
-          <article className="client-card">
-            <header><h2>{c.resume}</h2></header>
+          <article className="client-card client-resume-card">
+            <header>
+              <h2>{c.resume}</h2>
+            </header>
             <p>{c.resumeLead}</p>
-            <Cta href={questionnaireHref} soft>{c.continue}</Cta>
+            <Cta href={questionnaireHref} soft>
+              {c.continue}
+            </Cta>
+            <div className="client-quote-art" aria-hidden />
           </article>
           <article className="client-card">
-            <header><h2>{c.myRuns}</h2></header>
+            <header>
+              <h2>{c.myRuns}</h2>
+            </header>
             <p>{c.myRunsLead}</p>
             {shownRuns.length === 0 ? (
-              <Cta href={questionnaireHref} soft>{c.startQuestionnaire}</Cta>
+              <Cta href={questionnaireHref} soft>
+                {c.startQuestionnaire}
+              </Cta>
             ) : (
               <ul className="client-feed">
                 {shownRuns.map((run) => (
-                  <li key={run.id}><Link href={run.href}><FileText className="size-4" aria-hidden /><span>{run.title}</span><ArrowRight className="size-4 rtl:rotate-180" aria-hidden /></Link></li>
+                  <li key={run.id}>
+                    <Link href={run.href}>
+                      <FileText className="size-4" aria-hidden />
+                      <span>{run.title}</span>
+                      <ArrowRight className="size-4 rtl:rotate-180" aria-hidden />
+                    </Link>
+                  </li>
                 ))}
               </ul>
             )}
-            <Cta href={evolutionHref} soft>{locale === "ar" ? "تطور التشخيصات" : "Évolution des diagnostics"}</Cta>
+            <Cta href={evolutionHref} soft>
+              {locale === "ar" ? "تطور التشخيصات" : "Évolution des diagnostics"}
+            </Cta>
           </article>
           {continuity ? (
             <article className="client-card">
@@ -388,10 +489,6 @@ export function MissionsBoard({ locale, query, organizationName, view }: { local
               </ul>
             </>
           )}
-          <div className="client-collab">
-            <strong>{c.collaboration}</strong>
-            <p>{c.collaborationLead}</p>
-          </div>
         </article>
         <div className="client-stack">
           <article className="client-card">
@@ -426,6 +523,13 @@ export function MissionsBoard({ locale, query, organizationName, view }: { local
           </article>
         </div>
       </section>
+      <article className="client-quote-banner client-collab-banner">
+        <div>
+          <h2>{c.collaboration}</h2>
+          <p>{c.collaborationLead}</p>
+        </div>
+        <blockquote>{locale === "ar" ? "أبعد اليوم، من أجل الغد." : "Plus loin aujourd’hui, pour demain."}</blockquote>
+      </article>
     </main>
   );
 }
@@ -590,12 +694,12 @@ export function FinancesBoard({ locale, query, organizationName, rows }: { local
   );
 }
 
-export function CompanyBoard({ locale, query, organizationName, alternate }: { locale: Locale; query: string; organizationName: string | null; alternate: "fr" | "ar" }) {
+export function CompanyBoard({ locale, query, organizationName, alternate, people }: { locale: Locale; query: string; organizationName: string | null; alternate: "fr" | "ar"; people?: Array<{ id: string; name: string; role: string }> }) {
   const c = spaceCopy(locale);
   const demo = demoClientSpaces(locale, query);
   const demoOn = canApplyClientSpaceDemo(organizationName);
   const legalName = organizationName ?? (demoOn ? (locale === "ar" ? "عميل · تواصل وتسويق وإبداع" : "Client · Communication, marketing et création") : "—");
-  const people = demoOn ? demo.people : [];
+  const members = people ?? (demoOn ? demo.people : []);
   return (
     <main className="client-page" data-client-layout="company">
       <OrganizationTabs locale={locale} query={query} active="profile" />
@@ -612,7 +716,7 @@ export function CompanyBoard({ locale, query, organizationName, alternate }: { l
         <article className="client-card">
           <header><h2>{c.security}</h2></header>
           <ul className="client-feed">
-            <li><Link href={`/${locale}/securite${query}`}><span>{c.accountSec}</span><ArrowRight className="size-4 rtl:rotate-180" aria-hidden /></Link></li>
+            <li><Link href={`/${locale}/securite/compte${query}`}><span>{c.accountSec}</span><ArrowRight className="size-4 rtl:rotate-180" aria-hidden /></Link></li>
             <li><Link href={`/${locale}/securite/sessions`}><span>{c.sessions}</span><ArrowRight className="size-4 rtl:rotate-180" aria-hidden /></Link></li>
             <li><Link href={`/${locale}/notifications${query}`}><span>{c.notif}</span><ArrowRight className="size-4 rtl:rotate-180" aria-hidden /></Link></li>
           </ul>
@@ -628,7 +732,7 @@ export function CompanyBoard({ locale, query, organizationName, alternate }: { l
             </div>
           </header>
           <ul className="client-feed">
-            {people.length === 0 ? <li><span>{c.emptyPeople}</span></li> : people.map((person) => (
+            {members.length === 0 ? <li><span>{c.emptyPeople}</span></li> : members.map((person) => (
               <li key={person.id}><span className="client-feed-icon" data-tone="violet" /><span><strong>{person.name}</strong></span><em>{person.role}</em></li>
             ))}
           </ul>

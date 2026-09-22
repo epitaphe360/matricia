@@ -16,7 +16,7 @@ export default async function AdminOperationsPage({ params }: { params: Promise<
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
 
   return (
-    <AdminModulePage locale={locale} active="settings" path="operations" title={messages.title} lead={messages.description}>
+    <AdminModulePage locale={locale} active="settings" path="operations" title={messages.title} lead={messages.description} hubGroup="ops">
       {result.status === "error" ? (
         <Alert variant="destructive">
           <AlertTitle>{result.reason === "MFA_REQUIRED" ? mfaRequiredMessage(locale) : result.reason === "FORBIDDEN" ? messages.forbidden : messages.unavailable}</AlertTitle>

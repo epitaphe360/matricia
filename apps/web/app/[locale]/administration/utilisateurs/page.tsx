@@ -13,7 +13,7 @@ export default async function AdminUsersPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ organizationId?: string; q?: string }>;
+  searchParams: Promise<{ organizationId?: string; q?: string; org?: string; role?: string; status?: string }>;
 }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
@@ -40,12 +40,12 @@ export default async function AdminUsersPage({
       lead={a.usersLead}
       actions={
         <>
-          <Link href={`/${locale}/administration/utilisateurs/export${space.selectedQuery}`} className="admin-dir-action" data-tone="white"><Download className="size-4" aria-hidden />{locale === "ar" ? "تصدير" : "Exporter"}</Link>
+          <a href={`/${locale}/administration/utilisateurs/export${space.selectedQuery}`} className="admin-dir-action" data-tone="white"><Download className="size-4" aria-hidden />{locale === "ar" ? "تصدير" : "Exporter"}</a>
           <Link href={`/${locale}/administration/utilisateurs/inviter${space.selectedQuery}`} className="admin-primary-cta"><UserPlus className="size-4" aria-hidden />{a.inviteUser}</Link>
         </>
       }
     >
-      <UsersBoard locale={locale} query={space.selectedQuery} users={users} invites={directory.invites} search={query.q} />
+      <UsersBoard locale={locale} query={space.selectedQuery} users={users} invites={directory.invites} search={query.q} filters={{ org: query.org, role: query.role, status: query.status }} />
     </AdminAppShell>
   );
 }

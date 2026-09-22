@@ -37,28 +37,28 @@ export default async function AdminCommandCenterPage({
       userEmail={space.userEmail}
       active="home"
       alternateHref={`/${alternate}/administration/command-center${space.selectedQuery}`}
-      title={m.today}
+      title={c.space}
       lead={c.homeLead}
       kicker={c.kicker}
     >
-      {result.status === "error" ? (
-        <Alert variant="destructive">
-          <AlertTitle>{result.reason === "FORBIDDEN" ? m.forbiddenPage : result.reason === "MFA_REQUIRED" ? m.mfaRequired : m.loadError}</AlertTitle>
-          <AlertDescription>{result.reason}</AlertDescription>
-        </Alert>
-      ) : (
-        <CommandCenterPanel
-          dashboard={result.dashboard}
-          locale={locale}
-          m={m}
-          enrichment={enrichment}
-          currentTime={new Date().toISOString()}
-          keys={Array.from({ length: keyCount }, () => crypto.randomUUID())}
-        />
-      )}
-      <details className="client-ops">
-        <summary>{c.homeTitle}</summary>
-        <AdminDirectoryBoard locale={locale} query={space.selectedQuery} />
+      <AdminDirectoryBoard locale={locale} query={space.selectedQuery} />
+      <details className="client-ops" id="command-today">
+        <summary>{m.today}</summary>
+        {result.status === "error" ? (
+          <Alert variant="destructive">
+            <AlertTitle>{result.reason === "FORBIDDEN" ? m.forbiddenPage : result.reason === "MFA_REQUIRED" ? m.mfaRequired : m.loadError}</AlertTitle>
+            <AlertDescription>{result.reason}</AlertDescription>
+          </Alert>
+        ) : (
+          <CommandCenterPanel
+            dashboard={result.dashboard}
+            locale={locale}
+            m={m}
+            enrichment={enrichment}
+            currentTime={new Date().toISOString()}
+            keys={Array.from({ length: keyCount }, () => crypto.randomUUID())}
+          />
+        )}
       </details>
     </AdminAppShell>
   );

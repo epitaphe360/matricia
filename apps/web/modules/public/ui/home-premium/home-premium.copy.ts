@@ -8,192 +8,170 @@ export type HomePremiumCopy = {
   primaryAction: string;
   providerAction: string;
   preciseNeedAction: string;
-  previewLabel: string;
-  previewStages: readonly string[];
-  projectLabel: string;
-  projectTitle: string;
-  projectStatus: string;
-  offersLabel: string;
-  offersValue: string;
-  decisionLabel: string;
-  decisionValue: string;
-  cycleEyebrow: string;
-  cycleTitle: string;
-  cycleIntro: string;
-  cycle: readonly { label: string; description: string }[];
-  outcomesEyebrow: string;
+  trust: readonly [string, string, string];
+  quote: string;
+  values: readonly [string, string, string];
+  script: string;
+  spines: readonly [string, string, string];
+  flowLabel: string;
+  flow: readonly { title: string; description: string }[];
+  stagesLabel: string;
+  stages: readonly [string, string, string, string];
+  cycleTitle: readonly [string, string];
+  cycleLabel: string;
+  cycle: readonly string[];
+  cycleOutcome: readonly [string, string];
   outcomesTitle: string;
-  outcomesIntro: string;
   outcomes: readonly { title: string; description: string }[];
-  professionalsEyebrow: string;
-  professionalsTitle: string;
-  professionalsIntro: string;
-  qualificationBadge: string;
-  professionals: readonly string[];
-  professionalsAction: string;
-  faqEyebrow: string;
+  networkTitle: string;
+  networkIntro: string;
+  networkPillars: readonly [string, string, string];
+  networkCaption: string;
   faqTitle: string;
   faq: readonly { question: string; answer: string }[];
-  finalEyebrow: string;
-  finalTitle: string;
-  finalIntro: string;
+  finalTitle: readonly [string, string];
   finalPrimary: string;
+  finalOr: string;
   finalSecondary: string;
+  finalCaption: readonly [string, string, string];
 };
 
 const fr: HomePremiumCopy = {
-  eyebrow: "Comprendre. Décider. Agir.",
+  eyebrow: "Des questions au bon partenaire",
   titleLead: "Découvrez ce qui freine votre entreprise.",
   titleAccent: "Passez aux bonnes solutions.",
   intro:
-    "Répondez à quelques questions. Matricia vous aide à comprendre vos priorités, comparer les bonnes propositions et piloter vos prestations.",
+    "Répondez à quelques questions. Matricia vous aide à comprendre vos priorités et à trouver les professionnels adaptés pour agir.",
   primaryAction: "Analyser mon entreprise",
   providerAction: "Proposer mes services",
   preciseNeedAction: "J’ai déjà un besoin précis",
-  previewLabel: "Un parcours clair, de votre besoin à sa réalisation",
-  previewStages: ["Besoin", "Offres", "Choix", "Mission"],
-  projectLabel: "Votre situation",
-  projectTitle: "Organisation et croissance",
-  projectStatus: "Analyse en cours",
-  offersLabel: "Propositions reçues",
-  offersValue: "3 offres comparables",
-  decisionLabel: "Prochaine décision",
-  decisionValue: "Choisir le bon partenaire",
-  cycleEyebrow: "Le cycle Matricia",
-  cycleTitle: "Une seule plateforme pour avancer, sans perdre le fil.",
-  cycleIntro:
-    "La complexité reste dans le moteur. Vous voyez seulement les informations utiles, les décisions à prendre et la prochaine action.",
-  cycle: [
-    { label: "Comprendre", description: "Décrire votre situation" },
-    { label: "Structurer", description: "Clarifier les priorités" },
-    { label: "Matcher", description: "Identifier les profils adaptés" },
-    { label: "Comparer", description: "Évaluer les propositions" },
-    { label: "Contractualiser", description: "Sécuriser l’accord" },
-    { label: "Exécuter", description: "Suivre la mission" },
-    { label: "Suivre", description: "Valider et mesurer" },
+  trust: ["Simple et confidentiel", "Indépendant et objectif", "Des professionnels qualifiés"],
+  quote: "Des entreprises plus fortes pour un Maroc qui avance",
+  values: ["Expertise", "Confiance", "Progrès"],
+  script: "Des idées en actions",
+  spines: ["Stratégie", "Organisation", "Croissance"],
+  flowLabel: "Comment Matricia vous accompagne",
+  flow: [
+    { title: "Votre situation", description: "Vous répondez à quelques questions" },
+    { title: "Priorité structurée", description: "Matricia analyse et cadre vos priorités" },
+    { title: "Professionnel adapté", description: "Vous êtes mis en relation avec les bons experts" },
   ],
-  outcomesEyebrow: "Ce que vous obtenez",
-  outcomesTitle: "Plus de clarté à chaque décision.",
-  outcomesIntro:
-    "Matricia transforme une situation parfois floue en priorités compréhensibles, puis en actions suivies.",
+  stagesLabel: "Votre parcours, du besoin à la mission",
+  stages: ["Besoin", "Offres", "Choix", "Mission"],
+  cycleTitle: ["Un cycle complet", "pour avancer sereinement"],
+  cycleLabel: "Le cycle Matricia, étape par étape",
+  cycle: ["Comprendre", "Structurer", "Matcher", "Comparer", "Contractualiser", "Exécuter", "Suivre"],
+  cycleOutcome: ["Du diagnostic", "à l’impact"],
+  outcomesTitle: "Ce que vous obtenez",
   outcomes: [
-    { title: "Des priorités lisibles", description: "Comprenez ce qui mérite votre attention en premier." },
-    { title: "Un besoin bien cadré", description: "Conservez un dossier clair, modifiable et partageable." },
-    { title: "Des offres comparables", description: "Comparez périmètre, prix, délais, garanties et exclusions." },
-    { title: "Une exécution suivie", description: "Pilotez missions, livrables, documents et décisions." },
+    { title: "Des priorités claires", description: "Une vision structurée de vos enjeux" },
+    { title: "Des solutions adaptées", description: "Des professionnels alignés avec vos besoins" },
+    { title: "Un gain de temps", description: "Moins de recherche, plus d’action" },
+    { title: "Une progression durable", description: "Des actions concrètes pour votre entreprise" },
   ],
-  professionalsEyebrow: "Réseau professionnel",
-  professionalsTitle: "Des professionnels adaptés à votre contexte.",
-  professionalsIntro:
-    "Les compétences, capacités et justificatifs sont examinés selon le domaine. La décision finale vous appartient toujours.",
-  qualificationBadge: "Qualification suivie",
-  professionals: [
-    "Compétences reliées aux services recherchés",
-    "Documents et capacité suivis dans le temps",
-    "Échanges, devis et livrables rassemblés au même endroit",
-  ],
-  professionalsAction: "Découvrir le parcours professionnel",
-  faqEyebrow: "Questions fréquentes",
-  faqTitle: "Avant de commencer",
+  networkTitle: "Des professionnels qualifiés",
+  networkIntro:
+    "Sur Matricia, les professionnels sont sélectionnés pour la pertinence de leurs compétences, la qualité de leur démarche et leur capacité à répondre à des besoins d’entreprises.",
+  networkPillars: ["Vérification des informations", "Adéquation avec vos besoins", "Engagement pour un service de qualité"],
+  networkCaption: "Des expertises au service de vos ambitions",
+  faqTitle: "Questions fréquentes",
   faq: [
     {
-      question: "Dois-je créer un compte pour commencer ?",
+      question: "Comment fonctionne Matricia ?",
       answer:
-        "Non. Vous pouvez lancer un premier prédiagnostic sans compte. La connexion intervient lorsque vous souhaitez enregistrer votre bilan ou poursuivre un dossier.",
+        "Vous répondez à quelques questions, Matricia structure vos priorités, puis vous confirmez avant toute consultation de professionnels.",
     },
     {
-      question: "Matricia impose-t-elle un prestataire ?",
-      answer:
-        "Non. Matricia structure votre besoin et facilite la comparaison. Vous restez libre de choisir la proposition qui vous convient.",
+      question: "Qui peut utiliser Matricia ?",
+      answer: "Les entreprises, les professionnels et les candidats franchisés, chacun dans un espace adapté à son rôle.",
     },
     {
-      question: "Puis-je commencer avec un besoin déjà précis ?",
+      question: "Est-ce que je suis engagé ?",
+      answer: "Non. Votre compte conserve votre parcours et aucune consultation n’est lancée sans votre validation.",
+    },
+    {
+      question: "Comment sont sélectionnés les professionnels ?",
       answer:
-        "Oui. Le parcours Besoin précis vous demande uniquement les informations nécessaires pour préparer un dossier clair et modifiable.",
+        "Chaque service déclaré suit des critères, des pièces justificatives et une décision Matricia. La sélection d’un service ne vaut pas qualification.",
+    },
+    {
+      question: "Mes informations sont-elles confidentielles ?",
+      answer:
+        "Vos documents et messages sensibles restent dans votre espace sécurisé, accessibles aux seuls destinataires autorisés.",
     },
   ],
-  finalEyebrow: "Matricia",
-  finalTitle: "Votre prochaine bonne décision commence ici.",
-  finalIntro: "Faites le point, clarifiez votre besoin et avancez avec les bons professionnels.",
-  finalPrimary: "Commencer mon analyse",
-  finalSecondary: "Décrire un besoin précis",
+  finalTitle: ["Prêt à faire avancer", "votre entreprise ?"],
+  finalPrimary: "Analyser mon entreprise",
+  finalOr: "Ou",
+  finalSecondary: "proposer mes services",
+  finalCaption: ["Ensemble,", "des entreprises", "plus fortes"],
 };
 
 const ar: HomePremiumCopy = {
-  eyebrow: "افهم. قرّر. تحرّك.",
+  eyebrow: "من الأسئلة إلى الشريك المناسب",
   titleLead: "اكتشف ما يعيق تطور مؤسستك.",
   titleAccent: "وانتقل إلى الحلول المناسبة.",
-  intro:
-    "أجب عن بعض الأسئلة. تساعدك ماتريسيا على فهم أولوياتك ومقارنة العروض المناسبة وتتبع إنجاز خدماتك.",
+  intro: "أجب عن بعض الأسئلة. تساعدك ماتريسيا على فهم أولوياتك وعلى إيجاد المهنيين المناسبين للتحرك.",
   primaryAction: "تحليل مؤسستي",
   providerAction: "تقديم خدماتي",
   preciseNeedAction: "لدي حاجة محددة",
-  previewLabel: "مسار واضح من الحاجة إلى الإنجاز",
-  previewStages: ["الحاجة", "العروض", "الاختيار", "المهمة"],
-  projectLabel: "وضعيتك",
-  projectTitle: "التنظيم والنمو",
-  projectStatus: "التحليل جارٍ",
-  offersLabel: "العروض المتوصل بها",
-  offersValue: "3 عروض قابلة للمقارنة",
-  decisionLabel: "القرار التالي",
-  decisionValue: "اختيار الشريك المناسب",
-  cycleEyebrow: "دورة ماتريسيا",
-  cycleTitle: "منصة واحدة للتقدم دون فقدان سياق العمل.",
-  cycleIntro:
-    "تبقى التعقيدات داخل المحرك، بينما ترى أنت المعلومات المفيدة والقرارات المطلوبة والخطوة التالية.",
-  cycle: [
-    { label: "الفهم", description: "وصف الوضعية" },
-    { label: "الهيكلة", description: "تحديد الأولويات" },
-    { label: "المطابقة", description: "اقتراح المهنيين المناسبين" },
-    { label: "المقارنة", description: "تقييم العروض" },
-    { label: "التعاقد", description: "تأمين الاتفاق" },
-    { label: "التنفيذ", description: "تتبع المهمة" },
-    { label: "المتابعة", description: "المصادقة والقياس" },
+  trust: ["بسيط وسري", "مستقل وموضوعي", "مهنيون مؤهلون"],
+  quote: "مؤسسات أقوى من أجل مغرب يتقدم",
+  values: ["الخبرة", "الثقة", "التقدم"],
+  script: "أفكار تتحول إلى أفعال",
+  spines: ["الاستراتيجية", "التنظيم", "النمو"],
+  flowLabel: "كيف ترافقك ماتريسيا",
+  flow: [
+    { title: "وضعيتك", description: "تجيب عن بعض الأسئلة" },
+    { title: "أولوية مهيكلة", description: "تحلل ماتريسيا وتؤطر أولوياتك" },
+    { title: "مهني مناسب", description: "نربطك بالخبراء المناسبين" },
   ],
-  outcomesEyebrow: "ما الذي ستحصل عليه",
-  outcomesTitle: "وضوح أكبر في كل قرار.",
-  outcomesIntro: "تحول ماتريسيا الوضعية المعقدة إلى أولويات مفهومة ثم إلى إجراءات قابلة للتتبع.",
+  stagesLabel: "مسارك من الحاجة إلى المهمة",
+  stages: ["الحاجة", "العروض", "الاختيار", "المهمة"],
+  cycleTitle: ["دورة كاملة", "للتقدم بكل اطمئنان"],
+  cycleLabel: "دورة ماتريسيا خطوة بخطوة",
+  cycle: ["الفهم", "الهيكلة", "المطابقة", "المقارنة", "التعاقد", "التنفيذ", "المتابعة"],
+  cycleOutcome: ["من التشخيص", "إلى الأثر"],
+  outcomesTitle: "ما الذي ستحصل عليه",
   outcomes: [
-    { title: "أولويات واضحة", description: "اعرف ما يستحق اهتمامك أولاً." },
-    { title: "حاجة مؤطرة", description: "احتفظ بملف واضح وقابل للتعديل والمشاركة." },
-    { title: "عروض قابلة للمقارنة", description: "قارن النطاق والسعر والآجال والضمانات والاستثناءات." },
-    { title: "تنفيذ متابَع", description: "تتبع المهام والتسليمات والوثائق والقرارات." },
+    { title: "أولويات واضحة", description: "رؤية مهيكلة لرهاناتك" },
+    { title: "حلول مناسبة", description: "مهنيون متوافقون مع احتياجاتك" },
+    { title: "توفير في الوقت", description: "بحث أقل وعمل أكثر" },
+    { title: "تقدم مستدام", description: "إجراءات ملموسة لمؤسستك" },
   ],
-  professionalsEyebrow: "شبكة مهنية",
-  professionalsTitle: "مهنيون ملائمون لسياق مؤسستك.",
-  professionalsIntro:
-    "تتم مراجعة الكفاءات والقدرات والوثائق حسب المجال، ويبقى القرار النهائي بيدك دائماً.",
-  qualificationBadge: "تأهيل متابَع",
-  professionals: [
-    "كفاءات مرتبطة بالخدمات المطلوبة",
-    "متابعة الوثائق والقدرة مع مرور الوقت",
-    "جمع المحادثات والعروض والتسليمات في مكان واحد",
-  ],
-  professionalsAction: "اكتشف مسار المهنيين",
-  faqEyebrow: "الأسئلة الشائعة",
-  faqTitle: "قبل البدء",
+  networkTitle: "مهنيون مؤهلون",
+  networkIntro:
+    "على ماتريسيا، يُختار المهنيون حسب ملاءمة كفاءاتهم وجودة مقاربتهم وقدرتهم على الاستجابة لاحتياجات المؤسسات.",
+  networkPillars: ["التحقق من المعلومات", "الملاءمة مع احتياجاتك", "الالتزام بخدمة ذات جودة"],
+  networkCaption: "خبرات في خدمة طموحاتك",
+  faqTitle: "الأسئلة الشائعة",
   faq: [
     {
-      question: "هل يجب إنشاء حساب للبدء؟",
-      answer:
-        "لا. يمكنك بدء تشخيص أولي دون حساب. تحتاج إلى تسجيل الدخول عند حفظ النتيجة أو متابعة ملفك.",
+      question: "كيف تعمل ماتريسيا؟",
+      answer: "تجيب عن بعض الأسئلة، تنظم ماتريسيا أولوياتك، ثم تؤكد قبل أي استشارة للمهنيين.",
     },
     {
-      question: "هل تفرض ماتريسيا مهنياً معيناً؟",
-      answer:
-        "لا. تساعدك ماتريسيا على تنظيم حاجتك ومقارنة العروض، ويبقى اختيار العرض المناسب قرارك.",
+      question: "من يمكنه استخدام ماتريسيا؟",
+      answer: "المؤسسات والمهنيون ومرشحو الامتياز، كل واحد في مساحة تناسب دوره.",
     },
     {
-      question: "هل يمكنني البدء بحاجة محددة مسبقاً؟",
-      answer:
-        "نعم. يطلب منك مسار الحاجة المحددة فقط المعلومات الضرورية لإعداد ملف واضح وقابل للتعديل.",
+      question: "هل ألتزم بشيء؟",
+      answer: "لا. يحفظ حسابك مسارك، ولا تُطلق أي استشارة دون مصادقتك.",
+    },
+    {
+      question: "كيف يُختار المهنيون؟",
+      answer: "كل خدمة مصرَّح بها تتبع معايير ووثائق وقراراً من ماتريسيا. اختيار خدمة لا يعني التأهيل.",
+    },
+    {
+      question: "هل معلوماتي سرية؟",
+      answer: "تبقى وثائقك ورسائلك الحساسة في مساحتك الآمنة، ولا يصل إليها إلا المستلمون المصرَّح لهم.",
     },
   ],
-  finalEyebrow: "Matricia",
-  finalTitle: "قرارك الجيد التالي يبدأ من هنا.",
-  finalIntro: "قيّم وضعيتك وحدد حاجتك وتقدم مع المهنيين المناسبين.",
-  finalPrimary: "ابدأ تحليل مؤسستي",
-  finalSecondary: "صف حاجة محددة",
+  finalTitle: ["جاهز لدفع مؤسستك", "إلى الأمام؟"],
+  finalPrimary: "تحليل مؤسستي",
+  finalOr: "أو",
+  finalSecondary: "تقديم خدماتي",
+  finalCaption: ["معاً،", "مؤسسات", "أقوى"],
 };
 
 export function getHomePremiumCopy(locale: HomeLocale): HomePremiumCopy {

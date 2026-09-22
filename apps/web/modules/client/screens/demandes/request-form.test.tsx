@@ -14,6 +14,10 @@ describe("guided client request form", () => {
     expect(html).toContain('name="opportunityId"'); expect(html).toContain("Entreprise Test"); expect(html).toContain("Enregistrer le brouillon");
     expect(html).toContain("client-wizard");
     expect(html).toContain("1. Votre besoin");
+    expect(html).toContain("Objectif de la demande");
+    expect(html).toContain("Résultat attendu");
+    expect(html).toContain("Ce que Matricia a compris");
+    expect(html).toContain("Fourchette budgétaire estimée");
     expect(html).not.toMatch(/exemple illustratif/i);
   });
 
@@ -24,7 +28,7 @@ describe("guided client request form", () => {
     expect(html).toContain('name="serviceCode"');
     expect(html).toContain("IT-AUDIT-SI");
     expect(html).toContain("besoin que vous avez confirmé");
-    expect(html).toContain("Site de l’entreprise");
+    expect(html).toContain("Site concerné");
     expect(html).toContain("Région");
   });
 

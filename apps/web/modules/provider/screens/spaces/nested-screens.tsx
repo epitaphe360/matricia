@@ -44,7 +44,7 @@ import { getRoleMessages } from "@/app/[locale]/organisation/roles/messages";
 
 const recordId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
-type Search = Promise<{ organizationId?: string; rfq?: string }>;
+type Search = Promise<{ organizationId?: string; rfq?: string; q?: string; vue?: string }>;
 
 async function spaceOrRedirect(locale: string, organizationId?: string) {
   if (!isLocale(locale)) notFound();
@@ -351,9 +351,17 @@ export async function ProviderNestedPage({
   if (nested.kind === "documents") {
     const c = providerCopy(locale as Locale);
     const documents = await loadProviderDashboard();
+    const view = query.vue === "qualification" ? "qualification" as const : "all" as const;
     return (
       <ProviderAppShell locale={locale as Locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="documents" title={c.docsTitle} lead={c.docsLead}>
-        <ProviderDocumentsBoard locale={locale as Locale} query={space.selectedQuery} documents={documents.status === "success" ? documents.dashboard.documents : []} loadError={documents.status === "error"} />
+        <ProviderDocumentsBoard
+          locale={locale as Locale}
+          query={space.selectedQuery}
+          documents={documents.status === "success" ? documents.dashboard.documents : []}
+          loadError={documents.status === "error"}
+          search={query.q ?? ""}
+          view={view}
+        />
       </ProviderAppShell>
     );
   }

@@ -1,8 +1,37 @@
 import Link from "next/link";
-import { Archive, ArrowRight, ChevronRight, Download, Eye, FileText, FolderKanban, MoreHorizontal, Pencil, Plus, Power, Search, Shield, Users } from "lucide-react";
+import {
+  Archive,
+  ArrowRight,
+  BookOpen,
+  Check,
+  ChevronRight,
+  CircleDot,
+  Download,
+  Eye,
+  FileText,
+  FolderKanban,
+  Info,
+  Landmark,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Power,
+  Route,
+  Search,
+  Settings2,
+  Shield,
+  TrendingUp,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { adminCopy } from "@/modules/admin/data/spaces/copy";
-import { adminDirectoryGroups, inferOrgType } from "@/modules/admin/data/spaces/directory";
+import {
+  adminDirectoryGroup,
+  adminDirectoryGroups,
+  inferOrgType,
+  type AdminDirectoryGroup,
+} from "@/modules/admin/data/spaces/directory";
 import { organizationJourney, type AdminOrgRow, type AdminTreatItem } from "@/modules/admin/data/spaces/view-model";
 import type { AdminOrganizationFiche } from "@/modules/admin/data/supervision/types";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
@@ -11,57 +40,134 @@ function Cta({ href, children }: { href: string; children: ReactNode }) {
   return <Link href={href} className="client-ghost-link">{children}<ArrowRight className="size-4 rtl:rotate-180" aria-hidden /></Link>;
 }
 
+const GROUP_ICONS: Record<AdminDirectoryGroup["id"], LucideIcon> = {
+  actors: Users,
+  parcours: Route,
+  catalog: BookOpen,
+  finance: Landmark,
+  growth: TrendingUp,
+  ops: Settings2,
+};
+
+function DirectoryCard({ group }: { group: AdminDirectoryGroup }) {
+  const Icon = GROUP_ICONS[group.id];
+  return (
+    <article className="admin-dir-card" data-tone={group.tone}>
+      <header>
+        <span className="admin-dir-card-icon" aria-hidden><Icon className="size-4" /></span>
+        {group.title}
+      </header>
+      <ul>
+        {group.links.map((link) => (
+          <li key={`${group.id}-${link.label}`}>
+            <Link href={link.href}>
+              <span className="admin-dir-link-label">
+                <CircleDot className="size-3.5 admin-dir-link-glyph" aria-hidden />
+                {link.label}
+              </span>
+              <ChevronRight className="size-4 rtl:rotate-180" aria-hidden />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </article>
+  );
+}
+
 export function AdminDirectoryBoard({ locale, query }: { locale: Locale; query: string }) {
   const c = adminCopy(locale);
   const groups = adminDirectoryGroups(locale, query);
   const actions = [
     { href: `/${locale}/administration/entreprises/nouvelle${query}`, label: c.create, tone: "violet" as const, icon: Plus },
     { href: `/${locale}/administration/entreprises${query}`, label: c.edit, tone: "peach" as const, icon: Pencil },
-    { href: `/${locale}/administration/operations${query}`, label: c.archiveRestore, tone: "mint" as const, icon: Archive },
-    { href: `/${locale}/administration/entreprises/export${query}`, label: c.export, tone: "white" as const, icon: Download },
+    { href: `/${locale}/administration/operations${query}#archives`, label: c.archiveRestore, tone: "mint" as const, icon: Archive },
+    { href: `/${locale}/administration/entreprises/export${query}`, label: c.export, tone: "sky" as const, icon: Download },
   ];
+  const sensitive = [c.s1, c.s2, c.s3, c.s4, c.s5];
   return (
-    <main className="client-page">
+    <main className="client-page admin-home-page">
+      <h2 className="admin-home-title">{c.homeTitle}</h2>
       <section className="admin-home-toolbar">
         <div className="admin-dir-actions">
           {actions.map((item) => {
             const Icon = item.icon;
-            return (
-              <Link key={item.label} href={item.href} className="admin-dir-action" data-tone={item.tone}>
+            const className = "admin-dir-action";
+            const content = (
+              <>
                 <Icon className="size-4" aria-hidden />
                 {item.label}
                 <ChevronRight className="size-4 rtl:rotate-180" aria-hidden />
-              </Link>
+              </>
             );
+            return item.href.includes("/export")
+              ? <a key={item.label} href={item.href} className={className} data-tone={item.tone}>{content}</a>
+              : <Link key={item.label} href={item.href} className={className} data-tone={item.tone}>{content}</Link>;
           })}
         </div>
         <article className="admin-sensitive">
-          <h2><Shield className="size-4" aria-hidden /> {c.sensitive}</h2>
-          <ol>
-            <li>{c.s1}</li>
-            <li>{c.s2}</li>
-            <li>{c.s3}</li>
-            <li>{c.s4}</li>
-            <li>{c.s5}</li>
-          </ol>
+          <h3><Shield className="size-4" aria-hidden /> {c.sensitive}</h3>
+          <ul>
+            {sensitive.map((item) => (
+              <li key={item}><Check className="size-3.5 admin-sensitive-check" aria-hidden />{item}</li>
+            ))}
+          </ul>
         </article>
       </section>
-      <section className="admin-dir-grid">
-        {groups.map((group) => (
-          <article key={group.id} className="admin-dir-card" data-tone={group.tone}>
-            <header>{group.title}</header>
-            <ul>
-              {group.links.map((link) => (
-                <li key={`${group.id}-${link.label}`}>
-                  <Link href={link.href}>{link.label}<ChevronRight className="size-4 rtl:rotate-180" aria-hidden /></Link>
-                </li>
-              ))}
-            </ul>
-          </article>
-        ))}
+      <section className="admin-dir-grid" aria-label={c.homeTitle}>
+        {groups.map((group) => <DirectoryCard key={group.id} group={group} />)}
       </section>
-      <p className="admin-foot-note">{c.foot}</p>
+      <p className="admin-foot-note"><Info className="size-4 shrink-0" aria-hidden />{c.foot}</p>
     </main>
+  );
+}
+
+export function AdminHubBoard({
+  locale,
+  query,
+  groupId,
+}: {
+  locale: Locale;
+  query: string;
+  groupId: AdminDirectoryGroup["id"];
+}) {
+  const c = adminCopy(locale);
+  const group = adminDirectoryGroup(locale, query, groupId);
+  if (!group) return null;
+  return (
+    <main className="client-page">
+      <section className="admin-hub-layout">
+        <DirectoryCard group={group} />
+        <article className="admin-sensitive">
+          <h3><Shield className="size-4" aria-hidden /> {c.sensitive}</h3>
+          <ul>
+            {[c.s1, c.s2, c.s3, c.s4, c.s5].map((item) => (
+              <li key={item}><Check className="size-3.5 admin-sensitive-check" aria-hidden />{item}</li>
+            ))}
+          </ul>
+        </article>
+      </section>
+      <p className="admin-foot-note"><Info className="size-4 shrink-0" aria-hidden />{c.foot}</p>
+    </main>
+  );
+}
+
+export function AdminHubStrip({
+  locale,
+  query,
+  groupId,
+}: {
+  locale: Locale;
+  query: string;
+  groupId: AdminDirectoryGroup["id"];
+}) {
+  const group = adminDirectoryGroup(locale, query, groupId);
+  if (!group) return null;
+  return (
+    <nav className="admin-hub-strip" aria-label={group.title} data-tone={group.tone}>
+      {group.links.map((link) => (
+        <Link key={link.href} href={link.href}>{link.label}</Link>
+      ))}
+    </nav>
   );
 }
 
@@ -72,6 +178,7 @@ export function OrganizationsBoard({
   treat,
   search,
   archives,
+  filters,
 }: {
   locale: Locale;
   query: string;
@@ -79,36 +186,70 @@ export function OrganizationsBoard({
   treat: AdminTreatItem[];
   search?: string;
   archives?: boolean;
+  filters?: { type?: string; status?: string; compliance?: string; plan?: string };
 }) {
   const c = adminCopy(locale);
+  const types = [...new Set(rows.map((row) => row.type).filter(Boolean))].sort();
+  const statuses = [...new Set(rows.map((row) => row.status).filter(Boolean))].sort();
+  const compliances = [...new Set(rows.map((row) => row.compliance).filter(Boolean))].sort();
+  const plans = [...new Set(rows.map((row) => row.plan).filter(Boolean))].sort();
   const filtered = rows.filter((row) => {
+    if (filters?.type && filters.type !== "all" && row.type !== filters.type) return false;
+    if (filters?.status && filters.status !== "all" && row.status !== filters.status) return false;
+    if (filters?.compliance && filters.compliance !== "all" && row.compliance !== filters.compliance) return false;
+    if (filters?.plan && filters.plan !== "all" && row.plan !== filters.plan) return false;
     if (!search) return true;
     const haystack = `${row.name} ${row.legalName} ${row.type} ${row.status}`.toLowerCase();
     return haystack.includes(search.toLowerCase());
   });
+  const orgParams = new URLSearchParams(query.startsWith("?") ? query.slice(1) : query);
+  const organizationId = orgParams.get("organizationId");
   return (
     <main className="client-page">
       <section className="admin-org-layout">
         <article className="client-card">
-          <form className="admin-filters" method="get">
-            <label>{c.type}<select name="type" defaultValue="all"><option value="all">{c.all}</option></select></label>
-            <label>{c.state}<select name="status" defaultValue="all"><option value="all">{c.all}</option></select></label>
-            <label>{c.compliance}<select name="compliance" defaultValue="all"><option value="all">{c.all}</option></select></label>
-            <label>{c.plan}<select name="plan" defaultValue="all"><option value="all">{c.all}</option></select></label>
+          <form className="admin-filters" method="get" action={`/${locale}/administration/entreprises`}>
+            {organizationId ? <input type="hidden" name="organizationId" value={organizationId} /> : null}
+            {archives ? <input type="hidden" name="archives" value="1" /> : null}
+            <label>{c.type}
+              <select name="type" defaultValue={filters?.type ?? "all"}>
+                <option value="all">{c.all}</option>
+                {types.map((type) => <option key={type} value={type}>{type}</option>)}
+              </select>
+            </label>
+            <label>{c.state}
+              <select name="status" defaultValue={filters?.status ?? "all"}>
+                <option value="all">{c.all}</option>
+                {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
+              </select>
+            </label>
+            <label>{c.compliance}
+              <select name="compliance" defaultValue={filters?.compliance ?? "all"}>
+                <option value="all">{c.all}</option>
+                {compliances.map((compliance) => <option key={compliance} value={compliance}>{compliance}</option>)}
+              </select>
+            </label>
+            <label>{c.plan}
+              <select name="plan" defaultValue={filters?.plan ?? "all"}>
+                <option value="all">{c.all}</option>
+                {plans.map((plan) => <option key={plan} value={plan}>{plan}</option>)}
+              </select>
+            </label>
             <label className="admin-check"><input type="checkbox" name="archives" value="1" defaultChecked={archives} />{c.includeArchived}</label>
-            <span className="admin-filter-link"><Link href={`/${locale}/administration/entreprises${query}${query ? "&" : "?"}archives=1`}>{c.seeArchives}</Link></span>
-          </form>
-          <form className="admin-table-tools" method="get" action={`/${locale}/administration/entreprises`}>
-            <div>
-              <h2>{c.allOrgs}</h2>
-              <p>{c.allOrgsLead}</p>
-            </div>
             <label className="client-top-search">
               <Search className="size-4" aria-hidden />
               <span className="sr-only">{c.searchList}</span>
               <input name="q" defaultValue={search} placeholder={c.searchList} />
             </label>
+            <button type="submit" className="admin-soft-cta">{locale === "ar" ? "تصفية" : "Filtrer"}</button>
+            <Link href={`/${locale}/administration/entreprises${organizationId ? `?organizationId=${organizationId}` : ""}`} className="client-ghost-link">{c.reset}</Link>
           </form>
+          <div className="admin-table-tools">
+            <div>
+              <h2>{c.allOrgs}</h2>
+              <p>{c.allOrgsLead}</p>
+            </div>
+          </div>
           {filtered.length === 0 ? null : (
             <div className="client-table-wrap">
               <table className="client-space-table">

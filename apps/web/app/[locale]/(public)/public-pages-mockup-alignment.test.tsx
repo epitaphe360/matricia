@@ -34,18 +34,17 @@ describe("alignement maquettes pages publiques", () => {
     expect(html).toContain("Analyser mon entreprise");
     expect(html).toContain("Proposer mes services");
     expect(html).toContain("J’ai déjà un besoin précis");
-    expect(html).toContain("Organisation et croissance");
-    expect(html).toContain("Un parcours clair, de votre besoin à sa réalisation");
-    expect(html).toContain("Le cycle Matricia");
+    expect(html).toContain("Un cycle complet");
     expect(html).toContain("Questions fréquentes");
-    expect(html).toContain("Votre prochaine bonne décision commence ici.");
+    expect(html).toContain("Prêt à faire avancer");
+    expect(html).toContain("/home-v2/hero-plate.png");
     expect(html).toContain("/home-v2/hero-collaboration.png");
   });
 
   it("accueil AR : photo, cycle et FAQ dans le sens RTL", async () => {
     const html = renderToStaticMarkup(await PublicHomePage({ params: Promise.resolve({ locale: "ar" }) }));
     expect(html).toContain("/home-v2/hero-collaboration.png");
-    expect(html).toContain("دورة ماتريسيا");
+    expect(html).toContain("دورة كاملة");
     expect(html).toContain('dir="rtl"');
     expect(html).toContain("اكتشف ما يعيق تطور مؤسستك.");
     expect(html).toContain("الأسئلة الشائعة");

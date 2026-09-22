@@ -10,6 +10,8 @@ import { resolveClientSpace } from "@/modules/client/data/spaces/context";
 import { spaceCopy } from "@/modules/client/data/spaces/copy";
 import { CompanyBoard, SpaceActions } from "@/modules/client/screens/spaces/boards";
 import { ConnectedAppShell } from "@/modules/shared/ui/connected-app-shell";
+import { listOrganizationRoles } from "@/app/[locale]/organisation/roles/actions";
+import { getRoleMessages } from "@/app/[locale]/organisation/roles/messages";
 import { OrganizationForm } from "./organization-form";
 
 export default async function OrganizationPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ role?: string; organizationId?: string }> }) {
@@ -46,6 +48,22 @@ export default async function OrganizationPage({ params, searchParams }: { param
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
   if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
   const c = spaceCopy(locale);
+  const roles = await listOrganizationRoles();
+  const roleMessages = getRoleMessages(locale);
+  const selectedOrgName = space.selectedOrganizationId
+    ? roles.status === "success"
+      ? roles.organizations.find((org) => org.id === space.selectedOrganizationId)?.displayName ?? space.organizationName
+      : space.organizationName
+    : null;
+  const people = roles.status === "success"
+    ? roles.memberships
+        .filter((member) => !selectedOrgName || member.organizationName === selectedOrgName)
+        .map((member) => ({
+          id: member.id,
+          name: member.isCurrentUser ? (locale === "ar" ? "أنتم" : "Vous") : (member.organizationName ?? roleMessages.anotherMember),
+          role: member.roles[0] ? roleMessages.roles[member.roles[0]] : roleMessages.noRole,
+        }))
+    : [];
   return (
     <ConnectedAppShell
       locale={locale}
@@ -58,7 +76,7 @@ export default async function OrganizationPage({ params, searchParams }: { param
       franchiseActive="governance"
       actions={<SpaceActions href="#modifier" label={c.editInfo} />}
     >
-      <CompanyBoard locale={locale} query={space.selectedQuery} organizationName={space.organizationName} alternate={alternate} />
+      <CompanyBoard locale={locale} query={space.selectedQuery} organizationName={space.organizationName} alternate={alternate} people={people} />
       <details id="modifier" className="client-ops">
         <summary>{c.opsOrg}</summary>
         <OrganizationForm locale={locale} idempotencyKey={randomUUID()} defaultRole={defaultRole} />

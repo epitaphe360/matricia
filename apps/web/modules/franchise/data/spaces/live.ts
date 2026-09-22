@@ -549,7 +549,12 @@ export function buildFranchiseSpaceBoard(input: {
     ],
     perimeter: {
       territory,
-      domains: input.libraryName ?? input.governance?.franchises[0]?.libraryCode ?? empty.perimeter.domains,
+      domains: input.libraryName
+        ?? (input.locale === "ar"
+          ? input.governance?.franchises[0]?.libraryNameAr
+          : input.governance?.franchises[0]?.libraryNameFr)
+        ?? input.governance?.franchises[0]?.libraryCode
+        ?? empty.perimeter.domains,
       mandate: franchise && "operatorCode" in franchise ? franchise.operatorCode : empty.perimeter.mandate,
       status: input.governance?.franchises[0]?.status ?? (franchise ? "ACTIVE" : empty.perimeter.status),
     },
@@ -583,7 +588,14 @@ export function buildFranchiseSpaceBoard(input: {
   };
   const hasLive = people.length + requests.length + quality.length + performance.length + followups.length + decisions.length + mandates.length + finance.length + corrective.length + quotes.length + missions.length + anomalies.length + users.length + volume.length + definitions.length + incidents.length > 0
     || (territory !== "—" && territory.length > 1);
-  if (hasLive) return live;
-  if (canApplyFranchiseSpaceDemo()) return demoFranchiseSpaces(locale, q);
-  return live;
+  if (!hasLive && canApplyFranchiseSpaceDemo()) return demoFranchiseSpaces(locale, q);
+  if (!canApplyFranchiseSpaceDemo()) return live;
+  const demo = demoFranchiseSpaces(locale, q);
+  return {
+    ...live,
+    documents: live.documents.length ? live.documents : demo.documents,
+    renewals: live.renewals.length ? live.renewals : demo.renewals,
+    messages: live.messages.length ? live.messages : demo.messages,
+    notifications: live.notifications.length ? live.notifications : demo.notifications,
+  };
 }

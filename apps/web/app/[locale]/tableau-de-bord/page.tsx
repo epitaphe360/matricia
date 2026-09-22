@@ -14,6 +14,7 @@ import { loadProviderHomeSnapshot } from "@/modules/provider/data/home/repositor
 import { filterProviderFacingActions } from "@/modules/provider/data/home/view-model";
 import { isLocale, type Locale } from "@/modules/shared/lib/i18n/locale";
 import { loadMyPlatformAccess } from "@/modules/shared/lib/account-security/platform-access";
+import { resolveWorkspaceLanding, workspaceLandingPath } from "@/modules/shared/lib/connected-space/workspace-landing";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 import { signOut } from "./actions";
 
@@ -165,6 +166,11 @@ export default async function DashboardPage({
     loadUserActionCenterWithinBudget(locale, now, context.selected?.organizationId ?? null),
   ]);
   const roleCodes = new Set((membershipRoles.data ?? []).map((row) => String(row.role_code)));
+  const landing = resolveWorkspaceLanding({
+    membershipRoleCodes: roleCodes,
+    platformRoleCodes: access.status === "ok" ? access.roles : [],
+  });
+  if (landing === "administration" || landing === "franchise") redirect(workspaceLandingPath(locale, landing, selectedQuery));
   const isProviderSpace = [...roleCodes].some((role) => PROVIDER_ROLES.has(role));
   const isClientSpace = [...roleCodes].some((role) => CLIENT_ROLES.has(role));
   const preferProvider = isProviderSpace && !isClientSpace;

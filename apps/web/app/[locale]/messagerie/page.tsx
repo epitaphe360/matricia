@@ -117,6 +117,7 @@ export default async function MessagingPage({ params, searchParams }: { params: 
       selectedQuery={space.selectedQuery}
       selectedOrganizationId={space.selectedOrganizationId}
       userEmail={space.userEmail}
+      organizationName={space.organizationName}
       active="messages"
       title={c.msgTitle}
       lead={c.msgLead}

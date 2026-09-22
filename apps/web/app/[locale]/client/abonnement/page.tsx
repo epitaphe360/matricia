@@ -27,7 +27,7 @@ export default async function SubscriptionPage({ params, searchParams }: { param
   const c = spaceCopy(locale);
   if (result.status === "error") {
     return (
-      <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="finance" title={c.subPageTitle} lead={c.subPageLead} kicker={c.kicker}>
+      <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="finance" title={c.subPageTitle} lead={c.subPageLead} kicker={c.kicker}>
         <p role="alert" className="client-card">{messages.error}</p>
       </ClientAppShell>
     );
@@ -40,7 +40,7 @@ export default async function SubscriptionPage({ params, searchParams }: { param
   const redemptions = creditsResult.status === "success" ? creditsResult.value.redemptions.filter((item) => item.organizationId === selectedId) : [];
   const members = roles.status === "success" ? roles.memberships.filter((item) => item.status === "ACTIVE") : [];
   return (
-    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="finance" title={c.subPageTitle} lead={c.subPageLead} kicker={result.dashboard.organizationName}>
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="finance" title={c.subPageTitle} lead={c.subPageLead} kicker={result.dashboard.organizationName}>
       <SubscriptionBoard
         locale={locale}
         query={space.selectedQuery}

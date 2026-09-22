@@ -186,15 +186,7 @@ export async function createInvitation(
     p_correlation_id: randomUUID(),
   });
   if (error) return { status: "error", reason: "UNAVAILABLE" };
-
-  const { error: deliveryError } = await supabase.auth.signInWithOtp({
-    email: parsed.data.invitedEmail,
-    options: {
-      shouldCreateUser: true,
-      data: { locale },
-    },
-  });
-  if (deliveryError) return { status: "error", reason: "UNAVAILABLE" };
+  // Email delivery is owned by OrganizationEmailInvitationRequestedV1 → outbox consumer.
   revalidatePath(`/${locale}/invitations`);
   return { status: "success" };
 }

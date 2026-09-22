@@ -23,7 +23,7 @@ export default async function SubscriptionInvoicePage({
   const c = spaceCopy(locale);
   if (result.status === "error") {
     return (
-      <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="finance" title={c.latestInvoices} lead={c.subPageLead} kicker={c.kicker}>
+      <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="finance" title={c.latestInvoices} lead={c.subPageLead} kicker={c.kicker}>
         <p role="alert" className="client-card">{locale === "ar" ? "تعذر عرض الفاتورة." : "La facture ne peut pas être affichée."}</p>
       </ClientAppShell>
     );
@@ -31,7 +31,7 @@ export default async function SubscriptionInvoicePage({
   const cycle = result.dashboard.subscription?.cycles.find((item) => item.id === cycleId);
   if (!cycle) notFound();
   return (
-    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="finance" title={c.latestInvoices} lead={result.dashboard.organizationName} kicker={c.kicker}>
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="finance" title={c.latestInvoices} lead={result.dashboard.organizationName} kicker={c.kicker}>
       <SubscriptionInvoice locale={locale} query={space.selectedQuery} organizationName={result.dashboard.organizationName} cycle={cycle} />
     </ClientAppShell>
   );

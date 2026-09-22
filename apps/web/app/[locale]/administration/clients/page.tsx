@@ -16,7 +16,7 @@ export default async function AdminClientsPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ organizationId?: string; q?: string }>;
+  searchParams: Promise<{ organizationId?: string; q?: string; status?: string; compliance?: string }>;
 }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
@@ -27,6 +27,7 @@ export default async function AdminClientsPage({
   const a = actorCopy(locale);
   const m = getAdminClientMessages(locale);
   const alternate = locale === "ar" ? "fr" : "ar";
+  const boardFilters = { status: query.status, compliance: query.compliance };
 
   return (
     <AdminAppShell
@@ -45,7 +46,7 @@ export default async function AdminClientsPage({
       actions={
         <>
           <Link href={`/${locale}/administration/utilisateurs/inviter${space.selectedQuery}${space.selectedQuery ? "&" : "?"}role=CLIENT_OWNER`} className="admin-soft-cta"><UserPlus className="size-4" aria-hidden />{a.inviteClient}</Link>
-          <Link href={`/${locale}/administration/clients/export${space.selectedQuery}`} className="admin-dir-action" data-tone="white"><Download className="size-4" aria-hidden />{locale === "ar" ? "تصدير" : "Exporter"}</Link>
+          <a href={`/${locale}/administration/clients/export${space.selectedQuery}`} className="admin-dir-action" data-tone="white"><Download className="size-4" aria-hidden />{locale === "ar" ? "تصدير" : "Exporter"}</a>
         </>
       }
     >
@@ -58,7 +59,7 @@ export default async function AdminClientsPage({
               <Link href={`/${locale}/securite/compte`} className="admin-soft-cta">{m.configureMfa}</Link>
             </AlertDescription>
           </Alert>
-          <ClientsBoard locale={locale} query={space.selectedQuery} organizations={[]} cases={[]} diagnostics={[]} search={query.q} />
+          <ClientsBoard locale={locale} query={space.selectedQuery} organizations={[]} cases={[]} diagnostics={[]} search={query.q} filters={boardFilters} />
         </main>
       ) : directory.reason === "FORBIDDEN" ? (
         <main className="client-page">
@@ -66,11 +67,11 @@ export default async function AdminClientsPage({
             <AlertTitle>{a.forbiddenSection}</AlertTitle>
             <AlertDescription>{a.forbiddenSectionLead}</AlertDescription>
           </Alert>
-          <ClientsBoard locale={locale} query={space.selectedQuery} organizations={[]} cases={[]} diagnostics={[]} search={query.q} />
+          <ClientsBoard locale={locale} query={space.selectedQuery} organizations={[]} cases={[]} diagnostics={[]} search={query.q} filters={boardFilters} />
         </main>
       ) : (
         <>
-          <ClientsBoard locale={locale} query={space.selectedQuery} organizations={directory.organizations} cases={directory.cases} diagnostics={directory.diagnostics} search={query.q} />
+          <ClientsBoard locale={locale} query={space.selectedQuery} organizations={directory.organizations} cases={directory.cases} diagnostics={directory.diagnostics} search={query.q} filters={boardFilters} />
           {directory.dashboard ? (
             <details className="client-ops">
               <summary>{m.title}</summary>

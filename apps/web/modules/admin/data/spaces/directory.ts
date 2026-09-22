@@ -1,26 +1,35 @@
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import { adminActorLinks, adminParcoursLinks } from "./admin-nav";
 
-export function adminDirectoryGroups(locale: Locale, q: string) {
+export type AdminDirectoryTone = "violet" | "peach" | "mint" | "amber" | "sky" | "plum";
+
+export type AdminDirectoryGroup = {
+  id: "actors" | "parcours" | "catalog" | "finance" | "growth" | "ops";
+  title: string;
+  tone: AdminDirectoryTone;
+  links: Array<{ href: string; label: string }>;
+};
+
+export function adminDirectoryGroups(locale: Locale, q: string): AdminDirectoryGroup[] {
   const p = `/${locale}`;
   const fr = locale === "fr";
   return [
     {
       id: "actors",
       title: fr ? "Acteurs & accès" : "الفاعلون والوصول",
-      tone: "violet" as const,
+      tone: "violet",
       links: adminActorLinks(locale, q).map(({ href, label }) => ({ href, label })),
     },
     {
       id: "parcours",
       title: fr ? "Parcours & dossiers" : "المسارات والملفات",
-      tone: "peach" as const,
+      tone: "peach",
       links: adminParcoursLinks(locale, q).map(({ href, label }) => ({ href, label })),
     },
     {
       id: "catalog",
       title: fr ? "Catalogue & moteurs" : "الدليل والمحركات",
-      tone: "mint" as const,
+      tone: "mint",
       links: [
         { href: `${p}/administration/catalogue${q}#domaines`, label: fr ? "Domaines, catégories & services" : "المجالات والفئات والخدمات" },
         { href: `${p}/administration/catalogue${q}#questions`, label: fr ? "Questions" : "الأسئلة" },
@@ -37,7 +46,7 @@ export function adminDirectoryGroups(locale: Locale, q: string) {
     {
       id: "finance",
       title: fr ? "Finance & monétisation" : "المالية والتسييل",
-      tone: "peach" as const,
+      tone: "amber",
       links: [
         { href: `${p}/administration/finance${q}#plans`, label: fr ? "Plans & abonnements" : "الخطط والاشتراكات" },
         { href: `${p}/administration/finance${q}#boxes`, label: fr ? "Boxes" : "الصناديق" },
@@ -48,8 +57,6 @@ export function adminDirectoryGroups(locale: Locale, q: string) {
         { href: `${p}/administration/finance${q}#rapprochements`, label: fr ? "Rapprochements" : "المطابقات" },
         { href: `${p}/administration/approbations-finance${q}#commissions`, label: fr ? "Commissions" : "العمولات" },
         { href: `${p}/administration/finance${q}#centres-couts`, label: fr ? "Centres de coûts" : "مراكز التكلفة" },
-        { href: `${p}/administration/finance${q}#pnl`, label: fr ? "P&L bibliothèques" : "أرباح المكتبات" },
-        { href: `${p}/administration/finance${q}#cloture`, label: fr ? "Clôture fournisseurs" : "إغلاق الموردين" },
         { href: `${p}/administration/achats-groupes${q}`, label: fr ? "Achats groupés" : "مشتريات مجمّعة" },
         { href: `${p}/administration/incitations${q}`, label: fr ? "ROI & économies" : "العائد والوفورات" },
         { href: `${p}/administration/approbations-finance${q}`, label: fr ? "Approbations finance" : "مصادقات المالية" },
@@ -58,7 +65,7 @@ export function adminDirectoryGroups(locale: Locale, q: string) {
     {
       id: "growth",
       title: fr ? "Pilotage & croissance" : "القيادة والنمو",
-      tone: "sky" as const,
+      tone: "sky",
       links: [
         { href: `${p}/administration/command-center${q}#command-today`, label: fr ? "Centre de commandement" : "مركز القيادة" },
         { href: `${p}/administration/marketing-autopilot${q}#gouvernance`, label: fr ? "Marketing Autopilot" : "التسويق الآلي" },
@@ -74,7 +81,7 @@ export function adminDirectoryGroups(locale: Locale, q: string) {
     {
       id: "ops",
       title: fr ? "Opérations, sécurité & configuration" : "التشغيل والأمن والإعداد",
-      tone: "mint" as const,
+      tone: "plum",
       links: [
         { href: `${p}/administration/operations${q}#operations-summary`, label: fr ? "Opérations & files de traitement" : "التشغيل وطوابير المعالجة" },
         { href: `${p}/administration/operations${q}#outbox`, label: fr ? "Event Outbox & workers" : "صندوق الأحداث والعاملون" },
@@ -90,6 +97,10 @@ export function adminDirectoryGroups(locale: Locale, q: string) {
       ],
     },
   ];
+}
+
+export function adminDirectoryGroup(locale: Locale, q: string, id: AdminDirectoryGroup["id"]) {
+  return adminDirectoryGroups(locale, q).find((group) => group.id === id) ?? null;
 }
 
 export function inferOrgType(name: string, locale: Locale) {

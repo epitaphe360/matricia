@@ -105,9 +105,12 @@ describe("ComparisonPanel", () => {
     expect(html).toContain("Offre A");
     expect(html).toContain("4 semaines");
     expect(html).toContain("Rapport");
-    expect(html).toContain("Offre recommandée");
+    expect(html).toContain("★ Offre recommandée");
+    expect(html).toContain("Pondérez vos critères");
     expect(html).toContain("Complétude du devis");
     expect(html).toContain("100 %");
+    expect(html).toContain("Maintenance / suivi");
+    expect(html).toContain("Conditions de paiement");
     expect(html).toContain('name="selectionReason"');
     expect(html).toContain('name="confirmSelection"');
     expect(html).toContain("coordonnées");

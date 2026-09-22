@@ -38,7 +38,7 @@ export default async function ClientActionsPage({
       locale={locale}
       selectedQuery={space.selectedQuery}
       selectedOrganizationId={space.selectedOrganizationId}
-      userEmail={space.userEmail}
+      userEmail={space.userEmail} organizationName={space.organizationName}
       active="actions"
       title={c.actionsTitle}
       lead={c.actionsLead}

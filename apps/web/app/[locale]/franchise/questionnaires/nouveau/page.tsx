@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { libraryCopy } from "@/modules/franchise/data/library/copy";
-import { FranchiseQuestionnairesWorkbench } from "@/modules/franchise/screens/library/library-workbenches";
+import { FranchiseQuestionnaireConstructor } from "@/modules/franchise/screens/library/constructors";
 import { requireFranchiseLibrary } from "@/modules/franchise/screens/library/page-helper";
 import { FranchiseAppShell } from "@/modules/franchise/ui/franchise-app-shell";
 
@@ -13,11 +13,11 @@ export default async function FranchiseNewQuestionnairePage({ params, searchPara
   const { space, result } = await requireFranchiseLibrary({ locale, organizationId: query.organizationId });
   const c = libraryCopy(locale);
   return (
-    <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="questionnaires" title={c.createQuestionnaire} lead={c.questionnairesLead} kicker={c.scope} mandateName={result.status === "success" ? result.workspace.mandate.libraryName : null}>
+    <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="questionnaires" title={c.questionnaireConstructorTitle} lead={c.questionnaireConstructorLead} kicker={c.scope} mandateName={result.status === "success" ? result.workspace.mandate.libraryName : null}>
       {result.status === "error" ? (
         <Alert variant="destructive"><AlertTitle>{c.unavailable}</AlertTitle><AlertDescription>{result.reason === "NO_MANDATE" ? c.noMandate : c.scopeHelp}</AlertDescription></Alert>
       ) : (
-        <FranchiseQuestionnairesWorkbench locale={locale} query={space.selectedQuery} workspace={result.workspace} selectedId={null} createMode commandIdentity={{ idempotencyKey: randomUUID(), correlationId: randomUUID() }} />
+        <FranchiseQuestionnaireConstructor locale={locale} query={space.selectedQuery} workspace={result.workspace} selectedId={null} createMode commandIdentity={{ idempotencyKey: randomUUID(), correlationId: randomUUID() }} organizationId={space.selectedOrganizationId} />
       )}
     </FranchiseAppShell>
   );

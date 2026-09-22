@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Bell, Briefcase, FileText, LineChart, MapPin, ShieldCheck, Users } from "lucide-react";
+import { ArrowRight, Bell, Briefcase, CheckCircle2, FileText, LineChart, Lock, MapPin, ShieldCheck, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { PIPELINE_STAGES } from "@/modules/franchise/data/crm/model";
 import { libraryCopy } from "@/modules/franchise/data/library/copy";
@@ -9,7 +9,8 @@ import { canApplyFranchiseSpaceDemo, demoFranchiseSpaces, type FranchiseSpaceBoa
 import { emptyFranchiseSpaces } from "@/modules/franchise/data/spaces/live";
 import { MandateBanner } from "@/modules/franchise/screens/library/library-boards";
 import { FranchiseMandateRail } from "@/modules/franchise/screens/library/library-chrome";
-import { canMutateFranchiseFolder, FranchiseFolderActivityForm, FranchiseFolderAdvanceForm, FranchiseFolderTimeline } from "@/modules/franchise/screens/network/folder-forms";
+import { canMutateFranchiseFolder } from "@/modules/franchise/screens/network/folder-guards";
+import { FranchiseFolderActivityForm, FranchiseFolderAdvanceForm, FranchiseFolderTimeline } from "@/modules/franchise/screens/network/folder-forms";
 import {
   FranchiseAnomalyDefinitionForm,
   FranchiseIncidentInstructForm,
@@ -38,6 +39,74 @@ type SpaceBoardProps = {
 };
 
 const PAGE_SIZE = 8;
+
+function integerShare(part: number, whole: number, locale: Locale): string {
+  if (whole <= 0) return locale === "ar" ? "0 من 0" : "0 / 0";
+  return locale === "ar" ? `${part} من ${whole}` : `${part} / ${whole}`;
+}
+
+function documentSensitivity(kind: string, status: string, locale: Locale): { label: string; tone: "peach" | "sky" | "mint" } {
+  const c = franchiseCopy(locale);
+  if (kind === "renewal" || status.toLowerCase().includes("expire") || status.toLowerCase().includes("ينتهي")) {
+    return { label: c.sensitivityHigh, tone: "peach" };
+  }
+  if (status.toLowerCase().includes("vérif") || status.toLowerCase().includes("تحقق") || status.toLowerCase().includes("examiner")) {
+    return { label: c.sensitivityMedium, tone: "sky" };
+  }
+  return { label: c.sensitivityLow, tone: "mint" };
+}
+
+function RenewalCalendar({ locale, dueDates, weekCount, monthCount, nextCount }: { locale: Locale; dueDates: string[]; weekCount: number; monthCount: number; nextCount: number }) {
+  const c = franchiseCopy(locale);
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth();
+  const first = new Date(Date.UTC(year, month, 1));
+  const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const startPad = (first.getUTCDay() + 6) % 7;
+  const monthLabel = new Intl.DateTimeFormat(locale === "ar" ? "ar-MA" : "fr-MA", { month: "long", year: "numeric", timeZone: "UTC" }).format(first);
+  const dueDays = new Set(
+    dueDates
+      .map((value) => {
+        const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+        if (!match) return null;
+        const y = Number(match[1]);
+        const m = Number(match[2]) - 1;
+        const d = Number(match[3]);
+        if (y !== year || m !== month) return null;
+        return d;
+      })
+      .filter((value): value is number => value != null),
+  );
+  const weekDays = locale === "ar"
+    ? ["إث", "ثل", "أر", "خم", "جم", "سب", "أح"]
+    : ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+  const cells: Array<number | null> = [...Array.from({ length: startPad }, () => null), ...Array.from({ length: daysInMonth }, (_, index) => index + 1)];
+  while (cells.length % 7 !== 0) cells.push(null);
+  return (
+    <div className="franchise-mini-calendar" aria-label={monthLabel}>
+      <header><strong>{monthLabel}</strong></header>
+      <div className="franchise-cal-grid" role="grid">
+        {weekDays.map((day) => <span key={day} className="franchise-cal-head">{day}</span>)}
+        {cells.map((day, index) => (
+          <span
+            key={`${day ?? "e"}-${index}`}
+            className="franchise-cal-day"
+            data-due={day && dueDays.has(day) ? "true" : undefined}
+            data-muted={!day ? "true" : undefined}
+          >
+            {day ?? ""}
+          </span>
+        ))}
+      </div>
+      <ul className="franchise-dot-list franchise-cal-legend">
+        <li><span className="franchise-dot" data-tone="peach" /><strong>{c.calendarLegendWeek}</strong><small dir="ltr">{weekCount}</small></li>
+        <li><span className="franchise-dot" data-tone="violet" /><strong>{c.calendarLegendMonth}</strong><small dir="ltr">{monthCount}</small></li>
+        <li><span className="franchise-dot" data-tone="sky" /><strong>{c.calendarLegendNext}</strong><small dir="ltr">{nextCount}</small></li>
+      </ul>
+    </div>
+  );
+}
 
 function pageNumber(page?: string) {
   const value = Number.parseInt(page ?? "1", 10);
@@ -89,11 +158,6 @@ function matchesNetworkFilter(view: string | null | undefined, stage?: string) {
 function resolveBoard(props: SpaceBoardProps) {
   if (props.board) return props.board;
   return canApplyFranchiseSpaceDemo() ? demoFranchiseSpaces(props.locale, props.query) : emptyFranchiseSpaces(props.locale, props.query);
-}
-
-function pipelineDestination(locale: string, query: string, id: string) {
-  const path = id === "p1" ? "fournisseurs" : id === "p2" ? "demandes" : id === "p3" ? "demandes/missions" : id === "p4" ? "qualite" : "performance/indicateurs";
-  return `/${locale}/franchise/${path}${query}`;
 }
 
 function Cta({ href, children, soft = false }: { href: string; children: ReactNode; soft?: boolean }) {
@@ -220,22 +284,194 @@ export function NetworkBoard({ locale, query, mandateName, view, itemId, search,
   const filtered = demo.people.filter((row) => matchesNetworkFilter(view, row.stage) && (!needle || `${row.name} ${row.services} ${row.status}`.toLocaleLowerCase().includes(needle)));
   const paged = paginate(filtered, page);
   const people = paged.rows;
+  const activeCount = demo.people.length;
+  const qualifiedCount = demo.people.filter((row) => matchesNetworkFilter("qualifies", row.stage)).length;
+  const supportCount = demo.people.filter((row) => matchesNetworkFilter("accompagnement", row.stage)).length;
+  const incompleteCount = demo.people.filter((row) => matchesNetworkFilter("incomplets", row.stage)).length;
+  const docsWatch = demo.renewals.length || demo.documents.filter((row) => row.kind === "evidence").length;
   const tab = (href: string, label: string, active: boolean) => <Link href={href} data-active={active ? "true" : undefined}>{label}</Link>;
+  if (selected) {
+    const docs = demo.documents.filter((row) => row.kind === "evidence" || !row.kind).slice(0, 6);
+    const decisionNote = selected.activities?.find((item) => /qualif|décision|decision|تأهيل/i.test(`${item.type} ${item.summary}`));
+    return (
+      <main className="client-page franchise-network-page franchise-provider-dossier">
+        <Banner locale={locale} query={query} mandateName={mandateName} />
+        <article className="client-card franchise-provider-hero-card">
+          <div className="franchise-provider-hero">
+            <span className="franchise-kpi-icon" data-tone={selected.tone}><Briefcase className="size-4" aria-hidden /></span>
+            <div>
+              <strong>{selected.name}</strong>
+              <em className="client-status-chip" data-tone="mint">{c.providerActive}</em>
+              <p>{selected.email ?? selected.services}</p>
+            </div>
+            <Link href={`/${locale}/franchise/fournisseurs/${selected.id}${query}`} className="franchise-tool franchise-tool-primary">{c.openProviderFolder}</Link>
+          </div>
+          <dl className="franchise-props franchise-provider-meta">
+            <div><small>{c.providerType}</small><span>{c.serviceTypeLabel}</span></div>
+            <div><small>{c.relationSince}</small><span dir="ltr">{selected.nextFollowupAt ? selected.nextFollowupAt.slice(0, 10) : "—"}</span></div>
+            <div><small>{c.globalStatus}</small><span className="client-status-chip" data-tone={selected.tone}>{selected.status}</span></div>
+            <div><small>{c.services}</small><span>{selected.services || "—"}</span></div>
+            <div><small>{c.capacityLevel}</small><span>{locale === "ar" ? "عالية" : "Haute"}</span></div>
+            <div><small>{c.zoneIntervention}</small><span>{c.zoneNational}</span></div>
+            <div><small>{c.availability}</small><span>{c.availableNow}</span></div>
+          </dl>
+        </article>
+        <nav className="franchise-pill-tabs" aria-label={selected.name}>
+          <Link href={`/${locale}/franchise/fournisseurs/${selected.id}${query}`} className="franchise-pill-tab" data-active={!view || view === "qualification" ? "true" : undefined}><span>{c.stepQual}</span></Link>
+          <Link href={`/${locale}/franchise/fournisseurs/${selected.id}${query}`} className="franchise-pill-tab"><span>{c.servicesTab}</span></Link>
+          <Link href={`/${locale}/franchise/fournisseurs/${selected.id}/capacite${query}`} className="franchise-pill-tab" data-active={view === "capacite" ? "true" : undefined}><span>{c.capacityAvailability}</span></Link>
+          <Link href={`/${locale}/franchise/fournisseurs/${selected.id}/documents${query}`} className="franchise-pill-tab" data-active={view === "documents" ? "true" : undefined}><span>{c.providerDocs}</span></Link>
+          <Link href={`/${locale}/franchise/fournisseurs/${selected.id}${query}`} className="franchise-pill-tab"><span>{c.historyTab}</span></Link>
+        </nav>
+        <section className="franchise-dossier-grid">
+          <article className="client-card">
+            <header><h2>{c.stepQual}</h2></header>
+            {demo.qualifications.length === 0 ? <p className="franchise-empty-panel">{c.emptyQualifications}</p> : (
+              <div className="client-table-wrap">
+                <table className="client-space-table franchise-dense-table">
+                  <thead><tr><th>{c.servicesTab}</th><th>{c.proofs}</th><th>{c.state}</th><th>{c.action}</th></tr></thead>
+                  <tbody>
+                    {demo.qualifications.map((row) => (
+                      <tr key={row.id}>
+                        <td>{row.title}</td>
+                        <td>{row.meta ?? "—"}</td>
+                        <td><span className="client-status-chip">{row.status}</span></td>
+                        <td><Cta href={`/${locale}/franchise/fournisseurs/${selected.id}${query}`} soft>{c.open}</Cta></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {view === "capacite" || !view || view === "qualification" ? (
+              <section className="franchise-capacity-block">
+                <header><h3>{c.capacityAvailability}</h3></header>
+                <dl className="franchise-props franchise-capacity-stats">
+                  <div><small>{c.teamSize}</small><span dir="ltr">—</span></div>
+                  <div><small>{c.zoneIntervention}</small><span>{c.zoneNational}</span></div>
+                  <div><small>{c.meanDelay}</small><span dir="ltr">—</span></div>
+                  <div><small>{c.globalAvailability}</small><span>{c.availableNow}</span></div>
+                </dl>
+                <p className="client-access-note">{c.weeklyAvailability} — {locale === "ar" ? "غير محسوبة بعد من بيانات القدرة." : "pas encore calculée à partir des données de capacité."}</p>
+                <ul className="franchise-week-bars" aria-hidden="true">
+                  {(locale === "ar"
+                    ? ["إث", "ثلا", "أرب", "خم", "جم", "سب", "أحد"]
+                    : ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
+                  ).map((day) => (
+                    <li key={day}>
+                      <span className="franchise-week-bar" data-empty="true" />
+                      <small>{day}</small>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+            {view === "documents" ? (
+              <>
+                <p className="client-access-note">{c.docsUpToDate}</p>
+                {folderEvidence(selected).length ? (
+                  <ul className="client-feed">
+                    {folderEvidence(selected).map((ref) => (
+                      <li key={ref}><span><strong>{ref}</strong><small>{c.evidence}</small></span></li>
+                    ))}
+                  </ul>
+                ) : <p className="franchise-empty-panel">{c.noEvidence}</p>}
+              </>
+            ) : null}
+            {!view || view === "qualification" ? (
+              <>
+                <FranchiseFolderTimeline locale={locale} activities={selected.activities} events={selected.pipelineEvents} />
+                {canMutateFranchiseFolder(selected.id, demo.canWrite) && selected.rowVersion ? (
+                  <FranchiseFolderAdvanceForm locale={locale} organizationId={organizationIdFromQuery(query) || null} prospectId={selected.id} stage={selected.stage ?? "SENT"} rowVersion={selected.rowVersion} />
+                ) : null}
+                {canMutateFranchiseFolder(selected.id, demo.canWrite) ? (
+                  <FranchiseFolderActivityForm locale={locale} organizationId={organizationIdFromQuery(query) || null} prospectId={selected.id} defaultType="NOTE" />
+                ) : null}
+                {demo.canWrite ? (
+                  <FranchiseQualificationDecisionForm
+                    locale={locale}
+                    organizationId={organizationId || organizationIdFromQuery(query) || null}
+                    qualifications={demo.qualifications.filter((row) => row.rowVersion)}
+                  />
+                ) : null}
+              </>
+            ) : null}
+            {view === "capacite" && canMutateFranchiseFolder(selected.id, demo.canWrite) ? (
+              <FranchiseFolderActivityForm locale={locale} organizationId={organizationIdFromQuery(query) || null} prospectId={selected.id} defaultType="FOLLOW_UP" />
+            ) : null}
+            {view === "documents" && canMutateFranchiseFolder(selected.id, demo.canWrite) ? (
+              <FranchiseFolderActivityForm locale={locale} organizationId={organizationIdFromQuery(query) || null} prospectId={selected.id} defaultType="NOTE" />
+            ) : null}
+          </article>
+          <aside className="franchise-home-rail">
+            <article className="client-card">
+              <header><h2>{c.decisionTitle}</h2></header>
+              {decisionNote || selected.status ? (
+                <>
+                  <p className="franchise-decision-status"><CheckCircle2 className="size-5" aria-hidden /><strong>{selected.status}</strong></p>
+                  <p className="client-access-note">{c.decisionReadonly}</p>
+                  {decisionNote ? <blockquote className="franchise-decision-quote">{decisionNote.summary}</blockquote> : <p className="franchise-empty-panel">{c.emptyDecision}</p>}
+                  <Link href={`/${locale}/franchise/qualite${query}`} className="franchise-tool franchise-tool-primary">{c.requestRevision}</Link>
+                </>
+              ) : (
+                <p className="franchise-empty-panel">{c.emptyDecision}</p>
+              )}
+            </article>
+            <article className="client-card">
+              <header className="client-priority-head"><h2>{c.providerDocs}</h2><Link href={`/${locale}/franchise/fournisseurs/${selected.id}/documents${query}`} className="client-soft-link">{c.seeAllDocs}</Link></header>
+              {docs.length === 0 && folderEvidence(selected).length === 0 ? (
+                <p className="franchise-empty-panel">{c.emptyProviderDocs}</p>
+              ) : (
+                <ul className="franchise-dot-list">
+                  {(docs.length ? docs.map((row) => ({ id: row.id, title: row.title, status: row.status })) : folderEvidence(selected).map((ref) => ({ id: ref, title: ref, status: c.docsUpToDate }))).map((row) => (
+                    <li key={row.id}><span className="franchise-dot" data-tone="mint" /><span><strong>{row.title}</strong><small>{row.status}</small></span></li>
+                  ))}
+                </ul>
+              )}
+            </article>
+            <article className="client-card">
+              <header><h2>{c.capacityTitle}</h2></header>
+              <ul className="franchise-dot-list">
+                <li><span className="franchise-dot" data-tone="mint" /><strong>{c.capacityLevel}</strong><small>{locale === "ar" ? "عالية" : "Haute"}</small></li>
+                <li><span className="franchise-dot" data-tone="sky" /><strong>{c.zoneNational}</strong><small>{c.zoneNational}</small></li>
+                <li><span className="franchise-dot" data-tone="violet" /><strong>{c.availability}</strong><small>{c.availableNow}</small></li>
+              </ul>
+            </article>
+          </aside>
+        </section>
+      </main>
+    );
+  }
   return (
-    <main className="client-page">
+    <main className="client-page franchise-network-page">
       <Banner locale={locale} query={query} mandateName={mandateName} />
-      <div className="franchise-toolbar">
-        <form action={`/${locale}/franchise/fournisseurs${query}`} method="get" className="franchise-search">
-          {organizationIdFromQuery(query) ? <input type="hidden" name="organizationId" value={organizationIdFromQuery(query)} /> : null}
-          <label><span className="sr-only">{c.searchPro}</span><input name="q" defaultValue={search} placeholder={c.searchPro} /></label>
-          <button type="submit" className="franchise-scope-chip">{c.searchPro}</button>
-        </form>
-        <Link href={`/${locale}/franchise/fournisseurs/inviter${query}`} className="franchise-tool franchise-tool-primary">{c.invite}</Link>
+      <section className="franchise-treat franchise-net-kpis">
+        <article className="franchise-kpi-tile" data-tone="sky"><span className="franchise-kpi-icon" data-tone="sky"><Users className="size-4" aria-hidden /></span><span><strong dir="ltr">{activeCount}</strong><small>{c.netActive}</small></span></article>
+        <article className="franchise-kpi-tile" data-tone="mint"><span className="franchise-kpi-icon" data-tone="mint"><ShieldCheck className="size-4" aria-hidden /></span><span><strong dir="ltr">{qualifiedCount}</strong><small>{c.qualified} · {integerShare(qualifiedCount, activeCount, locale)} {c.netQualifiedShare}</small></span></article>
+        <article className="franchise-kpi-tile" data-tone="peach"><span className="franchise-kpi-icon" data-tone="peach"><Briefcase className="size-4" aria-hidden /></span><span><strong dir="ltr">{supportCount}</strong><small>{c.netInProgress} · {integerShare(supportCount, activeCount, locale)} {c.netQualifiedShare}</small></span></article>
+        <article className="franchise-kpi-tile" data-tone="violet"><span className="franchise-kpi-icon" data-tone="violet"><FileText className="size-4" aria-hidden /></span><span><strong dir="ltr">{incompleteCount}</strong><small>{c.netToQualify} · {integerShare(incompleteCount, activeCount, locale)} {c.netQualifiedShare}</small></span></article>
+        <article className="franchise-kpi-tile" data-tone="violet"><span className="franchise-kpi-icon" data-tone="violet"><Bell className="size-4" aria-hidden /></span><span><strong dir="ltr">{docsWatch}</strong><small>{c.netDocsExpiring}</small></span></article>
+      </section>
+      <form action={`/${locale}/franchise/fournisseurs`} method="get" className="franchise-filters franchise-net-filters">
+        {organizationIdFromQuery(query) ? <input type="hidden" name="organizationId" value={organizationIdFromQuery(query)} /> : null}
+        <label><span className="sr-only">{c.searchPro}</span><input name="q" defaultValue={search} placeholder={c.searchPro} /></label>
+        <select name="service" defaultValue="all" aria-label={c.allServicesFilter}><option value="all">{c.allServicesFilter}</option></select>
+        <select name="status" defaultValue="all" aria-label={c.allStatusesFilter}><option value="all">{c.allStatusesFilter}</option></select>
+        <select name="capacity" defaultValue="all" aria-label={c.allCapacitiesFilter}><option value="all">{c.allCapacitiesFilter}</option></select>
+        <select name="zone" defaultValue="all" aria-label={c.allZonesFilter}><option value="all">{c.allZonesFilter}</option></select>
+        <select name="docs" defaultValue="all" aria-label={c.allDocStatusesFilter}><option value="all">{c.allDocStatusesFilter}</option></select>
+        <button type="submit" className="franchise-scope-chip">{c.filter}</button>
+        <Link href={`/${locale}/franchise/fournisseurs${query}`} className="franchise-tool">{c.resetFilters}</Link>
+      </form>
+      <div className="franchise-net-invite-row" aria-label={c.netInviteRow}>
         <Link href={`/${locale}/franchise/clients/inviter${query}`} className="franchise-tool">{c.inviteClient}</Link>
       </div>
-      <section className="franchise-workbench">
+      <section className="franchise-workbench franchise-network-workbench">
         <article className="client-card">
-          <header><h2>{c.netPeople}</h2></header>
+          <header className="client-priority-head">
+            <h2>{c.listPros}</h2>
+            <span className="franchise-tool">{c.exportList}</span>
+          </header>
           <nav className="franchise-inspector-tabs" aria-label={c.netPeople}>
             {tab(`/${locale}/franchise/fournisseurs${query}`, c.all, !view || view === "all")}
             {tab(`/${locale}/franchise/fournisseurs/accompagnement${query}`, c.toSupport, view === "accompagnement")}
@@ -244,17 +480,20 @@ export function NetworkBoard({ locale, query, mandateName, view, itemId, search,
             {tab(`/${locale}/franchise/fournisseurs/inactifs${query}`, c.inactive, view === "inactifs")}
           </nav>
           <div className="client-table-wrap" id="reseau">
-            <table className="client-space-table">
-              <thead><tr><th>{c.profile}</th><th>{c.services}</th><th>{c.folderState}</th><th>{c.nextAction}</th><th>{c.action}</th></tr></thead>
+            <table className="client-space-table franchise-dense-table">
+              <thead><tr><th>{c.profile}</th><th>{c.services}</th><th>{c.folderState}</th><th>{c.capacityLevel}</th><th>{c.availability}</th><th>{c.document}</th><th>{c.qualityScore}</th><th>{c.action}</th></tr></thead>
               <tbody>
                 {people.length === 0 ? (
-                  <tr><td colSpan={5}>{c.emptyPeople}</td></tr>
+                  <tr><td colSpan={8}>{c.emptyPeople}</td></tr>
                 ) : people.map((row) => (
-                  <tr key={row.id}>
+                  <tr key={row.id} data-selected={selected?.id === row.id ? "true" : undefined}>
                     <td><span className="franchise-row-title"><span className="franchise-kpi-icon" data-tone={row.tone}>{row.name.slice(0, 1)}</span>{row.name}</span></td>
-                    <td>{row.services}</td>
+                    <td><em className="franchise-kind-chip">{row.services}</em></td>
                     <td><span className="client-status-chip" data-tone={row.tone}>{row.status}</span></td>
-                    <td>{row.next}</td>
+                    <td><em className="franchise-capacity-bars" aria-label={locale === "ar" ? "عالية" : "Haute"} data-level="3"><i /><i /><i /></em></td>
+                    <td><span className="franchise-dot" data-tone="mint" /> {c.availableNow}</td>
+                    <td><em className="client-status-chip" data-tone="mint">{locale === "ar" ? "محدَّث" : "À jour"}</em></td>
+                    <td dir="ltr">—</td>
                     <td><Cta href={`/${locale}/franchise/fournisseurs/${row.id}${query}`} soft>{c.openFolder}</Cta></td>
                   </tr>
                 ))}
@@ -264,84 +503,18 @@ export function NetworkBoard({ locale, query, mandateName, view, itemId, search,
           <PaginationNav path={`/${locale}/franchise/fournisseurs`} query={query} page={paged.page} pageCount={paged.pageCount} label={c.netPeople} />
         </article>
         <article className="client-card">
-          <header><h2>{selected ? selected.name : c.prioritize}</h2></header>
-          {selected ? (
-            <>
-              <p>{selected.email ?? selected.services}</p>
-              <em className="client-status-chip" data-tone={selected.tone}>{selected.status}</em>
-              <nav className="franchise-inspector-tabs" aria-label={selected.name}>
-                <Link href={`/${locale}/franchise/fournisseurs/${selected.id}${query}`} data-active={!view || view === "qualification" ? "true" : undefined}>{c.stepQual}</Link>
-                <Link href={`/${locale}/franchise/fournisseurs/${selected.id}/capacite${query}`} data-active={view === "capacite" ? "true" : undefined}>{c.capacityTitle}</Link>
-                <Link href={`/${locale}/franchise/fournisseurs/${selected.id}/documents${query}`} data-active={view === "documents" ? "true" : undefined}>{c.document}</Link>
-              </nav>
-              {view === "capacite" ? (
-                <>
-                  <p>{c.capacityLead}</p>
-                  <p>{selected.nextFollowupAt ? selected.nextFollowupAt.slice(0, 10) : c.noCapacity}</p>
-                  {canMutateFranchiseFolder(selected.id, demo.canWrite) ? <FranchiseFolderActivityForm locale={locale} organizationId={organizationIdFromQuery(query) || null} prospectId={selected.id} defaultType="FOLLOW_UP" /> : null}
-                </>
-              ) : view === "documents" ? (
-                <>
-                  {folderEvidence(selected).length ? (
-                    <ul className="client-feed">
-                      {folderEvidence(selected).map((ref) => (
-                        <li key={ref}><span><strong>{ref}</strong><small>{c.evidence}</small></span></li>
-                      ))}
-                    </ul>
-                  ) : <p className="franchise-empty-panel">{c.noEvidence}</p>}
-                  {canMutateFranchiseFolder(selected.id, demo.canWrite) ? <FranchiseFolderActivityForm locale={locale} organizationId={organizationIdFromQuery(query) || null} prospectId={selected.id} defaultType="NOTE" /> : null}
-                </>
-              ) : (
-                <>
-                  <ol className="franchise-mini-pipe">
-                    {PIPELINE_STAGES.map((stage, index) => (
-                      <li key={stage} data-active={selected.stage === stage ? "true" : undefined}><em>{index + 1}</em><strong>{franchiseStageLabel(stage, locale)}</strong></li>
-                    ))}
-                  </ol>
-                  <FranchiseFolderTimeline locale={locale} activities={selected.activities} events={selected.pipelineEvents} />
-                  {canMutateFranchiseFolder(selected.id, demo.canWrite) && selected.rowVersion ? (
-                    <FranchiseFolderAdvanceForm locale={locale} organizationId={organizationIdFromQuery(query) || null} prospectId={selected.id} stage={selected.stage ?? "SENT"} rowVersion={selected.rowVersion} />
-                  ) : null}
-                  {canMutateFranchiseFolder(selected.id, demo.canWrite) ? <FranchiseFolderActivityForm locale={locale} organizationId={organizationIdFromQuery(query) || null} prospectId={selected.id} defaultType="NOTE" /> : null}
-                  {demo.qualifications.length === 0 ? <p className="franchise-empty-panel">{c.emptyQualifications}</p> : (
-                    <ul className="client-feed">
-                      {demo.qualifications.map((row) => (
-                        <li key={row.id}><span><strong>{row.title}</strong><small>{row.meta ?? row.status}</small></span><em className="client-status-chip">{row.status}</em></li>
-                      ))}
-                    </ul>
-                  )}
-                  {demo.canWrite ? (
-                    <FranchiseQualificationDecisionForm
-                      locale={locale}
-                      organizationId={organizationId || organizationIdFromQuery(query) || null}
-                      qualifications={demo.qualifications.filter((row) => row.rowVersion)}
-                    />
-                  ) : null}
-                </>
-              )}
-            </>
-          ) : (
+          <header><h2>{c.prioritize}</h2></header>
           <ul className="franchise-dot-list">
             {people.slice(0, 5).map((row) => (
               <li key={`prio-${row.id}`}>
                 <span className="franchise-dot" data-tone={row.tone} />
                 <span><strong>{row.name}</strong><small>{row.status}</small></span>
-                <Cta href={`/${locale}/franchise/relances${query}`} soft>{c.contact}</Cta>
+                <Cta href={`/${locale}/franchise/fournisseurs/${row.id}${query}`} soft>{c.openProviderFolder}</Cta>
               </li>
             ))}
           </ul>
-          )}
-          <h3>{c.integration}</h3>
-          <ol className="franchise-mini-pipe">
-            <li data-active="true"><em>1</em><strong>{c.stepInvite}</strong></li>
-            <li><em>2</em><strong>{c.stepFolder}</strong></li>
-            <li><em>3</em><strong>{c.stepQual}</strong></li>
-            <li><em>4</em><strong>{c.stepActivity}</strong></li>
-            <li><em>5</em><strong>{c.stepFollow}</strong></li>
-          </ol>
           <p className="client-access-note">{c.privacyLead}</p>
         </article>
-        <FranchiseMandateRail locale={locale} name={mandateName} />
       </section>
     </main>
   );
@@ -363,9 +536,19 @@ export function FranchiseRequestsBoard({ locale, query, mandateName, view, itemI
   const paged = paginate(filtered, page);
   const requests = paged.rows;
   const org = organizationIdFromQuery(query);
+  const openCount = demo.requests.filter((row) => row.tone === "violet").length;
+  const waitingCount = demo.requests.filter((row) => row.tone === "peach").length;
+  const matchingCount = demo.requests.filter((row) => (row.matching?.length ?? 0) > 0).length;
+  const followCount = demo.requests.filter((row) => row.tone === "mint" || row.tone === "sky").length;
   return (
     <main className="client-page">
       <Banner locale={locale} query={query} mandateName={mandateName} />
+      <section className="franchise-treat">
+        <article className="franchise-kpi-tile" data-tone="violet"><span className="franchise-kpi-icon" data-tone="violet"><FileText className="size-4" aria-hidden /></span><span><strong dir="ltr">{openCount}</strong><small>{c.reqKpiOpen}</small></span></article>
+        <article className="franchise-kpi-tile" data-tone="peach"><span className="franchise-kpi-icon" data-tone="peach"><Bell className="size-4" aria-hidden /></span><span><strong dir="ltr">{waitingCount}</strong><small>{c.reqKpiWaiting}</small></span></article>
+        <article className="franchise-kpi-tile" data-tone="sky"><span className="franchise-kpi-icon" data-tone="sky"><Users className="size-4" aria-hidden /></span><span><strong dir="ltr">{matchingCount}</strong><small>{c.reqKpiMatching}</small></span></article>
+        <article className="franchise-kpi-tile" data-tone="mint"><span className="franchise-kpi-icon" data-tone="mint"><LineChart className="size-4" aria-hidden /></span><span><strong dir="ltr">{followCount}</strong><small>{c.reqKpiFollow}</small></span></article>
+      </section>
       <form action={`/${locale}/franchise/demandes`} method="get" className="franchise-filters">
         {org ? <input type="hidden" name="organizationId" value={org} /> : null}
         <label><span className="sr-only">{c.search}</span><input name="q" defaultValue={search} placeholder={c.search} /></label>
@@ -436,16 +619,66 @@ export function FranchiseRequestsBoard({ locale, query, mandateName, view, itemI
             <Link href={itemId ? `/${locale}/franchise/demandes/${itemId}/suivi${query}` : href} data-active={view === "suivi" ? "true" : undefined}>{c.follow}</Link>
           </nav>
           {selected && view === "matching" ? (
-            <>
-              <p>{c.matchingLead}</p>
-              {selected.matching?.length ? (
+            <section className="franchise-matching-layout">
+              <div>
+                <header className="client-priority-head">
+                  <h2>{c.matchingEligible} <small dir="ltr">({selected.matching?.length ?? 0})</small></h2>
+                </header>
+                <p>{c.matchingLead}</p>
+                {selected.matching?.length ? (
+                  <div className="client-table-wrap">
+                    <table className="client-space-table">
+                      <thead>
+                        <tr>
+                          <th>{c.netPeople}</th>
+                          <th>{c.stepQual}</th>
+                          <th>{c.state}</th>
+                          <th>{c.action}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selected.matching.map((row, index) => (
+                          <tr key={row.id} data-selected={index < 2 ? "true" : undefined}>
+                            <td>
+                              <label className="franchise-check-row">
+                                <input type="checkbox" defaultChecked={index < 2} readOnly aria-label={row.name} />
+                                <strong>{row.name}</strong>
+                              </label>
+                            </td>
+                            <td><em className="client-status-chip" data-tone={row.tone}>{row.status}</em></td>
+                            <td><em className="client-status-chip" data-tone="mint">{locale === "ar" ? "متاح" : "Disponible"}</em></td>
+                            <td><Cta href={row.href} soft>{c.openFolder}</Cta></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : <p className="franchise-empty-panel">{c.emptyMatching}</p>}
+                <ol className="franchise-mini-pipe franchise-consult-steps">
+                  <li data-active="true"><em>1</em><strong>{c.matchingStepPrepare}</strong><small>{c.needLead}</small></li>
+                  <li><em>2</em><strong>{c.matchingStepConfirm}</strong><small>{c.structureLead}</small></li>
+                  <li><em>3</em><strong>{c.matchingStepSend}</strong><small>{c.consultLead}</small></li>
+                  <li><em>4</em><strong>{c.matchingStepFollow}</strong><small>{c.followLead}</small></li>
+                </ol>
+              </div>
+              <aside className="client-card franchise-basket">
+                <header className="client-priority-head">
+                  <h2>{c.matchingBasket} <small dir="ltr">({Math.min(selected.matching?.length ?? 0, 2)})</small></h2>
+                  <span className="client-soft-link">{c.matchingClear}</span>
+                </header>
                 <ul className="client-feed">
-                  {selected.matching.map((row) => (
-                    <li key={row.id}><span><strong>{row.name}</strong><small>{row.status}</small></span><Cta href={row.href} soft>{c.openFolder}</Cta></li>
+                  {(selected.matching ?? []).slice(0, 2).map((row) => (
+                    <li key={row.id}><span><strong>{row.name}</strong><small>{row.status}</small></span></li>
                   ))}
                 </ul>
-              ) : <p className="franchise-empty-panel">{c.emptyMatching}</p>}
-            </>
+                <p className="client-access-note">{c.matchingNoAmount}</p>
+                <p className="franchise-mandate-banner" role="note">{c.privacyLead}</p>
+                <Link href={`/${locale}/franchise/demandes/${selected.id}/consultation${query}`} className="franchise-cta">
+                  {c.matchingSubmit} <ArrowRight className="size-4 rtl:rotate-180" aria-hidden />
+                </Link>
+                <p className="client-access-note">{c.matchingSubmitNote}</p>
+              </aside>
+            </section>
           ) : selected && view === "consultation" ? (
             <>
               <FranchiseFolderTimeline locale={locale} activities={selected.activities} />
@@ -506,29 +739,36 @@ export function QualityBoard({ locale, query, mandateName, view, search, page, b
     { t: c.stepMotive, d: c.stepMotiveLead },
     { t: c.stepControl, d: c.stepControlLead },
   ];
+  const reviewsCount = demo.quality.length;
+  const nonConfCount = demo.quality.filter((row) => row.tone === "peach").length;
+  const correctiveCount = demo.corrective.length || demo.quality.filter((row) => row.type.toLowerCase().includes("preuve") || row.type.toLowerCase().includes("دليل")).length;
+  const lateCount = demo.quality.filter((row) => row.tone === "peach" || row.status.toLowerCase().includes("retard") || row.status.toLowerCase().includes("متأخر")).length;
+  const selectedReview = pagedQuality.rows[0] ?? demo.quality[0] ?? null;
   return (
-    <main className="client-page">
+    <main className="client-page franchise-quality-page">
       <Banner locale={locale} query={query} mandateName={mandateName} />
       <section className="franchise-treat">
-        {demo.obligations.map((item, index) => (
-          <article key={item.id} className="franchise-kpi-tile" data-tone={(["sky", "violet", "mint", "peach"] as const)[index] ?? "sky"}>
-            <span className="franchise-kpi-icon"><FileText className="size-4" aria-hidden /></span>
-            <span><strong>{item.title}</strong><small>{item.detail}</small></span>
-          </article>
-        ))}
+        <article className="franchise-kpi-tile" data-tone="sky"><span className="franchise-kpi-icon" data-tone="sky"><FileText className="size-4" aria-hidden /></span><span><strong dir="ltr">{reviewsCount}</strong><small>{c.reviewsDue}</small></span></article>
+        <article className="franchise-kpi-tile" data-tone="peach"><span className="franchise-kpi-icon" data-tone="peach"><Bell className="size-4" aria-hidden /></span><span><strong dir="ltr">{nonConfCount}</strong><small>{c.nonConformities}</small></span></article>
+        <article className="franchise-kpi-tile" data-tone="mint"><span className="franchise-kpi-icon" data-tone="mint"><ShieldCheck className="size-4" aria-hidden /></span><span><strong dir="ltr">{correctiveCount}</strong><small>{c.correctiveInProgress}</small></span></article>
+        <article className="franchise-kpi-tile" data-tone="peach"><span className="franchise-kpi-icon" data-tone="peach"><Bell className="size-4" aria-hidden /></span><span><strong dir="ltr">{lateCount}</strong><small>{c.lateItems}</small></span></article>
       </section>
       <form action={qualityPath} method="get" className="franchise-filters">
         {organizationIdFromQuery(query) ? <input type="hidden" name="organizationId" value={organizationIdFromQuery(query)} /> : null}
+        <select name="status" defaultValue="all" aria-label={c.allStatusesFilter}><option value="all">{c.allStatusesFilter}</option></select>
+        <select name="severity" defaultValue="all" aria-label={locale === "ar" ? "كل درجات الخطورة" : "Toutes les sévérités"}><option value="all">{locale === "ar" ? "كل درجات الخطورة" : "Toutes les sévérités"}</option></select>
         <label><span className="sr-only">{c.search}</span><input name="q" defaultValue={search} placeholder={c.search} /></label>
         <button type="submit" className="franchise-scope-chip">{c.filter}</button>
       </form>
-      <section className="franchise-workbench">
+      <section className="franchise-workbench franchise-quality-workbench">
         <article className="client-card">
-          <nav className="franchise-inspector-tabs" aria-label={c.toExamine}>
+          <nav className="franchise-pill-tabs" aria-label={c.toExamine}>
+            <Link href={`/${locale}/franchise/qualite/revues${query}`} className="franchise-pill-tab" data-active={!view || view === "revues" ? "true" : undefined}><span>{c.reviewsTab}</span><em dir="ltr">{reviewsCount}</em></Link>
+            <Link href={`/${locale}/franchise/qualite/non-conformites${query}`} className="franchise-pill-tab" data-active={view === "non-conformites" ? "true" : undefined}><span>{c.nonConformities}</span><em dir="ltr">{nonConfCount}</em></Link>
+            <Link href={`/${locale}/franchise/qualite/actions${query}`} className="franchise-pill-tab" data-active={view === "actions" ? "true" : undefined}><span>{c.corrective}</span><em dir="ltr">{correctiveCount}</em></Link>
+          </nav>
+          <nav className="franchise-inspector-tabs franchise-quality-subnav" aria-label={c.toExamine}>
             <Link href={`/${locale}/franchise/qualite${query}`} data-active={!view ? "true" : undefined}>{c.toExamine}</Link>
-            <Link href={`/${locale}/franchise/qualite/revues${query}`} data-active={view === "revues" ? "true" : undefined}>{c.stepExam}</Link>
-            <Link href={`/${locale}/franchise/qualite/non-conformites${query}`} data-active={view === "non-conformites" ? "true" : undefined}>{c.stepMotive}</Link>
-            <Link href={`/${locale}/franchise/qualite/actions${query}`} data-active={view === "actions" ? "true" : undefined}>{c.stepControl}</Link>
             <Link href={`/${locale}/franchise/qualite/anomalies${query}`} data-active={view === "anomalies" ? "true" : undefined}>{c.anomalies}</Link>
             <Link href={`/${locale}/franchise/qualite/recommandations${query}`} data-active={view === "recommandations" ? "true" : undefined}>{c.recommendations}</Link>
             <Link href={`/${locale}/franchise/qualite/opportunites${query}`} data-active={view === "opportunites" ? "true" : undefined}>{c.opportunities}</Link>
@@ -540,16 +780,18 @@ export function QualityBoard({ locale, query, mandateName, view, search, page, b
             <p className="client-access-note">{c.ruleModelsLead}</p>
           ) : null}
           <div className="client-table-wrap">
-            <table className="client-space-table">
-              <thead><tr><th>{c.folder}</th><th>{c.type}</th><th>{c.state}</th><th>{c.nextAction}</th><th>{c.action}</th></tr></thead>
+            <table className="client-space-table franchise-dense-table">
+              <thead><tr><th>{c.folder}</th><th>{c.type}</th><th>{c.severity}</th><th>{c.proofs}</th><th>{c.state}</th><th>{c.nextActionCol}</th><th>{c.action}</th></tr></thead>
               <tbody>
                 {view === "actions" ? (
                   demo.corrective.length === 0 ? (
-                    <tr><td colSpan={5}>{c.emptyCorrective}</td></tr>
+                    <tr><td colSpan={7}>{c.emptyCorrective}</td></tr>
                   ) : demo.corrective.map((row) => (
                     <tr key={row.id}>
                       <td>{row.title}</td>
                       <td>{c.corrective}</td>
+                      <td>—</td>
+                      <td dir="ltr">—</td>
                       <td><span className="client-status-chip" data-tone="peach">{row.status}</span></td>
                       <td>{row.due}</td>
                       <td><Cta href={`/${locale}/franchise/qualite/actions${query}`} soft>{c.open}</Cta></td>
@@ -557,22 +799,26 @@ export function QualityBoard({ locale, query, mandateName, view, search, page, b
                   ))
                 ) : view === "anomalies" || view === "recommandations" || view === "opportunites" || view === "definitions" || view === "risques" || view === "incidents" ? (
                   pagedSupervision.rows.length === 0 ? (
-                    <tr><td colSpan={5}>{supervisionEmpty}</td></tr>
+                    <tr><td colSpan={7}>{supervisionEmpty}</td></tr>
                   ) : pagedSupervision.rows.map((row) => (
                     <tr key={row.id}>
                       <td>{row.title}</td>
                       <td>{row.meta ?? row.status}</td>
+                      <td>—</td>
+                      <td dir="ltr">—</td>
                       <td><span className="client-status-chip">{row.status}</span></td>
                       <td>—</td>
                       <td><Cta href={row.href} soft>{c.open}</Cta></td>
                     </tr>
                   ))
                 ) : pagedQuality.rows.length === 0 ? (
-                  <tr><td colSpan={5}>{c.emptyQuality}</td></tr>
-                ) : pagedQuality.rows.map((row) => (
-                  <tr key={row.id}>
+                  <tr><td colSpan={7}>{c.emptyQuality}</td></tr>
+                ) : pagedQuality.rows.map((row, index) => (
+                  <tr key={row.id} data-selected={index === 0 ? "true" : undefined}>
                     <td>{row.title}</td>
                     <td>{row.type}</td>
+                    <td><span className="franchise-dot" data-tone={row.tone} /> {row.tone === "peach" ? (locale === "ar" ? "حرجة" : "Critique") : (locale === "ar" ? "مرتفعة" : "Élevée")}</td>
+                    <td dir="ltr">—</td>
                     <td><span className="client-status-chip" data-tone={row.tone}>{row.status}</span></td>
                     <td>{row.next}</td>
                     <td><Cta href={row.href ?? `/${locale}/franchise/qualite${query}`} soft>{c.open}</Cta></td>
@@ -584,7 +830,7 @@ export function QualityBoard({ locale, query, mandateName, view, search, page, b
           {view === "actions" ? null : <PaginationNav path={qualityPath} query={query} page={supervision ? pagedSupervision.page : pagedQuality.page} pageCount={supervision ? pagedSupervision.pageCount : pagedQuality.pageCount} label={c.toExamine} />}
         </article>
         <article className="client-card">
-          <header><h2>{c.treatItem}</h2></header>
+          <header><h2>{selectedReview ? selectedReview.title : c.reviewDetail}</h2></header>
           {view === "definitions" && libraryId && demo.canWrite ? (
             <FranchiseAnomalyDefinitionForm locale={locale} libraryId={libraryId} organizationId={organizationId || organizationIdFromQuery(query) || null} />
           ) : view === "risques" && libraryId && demo.canWrite ? (
@@ -598,18 +844,41 @@ export function QualityBoard({ locale, query, mandateName, view, search, page, b
             </>
           ) : (
             <>
-              <p>{c.treatLead}</p>
-              <ol className="franchise-process">
-                {steps.map((step, index) => (
-                  <li key={step.t}><span className="client-num">{index + 1}</span><span><strong>{step.t}</strong><small>{step.d}</small></span></li>
-                ))}
-              </ol>
+              {selectedReview ? (
+                <>
+                  <em className="client-status-chip" data-tone={selectedReview.tone}>{selectedReview.status}</em>
+                  <h3>{c.requiredProofs}</h3>
+                  <ul className="franchise-check-list">
+                    <li data-done="true"><ShieldCheck className="size-4" aria-hidden />{locale === "ar" ? "تقرير التدخل" : "Rapport d’intervention"}</li>
+                    <li data-done="true"><ShieldCheck className="size-4" aria-hidden />{locale === "ar" ? "صور" : "Photos"}</li>
+                    <li><FileText className="size-4" aria-hidden />{locale === "ar" ? "محضر مراقبة" : "Procès-verbal de contrôle"}</li>
+                  </ul>
+                  <h3>{c.matriciaDecision}</h3>
+                  <p className="franchise-comment-box"><strong>{c.awaitingReview}</strong></p>
+                  <h3>{c.correctiveMilestones}</h3>
+                  <ol className="franchise-review-steps">
+                    <li data-done="true"><em>1</em><span><strong>{locale === "ar" ? "تحليل الأسباب" : "Analyse des causes"}</strong></span></li>
+                    <li data-done="true"><em>2</em><span><strong>{locale === "ar" ? "تنفيذ الإجراءات" : "Mise en œuvre des actions"}</strong></span></li>
+                    <li><em>3</em><span><strong>{locale === "ar" ? "التحقق من الفعالية" : "Vérification de l’efficacité"}</strong></span></li>
+                  </ol>
+                  <label className="franchise-field">{c.addComment}<textarea rows={2} placeholder={c.addComment} /></label>
+                  <p className="client-access-note">{c.auditHistory}</p>
+                </>
+              ) : (
+                <>
+                  <p>{c.treatLead}</p>
+                  <ol className="franchise-process">
+                    {steps.map((step, index) => (
+                      <li key={step.t}><span className="client-num">{index + 1}</span><span><strong>{step.t}</strong><small>{step.d}</small></span></li>
+                    ))}
+                  </ol>
+                </>
+              )}
               <p className="franchise-warning" role="note">{c.noSelf}</p>
               <Link href={`/${locale}/franchise/gouvernance${query}`} className="franchise-tool">{c.seeTrace}</Link>
             </>
           )}
         </article>
-        <FranchiseMandateRail locale={locale} name={mandateName} />
       </section>
     </main>
   );
@@ -618,66 +887,150 @@ export function QualityBoard({ locale, query, mandateName, view, search, page, b
 export function PerformanceBoard({ locale, query, mandateName, view, board }: SpaceBoardProps) {
   const c = franchiseCopy(locale);
   const demo = resolveBoard({ locale, query, board });
+  const requestCount = demo.requests.length;
+  const missionDone = demo.missions.length;
+  const qualified = demo.people.filter((row) => matchesNetworkFilter("qualifies", row.stage)).length;
+  const peopleCount = demo.people.length;
+  const conversionLabel = integerShare(missionDone, Math.max(requestCount, 1), locale);
+  const capacityLabel = integerShare(qualified, Math.max(peopleCount, 1), locale);
+  const serviceRows = [
+    ...demo.requests.map((row) => ({ id: row.id, title: row.title, demandes: 1, status: row.stage })),
+    ...demo.performance.map((row) => ({ id: row.id, title: row.title, demandes: 0, status: row.status })),
+  ].slice(0, 8);
+  const maxDemandes = Math.max(1, ...serviceRows.map((row) => row.demandes));
+  const shareRows = demo.people
+    .map((row) => ({
+      id: row.id,
+      name: row.name,
+      count: demo.requests.filter((request) => request.matching?.some((match) => match.id === row.id)).length,
+    }))
+    .filter((row) => row.count > 0)
+    .slice(0, 5);
+  const shareTotal = shareRows.reduce((sum, row) => sum + row.count, 0);
+  const shareColors = ["#5b4bdb", "#3b82f6", "#14b8a6", "#f59e0b", "#ef4444"];
   return (
-    <main className="client-page">
+    <main className="client-page franchise-performance-page">
       <Banner locale={locale} query={query} mandateName={mandateName} />
-      <section className="franchise-treat">
-        {demo.pipeline.slice(0, 3).map((item) => (
-          <Link key={item.id} href={pipelineDestination(locale, query, item.id)} className="franchise-kpi-tile" data-tone={item.tone}>
-            <span className="franchise-kpi-icon" data-tone={item.tone}><FileText className="size-4" aria-hidden /></span>
-            <span><strong>{item.title}</strong><small>{item.detail}</small></span>
-            <em className="client-status-chip" data-tone={item.tone}>{item.status}</em>
-          </Link>
-        ))}
+      <div className="franchise-section-head franchise-section-head-actions">
+        <Link href={`/${locale}/franchise/gouvernance${query}`} className="franchise-tool">{c.perfMethodology}</Link>
+      </div>
+      <section className="franchise-treat franchise-perf-kpis">
+        <article className="franchise-kpi-tile" data-tone="violet"><span className="franchise-kpi-icon" data-tone="violet"><FileText className="size-4" aria-hidden /></span><span><strong dir="ltr">{requestCount}</strong><small>{c.perfVolume}</small></span></article>
+        <article className="franchise-kpi-tile" data-tone="sky"><span className="franchise-kpi-icon" data-tone="sky"><LineChart className="size-4" aria-hidden /></span><span><strong dir="ltr">—</strong><small>{c.perfResponseDelay}</small></span></article>
+        <article className="franchise-kpi-tile" data-tone="mint"><span className="franchise-kpi-icon" data-tone="mint"><ShieldCheck className="size-4" aria-hidden /></span><span><strong dir="ltr">{conversionLabel}</strong><small>{c.perfConversion}</small></span></article>
+        <article className="franchise-kpi-tile" data-tone="peach"><span className="franchise-kpi-icon" data-tone="peach"><Briefcase className="size-4" aria-hidden /></span><span><strong dir="ltr">{missionDone} / {Math.max(requestCount, missionDone)}</strong><small>{c.perfMissions}</small></span></article>
+        <article className="franchise-kpi-tile" data-tone="mint"><span className="franchise-kpi-icon" data-tone="mint"><CheckCircle2 className="size-4" aria-hidden /></span><span><strong dir="ltr">{demo.quality.length}</strong><small>{c.perfQualityNote}</small></span></article>
+        <article className="franchise-kpi-tile" data-tone="sky"><span className="franchise-kpi-icon" data-tone="sky"><Users className="size-4" aria-hidden /></span><span><strong dir="ltr">{capacityLabel}</strong><small>{c.perfCapacity} · {c.servicesCovered}</small></span></article>
       </section>
-      <section className="franchise-workbench">
+      <section className="franchise-perf-mid">
         <article className="client-card">
-          <nav className="franchise-inspector-tabs" aria-label={c.objectives}>
-            <Link href={`/${locale}/franchise/performance${query}`} data-active={!view ? "true" : undefined}>{c.objectives}</Link>
-            <Link href={`/${locale}/franchise/performance/indicateurs${query}`} data-active={view === "indicateurs" ? "true" : undefined}>{c.object}</Link>
-            <Link href={`/${locale}/franchise/performance/reseau${query}`} data-active={view === "reseau" ? "true" : undefined}>{c.netPeople}</Link>
-            <Link href={`/${locale}/franchise/performance/tendances${query}`} data-active={view === "tendances" ? "true" : undefined}>{c.alerts}</Link>
-          </nav>
+          <header><h2>{c.perfVolume}</h2></header>
+          <ul className="franchise-bar-chart" aria-label={c.perfVolume}>
+            {serviceRows.length === 0 ? <li>{c.emptyPerformance}</li> : serviceRows.map((row) => (
+              <li key={`vol-${row.id}`}>
+                <span>{row.title}</span>
+                <span className="franchise-bar-track"><span style={{ width: `${Math.round((row.demandes * 100) / maxDemandes)}%` }} /></span>
+                <em dir="ltr">{row.demandes}</em>
+              </li>
+            ))}
+          </ul>
+        </article>
+        <article className="client-card">
+          <header><h2>{c.perfResponseDelay}</h2></header>
+          <p className="franchise-empty-panel" role="status">{c.perfDelayUnavailable}</p>
+          <ul className="franchise-bar-chart franchise-bar-chart-sky" aria-hidden="true">
+            {serviceRows.slice(0, 5).map((row) => (
+              <li key={`delay-${row.id}`}>
+                <span>{row.title}</span>
+                <span className="franchise-bar-track"><span style={{ width: "0%" }} /></span>
+                <em dir="ltr">—</em>
+              </li>
+            ))}
+          </ul>
+        </article>
+        <article className="client-card">
+          <header className="client-priority-head"><h2>{c.alerts}</h2><em className="client-status-chip" data-tone="peach">{demo.attention.length || 0}</em></header>
+          <ul className="franchise-dot-list">
+            {(demo.attention.length ? demo.attention : [{ id: "empty", title: c.noOut, href: `/${locale}/franchise/performance${query}` }]).map((item) => (
+              <li key={item.id}><span className="franchise-dot" data-tone="peach" /><strong>{item.title}</strong><Cta href={item.href} soft>{c.open}</Cta></li>
+            ))}
+          </ul>
+          <p className="client-access-note">{c.noOut}</p>
+        </article>
+      </section>
+      <section className="franchise-workbench franchise-perf-bottom">
+        <article className="client-card">
+          <header className="client-priority-head">
+            <h2>{c.perfByService}</h2>
+            <nav className="franchise-inspector-tabs" aria-label={c.objectives}>
+              <Link href={`/${locale}/franchise/performance${query}`} data-active={!view ? "true" : undefined}>{c.objectives}</Link>
+              <Link href={`/${locale}/franchise/performance/indicateurs${query}`} data-active={view === "indicateurs" ? "true" : undefined}>{c.object}</Link>
+              <Link href={`/${locale}/franchise/performance/reseau${query}`} data-active={view === "reseau" ? "true" : undefined}>{c.netPeople}</Link>
+              <Link href={`/${locale}/franchise/performance/tendances${query}`} data-active={view === "tendances" ? "true" : undefined}>{c.trendsTitle}</Link>
+            </nav>
+          </header>
           <div className="client-table-wrap">
-            <table className="client-space-table">
-              <thead><tr><th>{c.object}</th><th>{c.state}</th><th>{c.nextAction}</th><th>{c.action}</th></tr></thead>
+            <table className="client-space-table franchise-dense-table">
+              <thead><tr><th>{c.object}</th><th>{c.perfRequestsCol}</th><th>{c.state}</th><th>{c.nextAction}</th><th>{c.action}</th></tr></thead>
               <tbody>
                 {view === "tendances" ? (
-                  demo.quality.length === 0 ? <tr><td colSpan={4}>{c.emptyQuality}</td></tr> : demo.quality.map((row) => (
-                    <tr key={row.id}><td>{row.title}</td><td><span className="client-status-chip" data-tone={row.tone}>{row.status}</span></td><td>{row.next}</td><td><Cta href={`/${locale}/franchise/qualite${query}`} soft>{c.open}</Cta></td></tr>
+                  demo.quality.length === 0 ? <tr><td colSpan={5}>{c.emptyQuality}</td></tr> : demo.quality.map((row) => (
+                    <tr key={row.id}><td>{row.title}</td><td dir="ltr">—</td><td><span className="client-status-chip" data-tone={row.tone}>{row.status}</span></td><td>{row.next}</td><td><Cta href={`/${locale}/franchise/qualite${query}`} soft>{c.perfSeeDetail}</Cta></td></tr>
                   ))
                 ) : view === "reseau" ? (
-                  demo.people.length === 0 ? <tr><td colSpan={4}>{c.emptyPeople}</td></tr> : demo.people.map((row) => (
-                    <tr key={row.id}><td>{row.name}</td><td><span className="client-status-chip" data-tone={row.tone}>{row.status}</span></td><td>{row.next}</td><td><Cta href={`/${locale}/franchise/fournisseurs/${row.id}${query}`} soft>{c.openFolder}</Cta></td></tr>
+                  demo.people.length === 0 ? <tr><td colSpan={5}>{c.emptyPeople}</td></tr> : demo.people.map((row) => (
+                    <tr key={row.id}><td>{row.name}</td><td dir="ltr">—</td><td><span className="client-status-chip" data-tone={row.tone}>{row.status}</span></td><td>{row.next}</td><td><Cta href={`/${locale}/franchise/fournisseurs/${row.id}${query}`} soft>{c.openFolder}</Cta></td></tr>
                   ))
                 ) : view === "indicateurs" && demo.corrective.length ? (
                   demo.corrective.map((row) => (
-                    <tr key={row.id}><td>{row.title}</td><td><span className="client-status-chip" data-tone="peach">{row.status}</span></td><td>{row.due}</td><td><Cta href={`/${locale}/franchise/qualite/actions${query}`} soft>{c.open}</Cta></td></tr>
+                    <tr key={row.id}><td>{row.title}</td><td dir="ltr">—</td><td><span className="client-status-chip" data-tone="peach">{row.status}</span></td><td>{row.due}</td><td><Cta href={`/${locale}/franchise/qualite/actions${query}`} soft>{c.open}</Cta></td></tr>
                   ))
-                ) : demo.performance.length === 0 ? (
-                  <tr><td colSpan={4}>{c.emptyPerformance}</td></tr>
-                ) : demo.performance.map((row) => (
+                ) : serviceRows.length === 0 && demo.performance.length === 0 ? (
+                  <tr><td colSpan={5}>{c.emptyPerformance}</td></tr>
+                ) : (serviceRows.length ? serviceRows : demo.performance.map((row) => ({ id: row.id, title: row.title, demandes: 0, status: row.status }))).map((row) => (
                   <tr key={row.id}>
                     <td>{row.title}</td>
+                    <td dir="ltr">{row.demandes}</td>
                     <td><span className="client-status-chip" data-tone="sky">{row.status}</span></td>
-                    <td>{row.next}</td>
-                    <td><Cta href={view === "indicateurs" ? `/${locale}/franchise/qualite${query}` : `/${locale}/franchise/performance/indicateurs${query}`} soft>{c.open}</Cta></td>
+                    <td>—</td>
+                    <td><Cta href={`/${locale}/franchise/performance/indicateurs${query}`} soft>{c.perfSeeDetail}</Cta></td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </article>
-        <article className="client-card">
-          <header><h2>{c.alerts}</h2></header>
-          <ul className="franchise-dot-list">
-            {demo.attention.map((item) => (
-              <li key={item.id}><span className="franchise-dot" data-tone="peach" /><strong>{item.title}</strong><Cta href={item.href} soft>{c.open}</Cta></li>
-            ))}
-          </ul>
-          <p className="client-access-note">{c.noOut}</p>
+        <article className="client-card franchise-share-card">
+          <header><h2>{c.perfShareTitle}</h2></header>
+          {shareRows.length === 0 || shareTotal === 0 ? (
+            <p className="franchise-empty-panel">{c.perfShareEmpty}</p>
+          ) : (
+            <div className="franchise-share-layout">
+              <div
+                className="franchise-donut"
+                style={{
+                  background: `conic-gradient(${shareRows.map((row, index) => {
+                    const start = shareRows.slice(0, index).reduce((sum, item) => sum + item.count, 0);
+                    const end = start + row.count;
+                    return `${shareColors[index % shareColors.length]} ${(start * 100) / shareTotal}% ${(end * 100) / shareTotal}%`;
+                  }).join(", ")})`,
+                }}
+                role="img"
+                aria-label={`${shareTotal} ${c.perfShareCenter}`}
+              >
+                <span><strong dir="ltr">{shareTotal}</strong><small>{c.perfShareCenter}</small></span>
+              </div>
+              <ul className="franchise-share-legend">
+                {shareRows.map((row, index) => (
+                  <li key={row.id}>
+                    <i style={{ background: shareColors[index % shareColors.length] }} aria-hidden />
+                    <span><strong>{row.name}</strong><small dir="ltr">{row.count} · {integerShare(row.count, shareTotal, locale)}</small></span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </article>
-        <FranchiseMandateRail locale={locale} name={mandateName} />
       </section>
     </main>
   );
@@ -689,60 +1042,128 @@ export function FollowupsBoard({ locale, query, mandateName, view, page, board }
   const followPath = view ? `/${locale}/franchise/relances/${view}` : `/${locale}/franchise/relances`;
   const pagedFollowups = paginate(demo.followups, page);
   const pagedJournal = paginate(demo.journal, page);
+  const pipeline = view === "pipeline";
+  const stages = [
+    { id: "contact", label: c.stageContact, tone: "violet" as const, rows: demo.followups.filter((_, i) => i % 5 === 0) },
+    { id: "contacted", label: c.stageContacted, tone: "sky" as const, rows: demo.followups.filter((_, i) => i % 5 === 1) },
+    { id: "waiting", label: c.stageWaiting, tone: "peach" as const, rows: demo.followups.filter((_, i) => i % 5 === 2) },
+    { id: "action", label: c.stageAction, tone: "peach" as const, rows: demo.followups.filter((_, i) => i % 5 === 3) },
+    { id: "done", label: c.stageDone, tone: "mint" as const, rows: demo.followups.filter((_, i) => i % 5 === 4 || (demo.followups.length < 5 && i === demo.followups.length - 1)) },
+  ];
+  const overdue = demo.followups.filter((row) => row.tone === "peach").length;
+  const today = demo.followups.filter((row) => row.tone === "violet").length;
+  const upcoming = demo.followups.filter((row) => row.tone === "sky").length;
   return (
     <main className="client-page">
       <Banner locale={locale} query={query} mandateName={mandateName} />
-      <section className="franchise-workbench">
-        <article className="client-card">
-          <nav className="franchise-inspector-tabs" aria-label={c.due}>
-            <Link href={`/${locale}/franchise/relances${query}`} data-active={!view ? "true" : undefined}>{c.due}</Link>
-            <Link href={`/${locale}/franchise/relances/pipeline${query}`} data-active={view === "pipeline" ? "true" : undefined}>{c.rule}</Link>
-            <Link href={`/${locale}/franchise/relances/historique${query}`} data-active={view === "historique" ? "true" : undefined}>{c.govHistory}</Link>
-          </nav>
-          <div className="client-table-wrap">
-            {view === "historique" ? (
-              <table className="client-space-table">
-                <thead><tr><th>{c.document}</th><th>{c.govHistory}</th><th>{c.dueWhen}</th></tr></thead>
-                <tbody>
-                  {pagedJournal.rows.length === 0 ? (
-                    <tr><td colSpan={3}>{c.emptyFollowups}</td></tr>
-                  ) : pagedJournal.rows.map((row) => (
-                    <tr key={row.id}>
-                      <td>{row.doc}</td>
-                      <td>{row.event}</td>
-                      <td>{row.date}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <table className="client-space-table">
-                <thead><tr><th>{c.profile}</th><th>{c.dueWhen}</th><th>{c.followAction}</th><th>{c.action}</th></tr></thead>
-                <tbody>
-                  {pagedFollowups.rows.length === 0 ? (
-                    <tr><td colSpan={4}>{c.emptyFollowups}</td></tr>
-                  ) : pagedFollowups.rows.map((row) => (
-                    <tr key={row.id}>
-                      <td><span className="franchise-row-title"><span className="franchise-kpi-icon" data-tone={row.tone}><Bell className="size-4" aria-hidden /></span>{row.title}</span></td>
-                      <td><span className="client-status-chip" data-tone={row.tone}>{row.due}</span></td>
-                      <td>{row.action}</td>
-                      <td><Cta href={row.href ?? `/${locale}/franchise/fournisseurs${query}`} soft>{c.open}</Cta></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-          <PaginationNav path={followPath} query={query} page={view === "historique" ? pagedJournal.page : pagedFollowups.page} pageCount={view === "historique" ? pagedJournal.pageCount : pagedFollowups.pageCount} label={c.due} />
+      <section className="franchise-treat">
+        <article className="franchise-kpi-tile" data-tone="violet" data-active={!view || view === "pipeline" ? "true" : undefined}>
+          <span className="franchise-kpi-icon" data-tone="violet"><Bell className="size-4" aria-hidden /></span>
+          <span><strong>{locale === "ar" ? "الكل" : "Toutes"}</strong><small dir="ltr">{demo.followups.length}</small></span>
         </article>
-        <article className="client-card">
-          <header><h2>{c.rule}</h2></header>
-          <p>{c.ruleLead}</p>
-          {view === "pipeline" ? null : <Link href={`/${locale}/franchise/relances/pipeline${query}`} className="franchise-tool franchise-tool-primary">{c.proposeRule}</Link>}
-          {view === "pipeline" ? <p className="client-access-note">{c.ruleLead}</p> : null}
-          <p className="client-access-note">{c.scopeNote}</p>
+        <article className="franchise-kpi-tile" data-tone="peach">
+          <span className="franchise-kpi-icon" data-tone="peach"><Bell className="size-4" aria-hidden /></span>
+          <span><strong>{c.overdue}</strong><small dir="ltr">{overdue}</small></span>
         </article>
-        <FranchiseMandateRail locale={locale} name={mandateName} />
+        <article className="franchise-kpi-tile" data-tone="peach">
+          <span className="franchise-kpi-icon" data-tone="peach"><Bell className="size-4" aria-hidden /></span>
+          <span><strong>{c.today}</strong><small dir="ltr">{today}</small></span>
+        </article>
+        <article className="franchise-kpi-tile" data-tone="mint">
+          <span className="franchise-kpi-icon" data-tone="mint"><Bell className="size-4" aria-hidden /></span>
+          <span><strong>{c.upcoming}</strong><small dir="ltr">{upcoming}</small></span>
+        </article>
+      </section>
+      <div className="franchise-toolbar">
+        <Link href={`/${locale}/franchise/relances/pipeline${query}`} className="franchise-tool" data-active={pipeline ? "true" : undefined}>{c.pipelineView}</Link>
+        <Link href={`/${locale}/franchise/relances${query}`} className="franchise-tool" data-active={!pipeline && view !== "historique" ? "true" : undefined}>{c.listView}</Link>
+        <Link href={`/${locale}/franchise/relances/historique${query}`} className="franchise-tool" data-active={view === "historique" ? "true" : undefined}>{c.govHistory}</Link>
+      </div>
+      <section className={pipeline ? "franchise-pipeline-layout" : "franchise-workbench"}>
+        {pipeline ? (
+          <>
+            <div className="franchise-kanban" aria-label={c.pipelineView}>
+              {stages.map((stage) => (
+                <section key={stage.id} className="franchise-kanban-col" data-tone={stage.tone}>
+                  <header>
+                    <strong>{stage.label}</strong>
+                    <em dir="ltr">{stage.rows.length}</em>
+                  </header>
+                  <ul>
+                    {(stage.rows.length ? stage.rows : demo.followups.slice(0, 1)).map((row) => (
+                      <li key={`${stage.id}-${row.id}`} className="franchise-kanban-card">
+                        <strong>{row.title}</strong>
+                        <small>{row.action}</small>
+                        <em className="client-status-chip" data-tone={row.tone}>{row.due}</em>
+                        <Cta href={row.href ?? `/${locale}/franchise/fournisseurs${query}`} soft>{c.open}</Cta>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
+            <aside className="franchise-home-rail">
+              <article className="client-card">
+                <header><h2>{c.dailySummary}</h2></header>
+                <ul className="franchise-dot-list">
+                  <li><span className="franchise-dot" data-tone="peach" /><strong>{overdue} {c.overdue}</strong></li>
+                  <li><span className="franchise-dot" data-tone="violet" /><strong>{today} {c.today}</strong></li>
+                  <li><span className="franchise-dot" data-tone="mint" /><strong>{upcoming} {c.upcoming}</strong></li>
+                </ul>
+                <Link href={`/${locale}/franchise/digest${query}`} className="franchise-cta">{c.prepareFollowups}</Link>
+              </article>
+              <article className="client-card">
+                <header className="client-priority-head"><h2>{c.govHistory}</h2></header>
+                <ol className="franchise-activity">
+                  {demo.journal.slice(0, 5).map((row) => (
+                    <li key={row.id}><span className="franchise-dot" data-tone="violet" /><span><strong>{row.doc}</strong><small>{row.event} · {row.date}</small></span></li>
+                  ))}
+                </ol>
+              </article>
+            </aside>
+          </>
+        ) : (
+          <>
+            <article className="client-card">
+              <div className="client-table-wrap">
+                {view === "historique" ? (
+                  <table className="client-space-table">
+                    <thead><tr><th>{c.document}</th><th>{c.govHistory}</th><th>{c.dueWhen}</th></tr></thead>
+                    <tbody>
+                      {pagedJournal.rows.length === 0 ? (
+                        <tr><td colSpan={3}>{c.emptyFollowups}</td></tr>
+                      ) : pagedJournal.rows.map((row) => (
+                        <tr key={row.id}>
+                          <td>{row.doc}</td>
+                          <td>{row.event}</td>
+                          <td>{row.date}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <table className="client-space-table">
+                    <thead><tr><th>{c.profile}</th><th>{c.dueWhen}</th><th>{c.followAction}</th><th>{c.action}</th></tr></thead>
+                    <tbody>
+                      {pagedFollowups.rows.length === 0 ? (
+                        <tr><td colSpan={4}>{c.emptyFollowups}</td></tr>
+                      ) : pagedFollowups.rows.map((row) => (
+                        <tr key={row.id}>
+                          <td><span className="franchise-row-title"><span className="franchise-kpi-icon" data-tone={row.tone}><Bell className="size-4" aria-hidden /></span>{row.title}</span></td>
+                          <td><span className="client-status-chip" data-tone={row.tone}>{row.due}</span></td>
+                          <td>{row.action}</td>
+                          <td><Cta href={row.href ?? `/${locale}/franchise/fournisseurs${query}`} soft>{c.open}</Cta></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+              <PaginationNav path={followPath} query={query} page={view === "historique" ? pagedJournal.page : pagedFollowups.page} pageCount={view === "historique" ? pagedJournal.pageCount : pagedFollowups.pageCount} label={c.due} />
+            </article>
+            <FranchiseMandateRail locale={locale} name={mandateName} />
+          </>
+        )}
       </section>
     </main>
   );
@@ -754,6 +1175,28 @@ export function GovernanceBoard({ locale, query, mandateName, view, board }: Spa
   return (
     <main className="client-page">
       <Banner locale={locale} query={query} mandateName={mandateName} />
+      <section className="franchise-treat franchise-gov-summary">
+        <article className="franchise-kpi-tile" data-tone="violet">
+          <span className="franchise-kpi-icon" data-tone="violet"><ShieldCheck className="size-4" aria-hidden /></span>
+          <span><strong>{mandateName ?? c.liveMandate}</strong><small>{c.liveMandate}</small></span>
+        </article>
+        <article className="franchise-kpi-tile" data-tone="sky">
+          <span className="franchise-kpi-icon" data-tone="sky"><MapPin className="size-4" aria-hidden /></span>
+          <span><strong>{demo.perimeter.territory}</strong><small>{c.territory}</small></span>
+        </article>
+        <article className="franchise-kpi-tile" data-tone="mint">
+          <span className="franchise-kpi-icon" data-tone="mint"><FileText className="size-4" aria-hidden /></span>
+          <span><strong>{demo.perimeter.mandate}</strong><small>{c.mandate}</small></span>
+        </article>
+        <article className="franchise-kpi-tile" data-tone="mint">
+          <span className="franchise-kpi-icon" data-tone="mint"><ShieldCheck className="size-4" aria-hidden /></span>
+          <span><strong>{c.canDo}</strong><small>{demo.perimeter.domains}</small></span>
+        </article>
+        <article className="franchise-kpi-tile" data-tone="peach">
+          <span className="franchise-kpi-icon" data-tone="peach"><ShieldCheck className="size-4" aria-hidden /></span>
+          <span><strong>{c.privacy}</strong><small>{c.scopeNote}</small></span>
+        </article>
+      </section>
       <section className="franchise-workbench">
         <article className="client-card">
           <header className="client-priority-head">
@@ -763,9 +1206,9 @@ export function GovernanceBoard({ locale, query, mandateName, view, board }: Spa
             </div>
           </header>
           <nav className="franchise-inspector-tabs" aria-label={c.decisions}>
-            <Link href={`/${locale}/franchise/gouvernance${query}`} data-active={!view ? "true" : undefined}>{c.toPrepare}</Link>
-            <Link href={`/${locale}/franchise/gouvernance/approbations${query}`} data-active={view === "approbations" ? "true" : undefined}>{c.inValidation}</Link>
             <Link href={`/${locale}/franchise/gouvernance/perimetre${query}`} data-active={view === "perimetre" ? "true" : undefined}>{c.authorized}</Link>
+            <Link href={`/${locale}/franchise/gouvernance/approbations${query}`} data-active={view === "approbations" || !view ? "true" : undefined}>{c.inValidation}</Link>
+            <Link href={`/${locale}/franchise/documents${query}`} data-active={undefined}>{locale === "ar" ? "الوثائق" : "Documents"}</Link>
             <Link href={`/${locale}/franchise/gouvernance/historique${query}`} data-active={view === "historique" ? "true" : undefined}>{c.govHistory}</Link>
           </nav>
           <div className="client-table-wrap" id="decisions">
@@ -779,7 +1222,11 @@ export function GovernanceBoard({ locale, query, mandateName, view, board }: Spa
                     <td>{row.title}</td>
                     <td>{row.type}</td>
                     <td><span className="client-status-chip" data-tone="peach">{row.status}</span></td>
-                    <td>{view === "approbations" ? row.status : <Cta href={`/${locale}/franchise/gouvernance/approbations${query}`} soft>{c.prepare}</Cta>}</td>
+                    <td>
+                      {view === "approbations"
+                        ? row.status
+                        : <Cta href={`/${locale}/franchise/gouvernance/approbations${query}#decisions`} soft>{c.prepare}</Cta>}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -792,25 +1239,26 @@ export function GovernanceBoard({ locale, query, mandateName, view, board }: Spa
             ))}
           </ul>
         </article>
-        <article className="client-card">
-          <header><h2>{c.prepareDec}</h2></header>
-          <p>{c.prepareDecLead}</p>
-          {demo.decisions[0] ? (
-            <ul className="client-feed">
-              <li><span><strong>{demo.decisions[0].title}</strong><small>{demo.decisions[0].type}</small></span><em className="client-status-chip" data-tone="peach">{demo.decisions[0].status}</em></li>
-            </ul>
-          ) : <p className="franchise-empty-panel">{c.emptyDecisions}</p>}
-          <Link href={`/${locale}/franchise/documents${query}`} className="franchise-tool franchise-tool-primary">{c.pieces}</Link>
-          <p className="client-access-note">{c.autoVal}</p>
-          <header className="franchise-section-head"><h2>{c.govHistory}</h2></header>
-          <ol className="franchise-activity">
-            {demo.govHistory.map((item) => (
-              <li key={item.id}><span className="franchise-dot" data-tone="violet" /><span><strong>{item.title}</strong><small>{item.actor}</small></span></li>
-            ))}
-          </ol>
-          <p className="client-access-note">{c.auditNote}</p>
-        </article>
-        <FranchiseMandateRail locale={locale} name={mandateName} />
+        <aside className="franchise-home-rail">
+          <article className="client-card">
+            <header><h2>{c.govTimeline}</h2></header>
+            <ol className="franchise-activity">
+              {demo.govHistory.map((item) => (
+                <li key={item.id}><span className="franchise-dot" data-tone="mint" /><span><strong>{item.title}</strong><small>{item.actor}</small></span></li>
+              ))}
+              <li><span className="franchise-dot" data-tone="sky" /><span><strong>{c.liveMandate}</strong><small>{locale === "ar" ? "اليوم" : "Aujourd’hui"}</small></span></li>
+            </ol>
+          </article>
+          <article className="client-card franchise-mandate-ok">
+            <header><h2>{c.securityReminder}</h2></header>
+            <p className="client-access-note">{c.scopeNote}</p>
+          </article>
+          <article className="client-card franchise-reminders">
+            <header><h2>{c.requestModification}</h2></header>
+            <p>{c.prepareDecLead}</p>
+            <Link href={`/${locale}/franchise/messages${query}`} className="franchise-cta">{c.requestModification}</Link>
+          </article>
+        </aside>
       </section>
     </main>
   );
@@ -921,52 +1369,107 @@ export function DocumentsBoard({ locale, query, mandateName, view, search, page,
   const n = libraryCopy(locale);
   const demo = resolveBoard({ locale, query, board });
   const needle = (search ?? "").trim().toLocaleLowerCase();
-  const filtered = (view === "renouvellements" ? demo.renewals : demo.documents).filter((row) => !needle || `${row.title} ${row.owner} ${row.status}`.toLocaleLowerCase().includes(needle));
+  const source = view === "renouvellements" ? demo.renewals : demo.documents;
+  const filtered = source.filter((row) => !needle || `${row.title} ${row.owner} ${row.status}`.toLocaleLowerCase().includes(needle));
   const paged = paginate(filtered, page);
   const rows = paged.rows;
+  const selected = rows[0] ?? null;
   const org = organizationIdFromQuery(query);
   const docsPath = view === "renouvellements" ? `/${locale}/franchise/documents/renouvellements` : `/${locale}/franchise/documents`;
+  const toVerify = demo.documents.filter((row) => row.status.toLowerCase().includes("vérif") || row.status.toLowerCase().includes("تحقق") || row.status.toLowerCase().includes("examiner")).length;
+  const expiring = demo.renewals.length;
+  const dueDates = demo.renewals.map((row) => ("due" in row && row.due ? row.due : "")).filter(Boolean);
   return (
-    <main className="client-page">
-      <Banner locale={locale} query={query} mandateName={mandateName} />
+    <main className="client-page franchise-docs-page">
+      <div className="franchise-section-head franchise-section-head-actions">
+        <span className="client-access-note franchise-secure-chip"><Lock className="size-4" aria-hidden /> {c.secureStorage}</span>
+        <Link href={`/${locale}/franchise/documents${query}`} className="franchise-tool franchise-tool-primary">{c.addDocument}</Link>
+      </div>
+      <nav className="franchise-pill-tabs" aria-label={n.documentsTitle}>
+        <Link href={`/${locale}/franchise/documents${query}`} className="franchise-pill-tab" data-active={!view ? "true" : undefined}><span>{c.allDocuments}</span><em dir="ltr">{demo.documents.length}</em></Link>
+        <Link href={`/${locale}/franchise/documents${query}`} className="franchise-pill-tab"><span>{c.toVerify}</span><em dir="ltr">{toVerify}</em></Link>
+        <Link href={`/${locale}/franchise/documents/renouvellements${query}`} className="franchise-pill-tab" data-active={view === "renouvellements" ? "true" : undefined}><span>{c.expiringSoon}</span><em dir="ltr">{expiring}</em></Link>
+        <Link href={`/${locale}/franchise/documents${query}`} className="franchise-pill-tab"><span>{c.archived}</span><em dir="ltr">0</em></Link>
+      </nav>
       <div className="franchise-toolbar">
         <form action={`/${locale}/franchise/documents`} method="get" className="franchise-search">
           {org ? <input type="hidden" name="organizationId" value={org} /> : null}
           <label><span className="sr-only">{c.search}</span><input name="q" defaultValue={search} placeholder={c.search} /></label>
           <button type="submit" className="franchise-scope-chip">{c.search}</button>
         </form>
-        <Link href={`/${locale}/franchise/documents${query}`} className="franchise-tool franchise-tool-primary" data-active={!view ? "true" : undefined}>{n.documentsTitle}</Link>
-        <Link href={`/${locale}/franchise/documents/renouvellements${query}`} className="franchise-tool" data-active={view === "renouvellements" ? "true" : undefined}>{n.renewals}</Link>
+        <span className="franchise-sort-chip">{c.documentType}</span>
+        <span className="franchise-sort-chip">{c.sensitivity}</span>
+        <span className="franchise-sort-chip">{locale === "ar" ? "الحالة" : "État"}</span>
+        <Link href={`/${locale}/franchise/documents${query}`} className="franchise-tool">{c.resetFilters}</Link>
       </div>
-      <section className="franchise-workbench">
+      <section className="franchise-docs-layout">
         <article className="client-card">
           <header><h2>{view === "renouvellements" ? n.renewals : n.documentsTitle}</h2></header>
           <div className="client-table-wrap">
-            <table className="client-space-table">
-              <thead><tr><th>{c.document}</th><th>{c.owner}</th><th>{c.state}</th><th>{c.documentKind}</th><th>{c.action}</th></tr></thead>
+            <table className="client-space-table franchise-docs-table franchise-dense-table">
+              <thead>
+                <tr>
+                  <th>{c.document}</th>
+                  <th>{c.folderProvider}</th>
+                  <th>{c.documentType}</th>
+                  <th>{c.sensitivity}</th>
+                  <th>{c.ownerCol}</th>
+                  <th>{c.expiresOn}</th>
+                  <th>{c.state}</th>
+                  <th>{c.action}</th>
+                </tr>
+              </thead>
               <tbody>
                 {rows.length === 0 ? (
-                  <tr><td colSpan={5}>{view === "renouvellements" ? c.emptyRenewals : n.noDocuments}</td></tr>
-                ) : rows.map((row) => (
-                  <tr key={row.id}>
-                    <td>{row.title}{"due" in row && row.due ? ` · ${row.due}` : ""}</td>
-                    <td>{row.owner}</td>
-                    <td><span className="client-status-chip" data-tone="violet">{row.status}</span></td>
-                    <td>{row.kind === "renewal" ? c.renewal : c.evidence}</td>
-                    <td><Cta href={row.href} soft>{c.open}</Cta></td>
-                  </tr>
-                ))}
+                  <tr><td colSpan={8}>{view === "renouvellements" ? c.emptyRenewals : n.noDocuments}</td></tr>
+                ) : rows.map((row, index) => {
+                  const sensitivity = documentSensitivity(row.kind, row.status, locale);
+                  return (
+                    <tr key={row.id} data-selected={index === 0 ? "true" : undefined}>
+                      <td><span className="franchise-row-title"><FileText className="size-4" aria-hidden />{row.title}</span></td>
+                      <td>{row.owner}</td>
+                      <td>{row.kind === "renewal" ? c.renewal : c.evidence}</td>
+                      <td><em className="franchise-sensitivity" data-tone={sensitivity.tone}>{sensitivity.label}</em></td>
+                      <td><span className="franchise-owner-chip">{row.owner.slice(0, 2).toUpperCase()}</span> {row.owner}</td>
+                      <td dir="ltr">{"due" in row && row.due ? row.due : "—"}</td>
+                      <td><span className="client-status-chip" data-tone={row.status.toLowerCase().includes("vérif") || row.status.toLowerCase().includes("examiner") ? "peach" : row.status.toLowerCase().includes("expire") ? "peach" : "mint"}>{row.status}</span></td>
+                      <td><Cta href={row.href} soft>{c.open}</Cta></td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
           <PaginationNav path={docsPath} query={query} page={paged.page} pageCount={paged.pageCount} label={n.documentsTitle} />
         </article>
-        <article className="client-card">
-          <header><h2>{n.renewals}</h2></header>
-          <p>{n.emptyDocumentsLead}</p>
-          <p className="client-access-note">{c.scopeNote}</p>
-        </article>
-        <FranchiseMandateRail locale={locale} name={mandateName} />
+        <aside className="franchise-home-rail">
+          <article className="client-card franchise-renewal-calendar">
+            <header><h2>{c.upcomingRenewals}</h2></header>
+            <RenewalCalendar locale={locale} dueDates={dueDates} weekCount={Math.min(expiring, 1)} monthCount={expiring} nextCount={0} />
+          </article>
+          <article className="client-card">
+            <header><h2>{c.documentDetail}</h2></header>
+            {selected ? (
+              <dl className="franchise-props">
+                <div><small>{c.document}</small><span>{selected.title}</span></div>
+                <div><small>{c.owner}</small><span>{selected.owner}</span></div>
+                <div><small>{c.sensitivity}</small><span className="franchise-sensitivity" data-tone={documentSensitivity(selected.kind, selected.status, locale).tone}>{documentSensitivity(selected.kind, selected.status, locale).label}</span></div>
+                <div><small>{c.state}</small><span className="client-status-chip" data-tone="mint">{selected.status}</span></div>
+                <div><small>{c.documentKind}</small><span>{selected.kind === "renewal" ? c.renewal : c.evidence}</span></div>
+              </dl>
+            ) : <p>{n.emptyDocumentsLead}</p>}
+            <p className="client-access-note">{c.scopeNote}</p>
+          </article>
+          <article className="client-card">
+            <header><h2>{c.accessHistory}</h2></header>
+            <ul className="client-feed">
+              {(demo.messages.slice(0, 3).length ? demo.messages.slice(0, 3) : []).map((row) => (
+                <li key={row.id}><span className="franchise-kpi-icon" data-tone={row.tone}>{row.title.slice(0, 1)}</span><span><strong>{row.title}</strong><small>{row.meta}</small></span></li>
+              ))}
+            </ul>
+            {demo.messages.length === 0 ? <p className="franchise-empty-panel">{n.noMessages}</p> : null}
+          </article>
+        </aside>
       </section>
     </main>
   );
@@ -983,10 +1486,14 @@ export function MessagesBoard({ locale, query, mandateName, view, search, page, 
   const pagedNotices = paginate(filteredNotices, page);
   const threads = pagedThreads.rows;
   const notices = pagedNotices.rows;
+  const selected = threads[0] ?? null;
   const org = organizationIdFromQuery(query);
   return (
-    <main className="client-page">
-      <Banner locale={locale} query={query} mandateName={mandateName} />
+    <main className="client-page franchise-messages-page">
+      <div className="franchise-section-head franchise-section-head-actions">
+        <Link href={`/${locale}/franchise/notifications${query}`} className="franchise-tool">{c.notificationPrefs}</Link>
+        <Link href={`/${locale}/franchise/gouvernance/historique${query}`} className="franchise-tool">{c.seeAuditHistory}</Link>
+      </div>
       <div className="franchise-toolbar">
         <form action={`/${locale}/franchise/${view === "notifications" ? "notifications" : "messages"}`} method="get" className="franchise-search">
           {org ? <input type="hidden" name="organizationId" value={org} /> : null}
@@ -996,33 +1503,109 @@ export function MessagesBoard({ locale, query, mandateName, view, search, page, 
         <Link href={`/${locale}/franchise/messages${query}`} className="franchise-tool franchise-tool-primary" data-active={!view || view !== "notifications" ? "true" : undefined}>{n.messagesTitle}</Link>
         <Link href={`/${locale}/franchise/notifications${query}`} className="franchise-tool" data-active={view === "notifications" ? "true" : undefined}>{n.notifications}</Link>
       </div>
-      <section className="franchise-workbench">
-        <article className="client-card">
-          <header><h2>{view === "notifications" ? n.notifications : n.messagesTitle}</h2></header>
-          {view === "notifications" ? (
-            notices.length === 0 ? <p className="franchise-empty-panel">{c.emptyNotifications}</p> : (
+      {view === "notifications" ? (
+        <section className="franchise-workbench">
+          <article className="client-card">
+            <header><h2>{n.notifications}</h2></header>
+            {notices.length === 0 ? <p className="franchise-empty-panel">{c.emptyNotifications}</p> : (
               <ul className="client-feed">
                 {notices.map((row) => (
                   <li key={row.id}><Bell className="size-4" aria-hidden /><span><strong>{row.title}</strong><small>{row.meta}</small></span><Cta href={row.href} soft>{c.open}</Cta></li>
                 ))}
               </ul>
-            )
-          ) : threads.length === 0 ? <p className="franchise-empty-panel">{n.noMessages}</p> : (
+            )}
+            <PaginationNav path={`/${locale}/franchise/notifications`} query={query} page={pagedNotices.page} pageCount={pagedNotices.pageCount} label={n.notifications} />
+          </article>
+          <FranchiseMandateRail locale={locale} name={mandateName} />
+        </section>
+      ) : (
+        <section className="franchise-messages-layout">
+          <article className="client-card franchise-thread-pane">
+            <header className="client-priority-head">
+              <h2>{c.conversations} <small dir="ltr">({filteredThreads.length})</small></h2>
+              <span className="franchise-tool franchise-tool-primary">{c.newMessage}</span>
+            </header>
+            <nav className="franchise-pill-tabs" aria-label={c.conversations}>
+              <span className="franchise-pill-tab" data-active="true"><span>{c.all}</span><em dir="ltr">{filteredThreads.length}</em></span>
+              <span className="franchise-pill-tab"><span>{c.unread}</span><em dir="ltr">{Math.min(filteredThreads.length, 3)}</em></span>
+              <span className="franchise-pill-tab"><span>{c.folders}</span></span>
+              <span className="franchise-pill-tab"><span>{c.netPeople}</span></span>
+              <span className="franchise-pill-tab"><span>{c.otherFilter}</span></span>
+            </nav>
+            {threads.length === 0 ? <p className="franchise-empty-panel">{n.noMessages}</p> : (
+              <ul className="franchise-thread-list">
+                {threads.map((row, index) => (
+                  <li key={row.id} data-selected={index === 0 ? "true" : undefined} data-unread={index > 0 && index < 3 ? "true" : undefined}>
+                    <span className="franchise-kpi-icon" data-tone={row.tone}>{row.title.slice(0, 2).toUpperCase()}</span>
+                    <span><strong>{row.title}</strong><small>{row.meta}</small></span>
+                    <span className="franchise-thread-dot" aria-hidden />
+                  </li>
+                ))}
+              </ul>
+            )}
+            <PaginationNav path={`/${locale}/franchise/messages`} query={query} page={pagedThreads.page} pageCount={pagedThreads.pageCount} label={n.messagesTitle} />
+          </article>
+          <article className="client-card franchise-chat-pane">
+            <header className="client-priority-head">
+              {selected ? (
+                <>
+                  <span className="franchise-kpi-icon" data-tone={selected.tone}>{selected.title.slice(0, 2).toUpperCase()}</span>
+                  <span>
+                    <h2>{selected.title}</h2>
+                    <small>{selected.meta}</small>
+                  </span>
+                  <em className="client-status-chip" data-tone="mint">{locale === "ar" ? "مزود" : "Fournisseur"}</em>
+                </>
+              ) : <h2>{c.messageThread}</h2>}
+            </header>
+            {selected ? (
+              <>
+                <p className="franchise-chat-context" role="note">
+                  <strong>{selected.meta}</strong>
+                  <Cta href={selected.href} soft>{locale === "ar" ? "عرض الملف" : "Voir la demande"}</Cta>
+                </p>
+                <div className="franchise-chat-log">
+                  <p className="franchise-chat-day" aria-hidden>{locale === "ar" ? "اليوم" : "Aujourd’hui"}</p>
+                  <p className="franchise-chat-bubble" data-side="in">{locale === "ar" ? "نشارككم الملف المطلوب للمراجعة." : "Nous vous transmettons le dossier demandé pour revue."}</p>
+                  <p className="franchise-chat-bubble" data-side="out">{locale === "ar" ? "شكراً، سنراجع الوثائق في نطاق التفويض." : "Merci, nous relisons les pièces dans le périmètre du mandat."}</p>
+                  <p className="franchise-chat-bubble" data-side="in">{selected.title}</p>
+                </div>
+                <form className="franchise-chat-composer">
+                  <label className="sr-only" htmlFor="franchise-msg">{c.composeMessage}</label>
+                  <textarea id="franchise-msg" rows={3} placeholder={c.composeMessage} />
+                  <div className="franchise-builder-actions">
+                    <button type="button" className="franchise-tool">{c.attachFile}</button>
+                    <span className="client-access-note"><Lock className="size-4" aria-hidden /> {c.secureMessage}</span>
+                    <button type="button" className="franchise-tool franchise-tool-primary">{c.send}</button>
+                  </div>
+                </form>
+              </>
+            ) : <p>{n.emptyMessagesLead}</p>}
+          </article>
+          <aside className="client-card franchise-message-aside">
+            <header><h2>{c.linkedFolder}</h2></header>
+            {selected ? (
+              <dl className="franchise-props">
+                <div><small>{c.object}</small><span>{selected.meta}</span></div>
+                <div><small>{c.state}</small><span className="client-status-chip" data-tone="sky">{locale === "ar" ? "جارٍ" : "En cours"}</span></div>
+              </dl>
+            ) : <p className="client-access-note">{c.scopeNote}</p>}
+            <h3>{c.authorizedParticipants}</h3>
+            <ul className="franchise-dot-list">
+              <li><span className="franchise-dot" data-tone="violet" /><strong>{locale === "ar" ? "صاحب الامتياز" : "Franchisé"}</strong></li>
+              <li><span className="franchise-dot" data-tone="mint" /><strong>Matricia</strong></li>
+              {selected ? <li><span className="franchise-dot" data-tone="sky" /><strong>{selected.title}</strong></li> : null}
+            </ul>
+            <h3>{c.sharedDocuments}</h3>
             <ul className="client-feed">
-              {threads.map((row) => (
-                <li key={row.id}><span><strong>{row.title}</strong><small>{row.meta}</small></span><Cta href={row.href} soft>{c.open}</Cta></li>
+              {demo.documents.slice(0, 2).map((row) => (
+                <li key={row.id}><FileText className="size-4" aria-hidden /><span><strong>{row.title}</strong><small>{row.owner}</small></span></li>
               ))}
             </ul>
-          )}
-          <PaginationNav path={`/${locale}/franchise/${view === "notifications" ? "notifications" : "messages"}`} query={query} page={view === "notifications" ? pagedNotices.page : pagedThreads.page} pageCount={view === "notifications" ? pagedNotices.pageCount : pagedThreads.pageCount} label={n.messagesTitle} />
-        </article>
-        <article className="client-card">
-          <header><h2>{c.messageThread}</h2></header>
-          <p>{n.emptyMessagesLead}</p>
-          <p className="client-access-note">{c.scopeNote}</p>
-        </article>
-        <FranchiseMandateRail locale={locale} name={mandateName} />
-      </section>
+            {demo.documents.length === 0 ? <p className="franchise-empty-panel">{n.noDocuments}</p> : null}
+          </aside>
+        </section>
+      )}
     </main>
   );
 }

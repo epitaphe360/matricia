@@ -67,6 +67,17 @@ describe("client space boards", () => {
     expect(disputes).not.toContain("Retard de livraison livrables");
   });
 
+  it("aligne le chrome ClientAppShell sur l’accueil (art, FR | AR, marque)", async () => {
+    const shell = await readFile(new URL("../../ui/client-app-shell.tsx", import.meta.url), "utf8");
+    expect(shell).toContain('/scenes/arch-city.png');
+    expect(shell).toContain("brandTagline");
+    expect(shell).toContain("brandFooter");
+    expect(shell).toContain("languagePair");
+    expect(shell).toContain("client-account-named");
+    expect(shell).toContain("client-lang-pair");
+    expect(shell).toContain("client-shell-topbar");
+  });
+
   it("compose les menus client sur la structure des maquettes", () => {
     vi.stubEnv("MATRICIA_DEMO_ACCESS_ENABLED", "true");
     vi.stubEnv("APP_ENV", "test");
@@ -81,12 +92,17 @@ describe("client space boards", () => {
     ].join("\n");
     expect(html).toContain("Vos priorités du moment");
     expect(html).toContain("Ce que Matricia a compris");
+    expect(html).toContain("Reprendre le bilan");
+    expect(html).toContain("Mes bilans");
+    expect(html).toContain("Avancez à votre rythme");
     expect(html).not.toContain("Structurer votre organisation");
     expect(html).toContain("Toutes vos demandes");
     expect(html).toContain("Demande de démonstration à ignorer");
     expect(html).not.toContain("Conseil stratégique");
     expect(html).toContain("Tous les statuts");
     expect(html).not.toContain("Valider un livrable");
+    expect(html).toContain("Une collaboration en toute confiance");
+    expect(html).toContain("Plus loin aujourd’hui, pour demain.");
     expect(html).toContain("Documents récents par dossier");
     expect(html).toContain("Factures à examiner");
     expect(html).toContain("client-kpi-cta");
@@ -109,11 +125,43 @@ describe("client space boards", () => {
     expect(disputes).not.toMatch(/exemple illustratif/i);
   });
 
+  it("tonifie les priorités diagnostic selon la maquette 01", () => {
+    const html = renderToStaticMarkup(
+      <DiagnosticsBoard
+        locale="fr"
+        questionnaireHref="/fr/client/questionnaires"
+        evolutionHref="/fr/client/diagnostics/evolution"
+        score="72.00"
+        ratingLabel="À surveiller"
+        libraryScores={[]}
+        findings={[
+          { id: "a1", title: "Sauvegardes non testées", severity: "HIGH", blocking: true, action: "Plan de reprise", why: "Règle versionnée", href: "/fr/client/diagnostics/run-1", cta: "plan" },
+          { id: "a2", title: "Démarches à sécuriser", severity: "MEDIUM", blocking: false, action: "Cadrer le besoin", why: "Pièces incomplètes", href: "/fr/besoin", cta: "need" },
+          { id: "a3", title: "Opportunités à activer", severity: "LOW", blocking: false, action: "Voir le plan", why: "Potentiel dormant", href: "/fr/client/diagnostics/run-1", cta: "plan" },
+        ]}
+        opportunities={[]}
+        runs={[{ id: "run-1", title: "12 sept. 2026 · 72.00/100", href: "/fr/client/diagnostics/run-1" }]}
+        hasSubmittedAssessment
+      />,
+    );
+    expect(html).toContain('data-tone="peach"');
+    expect(html).toContain('data-tone="violet"');
+    expect(html).toContain('data-tone="sky"');
+    expect(html).toContain("Sauvegardes non testées");
+    expect(html).toContain("Décrire mon besoin");
+    expect(html).toContain("client-resume-card");
+    expect(html).not.toMatch(/exemple illustratif/i);
+  });
+
   it("le chrome client utilise le décor Figma et des CTA violets", async () => {
     const css = await readFile(new URL("../../ui/client-experience.css", import.meta.url), "utf8");
     expect(css).toContain("/scene/pattern-bl.png");
     expect(css).toContain("/scene/pattern-tl.png");
     expect(css).toContain("/scene/pattern-br.png");
+    expect(css).toContain(".client-shell-topbar");
+    expect(css).toContain(".client-lang-pair");
+    expect(css).toContain(".client-account-named");
+    expect(css).toContain(".client-collab-banner");
     expect(css).toMatch(/\.client-dark-cta[\s\S]*background:\s*var\(--client-cta\)/);
     expect(css).toContain(".client-compare-grid");
     expect(css).toContain(".client-dispute-layout");
@@ -192,11 +240,16 @@ describe("client space boards", () => {
     expect(follow).toContain("À traiter maintenant");
     expect(follow).toContain("Mes dossiers en cours");
     expect(follow).toContain("Offres à comparer");
+    expect(follow).toContain("Mes demandes et missions");
+    expect(follow).toContain("Prochaine décision");
+    expect(follow).toContain("Documents et renouvellements");
     expect(follow).not.toMatch(/exemple illustratif/i);
     const jalons = renderToStaticMarkup(<JalonsBoard locale="fr" query="" organizationName="Client · Communication" mission={null} messages={getMissionMessages("fr")} />);
     expect(jalons).toContain("Jalons et livrables");
     expect(jalons).toContain("Aucun élément disponible.");
+    expect(jalons).toContain("Version signée et immuable");
     expect(jalons).not.toContain("Diagnostic initial");
+    expect(jalons).not.toMatch(/exemple illustratif/i);
     const sub = renderToStaticMarkup(
       <SubscriptionBoard locale="fr" query="" dashboard={emptySubscription} credits={{ balance: "0", unitCode: "CRD", memberCount: 1, boxes: [], operations: [] }} />,
     );

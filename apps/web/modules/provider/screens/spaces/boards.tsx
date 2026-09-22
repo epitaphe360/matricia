@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CheckSquare, ClipboardList, Cloud, FileText, Paperclip, Plus, Search, Sprout } from "lucide-react";
+import { ArrowRight, CheckSquare, ClipboardList, Cloud, FileText, Paperclip, Plus, Search, Sprout, Star, Zap } from "lucide-react";
 import type { ReactNode } from "react";
 import { formatMinor, type BillingDashboard } from "@/modules/provider/data/billing/model";
 import { providerCopy } from "@/modules/provider/data/spaces/copy";
@@ -13,6 +13,21 @@ import { getEligibilityReason, getProviderStatusLabel } from "@/modules/provider
 import type { UserActionItem } from "@/modules/shared/lib/action-center/model";
 import { JourneyGlyph } from "@/modules/shared/ui/journey-glyph";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
+
+function capacityStatusLabel(status: string, locale: Locale, fallback: string) {
+  const normalized = status.trim().toUpperCase();
+  if (!status || status === "—" || status === fallback) return fallback;
+  if (normalized === "AVAILABLE" || normalized === "OPEN" || normalized === "OPEN_TO_OPPORTUNITIES") {
+    return locale === "ar" ? "مفتوح للفرص" : "Ouvert aux opportunités";
+  }
+  if (normalized === "LIMITED" || normalized === "PARTIAL") {
+    return locale === "ar" ? "قدرة محدودة" : "Capacité limitée";
+  }
+  if (normalized === "UNAVAILABLE" || normalized === "CLOSED") {
+    return locale === "ar" ? "غير متاح" : "Indisponible";
+  }
+  return status;
+}
 
 function SearchForm({
   locale,
@@ -102,11 +117,12 @@ export function ProviderHomeBoard({
   const capacity = live
     ? (snapshot?.status === "success" ? snapshot.capacity : { status: c.capacityUnset, domains: c.capacityUnset, zones: c.capacityUnset })
     : demo.capacity;
+  const capacityStatus = capacityStatusLabel(capacity.status, locale, c.capacityUnset);
   const showProfileCallout = snapshot?.status !== "success" || snapshot.stage !== "qualified";
   const journey = demo.journey.map((step) => {
     if (snapshot?.status !== "success") return step;
-    if (snapshot.stage === "qualified" && step.id === "j2") return { ...step, state: "done" as const };
-    if (snapshot.stage === "qualified" && step.id === "j3") return { ...step, state: "current" as const };
+    if (snapshot.stage === "qualified" && step.id === "j2") return { ...step, state: "done" as const, detail: locale === "ar" ? "مكتمل" : "Complété" };
+    if (snapshot.stage === "qualified" && step.id === "j3") return { ...step, state: "current" as const, detail: locale === "ar" ? "جارٍ" : "En cours" };
     if (snapshot.stage === "blocked" && step.id === "j2") return { ...step, state: "current" as const };
     return step;
   });
@@ -123,13 +139,13 @@ export function ProviderHomeBoard({
       </section>
       ) : null}
 
-      <section className="provider-home-treat" aria-labelledby="provider-treat-now">
+      <article className="client-card provider-home-treat" aria-labelledby="provider-treat-now">
         <header className="client-priority-head">
           <div>
-            <h2 id="provider-treat-now">{c.treatNow}</h2>
+            <h2 id="provider-treat-now"><Zap aria-hidden className="size-4" />{c.treatNow}</h2>
             <p>{c.treatLead}</p>
           </div>
-          <Link href={`/${locale}/sous-traitant/consultations${query}`} className="client-text-link">{c.seeAll}</Link>
+          <Link href={`/${locale}/sous-traitant/consultations${query}`} className="client-text-link">{c.seeAll} →</Link>
         </header>
         <div className="provider-treat">
           {treatRows.length === 0 ? <p role="status">{c.treatEmpty}</p> : treatRows.map((item) => {
@@ -147,9 +163,9 @@ export function ProviderHomeBoard({
             );
           })}
         </div>
-      </section>
+      </article>
 
-      <article className="client-card">
+      <article className="client-card provider-journey-card">
         <header className="client-priority-head">
           <div>
             <h2>{c.journey}</h2>
@@ -159,11 +175,15 @@ export function ProviderHomeBoard({
         </header>
         <ol className="client-journey">
           {journey.map((step, index) => (
-            <li key={step.id} data-state={step.state}><span><JourneyGlyph index={index} /></span><small>{step.title}</small></li>
+            <li key={step.id} data-state={step.state}>
+              <span><JourneyGlyph index={index} /></span>
+              <small>{step.title}<em>{step.detail}</em></small>
+            </li>
           ))}
         </ol>
       </article>
-      <section className="client-board client-board-compare">
+
+      <section className="client-board provider-home-grid">
         <article className="client-card">
           <header className="client-priority-head">
             <div>
@@ -185,29 +205,41 @@ export function ProviderHomeBoard({
           </ul>
           )}
         </article>
-        <div className="client-stack">
-          <article className="client-card">
-            <header><h2>{c.capacity}</h2></header>
-            <p>{c.capacityLead}</p>
-            <ul className="client-feed">
-              <li><span><strong>{c.availability}</strong><small>{capacity.status}</small></span></li>
-              <li><span><strong>{c.domains}</strong><small>{capacity.domains}</small></span></li>
-              <li><span><strong>{c.zones}</strong><small>{capacity.zones}</small></span></li>
-            </ul>
-            <Cta href={`/${locale}/sous-traitant/services${query}`} soft>{c.refresh}</Cta>
-          </article>
-          <article className="client-card">
-            <header><h2>{c.reputation}</h2></header>
-            <p>{c.reputationLead}</p>
-            {live && snapshot?.status === "success" && snapshot.reputation.published > 0 ? (
-              <p>{snapshot.reputation.latest ?? c.received}</p>
-            ) : (
+        <article className="client-card">
+          <header><h2>{c.capacity}</h2></header>
+          <p>{c.capacityLead}</p>
+          <ul className="client-feed provider-capacity-feed">
+            <li>
+              <span>
+                <strong>{c.availability}</strong>
+                <small className="provider-capacity-status" data-open={capacityStatus === c.capacityOpen || /ouvert|مفتوح/i.test(capacityStatus) ? "true" : undefined}>
+                  <i aria-hidden />
+                  {capacityStatus}
+                </small>
+              </span>
+            </li>
+            <li><span><strong>{c.domains}</strong><small>{capacity.domains}</small></span></li>
+            <li><span><strong>{c.zones}</strong><small>{capacity.zones}</small></span></li>
+          </ul>
+          <Cta href={`/${locale}/sous-traitant/services${query}`} soft>{c.refresh}</Cta>
+        </article>
+        <article className="client-card provider-reputation-card">
+          <header><h2><Star aria-hidden className="size-4" />{c.reputation}</h2></header>
+          <p>{c.reputationLead}</p>
+          {live && snapshot?.status === "success" && snapshot.reputation.published > 0 ? (
+            <p>{snapshot.reputation.latest ?? c.received}</p>
+          ) : (
+            <div className="provider-reputation-empty">
+              <span className="provider-reputation-glyph" aria-hidden>
+                <FileText className="size-8" />
+                <Star className="size-4" />
+              </span>
               <p>{c.reputationEmpty}</p>
-            )}
-            <p>{c.reputationFoot}</p>
-            <Cta href={`/${locale}/sous-traitant/reputation${query}`} soft>{c.seeAll}</Cta>
-          </article>
-        </div>
+            </div>
+          )}
+          <p className="provider-reputation-foot"><Sprout className="size-4" aria-hidden />{c.reputationFoot}</p>
+          <Cta href={`/${locale}/sous-traitant/reputation${query}`} soft>{c.seeAll}</Cta>
+        </article>
       </section>
     </main>
   );
@@ -222,20 +254,31 @@ export function QualificationBoard({ locale, query, dashboard }: { locale: Local
   const overall = dashboard?.profile?.overallStatus;
   const statusLabel = overall ? getProviderStatusLabel(locale, overall) : c.underReview;
   const blocking = services.flatMap((service) => service.eligibility.reasons);
+  const profileReady = Boolean(dashboard?.profile);
+  const servicesReady = services.length > 0;
+  const docsReady = documents.length > 0;
+  const capacityReady = services.some((service) => Boolean(service.capacityStatus));
   const checklist = live
     ? [
-        { id: "profile", title: c.completeProfile, status: dashboard?.profile ? c.complete : c.open, tone: dashboard?.profile ? "mint" : "peach", href: `/${locale}/sous-traitant/qualification${query}#qualification`, action: dashboard?.profile ? "open" : "complete" },
-        { id: "services", title: c.declared, status: services.length ? c.complete : c.open, tone: services.length ? "mint" : "peach", href: `/${locale}/sous-traitant/services${query}`, action: "open" as const },
-        { id: "docs", title: c.pieces, status: documents.length ? c.complete : c.open, tone: documents.length ? "mint" : "peach", href: `/${locale}/sous-traitant/documents${query}`, action: documents.length ? "open" : "complete" },
+        { id: "profile", title: c.checkActivity, status: profileReady ? c.statusSent : c.statusOpen, tone: profileReady ? "mint" : "peach", href: `/${locale}/sous-traitant/qualification${query}#qualification`, action: profileReady ? "open" : "complete" },
+        { id: "services", title: c.checkServices, status: servicesReady ? c.statusSent : c.statusOpen, tone: servicesReady ? "mint" : "peach", href: `/${locale}/sous-traitant/services${query}`, action: "open" as const },
+        { id: "capacity", title: c.checkCapacity, status: capacityReady ? c.statusSent : c.statusOpen, tone: capacityReady ? "mint" : "peach", href: `/${locale}/sous-traitant/services${query}`, action: capacityReady ? "open" : "complete" },
+        { id: "docs", title: c.checkDocs, status: docsReady ? c.statusSent : c.statusOpen, tone: docsReady ? "mint" : "peach", href: `/${locale}/sous-traitant/documents${query}`, action: docsReady ? "open" : "complete" },
+        { id: "decision", title: c.checkDecision, status: c.statusReview, tone: "violet" as const, href: `/${locale}/sous-traitant/qualification${query}`, action: "open" as const },
       ]
     : demo.checklist;
-  const verified = live ? documents.filter((item) => item.status === "VERIFIED").map((item) => item.code) : demo.verified;
+  const verifiedCategories = [c.verifiedIdentity, c.verifiedDocuments, c.verifiedServices, c.verifiedCapacity, c.verifiedRules];
+  const verified = live
+    ? (documents.filter((item) => item.status === "VERIFIED").map((item) => item.code).length
+        ? documents.filter((item) => item.status === "VERIFIED").map((item) => item.code)
+        : verifiedCategories)
+    : demo.verified;
   const history = live
     ? documents.map((item) => ({ id: item.id, title: item.code, detail: `${item.kind} · ${item.status}` }))
     : demo.history;
   return (
-    <main className="client-page">
-      <section className="client-board">
+    <main className="client-page provider-qualify">
+      <section className="client-board provider-qualify-status">
         <article className="client-card client-priority-head">
           <div>
             <h2>{c.folderState}</h2>
@@ -247,12 +290,13 @@ export function QualificationBoard({ locale, query, dashboard }: { locale: Local
               </ul>
             ) : null}
           </div>
-        </article>
-        <article className="client-card">
-          <p>{c.processNote}</p>
-          <Cta href={`/${locale}/sous-traitant/qualification/certifications${query}`} soft>
-            {locale === "ar" ? "الشهادات والمراجع" : "Certifications et références"}
-          </Cta>
+          <aside className="provider-process-note">
+            <strong>{c.processTransparent}</strong>
+            <p>{c.processNote}</p>
+            <Cta href={`/${locale}/sous-traitant/qualification/certifications${query}`} soft>
+              {locale === "ar" ? "الشهادات والمراجع" : "Certifications et références"}
+            </Cta>
+          </aside>
         </article>
       </section>
       <section className="client-board client-board-compare">
@@ -277,32 +321,38 @@ export function QualificationBoard({ locale, query, dashboard }: { locale: Local
               <li key={item}><FileText className="size-4" aria-hidden /><span>{item}</span></li>
             ))}
           </ul>
+          <p className="client-access-note">{c.notCert}</p>
         </article>
       </section>
       <section className="client-board">
         <article className="client-card">
           <header className="client-priority-head"><h2>{c.pieces}</h2><Cta href={`/${locale}/sous-traitant/qualification${query}#qualification`} soft>{c.addPiece}</Cta></header>
-          <Link href={`/${locale}/sous-traitant/qualification${query}#qualification`} className="client-drop">
-            <Cloud className="size-6" aria-hidden />
-            <p>{c.drop}</p>
-            <small>{c.formats}</small>
-          </Link>
-          <p className="client-verified">{c.secureLead}</p>
+          <div className="provider-pieces-row">
+            <Link href={`/${locale}/sous-traitant/qualification${query}#qualification`} className="client-drop">
+              <Cloud className="size-6" aria-hidden />
+              <p>{c.drop}</p>
+              <small>{c.formats}</small>
+            </Link>
+            <p className="client-verified"><strong>{c.secureAccess}</strong><span>{c.secureLead}</span></p>
+          </div>
         </article>
         <article className="client-card">
           <header><h2>{c.history}</h2></header>
           <p>{c.historyLead}</p>
-          <ol className="client-journey">
-            {history.map((item, index) => (
-              <li key={item.id} data-state={index === 0 ? "current" : "todo"}><span><JourneyGlyph index={index} /></span><small>{item.title}</small></li>
-            ))}
-          </ol>
-          <ul className="client-feed">
-            {history.map((item) => (
-              <li key={`${item.id}-d`}><span><strong>{item.title}</strong><small>{item.detail}</small></span></li>
-            ))}
-          </ul>
-          <p className="client-access-note">{c.notCert}</p>
+          {history.length === 0 ? <p role="status">{locale === "ar" ? "لا سجل متاح بعد." : "Aucun historique disponible pour le moment."}</p> : (
+            <>
+              <ol className="client-journey">
+                {history.map((item, index) => (
+                  <li key={item.id} data-state={index === 0 ? "current" : "todo"}><span><JourneyGlyph index={index} /></span><small>{item.title}</small></li>
+                ))}
+              </ol>
+              <ul className="client-feed">
+                {history.map((item) => (
+                  <li key={`${item.id}-d`}><span><strong>{item.title}</strong><small>{item.detail}</small></span></li>
+                ))}
+              </ul>
+            </>
+          )}
         </article>
       </section>
     </main>
@@ -325,16 +375,22 @@ export function ServicesBoard({ locale, query, services, domain }: { locale: Loc
     : [];
   const visibleGroups = live && domain ? groups.filter((group) => group.domain === domain) : groups;
   const capacityLead = live
-    ? (declared[0] ? `${declared[0].capacityStatus}${declared[0].leadTimeDays !== null ? ` · ${declared[0].leadTimeDays} j` : ""}` : "—")
+    ? capacityStatusLabel(declared[0]?.capacityStatus ?? c.capacityUnset, locale, c.capacityUnset)
     : demo.capacity.status;
   const delayLead = live
-    ? (declared[0]?.leadTimeDays !== null && declared[0] ? `${declared[0].leadTimeDays} j` : "—")
+    ? (declared[0]?.leadTimeDays !== null && declared[0] ? `${declared[0].leadTimeDays} j` : c.capacityUnset)
     : c.indicativeDelay;
+  const zonesLead = live ? c.capacityUnset : demo.capacity.zones;
+  const modalitiesLead = live ? c.capacityUnset : c.presentialRemote;
+  const capacityByServiceLead = live
+    ? (declared.length ? String(declared.length) : c.capacityUnset)
+    : String(demo.services.reduce((n, g) => n + g.items.length, 0));
   const skillOptions = live
     ? declared.map((item) => ({ id: item.id, title: locale === "ar" ? item.label.ar : item.label.fr, href: `/${locale}/sous-traitant/qualification${query}#capacite` }))
     : demo.services.flatMap((group) => group.items.map((item) => ({ id: item.id, title: item.title, href: `/${locale}/sous-traitant/qualification${query}#capacite` })));
+  const capacityHref = `/${locale}/sous-traitant/qualification${query}#capacite`;
   return (
-    <main className="client-page">
+    <main className="client-page provider-services">
       <p className="client-safety">{c.svcExamined}</p>
       <section className="client-board client-board-compare">
         <article className="client-card">
@@ -359,8 +415,8 @@ export function ServicesBoard({ locale, query, services, domain }: { locale: Loc
                     <ul>
                       {group.items.map((item) => (
                         <li key={item.id}>
-                          <span><strong>{locale === "ar" ? item.label.ar : item.label.fr}</strong><small>{item.capacityStatus} · {item.requestStatus}</small></span>
-                          <Cta href={`/${locale}/sous-traitant/qualification${query}#capacite`}>{c.edit}</Cta>
+                          <span><strong>{locale === "ar" ? item.label.ar : item.label.fr}</strong><small>{capacityStatusLabel(item.capacityStatus, locale, c.capacityUnset)} · {item.requestStatus}</small></span>
+                          <Cta href={capacityHref}>{c.edit}</Cta>
                         </li>
                       ))}
                     </ul>
@@ -373,7 +429,7 @@ export function ServicesBoard({ locale, query, services, domain }: { locale: Loc
                       {group.items.map((item) => (
                         <li key={item.id}>
                           <span><strong>{item.title}</strong><small>{item.path}</small></span>
-                          <Cta href={`/${locale}/sous-traitant/qualification${query}#capacite`}>{c.edit}</Cta>
+                          <Cta href={capacityHref}>{c.edit}</Cta>
                         </li>
                       ))}
                     </ul>
@@ -385,9 +441,21 @@ export function ServicesBoard({ locale, query, services, domain }: { locale: Loc
         <article className="client-card">
           <header><h2>{c.capacity}</h2></header>
           <p>{c.capacityLead}</p>
-          <ul className="client-feed">
-            <li><span><strong>{c.availability}</strong><small>{capacityLead}</small></span><Cta href={`/${locale}/sous-traitant/qualification${query}#capacite`}>{c.refresh}</Cta></li>
-            <li><span><strong>{c.delays}</strong><small>{delayLead}</small></span><Cta href={`/${locale}/sous-traitant/qualification${query}#capacite`}>{c.refresh}</Cta></li>
+          <ul className="client-feed provider-capacity-feed">
+            <li>
+              <span>
+                <strong>{c.availability}</strong>
+                <small className="provider-capacity-status" data-open={/ouvert|مفتوح/i.test(capacityLead) ? "true" : undefined}>
+                  <i aria-hidden />
+                  {capacityLead}
+                </small>
+              </span>
+              <Cta href={capacityHref}>{c.refresh}</Cta>
+            </li>
+            <li><span><strong>{c.zones}</strong><small>{zonesLead}</small></span><Cta href={capacityHref}>{c.refresh}</Cta></li>
+            <li><span><strong>{c.modalities}</strong><small>{modalitiesLead}</small></span><Cta href={capacityHref}>{c.refresh}</Cta></li>
+            <li><span><strong>{c.delays}</strong><small>{delayLead}</small></span><Cta href={capacityHref}>{c.refresh}</Cta></li>
+            <li><span><strong>{c.capacityByService}</strong><small>{capacityByServiceLead}</small></span><Cta href={capacityHref}>{c.refresh}</Cta></li>
           </ul>
           <p className="client-access-note">{c.publicNote}</p>
         </article>
@@ -636,17 +704,31 @@ export function ProviderDocumentsBoard({
   documents,
   loadError = false,
   search = "",
+  view = "all",
 }: {
   locale: Locale;
   query: string;
   documents?: readonly ProviderDocument[];
   loadError?: boolean;
   search?: string;
+  view?: "all" | "qualification";
 }) {
   const c = providerCopy(locale);
   const qualifyHref = `/${locale}/sous-traitant/qualification${query}#documents`;
+  const params = new URLSearchParams(query.startsWith("?") ? query.slice(1) : query);
+  const organizationId = params.get("organizationId");
+  const tabHref = (next: "all" | "qualification") => {
+    const nextParams = new URLSearchParams(params);
+    if (next === "all") nextParams.delete("vue");
+    else nextParams.set("vue", next);
+    if (search.trim()) nextParams.set("q", search.trim());
+    else nextParams.delete("q");
+    const qs = nextParams.toString();
+    return `/${locale}/sous-traitant/documents${qs ? `?${qs}` : ""}`;
+  };
   const needle = search.trim().toLocaleLowerCase();
   const rows = (documents ?? []).filter((document) => {
+    if (view === "qualification" && !/LEGAL|INSURANCE|QUALIF|COMPLIANCE|IDENTITY/i.test(document.kind)) return false;
     if (!needle) return true;
     return `${document.code} ${document.kind} ${document.status}`.toLocaleLowerCase().includes(needle);
   });
@@ -657,11 +739,12 @@ export function ProviderDocumentsBoard({
         <article className="client-card">
           <header>
             <nav className="client-tabs" aria-label={c.docsTitle}>
-              <a href="#docs" aria-current="page">{c.all}</a>
-              <a href="#docs">{c.qualification}</a>
+              <Link href={tabHref("all")} aria-current={view === "all" ? "page" : undefined}>{c.all}</Link>
+              <Link href={tabHref("qualification")} aria-current={view === "qualification" ? "page" : undefined}>{c.qualification}</Link>
             </nav>
-            <form className="client-top-search" action={`/${locale}/sous-traitant/documents${query}`} method="get">
-              {(() => { const organizationId = new URLSearchParams(query.startsWith("?") ? query.slice(1) : query).get("organizationId"); return organizationId ? <input type="hidden" name="organizationId" value={organizationId} /> : null; })()}
+            <form className="client-top-search" action={`/${locale}/sous-traitant/documents`} method="get">
+              {organizationId ? <input type="hidden" name="organizationId" value={organizationId} /> : null}
+              {view === "qualification" ? <input type="hidden" name="vue" value="qualification" /> : null}
               <Search className="size-4" aria-hidden />
               <label className="sr-only" htmlFor="provider-doc-search">{c.searchDoc}</label>
               <input id="provider-doc-search" name="q" defaultValue={search} placeholder={c.searchDoc} />

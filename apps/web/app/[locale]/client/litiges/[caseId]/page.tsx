@@ -37,7 +37,7 @@ export default async function DisputePage({
   const keys = Object.fromEntries(["respond", "appeal", "decide", "propose", "approve", "activate"].map((x) => [x, randomUUID()]));
 
   return (
-    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="missions" title={m.title} lead={d.obligationKey} kicker={c.kicker}>
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="missions" title={m.title} lead={d.obligationKey} kicker={c.kicker}>
       <DisputesBoard
         locale={locale}
         query={space.selectedQuery}

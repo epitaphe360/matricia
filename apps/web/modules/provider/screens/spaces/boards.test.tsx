@@ -20,6 +20,7 @@ describe("provider space boards", () => {
     expect(html).not.toContain("Répondre à une consultation");
     expect(html).toContain("Complétez votre profil");
     expect(html).toContain("Checklist de qualification");
+    expect(html).toContain("Informations de l’activité");
     expect(html).toContain("Vos services déclarés");
     expect(html).toContain("Aucun service n’est encore déclaré.");
     expect(html).not.toContain("Appui et conseil");
@@ -43,8 +44,10 @@ describe("provider space boards", () => {
     expect(liveHome).not.toContain("/sous-traitant/consultations/cr1");
 
     const liveQual = renderToStaticMarkup(<QualificationBoard locale="fr" query="" dashboard={null} />);
-    expect(liveQual).not.toContain("Informations de l’activité");
-    expect(liveQual).not.toContain("Décision et raisonnement");
+    expect(liveQual).toContain("Informations de l’activité");
+    expect(liveQual).toContain("Décision et raisonnement");
+    expect(liveQual).toContain("À compléter");
+    expect(liveQual).not.toContain("Exemple illustratif");
 
     const liveServices = renderToStaticMarkup(<ServicesBoard locale="fr" query="" services={[]} />);
     expect(liveServices).toContain("Aucun service n’est encore déclaré.");
@@ -81,8 +84,9 @@ describe("provider space boards", () => {
       />,
     );
     expect(liveHomeSnap).toContain("Lot CVC Rabat");
-    expect(liveHomeSnap).toContain("AVAILABLE");
+    expect(liveHomeSnap).toContain("Ouvert aux opportunités");
     expect(liveHomeSnap).toContain("Digital et IT");
     expect(liveHomeSnap).not.toContain("/sous-traitant/consultations/cr1");
+    expect(liveHomeSnap).not.toContain("AVAILABLE");
   });
 });

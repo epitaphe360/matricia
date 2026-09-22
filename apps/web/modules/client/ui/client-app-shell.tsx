@@ -1,20 +1,30 @@
 import Link from "next/link";
-import { Bell, Building2, Search } from "lucide-react";
+import { Bell, Search } from "lucide-react";
 import type { ReactNode } from "react";
 import { clientDashboardCopy } from "@/modules/client/data/home/copy";
 import { spaceCopy } from "@/modules/client/data/spaces/copy";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import type { ClientNavKey } from "@/modules/client/ui/client-nav";
+import { buildClientNav } from "@/modules/client/ui/client-nav";
 import { ClientWorkspaceNav } from "@/modules/client/ui/client-workspace-nav";
+import { WorkspaceAccountMenu } from "@/modules/shared/ui/workspace-account-menu";
 import "./client-experience.css";
 
 export type { ClientNavKey };
+
+function localeSwitchHref(locale: Locale, selectedQuery: string, active?: ClientNavKey) {
+  const alternate: Locale = locale === "fr" ? "ar" : "fr";
+  const items = buildClientNav({ locale: alternate, selectedQuery });
+  const match = active ? items.find((item) => item.key === active) : null;
+  return match?.href ?? `/${alternate}/tableau-de-bord${selectedQuery}`;
+}
 
 export function ClientAppShell({
   locale,
   selectedQuery,
   selectedOrganizationId,
   userEmail,
+  organizationName,
   active,
   searchAction,
   searchQuery = "",
@@ -30,6 +40,7 @@ export function ClientAppShell({
   selectedQuery: string;
   selectedOrganizationId: string | null;
   userEmail: string | null;
+  organizationName?: string | null;
   active?: ClientNavKey;
   messagesUnread?: boolean;
   searchAction?: string;
@@ -43,25 +54,28 @@ export function ClientAppShell({
 }): ReactNode {
   const c = clientDashboardCopy[locale];
   const space = spaceCopy(locale);
+  const alternate: Locale = locale === "fr" ? "ar" : "fr";
   const searchPath = searchAction ?? `/${locale}/client/recherche`;
+  const accountLabel = organizationName?.trim() || space.space;
+  const langHref = localeSwitchHref(locale, selectedQuery, active);
 
   return (
     <div dir={locale === "ar" ? "rtl" : "ltr"} className="client-workspace" data-theme={theme}>
       <aside className="client-side" aria-label={c.navHome}>
         <Link href={`/${locale}/tableau-de-bord${selectedQuery}`} className="client-brand">
           <span className="client-brand-mark" aria-hidden>
-            <svg viewBox="0 0 32 32" className="size-5" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M5 28V16a11 11 0 0 1 22 0v12" />
-              <path d="M12 28V18a4 4 0 0 1 8 0v10" />
-            </svg>
+            M
           </span>
           <span>
             <strong>Matricia</strong>
-            <small>{space.space}</small>
+            <small>{c.brandTagline}</small>
           </span>
         </Link>
         <ClientWorkspaceNav locale={locale} selectedQuery={selectedQuery} messagesUnread={messagesUnread} active={active} />
-        <p className="client-side-foot"><span aria-hidden>◆</span>{c.brandFooter}</p>
+        <figure className="client-side-art">
+          <img src="/scenes/arch-city.png" alt="" width={220} height={120} />
+          <figcaption>{c.brandFooter}</figcaption>
+        </figure>
       </aside>
       <div className="client-frame">
         <div className="client-scene" aria-hidden>
@@ -69,16 +83,32 @@ export function ClientAppShell({
           <div className="client-scene-palms" />
           <div className="client-scene-pattern" />
         </div>
-        <div className="client-topbar">
+        <div className="client-topbar client-shell-topbar">
           <form className="client-top-search client-shell-search" method="get" action={searchPath} role="search" aria-label={c.searchLabel}>
             {selectedOrganizationId ? <input type="hidden" name="organizationId" value={selectedOrganizationId} /> : null}
             <Search aria-hidden className="size-4" />
-            <label className="sr-only" htmlFor="client-shell-search">{c.searchLabel}</label>
+            <label className="sr-only" htmlFor="client-shell-search">
+              {c.searchLabel}
+            </label>
             <input id="client-shell-search" name="q" defaultValue={searchQuery} placeholder={c.searchSpace} />
           </form>
-          <Link href={`/${locale}/notifications${selectedQuery}`} className="client-icon-btn" aria-label={c.notifications}><Bell className="size-4" /></Link>
-          <span className="client-space-chip"><Building2 className="size-3.5" aria-hidden />{space.space}</span>
-          <span className="client-account" aria-label={c.accountMenu}><span className="client-chip">{userEmail?.slice(0, 1).toUpperCase() ?? "M"}</span></span>
+          <div className="client-top-actions">
+            <Link href={`/${locale}/notifications${selectedQuery}`} className="client-icon-btn" aria-label={c.notifications}>
+              <Bell className="size-4" />
+            </Link>
+            <Link href={langHref} hrefLang={alternate} lang={alternate} className="client-lang-pair">
+              {c.languagePair}
+            </Link>
+            <WorkspaceAccountMenu
+              locale={locale}
+              userEmail={userEmail}
+              returnTo={`/${locale}/tableau-de-bord${selectedQuery}`}
+              fallbackInitial="M"
+              label={c.accountMenu}
+              displayName={accountLabel}
+              className="client-account client-account-named"
+            />
+          </div>
         </div>
         {title ? (
           <header className="client-mast">

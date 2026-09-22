@@ -1,6 +1,5 @@
 import type { AdminWorkItem } from "@/modules/admin/data/command-center/model";
 import type { AdminOrganizationFiche, AdminSupervisionDashboard } from "@/modules/admin/data/supervision/types";
-import { isDemoClientHomeEnabled } from "@/modules/client/data/home/demo-scenario";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import { adminCopy } from "./copy";
 import { inferOrgType } from "./directory";
@@ -85,15 +84,8 @@ export function mapAdminTreatQueue(input: {
   }));
 }
 
-export function demoAdminTreatQueue(locale: Locale, query: string): AdminTreatItem[] {
-  if (!isDemoClientHomeEnabled()) return [];
-  const fr = locale === "fr";
-  return [
-    { id: "d1", title: "Client · Communication", detail: fr ? "Dossier à examiner" : "ملف للمراجعة", href: `/${locale}/administration/parcours${query}`, tone: "sky" as const },
-    { id: "d2", title: "Studio Atlas", detail: fr ? "Conformité à finaliser" : "امتثال للإنهاء", href: `/${locale}/administration/conformite-clients${query}`, tone: "peach" as const },
-    { id: "d3", title: "Franchisé · Casablanca-Settat", detail: fr ? "Gouvernance à relire" : "حوكمة للمراجعة", href: `/${locale}/administration/territoires${query}`, tone: "mint" as const },
-    { id: "d4", title: "Conseil Anfa", detail: fr ? "File opérationnelle" : "قائمة تشغيلية", href: `/${locale}/administration/command-center${query}`, tone: "violet" as const },
-  ];
+export function demoAdminTreatQueue(_locale: Locale, _query: string): AdminTreatItem[] {
+  return [];
 }
 
 export function organizationJourney(fiche: AdminOrganizationFiche, locale: Locale) {

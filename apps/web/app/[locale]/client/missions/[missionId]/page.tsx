@@ -34,7 +34,7 @@ export default async function ClientMissionFollowPage({
   const mission = dashboard?.missions[0] ?? null;
 
   return (
-    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="missions" theme="follow" title={c.followTitle} lead={c.followLead} kicker={c.kicker} actions={<SpaceActions href={`/${locale}/besoin${space.selectedQuery}`} label={locale === "ar" ? "وصف حاجتي" : "Décrire mon besoin"} />}>
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="missions" theme="follow" title={c.followTitle} lead={c.followLead} kicker={c.kicker} actions={<SpaceActions href={`/${locale}/besoin${space.selectedQuery}`} label={locale === "ar" ? "وصف حاجتي" : "Décrire mon besoin"} />}>
       <FollowBoard locale={locale} query={space.selectedQuery} organizationName={space.organizationName} mission={mission} />
       <details className="client-ops">
         <summary>{c.opsMissions}</summary>

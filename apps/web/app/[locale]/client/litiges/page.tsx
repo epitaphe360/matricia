@@ -25,21 +25,26 @@ export default async function DisputesPage({
   const repository = await createServerDisputesRepository(space.selectedOrganizationId ?? organizationId);
   const result = await repository.list();
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
-  if (result.status === "error") throw new Error("DISPUTES_UNAVAILABLE");
+  const m = getDisputeMessages(locale);
+  const c = spaceCopy(locale);
+  if (result.status === "error") {
+    return (
+      <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} title={m.title} lead={m.intro} kicker={space.organizationName ?? c.kicker}>
+        <main className="client-page"><p role="alert" className="client-card">{locale === "ar" ? "تعذر تحميل النزاعات." : "Impossible de charger les litiges."}</p></main>
+      </ClientAppShell>
+    );
+  }
 
   const selectedId = result.value.cases[0]?.id;
   const selected = selectedId ? await repository.detail(selectedId) : { status: "success" as const, value: null };
   if (selected.status === "error" && selected.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
-
-  const m = getDisputeMessages(locale);
-  const c = spaceCopy(locale);
 
   return (
     <ClientAppShell
       locale={locale}
       selectedQuery={space.selectedQuery}
       selectedOrganizationId={space.selectedOrganizationId}
-      userEmail={space.userEmail}
+      userEmail={space.userEmail} organizationName={space.organizationName}
       title={m.title}
       lead={m.intro}
       kicker={space.organizationName ?? c.kicker}

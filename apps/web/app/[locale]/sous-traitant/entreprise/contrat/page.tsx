@@ -38,7 +38,7 @@ export default async function ProviderPartnerContractPage({
       lead={copy.lead}
       kicker={result.status === "error" ? copy.error : getProviderStatusLabel(locale, status)}
     >
-      <main className="client-page">
+      <main className="client-page provider-partner-contract">
         <section className="client-board client-board-compare">
           <article className="client-card">
             <header><h2>{copy.status}</h2></header>

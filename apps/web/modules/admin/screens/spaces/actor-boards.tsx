@@ -36,17 +36,25 @@ export function UsersBoard({
   users,
   invites,
   search,
+  filters,
 }: {
   locale: Locale;
   query: string;
   users: ActorUserRow[];
   invites: SafeInvitation[];
   search?: string;
+  filters?: { org?: string; role?: string; status?: string };
 }) {
   const a = actorCopy(locale);
   const c = adminCopy(locale);
   const inviteMessages = getInvitationMessages(locale);
+  const orgs = [...new Set(users.map((row) => row.organizationName).filter(Boolean))].sort();
+  const roles = [...new Set(users.flatMap((row) => row.roles))].sort();
+  const statuses = [...new Set(users.map((row) => row.status))].sort();
   const filtered = users.filter((row) => {
+    if (filters?.org && filters.org !== "all" && row.organizationName !== filters.org) return false;
+    if (filters?.role && filters.role !== "all" && !row.roles.includes(filters.role)) return false;
+    if (filters?.status && filters.status !== "all" && row.status !== filters.status) return false;
     if (!search) return true;
     return `${row.organizationName} ${row.roles.join(" ")} ${row.userId}`.toLowerCase().includes(search.toLowerCase());
   });
@@ -66,10 +74,25 @@ export function UsersBoard({
               <span className="sr-only">{a.searchUsers}</span>
               <input name="q" defaultValue={search} placeholder={a.searchUsers} />
             </label>
-            <label>{c.orgs}<select name="org" defaultValue="all"><option value="all">{c.all}</option></select></label>
-            <label>{c.roles}<select name="role" defaultValue="all"><option value="all">{c.all}</option></select></label>
-            <label>{c.state}<select name="status" defaultValue="all"><option value="all">{c.all}</option></select></label>
-            <label>{a.security}<select name="security" defaultValue="all"><option value="all">{c.all}</option></select></label>
+            <label>{c.orgs}
+              <select name="org" defaultValue={filters?.org ?? "all"}>
+                <option value="all">{c.all}</option>
+                {orgs.map((org) => <option key={org} value={org}>{org}</option>)}
+              </select>
+            </label>
+            <label>{c.roles}
+              <select name="role" defaultValue={filters?.role ?? "all"}>
+                <option value="all">{c.all}</option>
+                {roles.map((role) => <option key={role} value={role}>{role}</option>)}
+              </select>
+            </label>
+            <label>{c.state}
+              <select name="status" defaultValue={filters?.status ?? "all"}>
+                <option value="all">{c.all}</option>
+                {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
+              </select>
+            </label>
+            <button type="submit" className="admin-soft-cta">{locale === "ar" ? "تصفية" : "Filtrer"}</button>
           </form>
           {filtered.length === 0 ? null : (
             <div className="client-table-wrap">
@@ -311,6 +334,7 @@ export function ClientsBoard({
   cases,
   diagnostics,
   search,
+  filters,
 }: {
   locale: Locale;
   query: string;
@@ -318,10 +342,20 @@ export function ClientsBoard({
   cases: AdminClientCase[];
   diagnostics: AdminSupervisionDashboard["diagnostics"];
   search?: string;
+  filters?: { status?: string; compliance?: string };
 }) {
   const a = actorCopy(locale);
   const c = adminCopy(locale);
-  const filtered = organizations.filter((org) => !search || `${org.display_name} ${org.legal_name}`.toLowerCase().includes(search.toLowerCase()));
+  const statuses = [...new Set(organizations.map((org) => org.status))].sort();
+  const complianceStatuses = [...new Set(cases.map((item) => item.status))].sort();
+  const filtered = organizations.filter((org) => {
+    if (filters?.status && filters.status !== "all" && org.status !== filters.status) return false;
+    if (filters?.compliance && filters.compliance !== "all") {
+      const compliance = cases.find((item) => item.organizationName === org.display_name);
+      if ((compliance?.status ?? "NONE") !== filters.compliance) return false;
+    }
+    return !search || `${org.display_name} ${org.legal_name}`.toLowerCase().includes(search.toLowerCase());
+  });
   const actionItems = [
     ...cases.filter((item) => item.status !== "VERIFIED").slice(0, 2).map((item) => ({ id: item.id, title: item.organizationName, detail: item.status, href: `/${locale}/administration/conformite-clients${query}`, tone: "peach" as const })),
     ...organizations.filter((org) => org.open_disputes > 0 || org.open_requests > 0).slice(0, 3).map((org) => ({ id: org.id, title: org.display_name, detail: org.open_disputes > 0 ? c.lastDispute : c.lastOpenRequest, href: `/${locale}/administration/clients/${org.id}${query}`, tone: "sky" as const })),
@@ -339,16 +373,24 @@ export function ClientsBoard({
       <section className="admin-two">
         <article className="client-card">
           <form className="admin-filters" method="get" action={`/${locale}/administration/clients`}>
-            <label>{a.onboarding}<select name="onboarding" defaultValue="all"><option value="all">{c.all}</option></select></label>
-            <label>{c.compliance}<select name="compliance" defaultValue="all"><option value="all">{c.all}</option></select></label>
-            <label>{a.diagnostic}<select name="diagnostic" defaultValue="all"><option value="all">{c.all}</option></select></label>
-            <label>{c.plan}<select name="plan" defaultValue="all"><option value="all">{c.all}</option></select></label>
-            <label>{c.state}<select name="status" defaultValue="all"><option value="all">{c.all}</option></select></label>
+            <label>{c.compliance}
+              <select name="compliance" defaultValue={filters?.compliance ?? "all"}>
+                <option value="all">{c.all}</option>
+                {complianceStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+              </select>
+            </label>
+            <label>{c.state}
+              <select name="status" defaultValue={filters?.status ?? "all"}>
+                <option value="all">{c.all}</option>
+                {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
+              </select>
+            </label>
             <label className="client-top-search">
               <Search className="size-4" aria-hidden />
               <span className="sr-only">{c.searchList}</span>
               <input name="q" defaultValue={search} placeholder={c.searchList} />
             </label>
+            <button type="submit" className="admin-soft-cta">{locale === "ar" ? "تصفية" : "Filtrer"}</button>
           </form>
           {filtered.length === 0 ? null : (
             <div className="client-table-wrap">

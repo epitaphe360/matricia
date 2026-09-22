@@ -3,19 +3,54 @@ import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { providerDashboardCopy } from "@/modules/provider/data/home/copy";
+import { providerCopy } from "@/modules/provider/data/spaces/copy";
 import { demoProviderSpaces } from "@/modules/provider/data/spaces/demo";
 import { providerWorkbenchCopy } from "@/modules/provider/data/spaces/workbench-copy";
+import { ProviderAppShell } from "@/modules/provider/ui/provider-app-shell";
 import { buildProviderNav } from "@/modules/provider/ui/provider-nav";
-import { ConsultationsBoard, QuotesBoard } from "@/modules/provider/screens/spaces/boards";
+import { ConsultationsBoard, ProviderHomeBoard, QuotesBoard } from "@/modules/provider/screens/spaces/boards";
 
 const mockupDir = join(process.cwd(), "..", "..", "docs", "design", "provider-dashboard-mockups");
+const sousTraitantMockups = join(process.cwd(), "..", "..", "docs", "design", "sous-traitant-dashboard-mockups");
 const appDir = join(process.cwd(), "app", "[locale]", "sous-traitant");
+const providerUiDir = join(process.cwd(), "modules", "provider", "ui");
 
 describe("provider dashboard mockups", () => {
   it("documente la navigation prestataire", () => {
     const nav = readFileSync(join(mockupDir, "NAVIGATION.md"), "utf8");
     expect(nav).toContain("/sous-traitant/qualification");
     expect(nav).toContain("/messagerie");
+    expect(readFileSync(join(sousTraitantMockups, "00-accueil-sous-traitant.png")).byteLength).toBeGreaterThan(10_000);
+  });
+
+  it("unifie le chrome shell sur la maquette 00", () => {
+    const c = providerCopy("fr");
+    const shell = renderToStaticMarkup(
+      <ProviderAppShell
+        locale="fr"
+        selectedQuery=""
+        selectedOrganizationId={null}
+        userEmail="atlas@example.com"
+        active="home"
+        title={c.homeTitle}
+        lead={c.homeLead}
+        kicker={c.kicker}
+        actions={<a href="/fr/sous-traitant/qualification">{c.completeProfile}</a>}
+      >
+        <ProviderHomeBoard locale="fr" query="" actionItems={[]} />
+      </ProviderAppShell>,
+    );
+    expect(shell).toContain("ESPACE PRESTATAIRE");
+    expect(shell).toContain("/scenes/arch-city.png");
+    expect(shell).toContain(c.brandFooter);
+    expect(shell).toContain("Votre activité, en toute clarté");
+    expect(shell).toContain("À traiter maintenant");
+    expect(shell).toContain("Votre parcours professionnel");
+    expect(shell).toContain("provider-mast-tip");
+    expect(shell).not.toMatch(/exemple illustratif/i);
+    const css = readFileSync(join(providerUiDir, "provider-experience.css"), "utf8");
+    expect(css).toContain("provider-home-grid");
+    expect(css).toContain("provider-mast-tip");
   });
 
   it("aligne buildProviderNav sur les libellés produit", () => {

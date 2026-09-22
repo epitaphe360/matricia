@@ -36,7 +36,7 @@ export default async function RewardsPage({
       locale={locale}
       selectedQuery={space.selectedQuery}
       selectedOrganizationId={space.selectedOrganizationId}
-      userEmail={space.userEmail}
+      userEmail={space.userEmail} organizationName={space.organizationName}
       active="rewards"
       title={messages.title}
       lead={messages.intro}

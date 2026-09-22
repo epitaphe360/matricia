@@ -94,13 +94,7 @@ describe("invitation mutations", () => {
       p_idempotency_key: "invitation-test-key-001",
       p_correlation_id: "11111111-1111-4111-8111-111111111111",
     });
-    expect(mocks.signInWithOtp).toHaveBeenCalledWith({
-      email: invitedEmail,
-      options: {
-        shouldCreateUser: true,
-        data: { locale: "fr" },
-      },
-    });
+    expect(mocks.signInWithOtp).not.toHaveBeenCalled();
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/fr/invitations");
   });
 

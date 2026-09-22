@@ -34,7 +34,7 @@ export default async function RequestDetailPage({
     : `/${locale}/client/demandes/${q.id}/offres${space.selectedQuery}`;
 
   return (
-    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="requests" title={messages.detailTitle} lead={q.description} kicker={c.kicker}>
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="requests" title={messages.detailTitle} lead={q.description} kicker={c.kicker}>
       <main className="client-page">
         <article className="client-card">
           <header className="client-priority-head">

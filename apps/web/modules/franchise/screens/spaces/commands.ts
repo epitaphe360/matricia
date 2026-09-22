@@ -339,15 +339,7 @@ export async function inviteFranchiseMandateMember(_: FranchiseCommandState, for
     p_correlation_id: parsed.data.correlationId,
   });
   if (result.status !== "success") return result;
-  const client = await getSupabaseServerClient();
-  const { error: deliveryError } = await client.auth.signInWithOtp({
-    email: parsed.data.invitedEmail,
-    options: {
-      shouldCreateUser: true,
-      data: { locale: parsed.data.locale },
-    },
-  });
-  if (deliveryError) return { status: "error", reason: "FAILED" };
+  // Email delivery is owned by OrganizationEmailInvitationRequestedV1 → outbox consumer.
   revalidate(parsed.data.locale, parsed.data.organizationId);
   revalidatePath(`/${parsed.data.locale}/invitations`);
   return result;

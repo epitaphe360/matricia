@@ -22,15 +22,21 @@ export default async function NewDispute({
   if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
   const result = await (await createServerDisputesRepository(query.organizationId)).list();
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
-  if (result.status === "error") throw new Error("DISPUTES_UNAVAILABLE");
-  if (!result.value.canOpen) redirect(`/${locale}/client/litiges${space.selectedQuery}`);
   const m = getDisputeMessages(locale);
+  if (result.status === "error") {
+    return (
+      <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="missions" title={m.newCase} kicker={spaceCopy(locale).kicker}>
+        <main className="client-page"><p role="alert" className="client-card">{locale === "ar" ? "تعذر تحميل النزاعات." : "Impossible de charger les litiges."}</p></main>
+      </ClientAppShell>
+    );
+  }
+  if (!result.value.canOpen) redirect(`/${locale}/client/litiges${space.selectedQuery}`);
   return (
     <ClientAppShell
       locale={locale}
       selectedQuery={space.selectedQuery}
       selectedOrganizationId={space.selectedOrganizationId}
-      userEmail={space.userEmail}
+      userEmail={space.userEmail} organizationName={space.organizationName}
       active="missions"
       title={m.newCase}
       kicker={spaceCopy(locale).kicker}

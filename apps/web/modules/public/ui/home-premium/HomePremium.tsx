@@ -1,19 +1,22 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  ArrowUpRight,
-  BadgeCheck,
+  ArrowRight,
   BarChart3,
-  BriefcaseBusiness,
   Check,
-  ChevronDown,
-  ClipboardCheck,
-  FileCheck2,
-  GitCompareArrows,
-  Route,
-  SearchCheck,
+  ChevronRight,
+  Clock,
+  Compass,
+  FileSignature,
+  FileText,
+  Gem,
+  Leaf,
+  Lightbulb,
+  Lock,
+  Scale,
+  Search,
+  Settings,
   ShieldCheck,
-  Sparkles,
   Target,
   Users,
 } from "lucide-react";
@@ -24,162 +27,228 @@ type HomePremiumProps = {
   locale: HomeLocale;
 };
 
-const cycleIcons = [SearchCheck, Route, Users, GitCompareArrows, FileCheck2, BriefcaseBusiness, BarChart3] as const;
-const outcomeIcons = [Target, ClipboardCheck, GitCompareArrows, ShieldCheck] as const;
+const trustIcons = [Lock, Compass, Users] as const;
+const flowIcons = [FileText, Target, Users] as const;
+const cycleIcons = [Search, FileText, Users, Scale, FileSignature, Settings, BarChart3] as const;
+const outcomeIcons = [Lightbulb, Target, Clock, Leaf] as const;
+const networkIcons = [ShieldCheck, Users, Gem] as const;
 
 export function HomePremium({ locale }: HomePremiumProps) {
   const copy = getHomePremiumCopy(locale);
   const href = (path: string) => `/${locale}${path}`;
 
   return (
-    <main id="contenu-principal" className={styles.page} dir={locale === "ar" ? "rtl" : "ltr"}>
+    <main id="contenu-principal" className={`${styles.page} home-premium-page`} dir={locale === "ar" ? "rtl" : "ltr"}>
       <section className={styles.hero} aria-labelledby="home-title">
-        <div className={styles.heroGlow} aria-hidden="true" />
-        <div className={styles.heroCopy}>
-          <p className={styles.eyebrow}><Sparkles size={16} aria-hidden="true" />{copy.eyebrow}</p>
-          <h1 id="home-title">
-            {copy.titleLead} <span>{copy.titleAccent}</span>
-          </h1>
-          <p className={styles.lead}>{copy.intro}</p>
-
-          <div className={styles.heroActions}>
-            <Link className={styles.primaryButton} href={href("/diagnostic")}>
-              {copy.primaryAction}<ArrowUpRight size={19} aria-hidden="true" />
-            </Link>
-            <Link className={styles.secondaryButton} href={href("/fournisseur")}>
-              {copy.providerAction}
-            </Link>
-          </div>
-
-          <Link className={styles.textLink} href={href("/besoin")}>
-            {copy.preciseNeedAction}<ArrowUpRight size={16} aria-hidden="true" />
-          </Link>
-        </div>
-
-        <div className={styles.heroVisual} aria-label={copy.previewLabel}>
-          <div className={styles.photoFrame}>
+        <div className={styles.heroMedia} aria-hidden="true" data-locale={locale}>
+          {locale === "fr" ? (
             <Image
-              className={styles.heroPhoto}
-              src="/home-v2/hero-collaboration.png"
+              className={`${styles.heroPhoto} ${styles.heroPhotoPlate}`}
+              src="/home-v2/hero-plate.png"
               alt=""
               fill
               priority
-              sizes="(max-width: 900px) 100vw, 48vw"
+              sizes="(min-width: 1141px) 71vw, 100vw"
             />
-            <div className={styles.photoShade} aria-hidden="true" />
-            <div className={styles.projectCard}>
-              <span>{copy.projectLabel}</span>
-              <strong>{copy.projectTitle}</strong>
-              <small><span className={styles.liveDot} />{copy.projectStatus}</small>
-            </div>
-            <div className={styles.offerCard}>
-              <BadgeCheck size={20} aria-hidden="true" />
-              <div><span>{copy.offersLabel}</span><strong>{copy.offersValue}</strong></div>
-            </div>
-            <div className={styles.decisionCard}>
-              <Target size={20} aria-hidden="true" />
-              <div><span>{copy.decisionLabel}</span><strong>{copy.decisionValue}</strong></div>
-            </div>
-          </div>
-
-          <ol className={styles.progress} aria-label={copy.previewLabel}>
-            {copy.previewStages.map((stage, index) => (
-              <li key={stage} className={index < 2 ? styles.progressActive : undefined}>
-                <span>{index === 0 ? <Check size={13} aria-hidden="true" /> : index + 1}</span>
-                {stage}
-              </li>
-            ))}
-          </ol>
+          ) : null}
+          <Image
+            className={`${styles.heroPhoto} ${styles.heroPhotoMobile}`}
+            src="/home-v2/hero-collaboration.png"
+            alt=""
+            fill
+            priority={locale !== "fr"}
+            sizes="100vw"
+          />
+          <div className={styles.heroVeil} />
         </div>
-      </section>
 
-      <section className={styles.cycleSection} aria-labelledby="cycle-title">
-        <div className={styles.sectionHeading}>
-          <div>
-            <p className={styles.sectionEyebrow}>{copy.cycleEyebrow}</p>
-            <h2 id="cycle-title">{copy.cycleTitle}</h2>
+        <div className={styles.heroInner}>
+          <div className={styles.heroCopy}>
+            <p className={styles.eyebrow}>{copy.eyebrow}</p>
+            <h1 id="home-title">
+              {copy.titleLead} <span>{copy.titleAccent}</span>
+            </h1>
+            <p className={styles.lead}>{copy.intro}</p>
+            <Link className={styles.primaryAction} href={href("/diagnostic")}>
+              {copy.primaryAction}
+              <ArrowRight className={styles.actionArrow} size={18} aria-hidden="true" />
+            </Link>
+            <Link className={styles.secondaryAction} href={href("/fournisseur")}>
+              {copy.providerAction}
+            </Link>
+            <Link className={styles.needAction} href={href("/besoin")}>
+              {copy.preciseNeedAction}
+              <ArrowRight className={styles.actionArrow} size={16} aria-hidden="true" />
+            </Link>
+            <ul className={styles.trust}>
+              {copy.trust.map((item, index) => {
+                const Icon = trustIcons[index];
+                return (
+                  <li key={item}>
+                    <Icon size={17} aria-hidden="true" />
+                    {item}
+                  </li>
+                );
+              })}
+            </ul>
           </div>
-          <p>{copy.cycleIntro}</p>
         </div>
-        <ol className={styles.cycleGrid}>
-          {copy.cycle.map((step, index) => {
-            const Icon = cycleIcons[index];
+
+        <ol className={styles.flow} aria-label={copy.flowLabel}>
+          {copy.flow.map((step, index) => {
+            const Icon = flowIcons[index];
             return (
-              <li key={step.label}>
-                <span className={styles.stepNumber}>{String(index + 1).padStart(2, "0")}</span>
-                <span className={styles.cycleIcon}><Icon size={21} aria-hidden="true" /></span>
-                <strong>{step.label}</strong>
-                <small>{step.description}</small>
+              <li key={step.title}>
+                <span className={styles.flowIcon}>
+                  <Icon size={19} aria-hidden="true" />
+                </span>
+                <span className={styles.flowText}>
+                  <strong>{step.title}</strong>
+                  <small>{step.description}</small>
+                </span>
               </li>
             );
           })}
         </ol>
-      </section>
 
-      <section className={styles.valueSection} aria-labelledby="outcomes-title">
-        <div className={styles.valueIntro}>
-          <p className={styles.sectionEyebrow}>{copy.outcomesEyebrow}</p>
-          <h2 id="outcomes-title">{copy.outcomesTitle}</h2>
-          <p>{copy.outcomesIntro}</p>
-          <div className={styles.signalLine} aria-hidden="true"><i /><i /><i /><i /></div>
-        </div>
-        <div className={styles.outcomeGrid}>
-          {copy.outcomes.map((outcome, index) => {
-            const Icon = outcomeIcons[index];
-            return (
-              <article key={outcome.title}>
-                <span><Icon size={22} aria-hidden="true" /></span>
-                <h3>{outcome.title}</h3>
-                <p>{outcome.description}</p>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className={styles.professionalSection} aria-labelledby="professional-title">
-        <div className={styles.professionalVisual} aria-hidden="true">
-          <div className={styles.orbit}><Users size={34} /></div>
-          <div className={styles.orbitBadge}><ShieldCheck size={20} />{copy.qualificationBadge}</div>
-        </div>
-        <div className={styles.professionalCopy}>
-          <p className={styles.sectionEyebrow}>{copy.professionalsEyebrow}</p>
-          <h2 id="professional-title">{copy.professionalsTitle}</h2>
-          <p>{copy.professionalsIntro}</p>
-          <ul>
-            {copy.professionals.map((item) => <li key={item}><Check size={17} aria-hidden="true" />{item}</li>)}
-          </ul>
-          <Link className={styles.darkLink} href={href("/fournisseur")}>
-            {copy.professionalsAction}<ArrowUpRight size={18} aria-hidden="true" />
-          </Link>
-        </div>
-      </section>
-
-      <section className={styles.faqSection} aria-labelledby="faq-title">
-        <div>
-          <p className={styles.sectionEyebrow}>{copy.faqEyebrow}</p>
-          <h2 id="faq-title">{copy.faqTitle}</h2>
-        </div>
-        <div className={styles.faqList}>
-          {copy.faq.map((item, index) => (
-            <details key={item.question} open={index === 0}>
-              <summary>{item.question}<ChevronDown size={19} aria-hidden="true" /></summary>
-              <p>{item.answer}</p>
-            </details>
+        <ol className={styles.stages} aria-label={copy.stagesLabel}>
+          {copy.stages.map((stage, index) => (
+            <li key={stage} className={index === 0 ? styles.stageDone : undefined}>
+              <span className={styles.stageMark}>{index === 0 ? <Check size={13} aria-hidden="true" /> : null}</span>
+              {stage}
+            </li>
           ))}
-        </div>
+        </ol>
+
+        <p className={styles.heroQuote}>{copy.quote}</p>
+        <ul className={styles.heroValues}>
+          {copy.values.map((value) => (
+            <li key={value}>{value}</li>
+          ))}
+        </ul>
+        <p className={styles.heroScript} aria-hidden="true">
+          {copy.script}
+        </p>
+        <ul className={styles.heroSpines} aria-hidden="true">
+          {copy.spines.map((spine) => (
+            <li key={spine}>{spine}</li>
+          ))}
+        </ul>
       </section>
 
-      <section className={styles.finalCta} aria-labelledby="final-title">
-        <div className={styles.finalGlow} aria-hidden="true" />
-        <p className={styles.eyebrow}><Sparkles size={16} aria-hidden="true" />{copy.finalEyebrow}</p>
-        <h2 id="final-title">{copy.finalTitle}</h2>
-        <p>{copy.finalIntro}</p>
-        <div>
-          <Link className={styles.lightButton} href={href("/diagnostic")}>
-            {copy.finalPrimary}<ArrowUpRight size={18} aria-hidden="true" />
+      <section className={styles.cycle} aria-labelledby="cycle-title" id="comment-ca-marche">
+        <h2 id="cycle-title">
+          {copy.cycleTitle[0]}
+          <span>{copy.cycleTitle[1]}</span>
+        </h2>
+        <div className={styles.cycleTrack}>
+          <svg className={styles.cycleWave} viewBox="0 0 760 48" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M4 28 C 70 8, 120 44, 190 24 S 310 6, 380 26 S 520 46, 570 22 S 690 4, 756 28" fill="none" stroke="#8f57e8" strokeWidth="1.6" strokeLinecap="round" />
+            <circle cx="4" cy="28" r="3.2" fill="#8f57e8" />
+            <circle cx="756" cy="28" r="3.2" fill="#8f57e8" />
+          </svg>
+          <ol className={styles.cycleRail} aria-label={copy.cycleLabel}>
+            {copy.cycle.map((step, index) => {
+              const Icon = cycleIcons[index];
+              return (
+                <li key={step}>
+                  <span className={styles.cycleIcon}>
+                    <Icon size={22} aria-hidden="true" />
+                  </span>
+                  {step}
+                  {index < copy.cycle.length - 1 ? (
+                    <ChevronRight className={styles.cycleArrow} size={15} aria-hidden="true" />
+                  ) : null}
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+        <p className={styles.cycleOutcome}>
+          <span className={styles.cycleMandala} aria-hidden="true" />
+          {copy.cycleOutcome[0]}
+          <span>{copy.cycleOutcome[1]}</span>
+        </p>
+      </section>
+
+      <div className={styles.panels}>
+        <section className={styles.outcomes} aria-labelledby="outcomes-title">
+          <h2 id="outcomes-title">{copy.outcomesTitle}</h2>
+          <ul>
+            {copy.outcomes.map((outcome, index) => {
+              const Icon = outcomeIcons[index];
+              return (
+                <li key={outcome.title}>
+                  <span className={styles.outcomeIcon}>
+                    <Icon size={22} aria-hidden="true" />
+                  </span>
+                  <span className={styles.outcomeText}>
+                    <strong>{outcome.title}</strong>
+                    <small>{outcome.description}</small>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+
+        <section className={styles.network} aria-labelledby="network-title">
+          <h2 id="network-title">{copy.networkTitle}</h2>
+          <p>{copy.networkIntro}</p>
+          <ul>
+            {copy.networkPillars.map((pillar, index) => {
+              const Icon = networkIcons[index];
+              return (
+                <li key={pillar}>
+                  <span className={styles.networkIcon}>
+                    <Icon size={24} aria-hidden="true" />
+                  </span>
+                  {pillar}
+                </li>
+              );
+            })}
+          </ul>
+          <p className={styles.networkCaption}>{copy.networkCaption}</p>
+        </section>
+
+        <section className={styles.faq} aria-labelledby="faq-title">
+          <h2 id="faq-title">{copy.faqTitle}</h2>
+          <div>
+            {copy.faq.map((item) => (
+              <details key={item.question}>
+                <summary>
+                  {item.question}
+                  <ChevronRight className={styles.faqChevron} size={17} aria-hidden="true" />
+                </summary>
+                <p>{item.answer}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <section className={styles.final} aria-labelledby="final-title">
+        <div className={styles.finalScene} aria-hidden="true">
+          <Image src="/scenes/medina-terrace.png" alt="" fill sizes="60vw" className={styles.finalPhoto} />
+        </div>
+        <div className={styles.finalPattern} aria-hidden="true" />
+        <div className={styles.finalInner}>
+          <h2 id="final-title">
+            {copy.finalTitle[0]}
+            <span>{copy.finalTitle[1]}</span>
+          </h2>
+          <Link className={styles.finalPrimary} href={href("/diagnostic")}>
+            {copy.finalPrimary}
+            <ArrowRight className={styles.actionArrow} size={18} aria-hidden="true" />
           </Link>
-          <Link className={styles.ghostButton} href={href("/besoin")}>{copy.finalSecondary}</Link>
+          <p className={styles.finalSecondary}>
+            {copy.finalOr} <Link href={href("/fournisseur")}>{copy.finalSecondary}</Link>
+          </p>
+          <ul className={styles.finalCaption}>
+            {copy.finalCaption.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
         </div>
       </section>
     </main>

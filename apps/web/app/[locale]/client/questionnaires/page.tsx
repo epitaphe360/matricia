@@ -10,6 +10,7 @@ import { getQuestionnaireMessages } from "@/modules/client/screens/questionnaire
 import { QuestionnairePanel } from "@/modules/client/screens/questionnaires/questionnaire-panel";
 import { loadClientPortfolio } from "@/modules/client/data/portfolio/server-repository";
 import { ClientAppShell } from "@/modules/client/ui/client-app-shell";
+import "@/modules/client/screens/diagnostics/diagnostic-connected.css";
 
 export default async function ClientQuestionnairesPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ session?: string; organizationId?: string }> }) {
   const { locale } = await params;
@@ -30,7 +31,7 @@ export default async function ClientQuestionnairesPage({ params, searchParams }:
       locale={locale}
       selectedQuery={space.selectedQuery}
       selectedOrganizationId={space.selectedOrganizationId}
-      userEmail={space.userEmail}
+      userEmail={space.userEmail} organizationName={space.organizationName}
       active="needs"
       title={messages.title}
       lead={messages.description}
@@ -38,6 +39,13 @@ export default async function ClientQuestionnairesPage({ params, searchParams }:
       actions={<Link href={`/${alternate}/client/questionnaires${query ? `?${query}` : ""}`} hrefLang={alternate} className="client-soft-link">{messages.language}</Link>}
     >
       <main className="client-page space-y-6">
+        <div className="diag-conn">
+          <div className="diag-conn-progress-bar" aria-hidden="true">
+            <span>{locale === "fr" ? "Questionnaire versionné" : "استبيان بإصدار"}</span>
+            <span>{locale === "fr" ? "Autosauvegarde active" : "حفظ تلقائي نشط"}</span>
+            <span>{locale === "fr" ? "Méthodologie versionnée" : "منهجية بإصدار"}</span>
+          </div>
+        </div>
         <Alert>
           <AlertTitle>{messages.privacyTitle}</AlertTitle>
           <AlertDescription>{messages.privacy}</AlertDescription>

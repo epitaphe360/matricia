@@ -33,8 +33,9 @@ function t(locale: Locale, fr: string, ar: string) {
   return locale === "ar" ? ar : fr;
 }
 
-function Cta({ href, children, tone = "ghost" }: { href: string; children: ReactNode; tone?: "ghost" | "primary" | "soft" | "white" }) {
+function Cta({ href, children, tone = "ghost", download = false }: { href: string; children: ReactNode; tone?: "ghost" | "primary" | "soft" | "white"; download?: boolean }) {
   const className = tone === "primary" ? "admin-primary-cta" : tone === "soft" ? "admin-soft-cta" : tone === "white" ? "admin-dir-action" : "client-ghost-link";
+  if (download) return <a href={href} className={className} data-tone={tone === "white" ? "white" : undefined}>{children}</a>;
   return <Link href={href} className={className} data-tone={tone === "white" ? "white" : undefined}>{children}</Link>;
 }
 
@@ -45,6 +46,7 @@ export function SpaceQueueBoard({
   rows,
   treat,
   search,
+  vue,
   children,
 }: {
   locale: Locale;
@@ -53,15 +55,36 @@ export function SpaceQueueBoard({
   rows: SpaceRow[];
   treat: SpaceRow[];
   search?: string;
+  vue?: string;
   children?: ReactNode;
 }) {
   const spec = spaceSpec(space);
   const family = spaceLayoutFamily(space);
   const pills = spec.pills(locale);
-  const filters = spec.filters(locale);
   const pipeline = spec.pipeline(locale);
   const columns = dataColumns(spec.columns(locale));
   const orgId = query.includes("organizationId=") ? new URLSearchParams(query.replace("?", "")).get("organizationId") : null;
+  const statuses = [...new Set(rows.map((row) => row.status).filter(Boolean))];
+  const visibleRows = (() => {
+    let list = rows;
+    if (search?.trim()) {
+      const needle = search.trim().toLocaleLowerCase();
+      list = list.filter((row) => `${row.title} ${row.status} ${row.cells.join(" ")}`.toLocaleLowerCase().includes(needle));
+    }
+    if (vue?.trim()) {
+      const needle = vue.trim().toLocaleLowerCase();
+      list = list.filter((row) => `${row.status} ${row.cells.join(" ")}`.toLocaleLowerCase().includes(needle));
+    }
+    return list;
+  })();
+  const pillHref = (pill: string, index: number) => {
+    const params = new URLSearchParams(query.startsWith("?") ? query.slice(1) : query);
+    if (index === 0) params.delete("vue");
+    else params.set("vue", pill);
+    params.delete("q");
+    const qs = params.toString();
+    return `/${locale}/administration/${space}${qs ? `?${qs}` : ""}`;
+  };
   return (
     <main className="client-page" data-admin-layout="queue" data-admin-space={space} data-admin-family={family.list}>
       <section className="admin-two">
@@ -69,24 +92,29 @@ export function SpaceQueueBoard({
           {pills.length ? (
             <nav className="admin-pills" aria-label={spec.title(locale)}>
               {pills.map((pill, index) => (
-                <a key={pill} href={`#${space}`} aria-current={index === 0 ? "page" : undefined}>{pill}</a>
+                <Link key={pill} href={pillHref(pill, index)} aria-current={(index === 0 && !vue) || vue === pill ? "page" : undefined}>{pill}</Link>
               ))}
             </nav>
           ) : null}
           <form className="admin-filters" method="get" action={`/${locale}/administration/${space}`}>
             {orgId ? <input type="hidden" name="organizationId" value={orgId} /> : null}
-            {filters.map((filter) => (
-              <label key={filter}>{filter}<select name={filter} defaultValue="all"><option value="all">{t(locale, "Tous", "الكل")}</option></select></label>
-            ))}
+            {statuses.length > 0 ? (
+              <label>{t(locale, "Statut", "الحالة")}
+                <select name="vue" defaultValue={vue ?? ""}>
+                  <option value="">{t(locale, "Tous", "الكل")}</option>
+                  {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
+                </select>
+              </label>
+            ) : vue ? <input type="hidden" name="vue" value={vue} /> : null}
             <label className="client-top-search">
               <Search className="size-4" aria-hidden />
               <span className="sr-only">{spec.search(locale)}</span>
               <input name="q" defaultValue={search} placeholder={spec.search(locale)} />
             </label>
             <button type="submit" className="admin-soft-cta">{t(locale, "Filtrer", "تصفية")}</button>
-            <Link href={`/${locale}/administration/${space}${query}`} className="client-ghost-link">{t(locale, "Réinitialiser les filtres", "إعادة تعيين عوامل التصفية")}</Link>
+            <Link href={`/${locale}/administration/${space}${orgId ? `?organizationId=${orgId}` : ""}`} className="client-ghost-link">{t(locale, "Réinitialiser les filtres", "إعادة تعيين عوامل التصفية")}</Link>
           </form>
-          {rows.length === 0 ? null : (
+          {visibleRows.length === 0 ? null : (
             <div className="client-table-wrap">
               <table className="client-space-table">
                 <thead>
@@ -96,7 +124,7 @@ export function SpaceQueueBoard({
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((row) => (
+                  {visibleRows.map((row) => (
                     <tr key={row.id}>
                       {columns.map((column, index) => (
                         <td key={`${row.id}-${column}`}>
@@ -116,7 +144,7 @@ export function SpaceQueueBoard({
               </table>
             </div>
           )}
-          {rows.length === 0 ? (
+          {visibleRows.length === 0 ? (
             <div className="admin-empty-card">
               <h3>{spec.empty(locale)}</h3>
               <div className="admin-empty-actions">
@@ -227,7 +255,7 @@ export function SpaceHeaderActions({ locale, query, spec }: { locale: Locale; qu
         <Cta href={spaceHref(locale, spec.id, query, spec.createView)} tone="primary"><Plus className="size-4" aria-hidden />{spec.createLabel(locale)}</Cta>
       ) : null}
       {spec.exportable ? (
-        <Cta href={`/${locale}/administration/export/${spec.id}${query}`} tone="white"><Download className="size-4" aria-hidden />{t(locale, "Exporter", "تصدير")}</Cta>
+        <Cta href={`/${locale}/administration/export/${spec.id}${query}`} tone="white" download><Download className="size-4" aria-hidden />{t(locale, "Exporter", "تصدير")}</Cta>
       ) : null}
       {spec.id === "devis" ? <Cta href={spaceHref(locale, spec.id, query, "comparer")} tone="soft">{t(locale, "Comparer", "مقارنة")}</Cta> : null}
       {spec.id === "diagnostics" ? <Cta href={`/${locale}/administration/operations${query}`} tone="soft">{t(locale, "Archiver / restaurer", "أرشفة / استعادة")}</Cta> : null}

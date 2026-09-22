@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { adminActorLinks, adminParcoursLinks } from "@/modules/admin/data/spaces/admin-nav";
 import { adminCopy } from "@/modules/admin/data/spaces/copy";
 import { buildAdminNav, type AdminNavKey } from "@/modules/admin/ui/admin-nav";
+import { WorkspaceAccountMenu } from "@/modules/shared/ui/workspace-account-menu";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 
 export type { AdminNavKey };
@@ -131,10 +132,13 @@ export function AdminAppShell({
           </Link>
           <Link href={`${p}/notifications${q}`} className="client-icon-btn" aria-label={locale === "ar" ? "الإشعارات" : "Notifications"}><Bell className="size-4" /></Link>
           <Link href={`${p}/administration/operations${q}`} className="client-icon-btn" aria-label={c.help}><CircleHelp className="size-4" /></Link>
-          <span className="client-account" aria-label={c.administrator}>
-            <span className="client-chip">{userEmail?.slice(0, 1).toUpperCase() ?? "A"}</span>
-            <span className="admin-account-name">{userEmail ?? c.administrator}</span>
-          </span>
+          <WorkspaceAccountMenu
+            locale={locale}
+            userEmail={userEmail}
+            returnTo={`${p}/administration/command-center${q}`}
+            fallbackInitial="A"
+            label={c.administrator}
+          />
         </div>
         {crumb ? <div className="admin-crumb">{crumb}</div> : null}
         {title ? (

@@ -37,7 +37,7 @@ export default async function CompareOffersPage({
   }
   if (!rfqId || !uuidSchema.safeParse(rfqId).success) {
     return (
-      <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="requests" title={c.comparePageTitle} lead={c.comparePageLead} kicker={c.kicker}>
+      <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="requests" title={c.comparePageTitle} lead={c.comparePageLead} kicker={c.kicker}>
         <RequestsBoard locale={locale} query={space.selectedQuery} compareHref={`/${locale}/client/demandes/${requestId}${space.selectedQuery}`} rows={[]} organizationName={space.organizationName} />
       </ClientAppShell>
     );
@@ -45,14 +45,20 @@ export default async function CompareOffersPage({
 
   const comparison = await repository.comparison(rfqId);
   if (comparison.status === "error" && comparison.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
-  if (comparison.status === "error") throw new Error("QUOTE_COMPARISON_UNAVAILABLE");
+  if (comparison.status === "error") {
+    return (
+      <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="requests" title={c.comparePageTitle} lead={c.comparePageLead} kicker={c.kicker}>
+        <main className="client-page"><p role="alert" className="client-card">{locale === "ar" ? "تعذر تحميل المقارنة." : "Impossible de charger la comparaison."}</p></main>
+      </ClientAppShell>
+    );
+  }
   const facts = comparison.value
     ? await loadComparisonOfferFacts(comparison.value.rows.map((row) => row.quoteVersionId), locale)
     : new Map();
   const offerFacts = Object.fromEntries(facts);
 
   return (
-    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="requests" title={c.comparePageTitle} lead={c.comparePageLead} kicker={c.kicker}>
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="requests" title={c.comparePageTitle} lead={c.comparePageLead} kicker={c.kicker}>
       <main className="client-page">
         <ComparisonPanel
           locale={locale}

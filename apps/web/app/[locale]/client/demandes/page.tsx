@@ -30,7 +30,7 @@ export default async function RequestsPage({ params, searchParams }: { params: P
     : [];
   const compareHref = rows[0] ? rows[0].href : `/${locale}/client/demandes${space.selectedQuery}`;
   return (
-    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="requests" title={c.reqTitle} lead={c.reqLead} kicker={c.kicker} actions={<><SpaceActions href={`/${locale}/besoin${space.selectedQuery}`} label={c.newNeed} /><SpaceActions href={`/${locale}/client/demandes/recurrence${space.selectedQuery}`} label={c.cloneRequest} variant="soft" /><SpaceFilters href="#filtres" label={c.filters} /></>}>
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="requests" title={c.reqTitle} lead={c.reqLead} kicker={c.kicker} actions={<><SpaceActions href={`/${locale}/besoin${space.selectedQuery}`} label={c.newNeed} /><SpaceActions href={`/${locale}/client/demandes/recurrence${space.selectedQuery}`} label={c.cloneRequest} variant="soft" /><SpaceFilters href="#filtres" label={c.filters} /></>}>
       <RequestsBoard locale={locale} query={space.selectedQuery} compareHref={compareHref} rows={rows} organizationName={space.organizationName} />
     </ClientAppShell>
   );

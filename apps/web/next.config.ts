@@ -10,7 +10,9 @@ if (!supabaseUrl || !supabasePublishableKey) throw new Error("Public Supabase en
 
 const supabaseOrigin = new URL(supabaseUrl).origin;
 const isProduction = process.env.NODE_ENV === "production";
+const isVercelPreview = process.env.VERCEL_ENV === "preview";
 const vercelLive = "https://vercel.live";
+const allowVercelLive = !isProduction || isVercelPreview;
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -20,9 +22,10 @@ const contentSecurityPolicy = [
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
-  `script-src 'self' 'unsafe-inline'${isProduction ? "" : ` 'unsafe-eval' ${vercelLive}`}`,
-  `connect-src 'self' ${supabaseOrigin}${isProduction ? "" : ` ws: wss: ${vercelLive}`}`,
-  ...(isProduction ? ["upgrade-insecure-requests"] : [`frame-src 'self' ${vercelLive}`]),
+  `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"}${allowVercelLive ? ` ${vercelLive}` : ""}`,
+  `connect-src 'self' ${supabaseOrigin}${isProduction ? "" : " ws: wss:"}${allowVercelLive ? ` ${vercelLive}` : ""}`,
+  `frame-src 'self'${allowVercelLive ? ` ${vercelLive}` : ""}`,
+  ...(isProduction ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
 
 const securityHeaders = [

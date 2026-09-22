@@ -25,7 +25,7 @@ export default async function ClientMissionsPage({ params, searchParams }: { par
   const [result, amendments, vault] = await Promise.all([loadContractMissions(locale, query.organizationId), loadClientAmendments(query.organizationId), loadClientDocumentVault(query.organizationId)]);
   const expired = vault.status === "success" ? expiredDocuments(vault.value.documents) : [];
   return (
-    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="missions" title={c.misTitle} lead={c.misLead} kicker={c.kicker} actions={<SpaceActions href={`/${locale}/client/demandes${space.selectedQuery}`} label={c.openFolder} />}>
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="missions" title={c.misTitle} lead={c.misLead} kicker={c.kicker} actions={<SpaceActions href={`/${locale}/client/demandes${space.selectedQuery}`} label={c.openFolder} />}>
       {expired.length > 0 ? (
         <Alert>
           <AlertTitle>{messages.expiredDocumentTitle}</AlertTitle>

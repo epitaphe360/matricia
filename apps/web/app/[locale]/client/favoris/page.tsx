@@ -31,7 +31,7 @@ export default async function FavoritesPage({
       locale={locale}
       selectedQuery={space.selectedQuery}
       selectedOrganizationId={space.selectedOrganizationId}
-      userEmail={space.userEmail}
+      userEmail={space.userEmail} organizationName={space.organizationName}
       active="favorites"
       title={messages.title}
       lead={messages.description}

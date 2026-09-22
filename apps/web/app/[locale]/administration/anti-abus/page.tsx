@@ -4,6 +4,7 @@ import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { hasPlatformRole, loadMyPlatformAccess, mfaRequiredMessage } from "@/modules/shared/lib/account-security/platform-access";
 import { AntiAbusePanel } from "@/modules/admin/screens/anti-abus/anti-abuse-panel";
 import { AdminModulePage } from "@/modules/admin/ui/admin-module-page";
+import { adminCopy } from "@/modules/admin/data/spaces/copy";
 
 const MUTATION_ROLES = new Set(["SUPER_ADMIN", "MATRICIA_ADMIN"]);
 
@@ -24,6 +25,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
   const failed = needsMfa ? null : (rules.error ?? cases.error);
   const canMutate = access.status === "ok" && access.requirementSatisfied && hasPlatformRole(access.roles, [...MUTATION_ROLES]);
   const ar = locale === "ar";
+  const c = adminCopy(locale);
 
   return (
     <AdminModulePage
@@ -31,7 +33,8 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
       active="pilot"
       path="anti-abus"
       title={ar ? "مراقبة إساءة الاستخدام" : "Contrôle des abus"}
-      lead={ar ? "قواعد وإشارات مراجعة دون نجاح زائف." : "Règles et signaux de revue — sans succès artificiel."}
+      lead={c.hubPilotLead}
+      hubGroup="growth"
     >
       {needsMfa ? (
         <Alert variant="destructive">

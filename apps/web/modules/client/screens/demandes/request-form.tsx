@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CalendarDays, CheckCircle2, Coins, Lightbulb, MapPin, Save, Sparkles, Target } from "lucide-react";
 import { Button } from "@/modules/shared/ui/button";
 import { Input } from "@/modules/shared/ui/input";
 import { Textarea } from "@/modules/shared/ui/textarea";
@@ -48,6 +48,8 @@ export function RequestForm({
     { id: "docs", label: c.stepDocs, hint: locale === "ar" ? "وثائق مفيدة" : "Pièces utiles" },
     { id: "recap", label: c.stepRecap, hint: locale === "ar" ? "تحقق وإرسال" : "Vérification et envoi" },
   ] as const;
+  const siteLabel = sites.find((site) => site.id === context.siteId);
+  const siteName = siteLabel ? (locale === "ar" ? siteLabel.nameAr : siteLabel.nameFr) : context.organizationName;
 
   return (
     <form action={action} className="client-wizard" noValidate>
@@ -94,26 +96,18 @@ export function RequestForm({
             <p>{messages.contextDerived}</p>
           </section>
           <div className="client-wizard-fields">
-            <Field label={c.yourObjective}>
-              <Textarea name="description" required minLength={10} maxLength={8000} rows={5} defaultValue={context.description} />
-            </Field>
             <div className="client-wizard-grid">
-              <Field label={messages.urgency}>
-                <select name="urgency" defaultValue="NORMAL">
-                  <option value="LOW">{messages.urgencies.LOW}</option>
-                  <option value="NORMAL">{messages.urgencies.NORMAL}</option>
-                  <option value="HIGH">{messages.urgencies.HIGH}</option>
-                  <option value="CRITICAL">{messages.urgencies.CRITICAL}</option>
-                </select>
+              <Field label={c.yourObjective} required>
+                <Input name="objectiveDisplay" defaultValue={context.title} disabled aria-describedby="objective-help" />
+                <span id="objective-help">{c.objectiveHelp}</span>
               </Field>
-              <Field label={c.desiredStart}>
-                <Input type="date" name="desiredDate" />
+              <Field label={c.expectedResult} required>
+                <Textarea name="description" required minLength={10} maxLength={8000} rows={4} defaultValue={context.description} aria-describedby="expected-help" />
+                <span id="expected-help">{c.expectedHelp}</span>
               </Field>
-              <Field label={messages.budgetAmount}>
-                <Input name="budget" inputMode="decimal" dir="ltr" placeholder="15 000,00" aria-describedby="budget-help" />
-                <span id="budget-help">{messages.budgetHelp}</span>
-              </Field>
-              <Field label={messages.companySite}>
+            </div>
+            <div className="client-wizard-grid">
+              <Field label={c.siteConcerned} required>
                 {sites.length === 0 ? (
                   <p>{messages.noCompanySite}</p>
                 ) : (
@@ -124,13 +118,33 @@ export function RequestForm({
                     ))}
                   </select>
                 )}
+                <span>{c.siteHelp}</span>
+              </Field>
+              <Field label={c.desiredStart} required>
+                <Input type="date" name="desiredDate" />
+                <span>{c.startHelp}</span>
+              </Field>
+              <Field label={c.budgetRange} required>
+                <Input name="budget" inputMode="decimal" dir="ltr" placeholder="15 000,00" aria-describedby="budget-help" />
+                <span id="budget-help">{c.budgetHelpRange}</span>
+              </Field>
+              <Field label={messages.urgency}>
+                <select name="urgency" defaultValue="NORMAL">
+                  <option value="LOW">{messages.urgencies.LOW}</option>
+                  <option value="NORMAL">{messages.urgencies.NORMAL}</option>
+                  <option value="HIGH">{messages.urgencies.HIGH}</option>
+                  <option value="CRITICAL">{messages.urgencies.CRITICAL}</option>
+                </select>
               </Field>
               <Field label={messages.region}>
                 <Input name="regionCode" required dir="ltr" defaultValue={context.regionCode} />
               </Field>
             </div>
           </div>
-          <p className="client-verified">{context.source === "need" ? c.prefilledFromNeed : c.prefilledFromBilan}</p>
+          <p className="client-verified">
+            <CheckCircle2 className="size-4" aria-hidden />
+            {context.source === "need" ? c.prefilledFromNeed : c.prefilledFromBilan}
+          </p>
           {state.status === "error" ? (
             <p role="alert">{state.reason === "VALIDATION" ? messages.validation : state.reason === "CONTEXT_REQUIRED" ? messages.contextError : state.reason === "FORBIDDEN" ? messages.notEntitled : messages.actionError}</p>
           ) : null}
@@ -140,8 +154,9 @@ export function RequestForm({
               <Link href={`/${locale}/client/demandes/${state.requestId}`}>{messages.view}</Link>
             </p>
           ) : null}
-          <div className="client-offer-actions">
+          <div className="client-wizard-actions">
             <Button type="submit" disabled={pending} className="client-ghost-link">
+              <Save className="size-4" aria-hidden />
               {pending ? messages.creating : c.saveDraft}
             </Button>
             <Button type="submit" disabled={pending} className="client-cta">
@@ -152,34 +167,75 @@ export function RequestForm({
         </article>
         <aside className="client-card client-wizard-aside">
           <header>
-            <h2>{c.understood}</h2>
+            <h2>
+              <Sparkles className="size-4" aria-hidden />
+              {c.understood}
+            </h2>
           </header>
           <p>{c.wizardUnderstoodLead}</p>
-          <dl className="client-fact-grid">
-            <div>
-              <small>{c.yourObjective}</small>
-              <span>{context.title}</span>
-            </div>
-            <div>
-              <small>{messages.suggestedSolution}</small>
-              <span>{context.serviceName}</span>
-            </div>
-            <div>
-              <small>{messages.companySite}</small>
-              <span>{context.organizationName}</span>
-            </div>
-          </dl>
-          <p>{c.wizardNeedLead}</p>
+          <ul className="client-wizard-summary">
+            <li>
+              <span className="client-feed-icon" data-tone="violet"><Target className="size-4" aria-hidden /></span>
+              <span>
+                <strong>{c.yourObjective}</strong>
+                <small>{context.title}</small>
+              </span>
+            </li>
+            <li>
+              <span className="client-feed-icon" data-tone="sky"><Sparkles className="size-4" aria-hidden /></span>
+              <span>
+                <strong>{c.expectedResult}</strong>
+                <small>{context.description}</small>
+              </span>
+            </li>
+            <li>
+              <span className="client-feed-icon" data-tone="peach"><MapPin className="size-4" aria-hidden /></span>
+              <span>
+                <strong>{c.siteConcerned}</strong>
+                <small>{siteName}</small>
+              </span>
+            </li>
+            <li>
+              <span className="client-feed-icon" data-tone="mint"><CalendarDays className="size-4" aria-hidden /></span>
+              <span>
+                <strong>{c.desiredDateLabel}</strong>
+                <small>{c.startHelp}</small>
+              </span>
+            </li>
+            <li>
+              <span className="client-feed-icon" data-tone="violet"><Coins className="size-4" aria-hidden /></span>
+              <span>
+                <strong>{c.estimatedBudget}</strong>
+                <small>{context.serviceName}</small>
+              </span>
+            </li>
+          </ul>
+          <p className="client-wizard-tip">
+            <Lightbulb className="size-4" aria-hidden />
+            {c.wizardNextTip}
+          </p>
         </aside>
       </div>
     </form>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <label className="client-wizard-field">
-      <span>{label}</span>
+      <span>
+        {label}
+        {required ? <abbr title="required">*</abbr> : null}
+      </span>
       {children}
     </label>
   );

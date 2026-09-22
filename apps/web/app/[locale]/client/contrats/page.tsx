@@ -43,7 +43,7 @@ export default async function ClientContractsPage({
       locale={locale}
       selectedQuery={space.selectedQuery}
       selectedOrganizationId={space.selectedOrganizationId}
-      userEmail={space.userEmail}
+      userEmail={space.userEmail} organizationName={space.organizationName}
       active="contracts"
       title={c.contractsTitle}
       lead={c.contractsLead}

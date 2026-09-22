@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { ArrowLeft, ArrowRight, Info, Scale } from "lucide-react";
+import { ArrowLeft, ArrowRight, FileText, Info, Scale } from "lucide-react";
 import { formatMinorExact, type QuoteComparison, type QuoteComparisonRow } from "@/modules/client/data/rfq/model";
 import { canApplyDemoOffer } from "@/modules/client/data/rfq/quote-detail-demo";
 import { formatCompletenessBasisPoints, type QuoteCompleteness } from "@/modules/client/data/rfq/quote-completeness";
@@ -136,6 +136,7 @@ export function ComparisonPanel({
   const snapshotId = state.status === "success" ? state.snapshotId : initialComparison?.snapshotId ?? "";
   const BackIcon = locale === "ar" ? ArrowRight : ArrowLeft;
   const askHref = `/${locale}/messagerie${selectedQuery}`;
+  const dash = locale === "ar" ? "—" : "—";
 
   return (
     <div className="client-compare-page">
@@ -144,9 +145,12 @@ export function ComparisonPanel({
         {c.backQuotes}
       </Link>
       <article className="client-card client-compare-request">
-        <div>
-          <p>{c.need}: <strong>{requestTitle}</strong></p>
-          <small>{c.sameScope} · {columns.length} {locale === "ar" ? "عروض" : "offres"}</small>
+        <div className="client-compare-request-body">
+          <span className="client-feed-icon" data-tone="violet"><FileText className="size-4" aria-hidden /></span>
+          <div>
+            <p>{c.need} : <strong>{requestTitle}</strong></p>
+            <small>{c.sameScope} · {columns.length} {locale === "ar" ? "عروض" : "offres"}</small>
+          </div>
         </div>
         <Link href={requestHref} className="client-soft-link">{c.seeRequest}</Link>
       </article>
@@ -188,6 +192,7 @@ export function ComparisonPanel({
                 selectKey={selectKeys[index] ?? selectKeys[0]}
                 snapshotId={snapshotId}
                 askHref={askHref}
+                dash={dash}
               />
             ))}
           </div>
@@ -267,6 +272,7 @@ function QuoteColumn({
   selectKey,
   snapshotId,
   askHref,
+  dash,
 }: {
   column: CompareColumn;
   locale: Locale;
@@ -277,6 +283,7 @@ function QuoteColumn({
   selectKey: string;
   snapshotId: string;
   askHref: string;
+  dash: string;
 }) {
   const [state, action, pending] = useActionState(selectQuoteAction, actionIdle);
   const c = spaceCopy(locale);
@@ -291,7 +298,7 @@ function QuoteColumn({
       </header>
       <dl className="client-offer-facts">
         <div><dt>{c.providerLabel}</dt><dd>{locale === "ar" ? `العرض ${column.letter}` : `Offre ${column.letter}`}</dd></div>
-        <div><dt>{c.priceMad}</dt><dd dir="ltr">{column.price}</dd></div>
+        <div><dt>{c.priceMad}</dt><dd className="client-offer-price" dir="ltr">{column.price}</dd></div>
         <div><dt>{c.taxBase}</dt><dd>{column.taxBase}</dd></div>
         <div><dt>{c.durationLabel}</dt><dd>{column.duration}</dd></div>
         {column.completeness ? (
@@ -306,15 +313,15 @@ function QuoteColumn({
             <ul>{column.deliverables.map((item) => <li key={item}>{item}</li>)}</ul>
           </dd>
         </div>
-        {column.exclusions.length > 0 ? (
-          <div>
-            <dt>{c.exclusions}</dt>
-            <dd>
-              <ul>{column.exclusions.map((item) => <li key={item}>{item}</li>)}</ul>
-            </dd>
-          </div>
-        ) : null}
-        {column.guarantees ? <div><dt>{c.guarantees}</dt><dd>{column.guarantees}</dd></div> : null}
+        <div>
+          <dt>{c.exclusions}</dt>
+          <dd>
+            {column.exclusions.length > 0 ? <ul>{column.exclusions.map((item) => <li key={item}>{item}</li>)}</ul> : dash}
+          </dd>
+        </div>
+        <div><dt>{c.guarantees}</dt><dd>{column.guarantees || dash}</dd></div>
+        <div><dt>{c.maintenance}</dt><dd>{column.maintenance || dash}</dd></div>
+        <div><dt>{c.paymentTerms}</dt><dd>{column.payment || dash}</dd></div>
         {column.why ? <div><dt>{c.whyCompatible}</dt><dd>{column.why}</dd></div> : null}
       </dl>
       <div className="client-offer-actions">
@@ -336,10 +343,10 @@ function QuoteColumn({
               <input type="checkbox" name="confirmSelection" required />
               <span>{messages.confirmSelection}</span>
             </label>
-            <button type="submit" disabled={pending} className="client-cta">{pending ? messages.selecting : c.chooseOffer}</button>
+            <button type="submit" disabled={pending} className="client-cta" data-recommended={column.recommended ? "true" : undefined}>
+              {pending ? messages.selecting : c.chooseOffer}
+            </button>
           </form>
-        ) : column.selectable && !column.expired ? (
-          <Link href={detailHref} className="client-ghost-link">{c.seeDetail}</Link>
         ) : null}
       </div>
       {column.completeness && column.completeness.basisPoints < 10_000 ? <p role="status" className="client-access-note">{messages.incompleteQuote}</p> : null}

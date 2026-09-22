@@ -15,6 +15,7 @@ import { RuleBuilder } from "@/modules/admin/screens/catalogue/rule-builder";
 import { QuestionnaireBuilder } from "@/modules/admin/screens/catalogue/questionnaire-builder";
 import { getRuleValidationMessages } from "@/modules/admin/screens/catalogue/validation/messages";
 import { AdminModulePage } from "@/modules/admin/ui/admin-module-page";
+import { adminCopy } from "@/modules/admin/data/spaces/copy";
 
 export const dynamic = "force-dynamic";
 
@@ -35,12 +36,13 @@ export default async function CatalogueReleaseAdministrationPage({ params, searc
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
   const messages = getBuilderMessages(locale);
   const validationMessages = getRuleValidationMessages(locale);
+  const c = adminCopy(locale);
 
   const selectedLibrary = result.status === "success" ? result.value.libraries.find((item) => item.id === libraryId) : undefined;
   const selectedService = result.status === "success" ? result.value.services.find((item) => item.id === selectedServiceId) : undefined;
 
   return (
-    <AdminModulePage locale={locale} active="catalog" path="catalogue" title={messages.title} lead={messages.description}>
+    <AdminModulePage locale={locale} active="catalog" path="catalogue" title={messages.title} lead={c.hubCatalogLead} hubGroup="catalog">
       <p>
         <Link href={`/${locale}/administration/catalogue/validation`} className={cn(buttonVariants({ variant: "outline" }), "min-h-11")}>{validationMessages.title}</Link>
       </p>

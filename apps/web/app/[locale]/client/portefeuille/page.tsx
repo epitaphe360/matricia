@@ -21,14 +21,20 @@ export default async function ClientPortfolioPage({
   if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
   const result = await loadClientPortfolio(query.organizationId);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
-  if (result.status === "error") throw new Error("CLIENT_PORTFOLIO_UNAVAILABLE");
   const m = getMessages(locale);
+  if (result.status === "error") {
+    return (
+      <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="portfolio" title={m.title} lead={m.intro} kicker={spaceCopy(locale).kicker}>
+        <main className="client-page"><p role="alert" className="client-card">{locale === "ar" ? "تعذر تحميل المحفظة." : "Impossible de charger le portefeuille."}</p></main>
+      </ClientAppShell>
+    );
+  }
   return (
     <ClientAppShell
       locale={locale}
       selectedQuery={space.selectedQuery}
       selectedOrganizationId={space.selectedOrganizationId}
-      userEmail={space.userEmail}
+      userEmail={space.userEmail} organizationName={space.organizationName}
       active="portfolio"
       title={m.title}
       lead={m.intro}

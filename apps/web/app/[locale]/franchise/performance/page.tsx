@@ -32,7 +32,7 @@ export default async function FranchisePerformancePage({ params, searchParams }:
     });
   }
   return (
-    <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="performance" title={c.perfTitle} lead={c.perfLead} kicker={c.kicker} mandateName={mandateName}>
+    <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="performance" title={c.perfTitleRich} lead={c.perfLeadRich} kicker={c.kicker} mandateName={mandateName}>
       <PerformanceBoard locale={locale} query={space.selectedQuery} mandateName={mandateName} board={r.status === "success" ? buildFranchiseSpaceBoard({ locale, query: space.selectedQuery, libraryName: mandateName, crm: r.dashboard }) : undefined} />
       <details id="performance" className="client-ops">
         <summary>{c.opsPerf}</summary>

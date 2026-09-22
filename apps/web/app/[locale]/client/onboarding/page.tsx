@@ -214,7 +214,7 @@ export default async function ClientOnboardingPage({ params, searchParams }: { p
       locale={locale}
       selectedQuery={space.selectedQuery}
       selectedOrganizationId={space.selectedOrganizationId}
-      userEmail={space.userEmail}
+      userEmail={space.userEmail} organizationName={space.organizationName}
       active="company"
       title={messages.title}
       lead={messages.description}
