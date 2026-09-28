@@ -28,10 +28,10 @@ export function PublicPathArt({
         <path d="M92 318c18-28 40-28 58 0  -10 8-20 14-29 14s-19-6-29-14Z" fill="#6d7f62" />
         <path d="M188 324c14-22 32-22 46 0-8 6-16 11-23 11s-15-5-23-11Z" fill="#7f9170" />
         <path d="M520 322c16-24 36-24 52 0-9 7-18 12-26 12s-17-5-26-12Z" fill="#6d7f62" />
-        <rect x="286" y="214" width="9" height="96" rx="2" fill="#1a2744" />
-        <path d="M295 218h118l-16 22H295Z" fill="#1a2744" />
-        <path d="M295 248h104l-16 22H295Z" fill="#1a2744" />
-        <path d="M295 278h90l-16 22H295Z" fill="#1a2744" />
+        <rect x="286" y="214" width="9" height="96" rx="2" fill="#121d58" />
+        <path d="M295 218h118l-16 22H295Z" fill="#121d58" />
+        <path d="M295 248h104l-16 22H295Z" fill="#121d58" />
+        <path d="M295 278h90l-16 22H295Z" fill="#121d58" />
         <text x="308" y="234" fill="#fff" fontSize="12" fontWeight="700">{signs[0]}</text>
         <text x="308" y="264" fill="#fff" fontSize="12" fontWeight="700">{signs[1]}</text>
         <text x="308" y="294" fill="#fff" fontSize="12" fontWeight="700">{signs[2]}</text>
@@ -44,10 +44,10 @@ export function PublicPathArt({
 export function PublicRibbon() {
   return (
     <svg className="public-ribbon" viewBox="0 0 72 88" width="72" height="88" aria-hidden="true">
-      <path d="M12 8h48l-6 44H18Z" fill="#6d3cc7" />
-      <path d="M18 52 8 84l16-12 12 16 12-16 16 12-10-32Z" fill="#c4a574" />
+      <path d="M12 8h48l-6 44H18Z" fill="#642bef" />
+      <path d="M18 52 8 84l16-12 12 16 12-16 16 12-10-32Z" fill="#e65290" />
       <circle cx="36" cy="34" r="14" fill="#fff" />
-      <path d="m30 34 4 4 8-9" fill="none" stroke="#6d3cc7" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="m30 34 4 4 8-9" fill="none" stroke="#642bef" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

@@ -9,7 +9,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/modules/shared/ui/button", () => ({ buttonVariants: () => "button" }));
 vi.mock("@/modules/shared/lib/utils", () => ({ cn: (...values: Array<string | undefined>) => values.filter(Boolean).join(" ") }));
 vi.mock("./contact/contact-form", () => ({
-  ContactForm: () => <div>États d’envoi</div>,
+  ContactForm: () => <div>Votre demande</div>,
 }));
 vi.mock("../connexion/otp-form", () => ({ OtpForm: () => <form>OTP</form> }));
 vi.mock("../connexion/demo-access", () => ({ DemoAccess: () => null }));
@@ -32,12 +32,14 @@ describe("alignement maquettes pages publiques", () => {
   it("accueil FR : trois intentions, aperçu, sept étapes, FAQ et bandeau", async () => {
     const html = renderToStaticMarkup(await PublicHomePage({ params: Promise.resolve({ locale: "fr" }) }));
     expect(html).toContain("Analyser mon entreprise");
+    expect(html).not.toContain("Des idées en actions");
+    expect(html).not.toContain("Expertise");
     expect(html).toContain("Proposer mes services");
     expect(html).toContain("J’ai déjà un besoin précis");
     expect(html).toContain("Un cycle complet");
     expect(html).toContain("Questions fréquentes");
     expect(html).toContain("Prêt à faire avancer");
-    expect(html).toContain("/home-v2/hero-plate.png");
+    expect(html).not.toContain("/home-v2/hero-plate.png");
     expect(html).toContain("/home-v2/hero-collaboration.png");
   });
 
@@ -47,6 +49,7 @@ describe("alignement maquettes pages publiques", () => {
     expect(html).toContain("دورة كاملة");
     expect(html).toContain('dir="rtl"');
     expect(html).toContain("اكتشف ما يعيق تطور مؤسستك.");
+    expect(html).not.toContain("أفكار تتحول إلى أفعال");
     expect(html).toContain("الأسئلة الشائعة");
   });
 
@@ -61,11 +64,13 @@ describe("alignement maquettes pages publiques", () => {
     expect(html).toContain("Créer un compte");
   });
 
-  it("contact : photo, formulaire et cartes d’état", async () => {
+  it("contact : photo et formulaire réel, sans états d’envoi illustratifs", async () => {
     const html = renderToStaticMarkup(await ContactPage({ params: Promise.resolve({ locale: "fr" }), searchParams: Promise.resolve({}) }));
     expect(html).toContain("public-contact-layout");
     expect(html).toContain("Échangeons ensemble");
-    expect(html).toContain("États d’envoi");
+    expect(html).toContain("Votre demande");
+    expect(html).not.toContain("États d’envoi");
+    expect(html).not.toContain("Nous écrire directement");
     expect(html).toContain("/scenes/zellige-arch.png");
     expect(html).toContain("public-contact-photo");
   });
@@ -98,6 +103,11 @@ describe("alignement maquettes pages publiques", () => {
     expect(franchise).toContain("journey-six-steps");
     expect(franchise).toContain("public-hero-split");
     expect(franchise).toContain("Déposer ma candidature");
+    expect(franchise).toContain("contrat versionné");
+    expect(franchise).not.toContain("territoire exclusif");
+    const franchiseAr = renderToStaticMarkup(await PublicFranchisePage({ params: Promise.resolve({ locale: "ar" }) }));
+    expect(franchiseAr).toContain("العقد ذي الإصدار");
+    expect(franchiseAr).not.toContain("حصري");
     expect(franchise).toContain("is-coral");
   });
 });

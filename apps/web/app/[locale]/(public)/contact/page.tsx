@@ -1,4 +1,4 @@
-import { Phone, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
@@ -33,16 +33,9 @@ export default async function ContactPage({ params, searchParams }: { params: Pr
           </div>
         </div>
       </section>
-      <section className="public-wrap mt-10 grid gap-4 sm:grid-cols-2">
+      <section className="public-wrap mt-10">
         <article className="public-card flex items-start gap-3">
-          <Phone aria-hidden="true" className="text-[#6d3cc7]" />
-          <div>
-            <h2>{locale === "ar" ? "راسلونا مباشرة" : "Nous écrire directement"}</h2>
-            <p className="public-muted mt-1">{locale === "ar" ? "عبر النموذج أعلاه." : "Via le formulaire ci-dessus."}</p>
-          </div>
-        </article>
-        <article className="public-card flex items-start gap-3">
-          <MapPin aria-hidden="true" className="text-[#6d3cc7]" />
+          <MapPin aria-hidden="true" className="text-[var(--mat-violet)]" />
           <div>
             <h2>{locale === "ar" ? "مقرنا" : "Notre siège"}</h2>
             <p className="public-muted mt-1">{locale === "ar" ? "يُبلَّغ العنوان عند الحاجة داخل المساحة الآمنة." : "L’adresse est communiquée si nécessaire depuis l’espace sécurisé."}</p>

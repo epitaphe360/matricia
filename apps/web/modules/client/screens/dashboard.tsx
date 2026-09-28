@@ -341,7 +341,7 @@ export function ClientDashboardHome({
                   <svg viewBox="0 0 320 120" role="img" aria-label={c.projectProgress}>
                     {progressRows.map((row, index) => {
                       const y = 100 - Math.round((row.value / progressMax) * 72);
-                      const color = index === 0 ? "#7c6bf0" : index === 1 ? "#e07a5f" : "#2f9d64";
+                      const color = index === 0 ? "#642bef" : index === 1 ? "#f86b71" : "#1e7a5c";
                       const points = `16,100 112,${y + 8} 208,${y} 304,${Math.max(28, y - 10)}`;
                       return (
                         <g key={row.label}>

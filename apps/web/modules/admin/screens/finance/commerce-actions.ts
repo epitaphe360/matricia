@@ -81,7 +81,7 @@ export async function createBoxAction(_: CommerceActionState, form: FormData): P
   const locale = localeOrFail(form);
   if (!locale) return { status: "error", reason: "VALIDATION" };
   const slotCode = text(form, "slotCode").toUpperCase();
-  const benefitIds = text(form, "allowedBenefitVersionIds").split(/[\s,]+/u).filter(Boolean);
+  const benefitIds = [...new Set(form.getAll("allowedBenefitVersionIds").flatMap((value) => String(value).split(/[\s,]+/u)).filter(Boolean))];
   const slots = slotCode
     ? [{
         slot_code: slotCode,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useId, type ReactNode } from "react";
+import { useActionState, useId, useState, type ReactNode } from "react";
 import { Button } from "@/modules/shared/ui/button";
 import { Input } from "@/modules/shared/ui/input";
 import { Label } from "@/modules/shared/ui/label";
@@ -9,17 +9,17 @@ import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import type { AdminCommandCenter, AdminWorkItem } from "@/modules/admin/data/command-center/model";
 import { summarizeAdminWork, workItemMotif, workItemNextAction, RESOLUTION_CODES, dossierHref } from "@/modules/admin/data/command-center/view-model";
 import Link from "next/link";
-import { claimAdminWork, decideAdminAction, requestAdminAction, resolveAdminWork, sweepExceptionsFromCenter, type AdminActionState } from "./actions";
+import { claimAdminWork, decideAdminAction, requestActionFromCenter, resolveAdminWork, sweepExceptionsFromCenter, type AdminActionState } from "./actions";
 import { getCommandCenterCodeLabel, type CommandCenterMessages, type CommandCodeGroup } from "./messages";
 
 const idle: AdminActionState = { status: "idle" };
-const control = "min-h-11 w-full rounded-md border border-[var(--ad-border,#d7e3dc)] bg-background px-3 text-base";
+const control = "min-h-11 w-full rounded-md border border-[var(--ad-border,var(--mat-border))] bg-background px-3 text-base";
 type WorkEnrichment = Record<string, { organization_name: string | null; assignee_label: string | null }>;
 
 function Feedback({ state, m }: { state: AdminActionState; m: CommandCenterMessages }) {
   const text = state.status === "success" ? m.success : state.status === "error" ? m[state.reason.toLowerCase()] ?? m.failed : "";
   return (
-    <p role={state.status === "error" ? "alert" : "status"} aria-live="polite" className={state.status === "error" ? "min-h-5 text-sm text-destructive" : "min-h-5 text-sm text-[var(--ad-forest,#053528)]"}>
+    <p role={state.status === "error" ? "alert" : "status"} aria-live="polite" className={state.status === "error" ? "min-h-5 text-sm text-destructive" : "min-h-5 text-sm text-[var(--ad-forest,var(--mat-navy))]"}>
       {text}
     </p>
   );
@@ -47,7 +47,7 @@ function Hidden({ locale, keyValue, children }: { locale: Locale; keyValue: stri
 
 function Submit({ pending, label, wait }: { pending: boolean; label: string; wait: string }) {
   return (
-    <Button type="submit" disabled={pending} className="min-h-11 w-full sm:w-auto bg-[var(--ad-forest,#053528)] text-white hover:bg-[var(--ad-forest-deep,#03261d)]">
+    <Button type="submit" disabled={pending} className="min-h-11 w-full sm:w-auto bg-[var(--ad-forest,var(--mat-navy))] text-white hover:bg-[var(--ad-forest-deep,var(--mat-navy-strong))]">
       {pending ? wait : label}
     </Button>
   );
@@ -112,7 +112,7 @@ function WorkCard({ item, locale, m, keys, enrichment }: { item: AdminWorkItem; 
       </div>
       <div className="mt-4 grid gap-4 xl:grid-cols-2">
         {item.canClaim !== false ? (
-          <form action={claimAction} className="space-y-3 rounded-xl border border-[var(--ad-border)] bg-[#fbfdfc] p-3">
+          <form action={claimAction} className="space-y-3 rounded-xl border border-[var(--ad-border)] bg-[var(--mat-canvas)] p-3">
             <Hidden locale={locale} keyValue={keys[0]}>
               <input type="hidden" name="workItemId" value={item.id} />
               <input type="hidden" name="expectedRowVersion" value={item.rowVersion} />
@@ -125,7 +125,7 @@ function WorkCard({ item, locale, m, keys, enrichment }: { item: AdminWorkItem; 
           </form>
         ) : null}
         {item.canResolve !== false ? (
-          <form action={resolveAction} className="space-y-3 rounded-xl border border-[var(--ad-border)] bg-[#fbfdfc] p-3">
+          <form action={resolveAction} className="space-y-3 rounded-xl border border-[var(--ad-border)] bg-[var(--mat-canvas)] p-3">
             <Hidden locale={locale} keyValue={keys[1]}>
               <input type="hidden" name="workItemId" value={item.id} />
               <input type="hidden" name="expectedRowVersion" value={item.rowVersion} />
@@ -182,7 +182,7 @@ function ActionCard({ action, locale, m, keyValue }: { action: AdminCommandCente
             <Input id={`${p}-decision-reason`} name="reason" required minLength={3} />
           </Field>
           <div className="flex flex-wrap items-end gap-2">
-            <Button type="submit" name="decision" value="APPROVE" disabled={pending} className="min-h-11 bg-[var(--ad-forest,#053528)] text-white hover:bg-[var(--ad-forest-deep,#03261d)]">
+            <Button type="submit" name="decision" value="APPROVE" disabled={pending} className="min-h-11 bg-[var(--ad-forest,var(--mat-navy))] text-white hover:bg-[var(--ad-forest-deep,var(--mat-navy-strong))]">
               {m.approve}
             </Button>
             <Button type="submit" name="decision" value="REJECT" variant="destructive" disabled={pending} className="min-h-11">
@@ -216,7 +216,9 @@ export function CommandCenterPanel({
   enrichment?: WorkEnrichment;
 }) {
   const p = useId();
-  const [request, requestAction, requesting] = useActionState(requestAdminAction, idle);
+  const [request, requestAction, requesting] = useActionState(requestActionFromCenter, idle);
+  const [actionType, setActionType] = useState("ASSIGN_CASE");
+  const [environment, setEnvironment] = useState("DEVELOPMENT");
   const [sweep, sweepAction, sweeping] = useActionState(sweepExceptionsFromCenter, idle);
   const summary = summarizeAdminWork(dashboard.workItems, currentTime);
 
@@ -270,34 +272,61 @@ export function CommandCenterPanel({
       {dashboard.capabilities?.requestAction !== false ? (
         <details className="admin-panel open:shadow-[var(--ad-shadow)]">
           <summary className="min-h-11 cursor-pointer text-xl font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">{m.newAction}</summary>
+          {dashboard.workItems.length === 0 ? (
+            <p className="mt-5 text-sm text-muted-foreground">{m.noWorkForAction}</p>
+          ) : (
           <form action={requestAction} className="mt-5 space-y-4">
             <Hidden locale={locale} keyValue={keys.at(-1)!} />
+            <p className="text-sm text-muted-foreground">{m.actionScopeHint}</p>
             <div className="grid min-w-0 gap-4 sm:grid-cols-2">
-              <Select id={`${p}-action`} label={m.actionType} name="actionType" locale={locale} group="action" m={m} values={["ASSIGN_CASE", "CHANGE_CONFIGURATION", "GRANT_SUPPORT_ACCESS", "RESTRICT_ENTITY", "SUSPEND_ENTITY", "MANUAL_EXCEPTION", "AUTHORIZE_PRODUCTION_CHANGE"]} />
-              <Select id={`${p}-env`} label={m.environment} name="targetEnvironment" locale={locale} group="environment" m={m} values={["DEVELOPMENT", "STAGING", "PRODUCTION"]} />
-              <Text id={`${p}-resource-type`} label={m.resourceType} name="resourceType" />
-              <Text id={`${p}-resource-id`} label={m.resourceId} name="resourceId" />
-              <Text id={`${p}-org`} label={m.organizationId} name="organizationId" required={false} />
-              <Text id={`${p}-work`} label={m.workItemId} name="workItemId" required={false} />
-              <Text id={`${p}-hash`} label={m.payloadHash} name="requestPayloadHash" />
-              <Field id={`${p}-summary`} label={m.redactedSummary}>
-                <Textarea id={`${p}-summary`} name="redactedSummary" defaultValue="{}" required dir="ltr" />
+              <Field id={`${p}-work`} label={m.workItemId}>
+                <select id={`${p}-work`} name="workItemId" className={control} required>
+                  {dashboard.workItems.map((item) => {
+                    const org = enrichment[item.id]?.organization_name;
+                    const title = locale === "ar" ? item.titleAr : item.titleFr;
+                    return <option key={item.id} value={item.id}>{org ? `${title} — ${org}` : title}</option>;
+                  })}
+                </select>
               </Field>
-              <Field id={`${p}-reason`} label={m.reason}>
-                <Textarea id={`${p}-reason`} name="reason" required minLength={10} />
+              <Field id={`${p}-action`} label={m.actionType}>
+                <select id={`${p}-action`} name="actionType" className={control} required value={actionType} onChange={(event) => setActionType(event.target.value)}>
+                  {["ASSIGN_CASE", "CHANGE_CONFIGURATION", "GRANT_SUPPORT_ACCESS", "RESTRICT_ENTITY", "SUSPEND_ENTITY", "MANUAL_EXCEPTION", "AUTHORIZE_PRODUCTION_CHANGE"].map((value) => (
+                    <option key={value} value={value}>{getCommandCenterCodeLabel(locale, "action", value)}</option>
+                  ))}
+                </select>
               </Field>
-              <Text id={`${p}-prod`} label={m.productionReference} name="productionAuthorizationReference" required={false} help={m.productionHelp} />
-              <Text id={`${p}-support-user`} label={m.supportUser} name="supportUserId" required={false} />
-              <Select id={`${p}-support-mode`} label={m.supportMode} name="supportAccessMode" locale={locale} group="support" m={m} values={["", "READ_ONLY", "CASE_SCOPED"]} />
-              <Field id={`${p}-support-expiry`} label={m.supportExpiry}>
-                <Input id={`${p}-support-expiry`} name="supportExpiresAt" type="datetime-local" />
+              <Field id={`${p}-env`} label={m.environment}>
+                <select id={`${p}-env`} name="targetEnvironment" className={control} required value={environment} onChange={(event) => setEnvironment(event.target.value)}>
+                  {["DEVELOPMENT", "STAGING", "PRODUCTION"].map((value) => (
+                    <option key={value} value={value}>{getCommandCenterCodeLabel(locale, "environment", value)}</option>
+                  ))}
+                </select>
               </Field>
+              {environment === "PRODUCTION" ? (
+                <Text id={`${p}-prod`} label={m.productionReference} name="productionAuthorizationReference" help={m.productionHelp} />
+              ) : null}
+              {actionType === "GRANT_SUPPORT_ACCESS" ? (
+                <>
+                  <Select id={`${p}-support-mode`} label={m.supportMode} name="supportAccessMode" locale={locale} group="support" m={m} values={["READ_ONLY", "CASE_SCOPED"]} />
+                  <Field id={`${p}-support-duration`} label={m.supportExpiry} help={m.supportHelp}>
+                    <select id={`${p}-support-duration`} name="supportMinutes" className={control} required aria-describedby={`${p}-support-duration-help`}>
+                      {["15", "30", "60"].map((value) => <option key={value} value={value}>{`${value} ${m.minutes}`}</option>)}
+                    </select>
+                  </Field>
+                </>
+              ) : null}
+              <div className="sm:col-span-2">
+                <Field id={`${p}-reason`} label={m.reason}>
+                  <Textarea id={`${p}-reason`} name="reason" required minLength={10} />
+                </Field>
+              </div>
             </div>
-            <Button type="submit" disabled={requesting} className="min-h-11 w-full sm:w-auto bg-[var(--ad-gold,#e8d5b5)] text-[var(--ad-forest-deep,#03261d)] hover:bg-[var(--ad-gold-strong,#d4b896)]">
+            <Button type="submit" disabled={requesting} className="min-h-11 w-full sm:w-auto bg-[var(--ad-gold,var(--mat-rose-tint))] text-[var(--ad-forest-deep,var(--mat-navy-strong))] hover:bg-[var(--ad-gold-strong,var(--mat-rose-tint))]">
               {requesting ? m.processing : m.request}
             </Button>
             <Feedback state={request} m={m} />
           </form>
+          )}
         </details>
       ) : (
         <p className="admin-panel text-muted-foreground">{m.readOnlyCommandCenter}</p>

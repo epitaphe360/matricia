@@ -902,7 +902,7 @@ export function PerformanceBoard({ locale, query, mandateName, view, board }: Sp
     .filter((row) => row.count > 0)
     .slice(0, 5);
   const shareTotal = shareRows.reduce((sum, row) => sum + row.count, 0);
-  const shareColors = ["#5b4bdb", "#3b82f6", "#14b8a6", "#f59e0b", "#ef4444"];
+  const shareColors = ["#642bef", "#3b82f6", "#14b8a6", "#f59e0b", "#ef4444"];
   return (
     <main className="client-page franchise-performance-page">
       <Banner locale={locale} query={query} mandateName={mandateName} />

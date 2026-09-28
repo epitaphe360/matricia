@@ -97,7 +97,7 @@ export function OtpForm({ locale, nextPath, intent = "login" }: { locale: Locale
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1" role="group" aria-label={messages.methodLabel}>
         <Button className="min-h-11 rounded-lg border-transparent bg-transparent shadow-none" type="button" variant="outline" onClick={() => selectMethod("otp")}>{messages.otpMethod}</Button>
-        <Button className="min-h-11 rounded-lg bg-[#0b1739]" type="button" aria-pressed="true">{messages.passwordMethod}</Button>
+        <Button className="min-h-11 rounded-lg bg-[var(--mat-navy)]" type="button" aria-pressed="true">{messages.passwordMethod}</Button>
       </div>
       <form onSubmit={signInWithPassword} className="space-y-5" noValidate aria-busy={status === "pending"}>
         <div className="space-y-2"><Label className="text-sm font-semibold text-slate-700" htmlFor="email">{messages.emailLabel}</Label><Input className="min-h-12 rounded-xl border-slate-400 bg-white px-4 text-base" id="email" name="email" type="email" autoComplete="username" inputMode="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder={messages.emailPlaceholder} aria-describedby="auth-status" aria-invalid={status === "error"} aria-errormessage={status === "error" ? "auth-status" : undefined} required /></div>
@@ -111,7 +111,7 @@ export function OtpForm({ locale, nextPath, intent = "login" }: { locale: Locale
   return step === "email" ? (
     <div className="space-y-6">
       {intent === "login" ? <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1" role="group" aria-label={messages.methodLabel}>
-        <Button className="min-h-11 rounded-lg bg-[#0b1739]" type="button" aria-pressed="true">{messages.otpMethod}</Button>
+        <Button className="min-h-11 rounded-lg bg-[var(--mat-navy)]" type="button" aria-pressed="true">{messages.otpMethod}</Button>
         <Button className="min-h-11 rounded-lg border-transparent bg-transparent shadow-none" type="button" variant="outline" onClick={() => selectMethod("password")}>{messages.passwordMethod}</Button>
       </div> : null}
       <form onSubmit={requestCode} className="space-y-5" noValidate aria-busy={status === "pending"}>
@@ -167,7 +167,7 @@ export function OtpForm({ locale, nextPath, intent = "login" }: { locale: Locale
       <p id="auth-status" role={status === "error" ? "alert" : "status"} aria-live="polite" className={status === "error" ? "text-sm font-medium text-destructive" : "text-sm text-slate-600"}>{message}</p>
     </form>
     {nextPath ? <aside className="grid gap-4">
-        <article className="rounded-2xl border border-[#eadfce] bg-[#fbf7ff] p-4">
+        <article className="rounded-2xl border border-[var(--mat-border)] bg-[var(--mat-violet-soft)] p-4">
           <h2 className="text-base font-semibold">{locale === "ar" ? "مساركم محفوظ" : "Votre parcours est conservé"}</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">{locale === "ar" ? "ستستأنفون من نفس النقطة بعد التحقق." : "Vous reprendrez exactement où vous en étiez arrêté après vérification."}</p>
         </article>

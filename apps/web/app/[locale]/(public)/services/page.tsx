@@ -87,10 +87,10 @@ export default async function ServicesTransition({ params, searchParams }: { par
             const Icon = domainIcons[index] ?? Sparkles;
             return (
               <Link key={`${code}-${name}`} href={`/${locale}/besoin?library=${encodeURIComponent(code)}`} className="public-card block no-underline">
-                <Icon aria-hidden="true" className="text-[#6d3cc7]" />
+                <Icon aria-hidden="true" className="text-[var(--mat-violet)]" />
                 <h3 className="mt-3">{name}</h3>
                 <p className="public-muted mt-2">{text}</p>
-                <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-[#6d3cc7]">{locale === "ar" ? "البدء" : "Commencer"}<ArrowRight className="rtl-mirror" size={14} /></span>
+                <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-[var(--mat-violet)]">{locale === "ar" ? "البدء" : "Commencer"}<ArrowRight className="rtl-mirror" size={14} /></span>
               </Link>
             );
           })}

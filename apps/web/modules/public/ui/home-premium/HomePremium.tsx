@@ -40,24 +40,14 @@ export function HomePremium({ locale }: HomePremiumProps) {
   return (
     <main id="contenu-principal" className={`${styles.page} home-premium-page`} dir={locale === "ar" ? "rtl" : "ltr"}>
       <section className={styles.hero} aria-labelledby="home-title">
-        <div className={styles.heroMedia} aria-hidden="true" data-locale={locale}>
-          {locale === "fr" ? (
-            <Image
-              className={`${styles.heroPhoto} ${styles.heroPhotoPlate}`}
-              src="/home-v2/hero-plate.png"
-              alt=""
-              fill
-              priority
-              sizes="(min-width: 1141px) 71vw, 100vw"
-            />
-          ) : null}
+        <div className={styles.heroMedia} aria-hidden="true">
           <Image
-            className={`${styles.heroPhoto} ${styles.heroPhotoMobile}`}
+            className={styles.heroPhoto}
             src="/home-v2/hero-collaboration.png"
             alt=""
             fill
-            priority={locale !== "fr"}
-            sizes="100vw"
+            priority
+            sizes="(min-width: 1141px) 64vw, 100vw"
           />
           <div className={styles.heroVeil} />
         </div>
@@ -120,20 +110,6 @@ export function HomePremium({ locale }: HomePremiumProps) {
           ))}
         </ol>
 
-        <p className={styles.heroQuote}>{copy.quote}</p>
-        <ul className={styles.heroValues}>
-          {copy.values.map((value) => (
-            <li key={value}>{value}</li>
-          ))}
-        </ul>
-        <p className={styles.heroScript} aria-hidden="true">
-          {copy.script}
-        </p>
-        <ul className={styles.heroSpines} aria-hidden="true">
-          {copy.spines.map((spine) => (
-            <li key={spine}>{spine}</li>
-          ))}
-        </ul>
       </section>
 
       <section className={styles.cycle} aria-labelledby="cycle-title" id="comment-ca-marche">
@@ -143,9 +119,9 @@ export function HomePremium({ locale }: HomePremiumProps) {
         </h2>
         <div className={styles.cycleTrack}>
           <svg className={styles.cycleWave} viewBox="0 0 760 48" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M4 28 C 70 8, 120 44, 190 24 S 310 6, 380 26 S 520 46, 570 22 S 690 4, 756 28" fill="none" stroke="#8f57e8" strokeWidth="1.6" strokeLinecap="round" />
-            <circle cx="4" cy="28" r="3.2" fill="#8f57e8" />
-            <circle cx="756" cy="28" r="3.2" fill="#8f57e8" />
+            <path d="M4 28 C 70 8, 120 44, 190 24 S 310 6, 380 26 S 520 46, 570 22 S 690 4, 756 28" fill="none" stroke="#642bef" strokeWidth="1.6" strokeLinecap="round" />
+            <circle cx="4" cy="28" r="3.2" fill="#642bef" />
+            <circle cx="756" cy="28" r="3.2" fill="#642bef" />
           </svg>
           <ol className={styles.cycleRail} aria-label={copy.cycleLabel}>
             {copy.cycle.map((step, index) => {

@@ -3,7 +3,7 @@
 import { Cell, Pie, PieChart, Bar, BarChart, XAxis, YAxis, CartesianGrid } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/modules/shared/ui/chart";
 
-const palette = ["#053528", "#0a4a38", "#17643a", "#b7791f", "#a12828", "#e8d5b5", "#3d7a66"];
+const palette = ["#121d58", "#2a3a8c", "#1e7a5c", "#b7791f", "#a12828", "#f9cfe1", "#32ad84"];
 
 export function SupervisionCharts({
   requests,
@@ -40,8 +40,8 @@ export function SupervisionCharts({
         {quotes.length === 0 ? <p className="text-sm text-[var(--ad-muted)]">{labels.empty}</p> : (
           <ChartContainer config={quoteConfig} className="aspect-[4/3] max-h-[240px]" initialDimension={{ width: 280, height: 220 }}>
             <BarChart data={quotes}>
-              <CartesianGrid vertical={false} stroke="#d7e3dc" />
-              <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "#5a6f66" }} />
+              <CartesianGrid vertical={false} stroke="#e4e7f0" />
+              <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "#5e6a93" }} />
               <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={28} />
               <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
               <Bar dataKey="value" radius={[8, 8, 0, 0]}>
@@ -56,9 +56,9 @@ export function SupervisionCharts({
         {missions.length === 0 ? <p className="text-sm text-[var(--ad-muted)]">{labels.empty}</p> : (
           <ChartContainer config={missionConfig} className="aspect-[4/3] max-h-[240px]" initialDimension={{ width: 280, height: 220 }}>
             <BarChart data={missions} layout="vertical" margin={{ left: 8, right: 8 }}>
-              <CartesianGrid horizontal={false} stroke="#d7e3dc" />
+              <CartesianGrid horizontal={false} stroke="#e4e7f0" />
               <XAxis type="number" hide />
-              <YAxis type="category" dataKey="name" width={90} tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "#5a6f66" }} />
+              <YAxis type="category" dataKey="name" width={90} tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "#5e6a93" }} />
               <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
               <Bar dataKey="value" radius={[0, 8, 8, 0]}>
                 {missions.map((entry, index) => <Cell key={entry.name} fill={palette[(index + 4) % palette.length]} />)}

@@ -88,8 +88,8 @@ export default async function PriorityToNeedPage({
               <h2>{t.understood}</h2>
               <p style={{ marginTop: 8, color: "var(--diag-muted)" }}>{t.understoodLead}</p>
               <dl className="diag-conn-list" style={{ marginTop: 12 }}>
-                <div><dt style={{ color: "#8b93a8", fontSize: "0.75rem" }}>{locale === "fr" ? "Priorité" : "الأولوية"}</dt><dd>{t.contextBody}</dd></div>
-                <div><dt style={{ color: "#8b93a8", fontSize: "0.75rem" }}>{locale === "fr" ? "Organisation" : "المؤسسة"}</dt><dd>{space.organizationName ?? "—"}</dd></div>
+                <div><dt style={{ color: "#5e6a93", fontSize: "0.75rem" }}>{locale === "fr" ? "Priorité" : "الأولوية"}</dt><dd>{t.contextBody}</dd></div>
+                <div><dt style={{ color: "#5e6a93", fontSize: "0.75rem" }}>{locale === "fr" ? "Organisation" : "المؤسسة"}</dt><dd>{space.organizationName ?? "—"}</dd></div>
               </dl>
             </section>
           </div>

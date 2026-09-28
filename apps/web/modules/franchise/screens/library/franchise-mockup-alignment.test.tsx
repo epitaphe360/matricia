@@ -167,7 +167,7 @@ describe("alignement maquettes franchise (00–05)", () => {
     expect(nav).toContain("fournisseurs");
     expect(nav).toContain("documents");
     expect(nav).toContain("messages");
-    expect(nav).not.toContain("franchise/finance");
+    expect(nav).toContain("franchise/finance");
     expect(css).toContain("franchise-security-panel");
     expect(css).toContain("franchise-mandate-ok");
     expect(css).toContain("franchise-workbench");

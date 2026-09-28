@@ -53,6 +53,14 @@ const blank = (initialNeed = "", classification: PublicNeedClassification | null
 });
 const unavailable = async (): Promise<SaveNeedState> => ({ status: "error", reason: "UNAVAILABLE" });
 
+export function needComposerSection(step: number) {
+  if (step >= 4) return "recap" as const;
+  if (step <= 0) return "describe" as const;
+  if (step === 1) return "understand" as const;
+  if (step === 2) return "questions" as const;
+  return "complete" as const;
+}
+
 export function needProgressPercent(stageCurrent: number, stageTotal: number) {
   if (stageTotal < 1 || stageCurrent < 0) return 0;
   return Math.trunc((Math.min(stageCurrent, stageTotal) * 100) / stageTotal);
@@ -307,7 +315,8 @@ function NeedComposer({
   const selectedServiceId = discovery?.services.find((item) => item.serviceCode === draft.classification?.serviceCode)?.serviceId;
   const missingQuestions = (discovery?.questions ?? []).filter((item) => !selectedServiceId || item.serviceId === selectedServiceId);
   const unansweredRequired = missingQuestions.filter((item) => item.requiredForQuote && !draft.answers[item.dataKey]?.trim() && !["FILE", "MULTI_FILE", "IMAGE", "TABLE", "REPEATER"].includes(item.answerType));
-  const stageIndex = !canContinue ? 0 : draft.classification || draft.unlisted ? (draft.location.trim() || draft.timing.trim() || draft.constraints.trim() || draft.tags.length || Object.values(draft.answers).some((item) => item.trim()) ? 2 : 1) : 0;
+  const section = needComposerSection(draft.step);
+  const stageIndex = section === "complete" ? 3 : section === "questions" ? 2 : section === "understand" ? 1 : 0;
   const stageTotal = copy.stages.length;
   const stageCurrent = stageIndex + 1;
   const missing = [
@@ -452,6 +461,8 @@ function NeedComposer({
             ))}
           </ol>
           <NeedStageProgress authenticated={authenticated} stageCurrent={stageCurrent} stageTotal={stageTotal} />
+          {section === "describe" ? (
+          <>
           <h2 id="need-question">1. {copy.title}</h2>
           <p id="need-help" className="journey-intro">{copy.help}</p>
           <textarea
@@ -482,7 +493,11 @@ function NeedComposer({
               </select>
             </label>
           ) : null}
+          </>
+          ) : null}
 
+          {section === "understand" ? (
+          <>
           <h2>2. {copy.suggestTitle}</h2>
           <p className="public-muted">{copy.suggestLead}</p>
           {discovering ? <p role="status" className="journey-field-help">{copy.discovering}</p> : null}
@@ -493,7 +508,7 @@ function NeedComposer({
                 <li key={item.serviceCode}>
                   <button type="button" aria-pressed={draft.classification?.serviceCode === item.serviceCode} onClick={() => confirmSuggestion(item.libraryCode, item.serviceCode)}>
                     <strong lang="fr">{item.serviceName}</strong>
-                    <small>{item.libraryName} · {copy.suggestScore} {formatNeedScoreBasisPoints(item.scoreBasisPoints, locale)} · TOKEN_OVERLAP_V1</small>
+                    <small>{item.libraryName} · {copy.suggestScore} {formatNeedScoreBasisPoints(item.scoreBasisPoints, locale)}</small>
                   </button>
                 </li>
               ))}
@@ -534,7 +549,18 @@ function NeedComposer({
               </select>
             </label>
           </div>
+          <label className="journey-need-unlisted">
+            <input type="checkbox" checked={draft.unlisted} onChange={(event) => patch({ unlisted: event.target.checked })} />
+            <span>
+              <strong>{locale === "ar" ? "خدمة غير مدرجة" : "Service non répertorié"}</strong>
+              <em>{locale === "ar" ? "إن لم تجدوا الخدمة المقترحة، يمكنكم وصفها في الخطوات التالية." : "Si aucun service ne correspond, vous pourrez le préciser dans les étapes suivantes."}</em>
+            </span>
+          </label>
+          </>
+          ) : null}
 
+          {section === "questions" ? (
+          <>
           <h2>3. {copy.questionsTitle}</h2>
           <p className="public-muted">{copy.questionsLead}</p>
           {!draft.classification && !draft.unlisted ? <p className="journey-field-help">{copy.questionsWait}</p> : null}
@@ -577,8 +603,12 @@ function NeedComposer({
               <label htmlFor="need-constraints">{copy.constraints}<textarea id="need-constraints" value={draft.constraints} rows={3} maxLength={1200} onChange={(event) => patch({ constraints: event.target.value.slice(0, 1200) })} /></label>
             </div>
           ) : null}
+          </>
+          ) : null}
 
-          <h2>3. {locale === "ar" ? "عناصر تكميلية (اختياري)" : "Sélectionnez des éléments complémentaires (optionnel)"}</h2>
+          {section === "complete" ? (
+          <>
+          <h2>4. {locale === "ar" ? "عناصر تكميلية (اختياري)" : "Sélectionnez des éléments complémentaires (optionnel)"}</h2>
           <div className="journey-need-tags">
             {tags.map((tag) => (
               <button key={tag} type="button" className={draft.tags.includes(tag) ? "is-selected" : undefined} aria-pressed={draft.tags.includes(tag)} onClick={() => toggleTag(tag)}>
@@ -591,14 +621,7 @@ function NeedComposer({
             <input id="need-custom-tag" value={customTag} maxLength={80} onChange={(event) => setCustomTag(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addCustomTag(); } }} />
             <button type="button" onClick={addCustomTag}>{locale === "ar" ? "إضافة" : "Ajouter"}</button>
           </div>
-          <label className="journey-need-unlisted">
-            <input type="checkbox" checked={draft.unlisted} onChange={(event) => patch({ unlisted: event.target.checked })} />
-            <span>
-              <strong>{locale === "ar" ? "خدمة غير مدرجة" : "Service non répertorié"}</strong>
-              <em>{locale === "ar" ? "إن لم تجدوا الخدمة المقترحة، سنساعدكم على وصفها بدقة في الخطوة التالية." : "Si votre besoin ne correspond à aucun service proposé, nous pourrez le décrire plus précisément à l’étape suivante."}</em>
-            </span>
-          </label>
-          <h2>4. {copy.docsStepTitle}</h2>
+          <h2>5. {copy.docsStepTitle}</h2>
           <p className="journey-intro">{copy.docsStepLead}</p>
           {authenticated ? <Link className="client-text-link" href={`/${locale}/client/documents`}>{locale === "fr" ? "Ouvrir Documents" : "فتح الوثائق"}</Link> : null}
           <p className="journey-login-note">
@@ -607,16 +630,22 @@ function NeedComposer({
               : locale === "fr" ? "Ce brouillon n’est pas sauvegardé sur cet appareil." : "هذه المسودة غير محفوظة على هذا الجهاز."}
           </p>
           <p className="journey-field-help">{copy.humanConfirm}</p>
+          </>
+          ) : null}
           <div className="journey-actions">
-            <Link className="journey-secondary" href={authenticated ? `/${locale}/client/demandes` : `/${locale}`}>{copy.back}</Link>
+            {section === "describe" ? (
+              <Link className="journey-secondary" href={authenticated ? `/${locale}/client/demandes` : `/${locale}`}>{copy.back}</Link>
+            ) : (
+              <button className="journey-secondary" type="button" onClick={() => patch({ step: Math.max(0, draft.step - 1) })}>{copy.back}</button>
+            )}
             <button className="journey-secondary" type="button" onClick={() => patch({})}>{copy.saveDraft}</button>
-            <button className="journey-primary" type="button" disabled={!canContinue} onClick={goRecap}>
-              {copy.continue}
+            <button className="journey-primary" type="button" disabled={section === "describe" && !canContinue} onClick={() => (section === "complete" ? goRecap() : patch({ step: draft.step + 1 }))}>
+              {section === "complete" ? (locale === "fr" ? "Voir le récapitulatif" : "عرض الملخص") : copy.continue}
               <ArrowRight className="rtl-mirror" size={18} aria-hidden="true" />
             </button>
           </div>
         </section>
-        <aside className="journey-understood" aria-live="polite">
+        {section === "describe" ? null : <aside className="journey-understood" aria-live="polite">
           <p className="journey-eyebrow">{copy.understoodTitle}</p>
           <h2>{copy.readyTitle}</h2>
           <p className="public-muted">{copy.understoodLead}</p>
@@ -639,14 +668,14 @@ function NeedComposer({
             </div>
           </dl>
           <div className="journey-actions">
-            <button className="journey-secondary" type="button" onClick={() => patch({ confirmed: false })}>
+            <button className="journey-secondary" type="button" onClick={() => patch({ step: 0, confirmed: false })}>
               <Pencil size={16} aria-hidden="true" /> {locale === "fr" ? "Modifier" : "تعديل"}
             </button>
             <button className="journey-primary" type="button" disabled={!canContinue} onClick={goRecap}>
               {locale === "fr" ? "Valider" : "تأكيد"}
             </button>
           </div>
-        </aside>
+        </aside>}
       </div>
     </main>
   );

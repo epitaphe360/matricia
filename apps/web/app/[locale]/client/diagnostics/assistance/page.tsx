@@ -98,7 +98,7 @@ export default async function AssistancePage({
 
           <div className="diag-conn-split">
             <section className="diag-conn-card">
-              <h2><Headset size={18} color="#6f46e8" aria-hidden />{t.formTitle}</h2>
+              <h2><Headset size={18} color="#642bef" aria-hidden />{t.formTitle}</h2>
               <p className="diag-conn-callout" data-tone="sky" style={{ marginTop: 12 }}>{messages.safety}</p>
               <div style={{ marginTop: 16 }}>
                 <AssistancePanel
@@ -121,8 +121,8 @@ export default async function AssistancePage({
               <section className="diag-conn-card">
                 <h2>{t.summary}</h2>
                 <dl className="diag-conn-list" style={{ marginTop: 12 }}>
-                  <div><dt style={{ color: "#8b93a8", fontSize: "0.75rem" }}>{messages.organization}</dt><dd>{space.organizationName ?? "—"}</dd></div>
-                  <div><dt style={{ color: "#8b93a8", fontSize: "0.75rem" }}>{messages.context}</dt><dd>{messages.contexts.CONTEXTUAL_ASSISTANT}</dd></div>
+                  <div><dt style={{ color: "#5e6a93", fontSize: "0.75rem" }}>{messages.organization}</dt><dd>{space.organizationName ?? "—"}</dd></div>
+                  <div><dt style={{ color: "#5e6a93", fontSize: "0.75rem" }}>{messages.context}</dt><dd>{messages.contexts.CONTEXTUAL_ASSISTANT}</dd></div>
                 </dl>
                 <label style={{ display: "flex", gap: 10, marginTop: 14, alignItems: "flex-start", fontSize: "0.86rem" }}>
                   <input type="checkbox" defaultChecked style={{ marginTop: 3 }} />
@@ -144,7 +144,7 @@ export default async function AssistancePage({
                       <span>•</span>
                       <span>
                         <strong>{messages.kinds[suggestion.kind] ?? suggestion.kind}</strong>
-                        <small style={{ display: "block", color: "#8b93a8" }}>{messages.statuses[suggestion.status]}</small>
+                        <small style={{ display: "block", color: "#5e6a93" }}>{messages.statuses[suggestion.status]}</small>
                       </span>
                     </li>
                   ))}

@@ -5,6 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { loadAdminVolumeDemand } from "@/modules/admin/data/catalog/repository";
 import { loadAdminVolume } from "@/modules/admin/data/volume/repository";
+import { loadAdminProviders } from "@/modules/admin/data/providers/repository";
 import { AdminVolumePanel } from "@/modules/admin/screens/achats-groupes/admin-volume-panel";
 import { VolumeDemandPanel } from "@/modules/admin/screens/achats-groupes/volume-demand-panel";
 import { VolumeNegotiatePanel } from "@/modules/admin/screens/achats-groupes/volume-negotiate-panel";
@@ -21,7 +22,8 @@ export default async function Page({
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const m = getMessages(locale);
-  const [result, demand] = await Promise.all([loadAdminVolume(), loadAdminVolumeDemand()]);
+  const [result, demand, providers] = await Promise.all([loadAdminVolume(), loadAdminVolumeDemand(), loadAdminProviders()]);
+  const providerOptions = providers.status === "success" ? providers.dashboard.providers.map((item) => ({ id: item.organizationId, name: item.organizationName })) : [];
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/achats-groupes` }));
   return (
     <AdminModulePage locale={locale} active="finance" path="achats-groupes" title={m.title} lead={m.description}>
@@ -33,7 +35,7 @@ export default async function Page({
       ) : (
         <>
           <AdminVolumePanel locale={locale} dashboard={result.value} m={m} keys={{ allocate: randomUUID(), consume: randomUUID() }} />
-          <VolumeNegotiatePanel locale={locale} dashboard={result.value} ownerOrganizationId={query.organizationId ?? result.value.agreements?.[0]?.owner_organization_id ?? null} keys={{ negotiate: randomUUID(), activate: randomUUID() }} />
+          <VolumeNegotiatePanel locale={locale} dashboard={result.value} ownerOrganizationId={query.organizationId ?? result.value.agreements?.[0]?.owner_organization_id ?? null} providerOptions={providerOptions} keys={{ negotiate: randomUUID(), activate: randomUUID() }} />
           {demand.status === "success" ? <VolumeDemandPanel locale={locale} demand={demand.value} /> : null}
         </>
       )}

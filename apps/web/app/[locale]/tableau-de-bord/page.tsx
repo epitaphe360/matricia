@@ -89,7 +89,7 @@ function OrganizationSwitcher({
           {memberships.map((membership) => {
             const current = membership.id === selectedMembershipId;
             return (
-              <li key={membership.id} className={`rounded-xl border p-4 ${current ? "border-[var(--ad-forest)] bg-[#f0f7f3]" : "border-[var(--ad-border)]"}`}>
+              <li key={membership.id} className={`rounded-xl border p-4 ${current ? "border-[var(--ad-forest)] bg-[var(--mat-mint-soft)]" : "border-[var(--ad-border)]"}`}>
                 <span className="block font-semibold">{membership.organizations.display_name}</span>
                 <span className="mt-1 block text-sm text-[var(--ad-muted)]">{m.status[membership.organizations.status as keyof typeof m.status] ?? m.status.unknown}</span>
                 {current ? (

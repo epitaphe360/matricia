@@ -24,6 +24,7 @@ import type { BillingDashboard } from "@/modules/provider/data/billing/model";
 import type { ProviderMissionDashboard } from "@/modules/provider/data/missions/model";
 import { consultationDocumentHref, type ConsultationPackDocument, type ProviderQuoteDashboard } from "@/modules/provider/data/quotes/model";
 import { workbenchCopy } from "@/modules/provider/data/spaces/workbench-copy";
+import { ProviderProfileRail } from "@/modules/provider/ui/provider-profile-rail";
 import { BillingPanel } from "@/modules/provider/screens/facturation/billing-panel";
 import type { BillingMessages } from "@/modules/provider/screens/facturation/messages";
 import type { MissionOption } from "@/modules/provider/screens/facturation/options";
@@ -102,6 +103,9 @@ export function ConsultationDetailWorkbench({
   const constraints = pack?.constraints ?? [];
   const documents: ConsultationPackDocument[] = pack?.documents ?? [];
   const region = invitation?.regionCode && invitation.regionCode !== "—" ? invitation.regionCode : w.consultLocationFallback;
+  const quoteStatus = invitation?.quote?.status;
+  const quoteDecided = quoteStatus === "SELECTED" || quoteStatus === "REJECTED";
+  const quoteSent = quoteDecided || quoteStatus === "SUBMITTED" || quoteStatus === "CLARIFICATION_REQUESTED";
   return (
     <main className="client-page provider-workbench provider-consult-detail">
       <p className="provider-breadcrumb">
@@ -115,9 +119,6 @@ export function ConsultationDetailWorkbench({
           <h2>{title}</h2>
           <p>{w.consultDetailLead}</p>
           <div className="provider-chip-row">
-            {invitation?.regionCode && invitation.regionCode !== "—" ? (
-              <span className="provider-meta-chip"><Building2 className="size-3.5" aria-hidden />{invitation.regionCode}</span>
-            ) : null}
             <span className="provider-meta-chip"><MapPin className="size-3.5" aria-hidden />{region}</span>
             <span className="client-status-chip" data-tone="mint">{w.consultOnInvite}</span>
           </div>
@@ -209,7 +210,7 @@ export function ConsultationDetailWorkbench({
         <aside className="provider-workbench-rail client-stack">
           <article className="client-card provider-invite-banner">
             <p className="client-status"><strong>{w.consultInProgress}</strong> — {w.consultInviteOpen}</p>
-            {quotePanel ? (
+            {quotePanel && (invitation?.status === "INVITED" || invitation?.status === "VIEWED") ? (
               <div className="provider-workbench-actions provider-workbench-actions-stack">
                 <a href="#invitation-decision" className="client-cta"><Check className="size-4" aria-hidden />{w.consultAccept}</a>
                 <a href="#invitation-decision" className="client-ghost-link">{w.consultDecline}</a>
@@ -221,12 +222,12 @@ export function ConsultationDetailWorkbench({
           <article className="client-card">
             <header><h3>{w.consultCalendar}</h3></header>
             <ol className="client-journey provider-timeline">
-              <li data-state={invitation ? "current" : "todo"}>
+              <li data-state={quoteSent ? "done" : invitation ? "current" : "todo"}>
                 <span><Calendar className="size-4" aria-hidden /></span>
                 <small>{w.consultQuoteDue}<em dir="ltr">{deadline}</em></small>
               </li>
-              <li data-state="todo"><span /><small>{w.consultAnalysis}</small></li>
-              <li data-state="todo"><span /><small>{w.consultDecision}</small></li>
+              <li data-state={quoteDecided ? "done" : quoteSent ? "current" : "todo"}><span /><small>{w.consultAnalysis}</small></li>
+              <li data-state={quoteDecided ? "done" : "todo"}><span /><small>{w.consultDecision}</small></li>
             </ol>
           </article>
           <article className="client-card">
@@ -684,6 +685,9 @@ export function CompanySecurityWorkbench({
   const mfaLabel = mfaEnabled === true ? w.mfaOn : mfaEnabled === false ? w.mfaOff : "—";
   return (
     <main className="client-page provider-workbench provider-company-security">
+      <div className="provider-settings-layout">
+      <ProviderProfileRail locale={locale} query={query} active="company" />
+      <div className="client-stack">
       <p className="provider-breadcrumb"><span>{w.companyTitle}</span><span aria-hidden>›</span><span>{w.tabSecurity}</span></p>
       <header className="provider-workbench-hero">
         <div>
@@ -764,6 +768,8 @@ export function CompanySecurityWorkbench({
           </article>
         </div>
       </section>
+      </div>
+      </div>
     </main>
   );
 }

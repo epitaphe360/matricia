@@ -26,7 +26,7 @@ export function PublicFooter({ locale }: { locale: Locale }) {
           <p className="mt-3 text-xs text-white/50">{copy.legalStatement}</p>
         </div>
         <nav aria-label={copy.footerLabel}>
-          <ul className="grid grid-cols-2 gap-x-5 gap-y-1 text-sm sm:grid-cols-1">
+          <ul className="grid grid-cols-2 gap-x-8 gap-y-1 text-sm">
             {links.map((link) => (
               <li key={link.href}>
                 <Link className="inline-flex min-h-11 items-center rounded-md underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" href={link.href}>

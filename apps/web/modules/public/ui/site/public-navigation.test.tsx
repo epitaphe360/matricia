@@ -14,6 +14,7 @@ describe("PublicNavigation", () => {
     currentPathname = "/fr/fournisseur";
     const html = renderToStaticMarkup(<PublicNavigation locale="fr" />);
     expect(html).toContain("Comment ça marche");
+    expect(html).toContain("Entreprises");
     expect(html).toContain("Professionnels");
     expect(html).toContain("Abonnements");
     expect(html).toContain("Franchise");
@@ -29,15 +30,23 @@ describe("PublicNavigation", () => {
     expect(html).not.toContain(">Fournisseurs<");
   });
 
-  it("rend la navigation arabe en RTL et conserve les destinations localisées", () => {
+  it("rend la navigation arabe avec les mêmes destinations que le français", () => {
     currentPathname = "/ar/fournisseur";
     const html = renderToStaticMarkup(<PublicNavigation locale="ar" />);
     expect(html).toContain('dir="rtl"');
+    expect(html).toContain('href="/ar/entreprises"');
+    expect(html).toContain('href="/ar/fournisseur"');
+    expect(html).toContain('href="/ar/franchise"');
+    expect(html).toContain('href="/ar/abonnements"');
+    expect(html).toContain('href="/ar/a-propos"');
     expect(html).toContain("كيف تعمل المنصة");
-    expect(html).toContain("لمن");
-    expect(html).toContain("موارد");
+    expect(html).toContain("المؤسسات");
+    expect(html).toContain("المهنيون");
+    expect(html).toContain("الامتياز");
+    expect(html).toContain("الاشتراكات");
     expect(html).toContain("من نحن");
-    expect(html).toContain("اتصل بنا");
+    expect(html).not.toContain(">لمن<");
+    expect(html).not.toContain(">موارد<");
     expect(html).toMatch(/aria-current="page"[^>]+href="\/ar\/fournisseur"/u);
     expect(html).toContain("rtl-mirror");
   });

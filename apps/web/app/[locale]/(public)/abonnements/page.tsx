@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle2 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { localizedRouteMetadata } from "@/modules/shared/lib/seo/metadata";
-import { loadPublicSubscriptionPlans } from "@/modules/public/data/subscriptions/repository";
+import { formatMinor } from "@/modules/shared/lib/subscriptions/model";
+import { loadPublicSubscriptionPlans, type PublicSubscriptionPlan } from "@/modules/public/data/subscriptions/repository";
 import { PublicPhoto } from "@/modules/public/ui/site/public-photo";
 
 const copy = {
@@ -17,6 +17,7 @@ const copy = {
     annual: "par an",
     credits: "crédits commerciaux mensuels inclus",
     unavailable: "Les conditions tarifaires sont confirmées avant souscription. Vous pouvez créer votre compte ou nous contacter dès aujourd’hui.",
+    tariff: "Tarif communiqué avant souscription",
     action: "Sur demande",
     manage: "Déjà client ? Gérer mon abonnement",
     contact: "Nous contacter",
@@ -24,7 +25,7 @@ const copy = {
     note: "Les conditions et fonctionnalités applicables sont confirmées avant souscription. Aucun prix n’est inventé sur cette page.",
     ctaTitle: "Prêt à simplifier vos projets ?",
     ctaText: "Découvrez la formule qui vous convient et échangez avec notre équipe pour en savoir plus.",
-    features: ["Diagnostic de projet", "Demandes structurées", "Comparaison de devis", "Suivi des missions", "Gestion des documents", "Support par email"],
+    funds: "L’abonnement finance l’accès aux outils Matricia : diagnostic, demandes, comparaison, suivi et documents. Il ne finance pas les honoraires du professionnel, qui fixe ses propres prix.",
     pillars: [["Des outils concrets pour passer à l’action"], ["Une expérience sécurisée et confidentielle"], ["Un accompagnement à chaque étape"]],
   },
   ar: {
@@ -36,6 +37,7 @@ const copy = {
     annual: "سنوياً",
     credits: "أرصدة تجارية شهرية مشمولة",
     unavailable: "تُؤكد الشروط قبل الاشتراك. يمكنكم إنشاء حساب أو التواصل معنا الآن.",
+    tariff: "يُبلَّغ السعر قبل الاشتراك",
     action: "عند الطلب",
     manage: "لديكم حساب؟ إدارة الاشتراك",
     contact: "اتصلوا بنا",
@@ -43,10 +45,24 @@ const copy = {
     note: "تُؤكد الشروط والوظائف المطبقة قبل الاشتراك. لا يُعرض أي سعر مخترع في هذه الصفحة.",
     ctaTitle: "جاهزون لتبسيط مشاريعكم؟",
     ctaText: "اكتشفوا الصيغة المناسبة وتبادلوا مع فريقنا لمعرفة المزيد.",
-    features: ["تشخيص المشروع", "طلبات منظمة", "مقارنة العروض", "متابعة المهام", "تدبير الوثائق", "دعم عبر البريد"],
+    funds: "يموّل الاشتراك الوصول إلى أدوات ماتريسيا: التشخيص والطلبات والمقارنة والمتابعة والوثائق. ولا يموّل أتعاب المهني، الذي يحدد أسعاره بنفسه.",
     pillars: [["أدوات ملموسة للانتقال إلى التنفيذ"], ["تجربة مؤمنة وسرية"], ["مرافقة في كل مرحلة"]],
   },
 } as const;
+
+const planNames = {
+  PREMIUM: { fr: "Premium", ar: "بريميوم" },
+  GOLD: { fr: "Gold", ar: "غولد" },
+  PLATINUM: { fr: "Platinum", ar: "بلاتينيوم" },
+} as const;
+
+function creditCount(value: string, locale: "fr" | "ar") {
+  return new Intl.NumberFormat(locale === "ar" ? "ar-MA" : "fr-MA", { maximumFractionDigits: 0 }).format(BigInt(value));
+}
+
+function publishedPrice(plan: PublicSubscriptionPlan) {
+  return BigInt(plan.monthlyPriceMinor) > BigInt(0) ? plan.monthlyPriceMinor : null;
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -74,40 +90,33 @@ export default async function PublicSubscriptionsPage({ params }: { params: Prom
         </div>
         <PublicPhoto scene="lantern" caption={locale === "ar" ? "مشاريع اليوم لمغرب الغد" : "Des projets d’aujourd’hui pour un Maroc de demain"} />
       </section>
+      <p className="public-wrap mt-8 text-sm leading-6 text-slate-700">{messages.funds}</p>
       {plans.length ? (
         <ul className="public-wrap public-plans">
-          {plans.map((plan, index) => (
-            <li key={plan.id}>
-              <article className={index === 1 ? "is-featured" : undefined}>
-                <h2>{plan.code}</h2>
-                <p className="mt-2 text-sm text-slate-600">{messages.note}</p>
-                <ul className="mt-5 space-y-2 text-sm text-slate-700">
-                  {messages.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2"><CheckCircle2 aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[#3d6b55]" />{feature}</li>
-                  ))}
-                </ul>
-                <Link href={`/${locale}/contact?motif=CLIENT&plan=${encodeURIComponent(plan.code)}`} className="journey-secondary mt-6 w-full">{messages.action}</Link>
-              </article>
-            </li>
-          ))}
+          {plans.map((plan) => {
+            const price = publishedPrice(plan);
+            return (
+              <li key={plan.id}>
+                <article className={plan.code === "GOLD" ? "is-featured" : undefined}>
+                  <h2>{planNames[plan.code][locale]}</h2>
+                  <p className="mt-3 text-2xl font-semibold" dir="ltr">
+                    {price ? formatMinor(price, plan.currency, locale) : messages.tariff}
+                  </p>
+                  {price ? <p className="text-sm text-slate-600">{messages.monthly}</p> : null}
+                  {BigInt(plan.annualPriceMinor) > BigInt(0) ? (
+                    <p className="mt-1 text-sm text-slate-600" dir="ltr">{formatMinor(plan.annualPriceMinor, plan.currency, locale)} {messages.annual}</p>
+                  ) : null}
+                  <p className="mt-4 text-sm text-slate-700"><span dir="ltr">{creditCount(plan.monthlyCreditGrant, locale)}</span> {messages.credits}</p>
+                  <Link href={`/${locale}/contact?motif=CLIENT&plan=${encodeURIComponent(plan.code)}`} className="journey-secondary mt-6 w-full">{messages.action}</Link>
+                </article>
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <div className="public-wrap">
           <p role="status" className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-950">{messages.unavailable}</p>
-          <div className="public-plans mt-8">
-            {["Essentiel", "Premium", "Organisation"].map((name, index) => (
-              <article key={name} className={index === 1 ? "is-featured" : undefined}>
-                <h2>{name}</h2>
-                <p className="mt-2 text-sm text-slate-600">{locale === "ar" ? "وظائف المسار، تؤكد قبل الاشتراك." : "Fonctionnalités adaptées à votre parcours, confirmées avant souscription."}</p>
-                <ul className="mt-5 space-y-2 text-sm text-slate-700">
-                  {messages.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2"><CheckCircle2 aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[#3d6b55]" />{feature}</li>
-                  ))}
-                </ul>
-                <Link href={`/${locale}/contact?motif=CLIENT`} className="journey-secondary mt-6 w-full">{messages.action}</Link>
-              </article>
-            ))}
-          </div>
+          <Link href={`/${locale}/contact?motif=CLIENT`} className="journey-secondary mt-6">{messages.contact}</Link>
         </div>
       )}
       <p className="public-wrap mt-6 text-sm text-slate-600">{messages.note}</p>
@@ -150,7 +159,7 @@ export default async function PublicSubscriptionsPage({ params }: { params: Prom
           ))}
         </div>
       </section>
-      <Link href={`/${locale}/client/abonnement`} className="public-wrap mt-4 inline-flex min-h-11 items-center font-semibold text-[#6d3cc7] underline underline-offset-4">{messages.manage}</Link>
+      <Link href={`/${locale}/client/abonnement`} className="public-wrap mt-4 inline-flex min-h-11 items-center font-semibold text-[var(--mat-violet)] underline underline-offset-4">{messages.manage}</Link>
     </main>
   );
 }

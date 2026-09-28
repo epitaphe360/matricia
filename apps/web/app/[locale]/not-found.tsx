@@ -14,7 +14,7 @@ export function NotFoundScreen({ locale }: { locale: Locale }) {
   const safe = isLocale(locale) ? locale : "fr";
   const fr = safe === "fr";
   return (
-    <div dir={fr ? "ltr" : "rtl"} className="public-root flex min-h-dvh flex-col text-[#1a2340]">
+    <div dir={fr ? "ltr" : "rtl"} className="public-root flex min-h-dvh flex-col text-[var(--mat-navy)]">
       <PublicNavigation locale={safe} />
       <main id="contenu-principal" className="public-page flex-1 pb-16">
         <section className="public-wrap public-error-hero">
@@ -40,19 +40,19 @@ export function NotFoundScreen({ locale }: { locale: Locale }) {
             <p className="public-muted mt-2">{fr ? "Voici quelques situations courantes et la meilleure action à entreprendre." : "إليكم بعض الحالات الشائعة وأفضل إجراء يمكن اتخاذه."}</p>
           </div>
           <article className="public-card">
-            <Search aria-hidden="true" className="text-[#6d3cc7]" />
+            <Search aria-hidden="true" className="text-[var(--mat-violet)]" />
             <h2>{fr ? "Page introuvable" : "صفحة غير موجودة"}</h2>
             <p className="public-muted mt-2">{fr ? "Le lien est peut-être obsolète ou la page a été déplacée." : "ربما أصبح الرابط قديماً أو نُقلت الصفحة."}</p>
             <Link className="journey-secondary mt-4" href={`/${safe}`}>{fr ? "Retour" : "رجوع"}</Link>
           </article>
           <article className="public-card">
-            <LockKeyhole aria-hidden="true" className="text-[#6d3cc7]" />
+            <LockKeyhole aria-hidden="true" className="text-[var(--mat-violet)]" />
             <h2>{fr ? "Accès non autorisé" : "وصول غير مصرّح"}</h2>
             <p className="public-muted mt-2">{fr ? "Cette page est réservée aux utilisateurs connectés." : "هذه الصفحة مخصصة للمستخدمين المسجّلين."}</p>
             <Link className="journey-primary mt-4" href={`/${safe}/connexion`}>{fr ? "Se connecter" : "تسجيل الدخول"}</Link>
           </article>
           <article className="public-card">
-            <Clock3 aria-hidden="true" className="text-[#6d3cc7]" />
+            <Clock3 aria-hidden="true" className="text-[var(--mat-violet)]" />
             <h2>{fr ? "Service temporairement indisponible" : "خدمة غير متاحة مؤقتاً"}</h2>
             <p className="public-muted mt-2">{fr ? "Le service est momentanément indisponible. Veuillez réessayer dans quelques instants." : "الخدمة غير متاحة حالياً. أعيدوا المحاولة بعد لحظات."}</p>
             <Link className="journey-secondary mt-4" href={`/${safe}`}>{fr ? "Réessayer" : "إعادة المحاولة"}</Link>

@@ -31,7 +31,7 @@ export default async function FranchiseCandidaturePage({ params }: { params: Pro
       ];
 
   return (
-    <div dir={locale === "ar" ? "rtl" : "ltr"} className="public-root flex min-h-dvh flex-col text-[#1a2340]">
+    <div dir={locale === "ar" ? "rtl" : "ltr"} className="public-root flex min-h-dvh flex-col text-[var(--mat-navy)]">
       <a href="#contenu-principal" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:start-2 z-50 bg-white text-slate-950 p-3">{getPublicMessages(locale).common.skipToContent}</a>
       <PublicNavigation locale={locale} />
       <main id="contenu-principal" className="public-page flex-1 pb-16">

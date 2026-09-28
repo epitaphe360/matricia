@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Building2, Factory, HeartPulse, Lock, Monitor, MoreHorizontal, ShieldCheck, ShoppingCart } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building2, Factory, Lock, Monitor, MoreHorizontal, ShieldCheck, ShoppingCart } from "lucide-react";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import { getPublicJourneyCopy } from "@/modules/public/data/journey/copy";
 import { diagnosticQuestionIds as questionIds, parseStoredDiagnostic, type DiagnosticAnswer as Answer, type DiagnosticQuestionId as QuestionId, type StoredDiagnostic as Stored } from "./diagnostic-storage";
@@ -13,7 +13,7 @@ import styles from "./diagnostic-premium.module.css";
 const storageKey = "matricia.public-diagnostic.v2";
 const legacyKeys = ["matricia.public-diagnostic", "matricia.public-diagnostic.fr", "matricia.public-diagnostic.ar"];
 const optionIds: Record<Exclude<QuestionId, "next_action">, readonly string[]> = {
-  sector: ["industry_logistics", "commerce", "professional_services", "construction", "health_social", "other"],
+  sector: ["industry_logistics", "commerce", "professional_services", "construction", "other"],
   team_size: ["solo", "small", "medium", "large"],
   goals: ["save_time", "control_costs", "grow_sales", "secure_activity", "global_review"],
   priority_tracking: ["regular", "partial", "no", "unknown"],
@@ -318,7 +318,7 @@ export function PrediagnosticFlow({ locale, organizations = [], authenticated = 
 
 function Choices({ label, choices, value, multi, icons = false, onChange }: { label: string; choices: readonly { id: string; label: string }[]; value: Answer | undefined; multi: boolean; icons?: boolean; onChange: (value: Answer) => void }) {
   const selected = Array.isArray(value) ? value : value ? [value] : [];
-  const sectorIcons = [Factory, ShoppingCart, Monitor, Building2, HeartPulse, MoreHorizontal];
+  const sectorIcons = [Factory, ShoppingCart, Monitor, Building2, MoreHorizontal];
   return (
     <div className={styles.choices} role={multi ? "group" : "radiogroup"} aria-label={label}>
       {choices.map((choice, index) => {

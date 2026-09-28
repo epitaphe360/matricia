@@ -39,10 +39,10 @@ export function createLegalPage(documentId: LegalDocumentId) {
         ];
 
     return (
-      <main id="contenu-principal" className="public-page px-4 py-12 text-[#1a2340] sm:px-6 sm:py-16" dir={locale === "ar" ? "rtl" : "ltr"}>
+      <main id="contenu-principal" className="public-page px-4 py-12 text-[var(--mat-navy)] sm:px-6 sm:py-16" dir={locale === "ar" ? "rtl" : "ltr"}>
         <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[240px_minmax(0,1fr)]">
-          <nav aria-label={locale === "ar" ? "وثائق قانونية" : "Informations légales"} className="public-legal-nav h-fit rounded-2xl border border-[#eadfce] bg-white p-3">
-            <p className="px-3 pb-2 text-sm font-semibold text-[#1a2340]">{locale === "ar" ? "المعلومات القانونية والسرية" : "Informations légales et confidentialité"}</p>
+          <nav aria-label={locale === "ar" ? "وثائق قانونية" : "Informations légales"} className="public-legal-nav h-fit rounded-2xl border border-[var(--mat-border)] bg-white p-3">
+            <p className="px-3 pb-2 text-sm font-semibold text-[var(--mat-navy)]">{locale === "ar" ? "المعلومات القانونية والسرية" : "Informations légales et confidentialité"}</p>
             {siblings.map((item) => {
               const label = getLegalDocument(locale, item.id).title;
               return <Link key={item.id} href={item.href} aria-current={item.id === documentId ? "page" : undefined}>{label}</Link>;
@@ -56,9 +56,9 @@ export function createLegalPage(documentId: LegalDocumentId) {
             <p className="mt-4 text-sm text-slate-500">{locale === "ar" ? `آخر تحديث: ${doc.updated}` : `Date de mise à jour : ${doc.updated}`}</p>
             <p className="mt-6 text-lg leading-8 text-slate-600">{doc.description}</p>
             {documentId === "confidentialite" ? (
-              <div id="securite" className="mt-8 overflow-x-auto rounded-2xl border border-[#eadfce] bg-white">
+              <div id="securite" className="mt-8 overflow-x-auto rounded-2xl border border-[var(--mat-border)] bg-white">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-[#fbf6ea] text-start">
+                  <thead className="bg-[var(--mat-canvas)] text-start">
                     <tr>
                       {(locale === "ar" ? ["فئة البيانات", "غاية المعالجة", "مدة الحفظ", "حقوقكم"] : ["Catégorie de données", "Finalité du traitement", "Durée de conservation", "Vos droits"]).map((heading) => (
                         <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>
@@ -67,7 +67,7 @@ export function createLegalPage(documentId: LegalDocumentId) {
                   </thead>
                   <tbody>
                     {table.map((row) => (
-                      <tr key={row[0]} className="border-t border-[#eadfce] align-top">
+                      <tr key={row[0]} className="border-t border-[var(--mat-border)] align-top">
                         {row.map((cell) => <td key={cell} className="px-4 py-3 leading-6 text-slate-700">{cell}</td>)}
                       </tr>
                     ))}
@@ -79,7 +79,7 @@ export function createLegalPage(documentId: LegalDocumentId) {
             <div className="mt-10 space-y-10">
               {doc.sections.map((section) => (
                 <section key={section.heading}>
-                  <h2 className="text-2xl font-semibold text-[#1a2340]">{section.heading}</h2>
+                  <h2 className="text-2xl font-semibold text-[var(--mat-navy)]">{section.heading}</h2>
                   {section.paragraphs.map((paragraph) => (
                     <p key={paragraph.slice(0, 48)} className="mt-4 leading-7 text-slate-700">{paragraph}</p>
                   ))}
@@ -98,7 +98,7 @@ export function createLegalPage(documentId: LegalDocumentId) {
                 <span className="journey-known mt-3">{locale === "ar" ? "إدارة تفضيلاتي" : "Gérer mes préférences"}</span>
               </Link>
             </div>
-            <aside className="mt-10 rounded-2xl border border-[#eadfce] bg-white p-5">
+            <aside className="mt-10 rounded-2xl border border-[var(--mat-border)] bg-white p-5">
               <h2 className="text-lg font-semibold">{locale === "ar" ? "الوصول إلى الوثائق" : "Accès aux documents"}</h2>
               <p className="public-muted mt-2">{locale === "ar" ? "كل وثيقة متاحة بالفرنسية والعربية." : "Chaque document est disponible en français et en arabe."}</p>
               <nav className="mt-3 flex flex-wrap gap-3 text-sm" aria-label={locale === "ar" ? "الوثائق القانونية" : "Documents légaux"}>

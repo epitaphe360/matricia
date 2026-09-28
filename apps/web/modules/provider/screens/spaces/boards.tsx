@@ -12,6 +12,7 @@ import type { ProviderReputationDashboard } from "@/modules/provider/data/reputa
 import { getEligibilityReason, getProviderStatusLabel } from "@/modules/provider/screens/qualification/messages";
 import type { UserActionItem } from "@/modules/shared/lib/action-center/model";
 import { JourneyGlyph } from "@/modules/shared/ui/journey-glyph";
+import { ProviderProfileRail } from "@/modules/provider/ui/provider-profile-rail";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 
 function capacityStatusLabel(status: string, locale: Locale, fallback: string) {
@@ -300,6 +301,24 @@ export function QualificationBoard({ locale, query, dashboard }: { locale: Local
     : demo.history;
   return (
     <main className="client-page provider-qualify">
+      <section className="client-board">
+        <article className="client-card provider-identity-card">
+          <div className="provider-identity-main">
+            <p className="client-space-label">{c.space}</p>
+            <h2>{live && dashboard?.organizationName ? dashboard.organizationName : (locale === "ar" ? "ملفكم المهني" : "Votre profil professionnel")}</h2>
+            <p>{live && dashboard?.profile?.activitySummary
+              ? dashboard.profile.activitySummary.slice(0, 220)
+              : (locale === "ar" ? "صفوا نشاطكم وكفاءاتكم لاستكمال الملف." : "Décrivez votre activité et vos compétences pour compléter le dossier.")}</p>
+            <div className="provider-chip-row">
+              <span className="client-status-chip" data-tone={profileReady ? "mint" : "peach"}>{statusLabel}</span>
+              {live && dashboard?.profile ? (
+                <span className="provider-meta-chip">{locale === "ar" ? `فريق: ${dashboard.profile.teamSize}` : `Équipe : ${dashboard.profile.teamSize}`}</span>
+              ) : null}
+            </div>
+          </div>
+          <Cta href={`/${locale}/sous-traitant/qualification${query}#qualification`}>{c.completeFolder}</Cta>
+        </article>
+      </section>
       <section className="client-board provider-qualify-status">
         <article className="client-card client-priority-head">
           <div>
@@ -413,6 +432,9 @@ export function ServicesBoard({ locale, query, services, domain }: { locale: Loc
   const capacityHref = `/${locale}/sous-traitant/qualification${query}#capacite`;
   return (
     <main className="client-page provider-services">
+      <div className="provider-settings-layout">
+        <ProviderProfileRail locale={locale} query={query} active="services" />
+        <div className="client-stack">
       <p className="client-safety">{c.svcExamined}</p>
       <section className="client-board client-board-compare">
         <article className="client-card">
@@ -428,7 +450,31 @@ export function ServicesBoard({ locale, query, services, domain }: { locale: Loc
               <TabLink key={group.id} href={`/${locale}/sous-traitant/services${providerSearchQuery(query, { domain: group.domain })}`} current={domain === group.domain}>{group.domain}</TabLink>
             ))}
           </nav>
-          {live && visibleGroups.length === 0 ? <p role="status">{c.svcEmpty}</p> : (
+          {live && visibleGroups.length === 0 ? (
+            <div>
+              <p role="status">{c.svcEmpty}</p>
+              <p className="client-access-note">{locale === "ar" ? "اختاروا مجالاً للبدء في التصريح بخدماتكم عبر التأهيل." : "Choisissez un domaine pour commencer à déclarer vos services via la qualification."}</p>
+              <div className="provider-domain-empty">
+                {[
+                  { code: "IT", label: locale === "ar" ? "معلوميات" : "Informatique" },
+                  { code: "COM", label: locale === "ar" ? "تواصل" : "Communication" },
+                  { code: "ACC", label: locale === "ar" ? "محاسبة" : "Comptabilité" },
+                  { code: "LEGAL", label: locale === "ar" ? "قانوني" : "Juridique" },
+                  { code: "HR", label: locale === "ar" ? "موارد بشرية" : "Ressources humaines" },
+                  { code: "INS", label: locale === "ar" ? "تأمين" : "Assurance" },
+                  { code: "LOG", label: locale === "ar" ? "لوجستيك" : "Logistique" },
+                  { code: "BTP", label: locale === "ar" ? "بناء" : "BTP" },
+                  { code: "QHSE", label: locale === "ar" ? "جودة" : "Qualité / HSE" },
+                  { code: "SALES", label: locale === "ar" ? "تجاري" : "Commercial" },
+                ].map((domainItem) => (
+                  <Link key={domainItem.code} href={`/${locale}/sous-traitant/qualification${providerSearchQuery(query, {})}#qualification`}>
+                    <span aria-hidden>{domainItem.code.slice(0, 1)}</span>
+                    {domainItem.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ) : (
           <ul className="client-feed" id="services-declares">
             {live
               ? visibleGroups.map((group) => (
@@ -493,6 +539,8 @@ export function ServicesBoard({ locale, query, services, domain }: { locale: Loc
         </ul>
         )}
       </article>
+        </div>
+      </div>
     </main>
   );
 }
@@ -578,6 +626,7 @@ export function QuotesBoard({ locale, query, rows, empty, tab }: { locale: Local
         <article className="client-card">
           <header>
             <h2>{c.proposals}</h2>
+            <p className="client-access-note">{locale === "ar" ? "تتبعوا عروضكم مثل مسار ترشيحات: مسودات، إرسال، مراجعة ونتيجة." : "Suivez vos devis comme un parcours de candidatures : brouillons, envoi, révision et issue."}</p>
             <div className="client-table-tools">
               <SearchForm locale={locale} path="devis" query={query} label={c.searchQuote} />
               <nav className="client-tabs" aria-label={c.proposals}>

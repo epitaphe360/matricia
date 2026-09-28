@@ -32,7 +32,7 @@ export function CookiePreferences({ locale }: { locale: Locale }) {
 
   return (
     <form
-      className="mt-8 rounded-2xl border border-[#eadfce] bg-white p-6"
+      className="mt-8 rounded-2xl border border-[var(--mat-border)] bg-white p-6"
       onSubmit={(event) => {
         event.preventDefault();
         save();
@@ -47,7 +47,7 @@ export function CookiePreferences({ locale }: { locale: Locale }) {
         </span>
       </label>
       <label className="mt-4 flex min-h-11 items-start gap-3">
-        <input type="checkbox" checked={serviceMessages} onChange={(event) => { setServiceMessages(event.target.checked); setSaved(false); }} className="mt-1 size-5 accent-[#6d3cc7]" />
+        <input type="checkbox" checked={serviceMessages} onChange={(event) => { setServiceMessages(event.target.checked); setSaved(false); }} className="mt-1 size-5 accent-[var(--mat-violet)]" />
         <span>
           <strong>{locale === "ar" ? "رسائل الخدمة" : "Messages de service"}</strong>
           <span className="mt-1 block text-sm text-slate-600">{locale === "ar" ? "قبول إعادة الاتصال لمعلومات غير تجارية حول مساركم." : "Accepter d’être recontacté pour des informations non commerciales liées à votre parcours."}</span>

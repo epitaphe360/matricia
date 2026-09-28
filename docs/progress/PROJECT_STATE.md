@@ -1,3 +1,54 @@
+## 2026-09-28 — Administration : plus d’UUID, de JSON ni d’empreinte à saisir
+
+- Command center : l’action contrôlée se demande en choisissant un dossier ouvert. Le serveur relit le dossier sous RLS, en déduit l’organisation et la ressource, et calcule l’empreinte SHA-256 et le résumé. Les identifiants envoyés par le navigateur sont ignorés.
+- L’accès support est accordé au responsable du dossier, pour 15, 30 ou 60 minutes. Avant, une date `datetime-local` échouait à la validation.
+- Finance (box) : avantages autorisés en cases à cocher. Achats groupés : fournisseur choisi dans une liste.
+- Quatre tests périmés alignés sur le comportement réel (Finance franchisé présente, bouton inventé retiré).
+- Vérification : `tsc` sans erreur dans le code source. La seule erreur restante est dans `.next/dev/types`, un fichier généré par le serveur de dev. Vitest : 267 fichiers, 1071 tests verts.
+- **Toujours non prêt** : pas d’E2E, pas de SQL/RLS relancé, pas d’audit indépendant, pas d’essai navigateur du Command center.
+
+## 2026-09-28 — Besoin public : une étape à la fois
+
+- Le formulaire n’affiche plus toutes les sections ensemble. L’ordre est : description, compréhension du besoin, questions, compléments, puis récapitulatif.
+- Le libellé technique `TOKEN_OVERLAP_V1` n’est plus montré à l’utilisateur.
+- **Toujours non prêt** pour le reste du prompt maître.
+
+## 2026-09-28 — Franchise publique : plus de promesse d’exclusivité
+
+- La page ne dit plus « territoire exclusif ». Elle dit que le territoire est celui prévu au contrat versionné, en français et en arabe.
+- Les parts internes (Hatim, NEOXA, Asma) n’étaient pas sur cette page.
+- **Toujours non prêt** pour le reste du prompt maître.
+
+## 2026-09-28 — Page Professionnels : plusieurs métiers, catégories repliées
+
+- Le hero ne montre plus la photo d’artisan. Il liste les domaines réels du catalogue (informatique, juridique, comptabilité, etc.).
+- Les services d’un domaine sont groupés par catégorie. Seule la première catégorie est ouverte.
+- L’exemple d’activité cite plusieurs métiers, plus seulement la menuiserie.
+- **Toujours non prêt** pour le reste du prompt maître.
+
+## 2026-09-28 — Prédiagnostic public : plus de chiffres inventés
+
+- Sans priorité, une seule carte s’affiche. Les 92 %, 83 %, 71 % et « 44 / 48 réponses » sont retirés.
+- Si le navigateur refuse le brouillon, une seule reprise s’affiche : réessayer, continuer sans sauvegarde locale, ou se reconnecter. Les trois pannes simultanées sont retirées.
+- Le secteur « Santé, éducation & social » est retiré : le contrat `save_public_diagnostic_intake` ne l’accepte pas. Un ancien brouillon est enregistré comme « Autre activité ».
+- **Toujours non prêt** pour le reste du prompt maître.
+
+## 2026-09-28 — Navigation publique unique et hero allégé
+
+- FR et AR partagent les mêmes destinations, dans le même ordre : Comment ça marche, Entreprises, Professionnels, Franchise, Abonnements, À propos. Le contact reste dans le pied de page.
+- Le hero n’affiche plus le slogan, les trois valeurs, le script ni les bandeaux posés sur la photo. Le voile du titre suit le sens d’écriture (`to inline-end`).
+- Preuve : `vitest run public-navigation public-pages-mockup-alignment` — 2 fichiers, 12 tests, vert.
+- **Toujours non prêt.** Le reste du prompt maître (diagnostic, espaces, admin, E2E, SQL) n’est pas traité.
+
+## 2026-09-28 — Correction publique ciblée (contact, abonnements, besoin)
+
+- Branche `codex/audit-final-2026-09-15`, HEAD `a1e5752`. Aucun déploiement. Les changements locaux non commités sont conservés.
+- Contact : suppression du bloc « États d’envoi (exemples) / Exemple illustratif » et de la carte « Nous écrire directement — Via le formulaire ci-dessus ». Le succès reste celui renvoyé par l’action serveur.
+- Abonnements : les cartes n’affichent plus la même liste de fonctions. Prix et crédits viennent de `get_public_subscription_plans` (unités mineures, `formatMinor`). Prix nul ou plans indisponibles : « Tarif communiqué avant souscription », sans cartes Essentiel / Premium / Organisation inventées.
+- Besoin public : les deux sections numérotées 3 sont devenues 3, 4 et 5. Faute « nous pourrez » corrigée. Le découpage en six étapes distinctes n’est pas fait.
+- Preuve : `vitest run abonnements/page.test public-pages-mockup-alignment` — 2 fichiers, 10 tests, vert.
+- **Non prêt.** Inventaire complet des routes, RBAC, E2E et P0 non exécuté. Détail : `docs/corrections-integrales/ACCEPTANCE_REPORT.md`.
+
 ## 2026-09-21 — Registre des 71 lignes encore ouvertes
 
 - Les 63 lignes `MAT-FUNC` `IN_PROGRESS` ne pointent plus vers la matrice générique. Chacune cite une implémentation, un test et la preuve atomique qui existe. Le motif `PENDING` nomme l’écart restant : visa indépendant, et E2E métier quand il manque encore.

@@ -32,7 +32,7 @@ export function AdminProcessStrip({
             <span className="font-semibold text-[var(--ad-ink)]">{locale === "ar" ? "المسؤول" : "Responsable"}:</span> {owner}
           </p>
         </div>
-        <div className="rounded-xl border border-[var(--ad-border)] bg-[#fbfdfc] px-3 py-2 text-sm">
+        <div className="rounded-xl border border-[var(--ad-border)] bg-[var(--mat-canvas)] px-3 py-2 text-sm">
           <span className="font-semibold">{locale === "ar" ? "الإجراء التالي" : "Prochaine action"}:</span> {nextAction}
         </div>
       </div>

@@ -21,11 +21,11 @@ describe("PublicHomePage", () => {
     expect(html).toContain('href="/fr/fournisseur"');
     expect(html).toContain('href="/fr/besoin"');
     expect(html).toContain("Un cycle complet");
-    expect(html).toContain("/home-v2/hero-plate.png");
+    expect(html).not.toContain("/home-v2/hero-plate.png");
+    expect(html).toContain("Votre situation");
     expect(html).toContain("/home-v2/hero-collaboration.png");
     expect(html).not.toContain("200 services");
     expect((html.match(/<section/g) ?? []).length).toBeGreaterThanOrEqual(5);
-    expect(html).toContain("Stratégie");
     expect(html).toContain("Questions fréquentes");
     expect(html).toContain("id=\"comment-ca-marche\"");
   });

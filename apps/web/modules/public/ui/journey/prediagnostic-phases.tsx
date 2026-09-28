@@ -38,7 +38,7 @@ type PriorityKey = "organization" | "sales" | "security" | "verify";
 type Kind = "opportunity" | "declared" | "risk" | "verify";
 
 const optionIds: Record<Exclude<QuestionId, "next_action">, readonly string[]> = {
-  sector: ["industry_logistics", "commerce", "professional_services", "construction", "health_social", "other"],
+  sector: ["industry_logistics", "commerce", "professional_services", "construction", "other"],
   team_size: ["solo", "small", "medium", "large"],
   goals: ["save_time", "control_costs", "grow_sales", "secure_activity", "global_review"],
   priority_tracking: ["regular", "partial", "no", "unknown"],
@@ -66,8 +66,9 @@ function answerLabel(locale: Locale, id: QuestionId, answer: Answer | undefined)
   if (id === "next_action") return typeof answer === "string" ? answer : "—";
   const labels = copy.questions[index]?.[2] ?? [];
   const ids = optionIds[id];
-  if (Array.isArray(answer)) return answer.map((value) => labels[ids.indexOf(value)] ?? value).join(", ") || "—";
-  return labels[ids.indexOf(answer)] ?? String(answer);
+  if (Array.isArray(answer)) return answer.map((value) => labels[ids.indexOf(value)] ?? labels.at(-1) ?? "—").join(", ") || "—";
+  const choice = ids.indexOf(id === "sector" && answer === "health_social" ? "other" : answer);
+  return labels[choice] ?? labels.at(-1) ?? "—";
 }
 
 function PageChrome({ locale, children, footer = true }: { locale: Locale; children: ReactNode; footer?: boolean }) {
@@ -284,7 +285,7 @@ export function AnalyzingView({
 }
 
 function MoreDots() {
-  return <span aria-hidden="true" style={{ color: "#6d3cc7", letterSpacing: 2 }}>•••</span>;
+  return <span aria-hidden="true" style={{ color: "#642bef", letterSpacing: 2 }}>•••</span>;
 }
 
 export function ResultView({
@@ -370,14 +371,14 @@ export function ResultView({
             <p className={styles.legendTitle}>{copy.legendTitle}</p>
             <div className={styles.legendList}>
               <div className={styles.legendItem}><AlertTriangle size={16} color="#c0364a" aria-hidden="true" /><span><strong>{copy.legend.analyze[0]}</strong>{copy.legend.analyze[1]}</span></div>
-              <div className={styles.legendItem}><CheckCircle2 size={16} color="#1f7a56" aria-hidden="true" /><span><strong>{copy.legend.verify[0]}</strong>{copy.legend.verify[1]}</span></div>
-              <div className={styles.legendItem}><CircleHelp size={16} color="#8b93a8" aria-hidden="true" /><span><strong>{copy.legend.none[0]}</strong>{copy.legend.none[1]}</span></div>
+              <div className={styles.legendItem}><CheckCircle2 size={16} color="#1e7a5c" aria-hidden="true" /><span><strong>{copy.legend.verify[0]}</strong>{copy.legend.verify[1]}</span></div>
+              <div className={styles.legendItem}><CircleHelp size={16} color="#5e6a93" aria-hidden="true" /><span><strong>{copy.legend.none[0]}</strong>{copy.legend.none[1]}</span></div>
             </div>
           </div>
         </div>
         <aside className={styles.resultAside}>
           <div className={styles.planCard}>
-            <p className={styles.planHead}><Target size={18} color="#6d3cc7" aria-hidden="true" />{copy.planTitle}</p>
+            <p className={styles.planHead}><Target size={18} color="#642bef" aria-hidden="true" />{copy.planTitle}</p>
             <p className={styles.planSub}>{copy.planSubtitle}</p>
             <ol className={styles.planList}>
               {copy.planItems.map(([title, text], index) => (
@@ -439,7 +440,7 @@ export function DetailView({
         <div className={styles.detailStack}>
           <section className={styles.detailCard}>
             <div className={styles.detailCardHead}>
-              <ClipboardList size={22} color="#e85a7a" aria-hidden="true" />
+              <ClipboardList size={22} color="#e65290" aria-hidden="true" />
               <div>
                 <h2>{copy.detailAnswersTitle}</h2>
                 <p>{copy.detailAnswersLead}</p>
@@ -475,7 +476,7 @@ export function DetailView({
           </section>
           <section className={styles.detailCard}>
             <div className={styles.detailCardHead}>
-              <Target size={22} color="#1f7a56" aria-hidden="true" />
+              <Target size={22} color="#1e7a5c" aria-hidden="true" />
               <div>
                 <h2>{copy.detailPlanTitle}</h2>
                 <p>{copy.detailPlanLead}</p>
@@ -590,7 +591,7 @@ export function SaveView({
       <Hero eyebrow={copy.resultEyebrow} title={copy.saveTitle} intro={copy.saveIntro} script={copy.scriptNote} />
       <div className={styles.resultBoard}>
         <section className={styles.card}>
-          <p className={styles.planHead}><ClipboardList size={18} color="#6d3cc7" aria-hidden="true" />{copy.saveReady}</p>
+          <p className={styles.planHead}><ClipboardList size={18} color="#642bef" aria-hidden="true" />{copy.saveReady}</p>
           <p className={styles.cardEyebrow} style={{ marginTop: 18 }}>{copy.savePrioritiesTitle}</p>
           <ol className={styles.priorityMeta} style={{ marginTop: 12 }}>
             {priorities.map((key, index) => (
@@ -621,7 +622,7 @@ export function SaveView({
           </div>
           <form action={submitSave} className={styles.actions} style={{ marginTop: 22 }}>
             <input type="hidden" name="locale" value={locale} />
-            <input type="hidden" name="answers" value={JSON.stringify(answers)} />
+            <input type="hidden" name="answers" value={JSON.stringify(answers.sector === "health_social" ? { ...answers, sector: "other" } : answers)} />
             <input type="hidden" name="organizationId" value={organizationId} />
             <button type="button" className={styles.back} onClick={onBack}><ArrowLeft className="rtl-mirror" size={16} aria-hidden="true" />{copy.backToResult}</button>
             <button type="submit" className={styles.continue} disabled={savePending || !completeAnswers || !organizationId}>
@@ -666,81 +667,42 @@ export type { PriorityKey, SaveState, OrganizationOption };
 
 export function HonestStatesView({ locale, onEdit, onAssist }: { locale: Locale; onEdit: () => void; onAssist: () => void }) {
   const copy = getPublicJourneyCopy(locale).diagnostic;
-  const cards = locale === "fr"
-    ? [
-        { tone: "mint" as const, title: "Aucune priorité majeure détectée sur le périmètre évalué", body: "Bonne dynamique — vos pratiques actuelles semblent globalement alignées. Continuez le suivi pour confirmer dans la durée.", coverage: "92%", answers: "44 / 48 réponses", cta: "Poursuivre le suivi" },
-        { tone: "coral" as const, title: "Analyse incomplète", body: "4 réponses manquantes. Complétez-les pour obtenir une orientation plus fiable.", coverage: "83%", answers: "40 / 48 réponses", cta: "Compléter le diagnostic" },
-        { tone: "violet" as const, title: "Information inconnue ou non applicable", body: "Information absente, inconnue ou non applicable : Matricia n’impose aucune conclusion forcée.", coverage: "71%", answers: "34 / 48 réponses", cta: null },
-      ]
-    : [
-        { tone: "mint" as const, title: "لا أولوية كبرى ضمن النطاق المقيم", body: "دينامية جيدة — ممارساتكم تبدو متوافقة إجمالاً. واصلوا المتابعة للتأكيد مع الزمن.", coverage: "92%", answers: "44 / 48 إجابة", cta: "متابعة الرصد" },
-        { tone: "coral" as const, title: "تحليل غير مكتمل", body: "4 إجابات ناقصة. أكملوها لتوجيه أوثق.", coverage: "83%", answers: "40 / 48 إجابة", cta: "إكمال التشخيص" },
-        { tone: "violet" as const, title: "معلومة غير معروفة أو غير منطبقة", body: "معلومة غائبة أو غير معروفة أو غير منطبقة: لا تفرض ماتريسيا أي استنتاج قسري.", coverage: "71%", answers: "34 / 48 إجابة", cta: null },
-      ];
+  const title = locale === "fr" ? "Aucune priorité majeure détectée sur le périmètre évalué" : "لا أولوية كبرى ضمن النطاق المقيم";
+  const body = locale === "fr"
+    ? "Vos réponses ne font apparaître aucune des priorités suivies par cet éclairage. Ce n’est pas un score de santé, ni une certification. Vous pouvez revoir vos réponses ou décrire un besoin précis."
+    : "لا تُظهر إجاباتكم أي أولوية يتتبعها هذا التقييم الأولي. هذه ليست نتيجة صحة ولا شهادة. يمكنكم مراجعة إجاباتكم أو وصف احتياج محدد.";
   return (
     <PageChrome locale={locale}>
-      <Hero eyebrow={copy.resultEyebrow} title={locale === "fr" ? "Résultats honnêtes selon les informations disponibles" : "نتائج صادقة وفق المعلومات المتاحة"} intro={copy.resultIntro} script={copy.scriptNote} />
-      <div className={styles.resultCards} style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
-        {cards.map((card) => (
-          <article key={card.title} className={styles.priorityCard}>
-            <span className={`${styles.priorityBadge} ${card.tone === "mint" ? styles.priorityBadgeVerify : card.tone === "coral" ? styles.priorityBadgeAnalyze : styles.priorityBadgeMid}`}>
-              {card.tone === "mint" ? <CheckCircle2 size={14} aria-hidden="true" /> : card.tone === "coral" ? <AlertTriangle size={14} aria-hidden="true" /> : <CircleHelp size={14} aria-hidden="true" />}
-              {card.coverage}
-            </span>
-            <h2 className={styles.priorityTitle}>{card.title}</h2>
-            <p className={styles.priorityRow}>{card.body}</p>
-            <p className={styles.priorityRow}>{card.answers}</p>
-            <div className={styles.stackActions}>
-              {card.cta ? <button type="button" className={card.tone === "coral" ? styles.primaryWide : styles.secondaryWide} onClick={onEdit}>{card.cta}</button> : null}
-              <button type="button" className={styles.secondaryWide} onClick={onEdit}>{copy.restart}</button>
-              <button type="button" className={styles.secondaryWide} onClick={onAssist}>{copy.assist}</button>
-            </div>
-          </article>
-        ))}
-      </div>
+      <Hero eyebrow={copy.resultEyebrow} title={title} intro={copy.resultIntro} script={copy.scriptNote} />
+      <article className={styles.priorityCard}>
+        <span className={`${styles.priorityBadge} ${styles.priorityBadgeVerify}`}><CheckCircle2 size={14} aria-hidden="true" />{locale === "fr" ? "Périmètre évalué" : "النطاق المقيم"}</span>
+        <h2 className={styles.priorityTitle}>{title}</h2>
+        <p className={styles.priorityRow}>{body}</p>
+        <div className={styles.stackActions}>
+          <button type="button" className={styles.primaryWide} onClick={onEdit}>{copy.restart}</button>
+          <button type="button" className={styles.secondaryWide} onClick={onAssist}>{copy.assist}</button>
+        </div>
+      </article>
     </PageChrome>
   );
 }
 
 export function RecoveryStatesView({ locale, onRetry, onContinue, onReconnect }: { locale: Locale; onRetry: () => void; onContinue: () => void; onReconnect: () => void }) {
   const copy = getPublicJourneyCopy(locale).diagnostic;
-  const cards = locale === "fr"
-    ? [
-        { title: "Connexion interrompue", body: "Votre travail est conservé. Réessayez la synchronisation ou continuez hors connexion.", primary: "Réessayer la synchronisation", secondary: "Continuer hors connexion", action: "retry" as const },
-        { title: "Session expirée", body: "Aucune donnée n’est perdue. Reconnectez-vous en toute sécurité pour reprendre.", primary: "Se reconnecter en toute sécurité", secondary: null, action: "reconnect" as const },
-        { title: "Mise à jour disponible", body: "Brouillon incompatible avec la nouvelle version. Créez une copie migrée ou conservez l’ancienne.", primary: "Créer une copie avec la nouvelle version", secondary: "Conserver l’ancienne version", action: "continue" as const },
-      ]
-    : [
-        { title: "انقطاع الاتصال", body: "عملكم محفوظ. أعيدوا المزامنة أو واصلوا دون اتصال.", primary: "إعادة المزامنة", secondary: "المتابعة دون اتصال", action: "retry" as const },
-        { title: "انتهت الجلسة", body: "لم تُفقد أي بيانات. أعيدوا الاتصال بأمان للاستئناف.", primary: "إعادة الاتصال بأمان", secondary: null, action: "reconnect" as const },
-        { title: "تحديث متاح", body: "المسودة غير متوافقة مع النسخة الجديدة. أنشئوا نسخة مُرحَّلة أو احتفظوا بالقديمة.", primary: "إنشاء نسخة بالنسخة الجديدة", secondary: "الاحتفاظ بالنسخة القديمة", action: "continue" as const },
-      ];
+  const title = locale === "fr" ? "Le brouillon n’a pas pu être conservé sur cet appareil" : "تعذر حفظ المسودة على هذا الجهاز";
   return (
     <PageChrome locale={locale}>
-      <Hero eyebrow={copy.eyebrow} title={locale === "fr" ? "Reprendre mon diagnostic" : "استئناف تشخيصي"} intro={locale === "fr" ? "Avancez même lorsque tout ne se passe pas comme prévu." : "تقدموا حتى عندما لا تسير الأمور كما خُطط."} script={copy.scriptNote} />
-      <div className={styles.resultCards} style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
-        {cards.map((card) => (
-          <article key={card.title} className={styles.priorityCard}>
-            <span className={`${styles.priorityBadge} ${styles.priorityBadgeAnalyze}`}><AlertTriangle size={14} aria-hidden="true" />{card.title}</span>
-            <h2 className={styles.priorityTitle}>{card.title}</h2>
-            <p className={styles.priorityRow}>{card.body}</p>
-            <div className={styles.stackActions}>
-              <button
-                type="button"
-                className={styles.primaryWide}
-                onClick={() => {
-                  if (card.action === "retry") onRetry();
-                  else if (card.action === "reconnect") onReconnect();
-                  else onContinue();
-                }}
-              >
-                {card.primary}
-              </button>
-              {card.secondary ? <button type="button" className={styles.secondaryWide} onClick={onContinue}>{card.secondary}</button> : null}
-            </div>
-          </article>
-        ))}
-      </div>
+      <Hero eyebrow={copy.eyebrow} title={locale === "fr" ? "Reprendre mon diagnostic" : "استئناف تشخيصي"} intro={title} script={copy.scriptNote} />
+      <article className={styles.priorityCard}>
+        <span className={`${styles.priorityBadge} ${styles.priorityBadgeAnalyze}`}><AlertTriangle size={14} aria-hidden="true" />{title}</span>
+        <h2 className={styles.priorityTitle}>{title}</h2>
+        <p className={styles.priorityRow}>{locale === "fr" ? "Les réponses déjà saisies dans cette page restent affichées. Vous pouvez réessayer l’enregistrement local ou continuer sans sauvegarde sur cet appareil." : "تبقى الإجابات المدخلة في هذه الصفحة ظاهرة. يمكنكم إعادة الحفظ المحلي أو المتابعة دون حفظ على هذا الجهاز."}</p>
+        <div className={styles.stackActions}>
+          <button type="button" className={styles.primaryWide} onClick={onRetry}>{locale === "fr" ? "Réessayer l’enregistrement" : "إعادة الحفظ"}</button>
+          <button type="button" className={styles.secondaryWide} onClick={onContinue}>{locale === "fr" ? "Continuer sans sauvegarde locale" : "المتابعة دون حفظ محلي"}</button>
+          <button type="button" className={styles.secondaryWide} onClick={onReconnect}>{locale === "fr" ? "Se reconnecter" : "إعادة الاتصال"}</button>
+        </div>
+      </article>
     </PageChrome>
   );
 }

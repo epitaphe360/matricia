@@ -15,7 +15,7 @@ export default async function PublicLoginLayout({ children, params }: Readonly<{
   const { locale } = await params;
   if (!isLocale(locale)) return children;
   return (
-    <div dir={locale === "ar" ? "rtl" : "ltr"} className="public-root flex min-h-dvh flex-col text-[#1a2340]">
+    <div dir={locale === "ar" ? "rtl" : "ltr"} className="public-root flex min-h-dvh flex-col text-[var(--mat-navy)]">
       <PublicNavigation locale={locale} />
       <div className="flex-1">{children}</div>
       <PublicFooter locale={locale} />

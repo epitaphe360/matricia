@@ -29,7 +29,7 @@
   --card-foreground: var(--mat-color-text);
   --popover: var(--mat-color-surface);
   --popover-foreground: var(--mat-color-text);
-  --primary: var(--mat-color-brand);
+  --primary: var(--mat-violet);
   --primary-foreground: #ffffff;
   --secondary: var(--mat-color-surface-muted);
   --secondary-foreground: var(--mat-color-brand-strong);
@@ -41,11 +41,11 @@
   --border: var(--mat-color-border);
   --input: var(--mat-color-border);
   --ring: var(--mat-color-focus);
-  --chart-1: var(--mat-color-brand);
-  --chart-2: var(--mat-color-accent);
-  --chart-3: var(--mat-color-focus);
-  --chart-4: var(--mat-color-success);
-  --chart-5: var(--mat-color-warning);
+  --chart-1: var(--mat-violet);
+  --chart-2: var(--mat-rose);
+  --chart-3: var(--mat-coral);
+  --chart-4: var(--mat-mint);
+  --chart-5: var(--mat-purple);
   --radius: var(--mat-radius-medium);
   --sidebar: var(--mat-color-surface);
   --sidebar-foreground: var(--mat-color-text);

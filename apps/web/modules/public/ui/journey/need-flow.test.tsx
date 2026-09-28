@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { NeedFlow, needProgressPercent, parseNeedDraft } from "./need-flow";
+import { NeedFlow, needComposerSection, needProgressPercent, parseNeedDraft } from "./need-flow";
 import { canonicalizePublicNeedClassification } from "@/modules/public/data/need-intent/model";
 
 describe("NeedFlow continuity", () => {
@@ -36,6 +36,15 @@ describe("NeedFlow continuity", () => {
     const future = Date.now() + 10_000;
     const result = parseNeedDraft(JSON.stringify({ version: 3, step: 9, need: "Audit du réseau interne", location: "", timing: "", constraints: "", expiresAt: future }), "fr");
     expect(result.draft?.step).toBe(4);
+  });
+
+  it("découpe le parcours en une section visible à la fois", () => {
+    expect(needComposerSection(0)).toBe("describe");
+    expect(needComposerSection(1)).toBe("understand");
+    expect(needComposerSection(2)).toBe("questions");
+    expect(needComposerSection(3)).toBe("complete");
+    expect(needComposerSection(4)).toBe("recap");
+    expect(needComposerSection(9)).toBe("recap");
   });
 
   it("restores confirmed answers without inventing a service", () => {

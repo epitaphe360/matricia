@@ -151,7 +151,15 @@ export function BoxesPanel({
             <Select name="slotKind" label={m.slotKind} values={["MANDATORY", "OPTIONAL"]} />
             <Field label={m.slotMin}><Input name="slotMin" className={control} dir="ltr" defaultValue="0" /></Field>
             <Field label={m.slotMax}><Input name="slotMax" className={control} dir="ltr" defaultValue="1" /></Field>
-            <Field label={m.allowedBenefits}><Input name="allowedBenefitVersionIds" className={control} dir="ltr" /></Field>
+            <fieldset className="grid gap-2 text-sm">
+              <legend>{m.allowedBenefits}</legend>
+              {dashboard.benefits.length === 0 ? <p className="text-muted-foreground">{m.empty}</p> : dashboard.benefits.map((item) => (
+                <label key={item.id} className="flex min-h-11 items-center gap-2">
+                  <input type="checkbox" name="allowedBenefitVersionIds" value={item.id} className="size-4" />
+                  <span>{name(item.name_fr, item.name_ar)} <span dir="ltr" className="text-muted-foreground">({item.code} v{item.version})</span></span>
+                </label>
+              ))}
+            </fieldset>
           </CommandForm>
 
           <CommandForm title={m.activateBox} action={activateBoxAction} keyValue={keys.activateBox} locale={locale} auditOrganizationId={auditOrganizationId!} m={m} disabled={draftBoxes.length === 0}>

@@ -26,6 +26,7 @@ const routeByActive: Record<ProviderNavKey, string> = {
   messages: "sous-traitant/messages",
   modeClient: "sous-traitant/mode-client",
   company: "sous-traitant/entreprise",
+  settings: "sous-traitant/parametres",
 };
 
 export function ProviderAppShell({

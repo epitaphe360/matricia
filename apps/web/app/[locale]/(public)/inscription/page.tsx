@@ -44,15 +44,19 @@ export default async function PublicInscriptionPage({
     <main id="contenu-principal" className="public-page pb-16">
       <section className="public-wrap grid gap-10 py-12 lg:grid-cols-[.9fr_1.1fr] lg:items-start">
         <div>
-          <p className="max-w-xl text-4xl font-semibold leading-tight text-[#1a2340]">{locale === "ar" ? "مؤسسات ومهنيون، تقدموا معاً." : "Entreprises et professionnels, avancez ensemble."}</p>
+          <p className="max-w-xl text-4xl font-semibold leading-tight text-[var(--mat-navy)]">{locale === "ar" ? "مؤسسات ومهنيون، تقدموا معاً." : "Entreprises et professionnels, avancez ensemble."}</p>
           <p className="public-lead mt-4">{locale === "ar" ? "تنظم ماتريسيا الاحتياجات وتسهّل الربط وترافق تنفيذ الخدمات." : "Matricia structure les besoins, facilite la mise en relation et accompagne l’exécution des prestations."}</p>
           <ul className="mt-8 space-y-4">
-            {(locale === "ar"
-              ? [["فرص مؤهلة", "مشاريع ملموسة وشركاء ثقة."], ["أدوات لنشاطكم", "وفّروا الوقت وركّزوا على الأهم."], ["منظومة أكثر انفتاحاً", "معاً لسوق أكثر شفافية ووصولاً."]]
-              : [["Des opportunités qualifiées", "Des projets concrets et des partenaires de confiance."], ["Des outils pensés pour votre activité", "Gagnez du temps, restez concentré sur l’essentiel."], ["Un écosystème plus ouvert", "Ensemble pour un marché plus transparent et accessible."]]
+            {(role === "fournisseur"
+              ? (locale === "ar"
+                ? [["مجاني ودون التزام", "أنشئوا ملفكم المهني دون رسوم دخول."], ["مهام مؤهلة", "اطلعوا على استشارات متوافقة مع خبرتكم."], ["مرافقة في كل مرحلة", "من التأهيل إلى التنفيذ مع ضوابط ماتريسيا."]]
+                : [["Gratuit et sans engagement", "Créez votre profil professionnel sans droit d’entrée."], ["Accès à des missions qualifiées", "Recevez des consultations compatibles avec votre expertise."], ["Accompagnement à chaque étape", "De la qualification à l’exécution, avec les contrôles Matricia."]])
+              : (locale === "ar"
+                ? [["فرص مؤهلة", "مشاريع ملموسة وشركاء ثقة."], ["أدوات لنشاطكم", "وفّروا الوقت وركّزوا على الأهم."], ["منظومة أكثر انفتاحاً", "معاً لسوق أكثر شفافية ووصولاً."]]
+                : [["Des opportunités qualifiées", "Des projets concrets et des partenaires de confiance."], ["Des outils pensés pour votre activité", "Gagnez du temps, restez concentré sur l’essentiel."], ["Un écosystème plus ouvert", "Ensemble pour un marché plus transparent et accessible."]])
             ).map(([title, text]) => (
               <li key={title}>
-                <strong className="block text-[#1a2340]">{title}</strong>
+                <strong className="block text-[var(--mat-navy)]">{title}</strong>
                 <span className="mt-1 block text-sm text-slate-600">{text}</span>
               </li>
             ))}
@@ -61,12 +65,12 @@ export default async function PublicInscriptionPage({
         </div>
         <section className="public-card max-w-none">
           <p className="journey-eyebrow">{chrome.signupAction}</p>
-          <h1 className="mt-3 text-2xl font-semibold text-[#1a2340]">{locale === "ar" ? "لنبدأ بملفك" : "Commençons par votre profil"}</h1>
+          <h1 className="mt-3 text-2xl font-semibold text-[var(--mat-navy)]">{locale === "ar" ? "لنبدأ بملفك" : "Commençons par votre profil"}</h1>
           <div className="mt-6 grid gap-3 sm:grid-cols-3" aria-label={chrome.signupTitle}>
             {profiles.map((profile) => (
-              <Link key={profile.id} href={profile.href} aria-current={role === profile.id ? "page" : undefined} className={`rounded-2xl border p-4 no-underline ${role === profile.id ? "border-[#6d3cc7] bg-[#f3eaff]" : "border-[#eadfce] bg-white"}`}>
-                <profile.icon aria-hidden="true" className="text-[#6d3cc7]" size={22} />
-                <strong className="mt-3 block text-[#1a2340]">{profile.title}</strong>
+              <Link key={profile.id} href={profile.href} aria-current={role === profile.id ? "page" : undefined} className={`rounded-2xl border p-4 no-underline ${role === profile.id ? "border-[var(--mat-violet)] bg-[var(--mat-violet-soft)]" : "border-[var(--mat-border)] bg-white"}`}>
+                <profile.icon aria-hidden="true" className="text-[var(--mat-violet)]" size={22} />
+                <strong className="mt-3 block text-[var(--mat-navy)]">{profile.title}</strong>
                 <span className="mt-1 block text-sm text-slate-600">{profile.text}</span>
                 {"alias" in profile ? <span className="sr-only">{profile.alias}</span> : null}
               </Link>
@@ -75,17 +79,17 @@ export default async function PublicInscriptionPage({
           {plan ? <p role="status" className="mt-5 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm">{chrome.planIntent} : <span dir="ltr">{plan}</span>. {chrome.planNote}</p> : null}
           <p className="mt-5 text-sm font-medium">{locale === "ar" ? "لغة التواصل المفضلة" : "Langue de communication préférée"} : {locale === "ar" ? "العربية" : "Français"}</p>
           <InscriptionConsent locale={locale} nextPath={nextPath} />
-          <p className="mt-6 text-sm text-slate-600">{chrome.loginTitle} <Link className="font-semibold text-[#6d3cc7] underline-offset-4 hover:underline" href={`/${locale}/connexion`}>{chrome.loginAction}</Link></p>
+          <p className="mt-6 text-sm text-slate-600">{chrome.loginTitle} <Link className="font-semibold text-[var(--mat-violet)] underline-offset-4 hover:underline" href={`/${locale}/connexion`}>{chrome.loginAction}</Link></p>
           <div className="mt-8 grid gap-3 sm:grid-cols-3">
-            <article className="rounded-2xl bg-[#f3eaff] p-4">
+            <article className="rounded-2xl bg-[var(--mat-violet-soft)] p-4">
               <h2 className="text-sm font-semibold">{locale === "ar" ? "حساب شخصي، منظمة منفصلة" : "Compte personnel, organisation séparée"}</h2>
               <p className="mt-2 text-xs leading-5 text-slate-600">{locale === "ar" ? "حسابكم ملك لكم. إنشاء المنظمة يتم لاحقاً، بشكل آمن." : "Votre compte vous est propre. La création d’une organisation se fait ensuite, séparément."}</p>
             </article>
-            <article className="rounded-2xl bg-[#f3eaff] p-4">
+            <article className="rounded-2xl bg-[var(--mat-violet-soft)] p-4">
               <h2 className="text-sm font-semibold">{locale === "ar" ? "لديكم حساب؟" : "Un compte existant ?"}</h2>
               <p className="mt-2 text-xs leading-5 text-slate-600">{locale === "ar" ? "نستأنف مساركم دون إنشاء حساب مزدوج." : "Nous reprenons votre parcours sans créer de double compte."}</p>
             </article>
-            <article className="rounded-2xl bg-[#f3eaff] p-4">
+            <article className="rounded-2xl bg-[var(--mat-violet-soft)] p-4">
               <h2 className="text-sm font-semibold">{locale === "ar" ? "مسودتكم مؤمّنة" : "Votre brouillon en sécurité"}</h2>
               <p className="mt-2 text-xs leading-5 text-slate-600">{locale === "ar" ? "كل ما بدأتموه يُستأنف تلقائياً بعد التأكيد." : "Tout brouillon public que vous avez commencé sera repris automatiquement rattaché à votre compte après confirmation."}</p>
             </article>

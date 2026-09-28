@@ -53,7 +53,7 @@ export default async function PublicFranchisePage({ params }: { params: Promise<
           const Icon = [Network, BadgeCheck, ChartNoAxesCombined, BookOpen, FileCheck, ShieldCheck][index] ?? ShieldCheck;
           return (
             <article key={role.title} className="public-card">
-              <Icon aria-hidden="true" className="text-[#6d3cc7]" />
+              <Icon aria-hidden="true" className="text-[var(--mat-violet)]" />
               <h3>{role.title}</h3>
               <p className="public-muted">{role.description}</p>
             </article>

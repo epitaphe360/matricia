@@ -54,7 +54,7 @@ export default async function PublicAboutPage({ params }: { params: Promise<{ lo
           const Icon = icons[index] ?? Sparkles;
           return (
             <article key={principle.title} className="public-card">
-              <Icon aria-hidden="true" className="text-[#6d3cc7]" />
+              <Icon aria-hidden="true" className="text-[var(--mat-violet)]" />
               <h2>{principle.title}</h2>
               <p className="public-muted">{principle.description}</p>
             </article>
@@ -67,7 +67,7 @@ export default async function PublicAboutPage({ params }: { params: Promise<{ lo
         <p className="public-lead mt-4">{copy.approachDescription}</p>
         <div className="public-ecosystem">
           <article>
-            <Building2 aria-hidden="true" className="mx-auto text-[#6d3cc7]" />
+            <Building2 aria-hidden="true" className="mx-auto text-[var(--mat-violet)]" />
             <h3 className="mt-2">{locale === "ar" ? "العميل" : "Client"}</h3>
             <p className="public-muted mt-1">{locale === "ar" ? "يعبّر عن احتياجاته ويقارن ويختار بثقة." : "Exprime ses besoins, compare et choisit en toute confiance."}</p>
           </article>
@@ -76,7 +76,7 @@ export default async function PublicAboutPage({ params }: { params: Promise<{ lo
             <p className="public-muted mt-2">{locale === "ar" ? "تنظّم وتربط وتؤمّن وترافق كل مرحلة." : "Structure, connecte, sécurise et accompagne chaque étape."}</p>
           </article>
           <article>
-            <Store aria-hidden="true" className="mx-auto text-[#e07a5f]" />
+            <Store aria-hidden="true" className="mx-auto text-[var(--mat-coral)]" />
             <h3 className="mt-2">{locale === "ar" ? "المهني" : "Professionnel"}</h3>
             <p className="public-muted mt-1">{locale === "ar" ? "يقترح خبرته ويستجيب للاحتياجات وينجز المهمة." : "Propose son expertise, répond aux besoins et réalise la mission."}</p>
           </article>

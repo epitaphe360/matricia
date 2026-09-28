@@ -157,15 +157,15 @@ export function AnalyseDetailleeView({ detail, locale, m, solutionsHref, assista
               <h2 style={{ marginTop: 12 }}>{locale === "ar" ? focused.titleAr : focused.titleFr}</h2>
             </section>
             <section className="diag-conn-card">
-              <h2><CheckCircle2 size={18} color="#1f6b4a" aria-hidden />{t.observed}</h2>
+              <h2><CheckCircle2 size={18} color="#1e7a5c" aria-hidden />{t.observed}</h2>
               <p style={{ marginTop: 10, color: "var(--diag-muted)" }}>{String(focused.explanation.summary ?? focused.explanation.reason ?? m.explanation)}</p>
             </section>
             <section className="diag-conn-card">
-              <h2><Lightbulb size={18} color="#6f46e8" aria-hidden />{t.why}</h2>
+              <h2><Lightbulb size={18} color="#642bef" aria-hidden />{t.why}</h2>
               <p style={{ marginTop: 10, color: "var(--diag-muted)" }}>{String(focused.explanation.impact ?? focused.explanation.why ?? m.whyOpportunity)}</p>
             </section>
             <section className="diag-conn-card">
-              <h2><Target size={18} color="#1d4ed8" aria-hidden />{t.how}</h2>
+              <h2><Target size={18} color="#2a3a8c" aria-hidden />{t.how}</h2>
               <p style={{ marginTop: 10, color: "var(--diag-muted)" }}>{m.policyVersion}: {String(detail.scoringPolicySnapshot.version ?? "—")}</p>
               <p style={{ marginTop: 6, color: "var(--diag-muted)" }}>{m.ruleSnapshot}: {String(focused.ruleSnapshot.code ?? focused.code)}</p>
             </section>
