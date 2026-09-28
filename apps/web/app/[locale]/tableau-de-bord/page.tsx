@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Building2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { z } from "zod";
 import { Alert, AlertDescription } from "@/modules/shared/ui/alert";
 import { dashboardHomeCopy, isCatalogFixtureOrganizationName, resolveOrganizationContext } from "@/modules/shared/module-hub-copy";
@@ -13,6 +14,8 @@ import { filterClientFacingActions } from "@/modules/client/data/home/view-model
 import { loadProviderHomeSnapshot } from "@/modules/provider/data/home/repository";
 import { filterProviderFacingActions } from "@/modules/provider/data/home/view-model";
 import { isLocale, type Locale } from "@/modules/shared/lib/i18n/locale";
+import { loadMyPlatformAccess } from "@/modules/shared/lib/account-security/platform-access";
+import { resolveWorkspaceLanding, workspaceLandingPath } from "@/modules/shared/lib/connected-space/workspace-landing";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 import { signOut } from "./actions";
 
@@ -86,7 +89,7 @@ function OrganizationSwitcher({
           {memberships.map((membership) => {
             const current = membership.id === selectedMembershipId;
             return (
-              <li key={membership.id} className={`rounded-xl border p-4 ${current ? "border-[var(--ad-forest)] bg-[#f0f7f3]" : "border-[var(--ad-border)]"}`}>
+              <li key={membership.id} className={`rounded-xl border p-4 ${current ? "border-[var(--ad-forest)] bg-[var(--mat-mint-soft)]" : "border-[var(--ad-border)]"}`}>
                 <span className="block font-semibold">{membership.organizations.display_name}</span>
                 <span className="mt-1 block text-sm text-[var(--ad-muted)]">{m.status[membership.organizations.status as keyof typeof m.status] ?? m.status.unknown}</span>
                 {current ? (
@@ -117,21 +120,20 @@ export default async function DashboardPage({
   const query = await searchParams;
   if (!isLocale(locale)) notFound();
 
-  const supabase = await getSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect(`/${locale}/connexion`);
+  const access = await loadMyPlatformAccess();
+  if (access.status === "error" && access.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/tableau-de-bord` }));
+  const supabase = access.status === "ok" ? access.client : await getSupabaseServerClient();
+  const userId = access.status === "ok" ? access.userId : null;
+  if (!userId) redirect(connexionHref(locale, { next: `/${locale}/tableau-de-bord` }));
 
   const now = new Date().toISOString();
-  const [membershipsQuery, platformRoles] = await Promise.all([
-    supabase
-      .from("organization_memberships")
-      .select("id,organization_id,organizations!inner(display_name,status)")
-      .eq("user_id", user.id)
-      .eq("status", "ACTIVE")
-      .order("display_name", { ascending: true, referencedTable: "organizations" })
-      .limit(25),
-    supabase.from("platform_user_roles").select("role_code").eq("user_id", user.id).is("revoked_at", null).limit(20),
-  ]);
+  const membershipsQuery = await supabase
+    .from("organization_memberships")
+    .select("id,organization_id,organizations!inner(display_name,status)")
+    .eq("user_id", userId)
+    .eq("status", "ACTIVE")
+    .order("display_name", { ascending: true, referencedTable: "organizations" })
+    .limit(25);
 
   const memberships = membershipRows.safeParse(membershipsQuery.data);
   const organizationsUnavailable = Boolean(membershipsQuery.error) || !memberships.success;
@@ -156,7 +158,7 @@ export default async function DashboardPage({
   const m = dashboardHomeCopy[locale];
   const alternate = locale === "fr" ? "ar" : "fr";
   const selectedQuery = context.selected ? `?organizationId=${encodeURIComponent(context.selected.organizationId)}` : "";
-  const hasPlatformRole = (platformRoles.data ?? []).length > 0;
+  const hasPlatformRole = access.status === "ok" && access.requirementSatisfied && access.roles.size > 0;
 
   const [membershipRoles, actionCenter] = await Promise.all([
     context.selected
@@ -165,6 +167,11 @@ export default async function DashboardPage({
     loadUserActionCenterWithinBudget(locale, now, context.selected?.organizationId ?? null),
   ]);
   const roleCodes = new Set((membershipRoles.data ?? []).map((row) => String(row.role_code)));
+  const landing = resolveWorkspaceLanding({
+    membershipRoleCodes: roleCodes,
+    platformRoleCodes: access.status === "ok" ? access.roles : [],
+  });
+  if (landing === "administration" || landing === "franchise") redirect(workspaceLandingPath(locale, landing, selectedQuery));
   const isProviderSpace = [...roleCodes].some((role) => PROVIDER_ROLES.has(role));
   const isClientSpace = [...roleCodes].some((role) => CLIENT_ROLES.has(role));
   const preferProvider = isProviderSpace && !isClientSpace;
@@ -204,7 +211,7 @@ export default async function DashboardPage({
         ) : null}
         <ProviderDashboardHome
           locale={locale}
-          userEmail={user.email ?? null}
+          userEmail={access.status === "ok" ? access.email : null}
           organizationName={selectedMembership?.organizations.display_name ?? (snapshot.status === "success" ? snapshot.organizationName : null)}
           selectedQuery={selectedQuery}
           alternate={alternate}
@@ -245,7 +252,7 @@ export default async function DashboardPage({
   return (
     <ClientDashboardHome
       locale={locale}
-      userEmail={user.email ?? null}
+      userEmail={access.status === "ok" ? access.email : null}
       organizationName={selectedMembership?.organizations.display_name ?? null}
       selectedOrganizationId={context.selected?.organizationId ?? null}
       selectedQuery={selectedQuery}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { buttonVariants } from "@/modules/shared/ui/button";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
@@ -28,7 +29,7 @@ export default async function RuleValidationPage({
   const selectedVersionId = queryValue(query.questionnaire);
   const repository = await createServerRuleValidationRepository();
   const result = await repository.loadWorkspace(selectedVersionId);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/catalogue/validation` }));
 
   return (
     <AdminModulePage

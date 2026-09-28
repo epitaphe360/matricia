@@ -1,4 +1,4 @@
-import { Phone, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
@@ -21,27 +21,21 @@ export default async function ContactPage({ params, searchParams }: { params: Pr
 
   return (
     <main id="contenu-principal" tabIndex={-1} className="public-page pb-16">
-      <section className="public-wrap grid gap-10 py-16 lg:grid-cols-[1.1fr_.9fr] lg:items-center">
-        <div>
+      <section className="public-contact-layout">
+        <PublicPhoto className="public-contact-photo" scene="zellige" caption={locale === "ar" ? "من مواهب الغد" : "Des talents pour demain"} />
+        <div className="public-contact-main">
           <p className="journey-eyebrow">{messages.eyebrow}</p>
           <h1>{messages.title}</h1>
           <p className="public-lead mt-5">{messages.description}</p>
-        </div>
-        <PublicPhoto scene="zellige" caption={locale === "ar" ? "المهنيون. مغرب يتقدم." : "Des professionnels. Un Maroc qui avance."} />
-      </section>
-      <div className="public-wrap">
-        <ContactForm locale={locale} initialMotif={initialMotif} initialPlan={initialPlan} />
-      </div>
-      <section className="public-wrap mt-10 grid gap-4 sm:grid-cols-2">
-        <article className="public-card flex items-start gap-3">
-          <Phone aria-hidden="true" className="text-[#6d3cc7]" />
-          <div>
-            <h2>{locale === "ar" ? "راسلونا مباشرة" : "Nous écrire directement"}</h2>
-            <p className="public-muted mt-1">{locale === "ar" ? "عبر النموذج أعلاه." : "Via le formulaire ci-dessus."}</p>
+          <p className="journey-script mt-4">{locale === "ar" ? "المهنيون. مغرب يتقدم." : "Des professionnels. Un Maroc qui avance."}</p>
+          <div className="mt-8">
+            <ContactForm locale={locale} initialMotif={initialMotif} initialPlan={initialPlan} />
           </div>
-        </article>
+        </div>
+      </section>
+      <section className="public-wrap mt-10">
         <article className="public-card flex items-start gap-3">
-          <MapPin aria-hidden="true" className="text-[#6d3cc7]" />
+          <MapPin aria-hidden="true" className="text-[var(--mat-violet)]" />
           <div>
             <h2>{locale === "ar" ? "مقرنا" : "Notre siège"}</h2>
             <p className="public-muted mt-1">{locale === "ar" ? "يُبلَّغ العنوان عند الحاجة داخل المساحة الآمنة." : "L’adresse est communiquée si nécessaire depuis l’espace sécurisé."}</p>

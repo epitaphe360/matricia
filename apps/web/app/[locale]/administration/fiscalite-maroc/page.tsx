@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { loadMoroccoTaxDashboard } from "@/modules/shared/lib/morocco-tax/repository";
@@ -12,7 +13,7 @@ export default async function MoroccoTaxPage({ params }: { params: Promise<{ loc
   if (!isLocale(locale)) notFound();
   const m = getMoroccoTaxMessages(locale);
   const result = await loadMoroccoTaxDashboard();
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/fiscalite-maroc` }));
   const keys: Record<string, string> = { proposal: randomUUID() };
   if (result.status === "success") result.dashboard.rules.forEach((rule) => { keys[rule.id] = randomUUID(); });
   return (

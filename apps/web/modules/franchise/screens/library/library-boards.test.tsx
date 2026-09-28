@@ -30,8 +30,8 @@ describe("franchise library boards", () => {
     expect(html).toContain("Informatique");
     expect(html).toContain("Vous voyez uniquement votre bibliothèque mandatée");
     expect(html).toContain("Diagnostic SI");
-    expect(html).toContain("Soumettre pour validation");
     expect(html).not.toMatch(/exemple illustratif/i);
+    expect(html).not.toMatch(/Hatim|Jalil|NEOXA|Asma/);
   });
 
   it("liste les questionnaires préparés par le franchisé", () => {

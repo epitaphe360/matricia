@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Badge } from "@/modules/shared/ui/badge";
 import { createInternalMessagingRepository } from "@/modules/shared/lib/internal-messaging/server-repository";
 import { resolveWorkspaceShell } from "@/modules/shared/lib/connected-space/workspace-shell";
@@ -64,16 +65,16 @@ function ConversationPanel({
   );
 }
 
-export default async function MessagingPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ fil?: string; organizationId?: string }> }) {
+export default async function MessagingPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ fil?: string; organizationId?: string; q?: string }> }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/messagerie` }));
   const [result, workspaceShell] = await Promise.all([
     (await createInternalMessagingRepository()).load(query.fil),
     resolveWorkspaceShell(space.selectedOrganizationId),
   ]);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/messagerie` }));
   const m = getMessagingMessages(locale);
   const c = spaceCopy(locale);
   const threads =
@@ -87,7 +88,7 @@ export default async function MessagingPage({ params, searchParams }: { params: 
       : [];
 
   const board = (
-    <MessagesBoard locale={locale} query={space.selectedQuery} threads={threads} organizationName={space.organizationName}>
+    <MessagesBoard locale={locale} query={space.selectedQuery} search={query.q} threads={threads} organizationName={space.organizationName}>
       <ConversationPanel locale={locale} m={m} result={result} />
     </MessagesBoard>
   );
@@ -117,6 +118,7 @@ export default async function MessagingPage({ params, searchParams }: { params: 
       selectedQuery={space.selectedQuery}
       selectedOrganizationId={space.selectedOrganizationId}
       userEmail={space.userEmail}
+      organizationName={space.organizationName}
       active="messages"
       title={c.msgTitle}
       lead={c.msgLead}

@@ -1,7 +1,8 @@
 import type { QuestionnaireDashboard } from "./model";
 
-export type QuestionnaireFailure = "UNAUTHENTICATED" | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_RESPONSE" | "CONFLICT" | "NOT_EDITABLE" | "NOT_SUBMITTABLE" | "REQUIRED_MISSING" | "BOUNDS_EXCEEDED" | "UNAVAILABLE";
-export type QuestionnaireResult<T> = { status: "success"; value: T } | { status: "error"; reason: QuestionnaireFailure };
+export type QuestionnaireFailure = "UNAUTHENTICATED" | "FORBIDDEN" | "NO_CLIENT_ORGANIZATION" | "ORGANIZATION_SELECTION_REQUIRED" | "INVALID_INPUT" | "INVALID_RESPONSE" | "CONFLICT" | "NOT_EDITABLE" | "NOT_SUBMITTABLE" | "REQUIRED_MISSING" | "BOUNDS_EXCEEDED" | "UNAVAILABLE";
+export type QuestionnaireOrganizationOption = { id: string; name: string };
+export type QuestionnaireResult<T> = { status: "success"; value: T } | { status: "error"; reason: QuestionnaireFailure; organizations?: QuestionnaireOrganizationOption[] };
 export type CommandIdentity = { idempotencyKey: string; correlationId: string };
 
 export type QuestionnaireSessionsRepository = {

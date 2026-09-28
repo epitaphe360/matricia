@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { loadClientPortfolio } from "@/modules/client/data/portfolio/server-repository";
 import { resolveClientSpace } from "@/modules/client/data/spaces/context";
 import { spaceCopy } from "@/modules/client/data/spaces/copy";
@@ -18,17 +19,23 @@ export default async function ClientPortfolioPage({
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/portefeuille` }));
   const result = await loadClientPortfolio(query.organizationId);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
-  if (result.status === "error") throw new Error("CLIENT_PORTFOLIO_UNAVAILABLE");
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/client/portefeuille` }));
   const m = getMessages(locale);
+  if (result.status === "error") {
+    return (
+      <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="portfolio" title={m.title} lead={m.intro} kicker={spaceCopy(locale).kicker}>
+        <main className="client-page"><p role="alert" className="client-card">{locale === "ar" ? "تعذر تحميل المحفظة." : "Impossible de charger le portefeuille."}</p></main>
+      </ClientAppShell>
+    );
+  }
   return (
     <ClientAppShell
       locale={locale}
       selectedQuery={space.selectedQuery}
       selectedOrganizationId={space.selectedOrganizationId}
-      userEmail={space.userEmail}
+      userEmail={space.userEmail} organizationName={space.organizationName}
       active="portfolio"
       title={m.title}
       lead={m.intro}

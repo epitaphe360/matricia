@@ -11,6 +11,7 @@ import {
   Package,
   Scale,
   ShieldCheck,
+  Settings2,
   ShoppingCart,
   Wallet,
   Wrench,
@@ -33,7 +34,8 @@ export type ProviderNavKey =
   | "reputation"
   | "messages"
   | "modeClient"
-  | "company";
+  | "company"
+  | "settings";
 
 export type ProviderNavItem = {
   key: ProviderNavKey;
@@ -61,5 +63,6 @@ export function buildProviderNav(locale: Locale, selectedQuery: string): Provide
     { key: "messages", href: `/${locale}/sous-traitant/messages${q}`, label: n.navMessages, icon: MessageSquare },
     { key: "modeClient", href: `/${locale}/sous-traitant/mode-client${q}`, label: n.navModeClient, icon: ShoppingCart },
     { key: "company", href: `/${locale}/sous-traitant/entreprise${q}`, label: n.navCompany, icon: Building2 },
+    { key: "settings", href: `/${locale}/sous-traitant/parametres${q}`, label: n.navSettings, icon: Settings2 },
   ];
 }

@@ -10,6 +10,9 @@ if (!supabaseUrl || !supabasePublishableKey) throw new Error("Public Supabase en
 
 const supabaseOrigin = new URL(supabaseUrl).origin;
 const isProduction = process.env.NODE_ENV === "production";
+const isVercelPreview = process.env.VERCEL_ENV === "preview";
+const vercelLive = "https://vercel.live";
+const allowVercelLive = !isProduction || isVercelPreview;
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -19,8 +22,9 @@ const contentSecurityPolicy = [
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
-  `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"}`,
-  `connect-src 'self' ${supabaseOrigin}${isProduction ? "" : " ws: wss:"}`,
+  `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"}${allowVercelLive ? ` ${vercelLive}` : ""}`,
+  `connect-src 'self' ${supabaseOrigin}${isProduction ? "" : " ws: wss:"}${allowVercelLive ? ` ${vercelLive}` : ""}`,
+  `frame-src 'self'${allowVercelLive ? ` ${vercelLive}` : ""}`,
   ...(isProduction ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
 
@@ -28,6 +32,7 @@ const securityHeaders = [
   { key: "Content-Security-Policy", value: contentSecurityPolicy },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "x-vercel-skip-toolbar", value: "1" },
   {
     key: "Permissions-Policy",
     value: "camera=(), geolocation=(), microphone=(), payment=(), usb=()",
@@ -51,6 +56,9 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [{ source: "/:path*", headers: [...securityHeaders] }];
+  },
+  async rewrites() {
+    return [{ source: "/favicon.ico", destination: "/favicon.svg" }];
   },
 };
 

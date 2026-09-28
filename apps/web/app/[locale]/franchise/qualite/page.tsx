@@ -14,7 +14,7 @@ export default async function FranchiseQualityPage({ params, searchParams }: { p
   const board = await loadFranchiseSpaceFromLibrary({ locale, query: space.selectedQuery, result });
   const scope = franchiseCommandScope(result, space.selectedOrganizationId);
   return (
-    <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="quality" title={c.qualTitle} lead={c.qualLead} kicker={c.kicker} mandateName={mandateName}>
+    <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="quality" title={c.qualTitleRich} lead={c.qualLeadRich} kicker={c.kicker} mandateName={mandateName}>
       <QualityBoard locale={locale} query={space.selectedQuery} mandateName={mandateName} board={board} search={query.q} page={query.page} libraryId={scope.libraryId} organizationId={scope.organizationId} services={scope.services} />
     </FranchiseAppShell>
   );

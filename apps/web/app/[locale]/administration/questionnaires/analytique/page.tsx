@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { buttonVariants } from "@/modules/shared/ui/button";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
@@ -14,7 +15,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
   if (!isLocale(locale)) notFound();
   const m = getMessages(locale);
   const result = await loadQuestionnaireAbandonmentDashboard();
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/questionnaires/analytique` }));
   return (
     <AdminModulePage locale={locale} active="catalog" path="questionnaires/analytique" title={m.title} lead={m.description}>
       {result.status === "error" ? (

@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { ClientOfferDetailView } from "@/modules/client/screens/demandes/offer-detail";
 import { ClientAppShell } from "@/modules/client/ui/client-app-shell";
 import { loadClientOfferDetail } from "@/modules/client/data/rfq/quote-detail-repository";
@@ -28,15 +29,31 @@ export default async function OfferDetailPage({
     organizationQuery: selectedQuery,
     organizationName,
   });
-  if (result.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (result.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/demandes/${requestId}/offres/${quoteId}` }));
   if (result.status === "not_found") notFound();
-  if (result.status === "error") throw new Error("OFFER_DETAIL_UNAVAILABLE");
+  if (result.status === "error") {
+    return (
+      <ClientAppShell
+        locale={locale}
+        selectedQuery={selectedQuery}
+        selectedOrganizationId={selectedOrganizationId}
+        userEmail={auth.user?.email ?? null}
+        organizationName={organizationName}
+        active="requests"
+        title={locale === "ar" ? "عرض التفصيل" : "Détail de l’offre"}
+        lead={locale === "ar" ? "تعذر تحميل هذا العرض." : "Impossible de charger cette offre."}
+      >
+        <main className="client-page"><p role="alert" className="client-card">{locale === "ar" ? "تعذر تحميل تفاصيل العرض." : "Impossible de charger le détail de l’offre."}</p></main>
+      </ClientAppShell>
+    );
+  }
   return (
     <ClientAppShell
       locale={locale}
       selectedQuery={selectedQuery}
       selectedOrganizationId={selectedOrganizationId}
       userEmail={auth.user?.email ?? null}
+      organizationName={organizationName}
       active="requests"
     >
       <ClientOfferDetailView locale={locale} selectedQuery={selectedQuery} detail={result.value} />

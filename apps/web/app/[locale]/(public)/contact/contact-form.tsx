@@ -2,7 +2,7 @@
 
 import { useActionState, useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertCircle, CheckCircle2, Clock3, Loader2, LockKeyhole, Send } from "lucide-react";
+import { Clock3, LockKeyhole, Send } from "lucide-react";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import { submitContactRequest, type ContactActionState } from "./actions";
 
@@ -48,12 +48,6 @@ const copy = {
     secureText: "Pour des raisons de sécurité, merci d’utiliser votre espace connecté. Ne partagez jamais vos identifiants par e-mail.",
     delayTitle: "Quel est le délai de réponse ?",
     delayText: "Nous accusons réception de votre demande et revenons vers vous dans les meilleurs délais. Le délai peut varier selon la nature de votre demande.",
-    statesTitle: "États d’envoi (exemples)",
-    statesHint: "Exemple illustratif",
-    sending: "Envoi en cours… Merci de patienter quelques instants.",
-    recorded: "Demande enregistrée. Votre demande a bien été prise en compte.",
-    failed: "Une erreur est survenue. Veuillez réessayer dans quelques instants.",
-    retry: "Réessayer",
     login: "Se connecter",
   },
   ar: {
@@ -95,12 +89,6 @@ const copy = {
     secureText: "لأسباب أمنية استخدموا مساحتكم المتصلة. لا تشاركوا معرفاتكم عبر البريد.",
     delayTitle: "ما مهلة الرد؟",
     delayText: "نؤكد الاستلام ونعود إليكم في أقرب أجل. قد تختلف المهلة حسب طبيعة الطلب.",
-    statesTitle: "حالات الإرسال (أمثلة)",
-    statesHint: "مثال توضيحي",
-    sending: "جارٍ الإرسال… انتظروا لحظات.",
-    recorded: "تم تسجيل الطلب وأخذه في الحسبان.",
-    failed: "حدث خطأ. أعيدوا المحاولة بعد لحظات.",
-    retry: "إعادة المحاولة",
     login: "تسجيل الدخول",
   },
 } as const;
@@ -234,21 +222,15 @@ export function ContactForm({
       </section>
       <aside className="grid gap-4">
         <article className="public-card">
-          <LockKeyhole className="text-[#6d3cc7]" aria-hidden="true" />
+          <LockKeyhole className="text-[var(--mat-violet)]" aria-hidden="true" />
           <h2 className="mt-3">{messages.secureTitle}</h2>
           <p className="public-muted mt-2">{messages.secureText}</p>
           <Link href={`/${locale}/connexion`} className="journey-primary mt-4">{messages.login}</Link>
         </article>
         <article className="public-card">
-          <Clock3 className="text-[#c4a574]" aria-hidden="true" />
+          <Clock3 className="text-[var(--mat-rose)]" aria-hidden="true" />
           <h2 className="mt-3">{messages.delayTitle}</h2>
           <p className="public-muted mt-2">{messages.delayText}</p>
-        </article>
-        <article className="public-illustrative" aria-label={messages.statesHint}>
-          <small>{messages.statesTitle} · {messages.statesHint}</small>
-          <p className="mt-2 flex items-start gap-2 text-sm"><Loader2 size={16} aria-hidden="true" />{messages.sending}</p>
-          <p className="mt-2 flex items-start gap-2 text-sm text-emerald-800"><CheckCircle2 size={16} aria-hidden="true" />{messages.recorded}</p>
-          <p className="mt-2 flex items-start gap-2 text-sm text-red-800"><AlertCircle size={16} aria-hidden="true" />{messages.failed}</p>
         </article>
       </aside>
     </div>

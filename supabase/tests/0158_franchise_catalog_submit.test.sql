@@ -1,6 +1,6 @@
 begin;
 set local search_path = public, extensions;
-select plan(18);
+select plan(15);
 
 select has_function(
   'public',

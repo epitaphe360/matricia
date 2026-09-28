@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { resolveClientOrganizationContext } from "@/modules/shared/client-organization-context";
 import { isDocumentExpired } from "@/modules/client/data/documents/expiry";
 import { loadClientDocumentVault } from "@/modules/client/data/documents/server-repository";
@@ -14,9 +15,9 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/documents` }));
   const result = await loadClientDocumentVault(query.organizationId);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/client/documents` }));
   const c = spaceCopy(locale);
   const context = result.status === "success" ? resolveClientOrganizationContext(result.value.organizations.map((organization) => ({ organization_id: organization.id })), query.organizationId) : null;
   const selectedId = context?.status === "success" ? context.membership.organization_id : null;
@@ -44,7 +45,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     };
   }) ?? [];
   return (
-    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="documents" title={c.docsTitle} lead={c.docsLead} kicker={c.kicker} actions={<SpaceActions href={`/${locale}/client/onboarding${space.selectedQuery}`} label={c.addDoc} />}>
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="documents" title={c.docsTitle} lead={c.docsLead} kicker={c.kicker} actions={<SpaceActions href={`/${locale}/client/onboarding${space.selectedQuery}`} label={c.addDoc} />}>
       <DocumentsBoard locale={locale} query={space.selectedQuery} organizationName={space.organizationName} documents={documents} toHandle={documents.filter((item) => item.tone === "peach").map((item) => ({ id: item.id, title: item.title, href: item.href, tone: item.tone, action: "examine" as const }))}>
         {value ? <DocumentVaultPanel locale={locale} data={value} keys={{ link: randomUUID(), revoke: Object.fromEntries(value.bindings.map((binding) => [binding.id, randomUUID()])) }} /> : null}
       </DocumentsBoard>

@@ -1,10 +1,9 @@
 import { z } from "zod";
-import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
+import { hasPlatformRole, loadMyPlatformAccess } from "@/modules/shared/lib/account-security/platform-access";
 import { ADMIN_PROVIDER_LIMITS, sumMoneyByCurrency, type AdminProviderDashboard } from "./model";
 
 const id = z.string().uuid();
 const money = z.union([z.string().regex(/^\d+$/u), z.number().int().nonnegative()]).transform((value): string => String(value));
-const platformRole = z.object({ role_code: z.string() });
 const profile = z.object({ provider_organization_id: id, company_status: z.string(), overall_status: z.string(), partner_contract_status: z.string(), row_version: z.number().int().positive() });
 const service = z.object({ id, provider_organization_id: id, service_id: id, request_status: z.string() });
 const qualification = z.object({ id, provider_service_id: id, row_version: z.number().int().positive(), current_decision_id: id.nullable() });
@@ -34,7 +33,7 @@ const supervisionNames = z.object({
   organizations: z.array(z.object({ id, display_name: z.string().min(1) })).optional(),
 }).passthrough();
 
-type Result = { status: "success"; dashboard: AdminProviderDashboard } | { status: "error"; reason: "UNAUTHENTICATED" | "FORBIDDEN" | "QUERY_FAILED" | "INVALID_RESPONSE" };
+type Result = { status: "success"; dashboard: AdminProviderDashboard } | { status: "error"; reason: "UNAUTHENTICATED" | "MFA_REQUIRED" | "FORBIDDEN" | "QUERY_FAILED" | "INVALID_RESPONSE" };
 type QueryResult<T> = { status: "ok"; data: T } | { status: "error"; reason: "QUERY_FAILED" | "INVALID_RESPONSE" };
 
 function uniqueIds(values: readonly string[]): string[] {
@@ -63,17 +62,17 @@ function eligibilityFrom(data: unknown, qualificationStatus: string) {
     : { eligible: false, reasons: ["ELIGIBILITY_UNAVAILABLE"], qualification_status: qualificationStatus, decision_version: null, rule_version: null, checked_at: null };
 }
 
+const providerRoles = ["SUPER_ADMIN", "MATRICIA_ADMIN", "COMPLIANCE_MANAGER", "FINANCE_MANAGER", "READ_ONLY_AUDITOR"] as const;
+
 export async function loadAdminProviders(): Promise<Result> {
-  const client = await getSupabaseServerClient();
-  const { data: auth } = await client.auth.getUser();
-  if (!auth.user) return { status: "error", reason: "UNAUTHENTICATED" };
-  const roleResult = await client.from("platform_user_roles").select("role_code").eq("user_id", auth.user.id).is("revoked_at", null).in("role_code", ["SUPER_ADMIN", "MATRICIA_ADMIN", "COMPLIANCE_MANAGER", "FINANCE_MANAGER", "READ_ONLY_AUDITOR"]).limit(10);
-  const roles = await readRows(z.array(platformRole), roleResult);
-  if (roles.status === "error") return roles;
-  if (!roles.data.length) return { status: "error", reason: "FORBIDDEN" };
-  const roleSet = new Set(roles.data.map((item) => item.role_code));
+  const access = await loadMyPlatformAccess();
+  if (access.status === "error") return { status: "error", reason: access.reason };
+  if (!hasPlatformRole(access.roles, providerRoles)) return { status: "error", reason: "FORBIDDEN" };
+  if (!access.requirementSatisfied) return { status: "error", reason: "MFA_REQUIRED" };
+  const client = access.client;
+  const roleSet = new Set([...access.roles].filter((role) => providerRoles.includes(role as (typeof providerRoles)[number])));
   const central = roleSet.has("SUPER_ADMIN") || roleSet.has("MATRICIA_ADMIN");
-  const readOnly = roleSet.has("READ_ONLY_AUDITOR") && roles.data.every((item) => item.role_code === "READ_ONLY_AUDITOR");
+  const readOnly = roleSet.has("READ_ONLY_AUDITOR") && [...roleSet].every((role) => role === "READ_ONLY_AUDITOR");
   const canQualification = !readOnly && (central || roleSet.has("COMPLIANCE_MANAGER"));
   const canFinance = !readOnly && (central || roleSet.has("FINANCE_MANAGER"));
 

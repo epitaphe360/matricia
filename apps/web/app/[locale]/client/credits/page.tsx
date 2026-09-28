@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
+import type { ReactNode } from "react";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Badge } from "@/modules/shared/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/ui/card";
 import { resolveClientOrganizationContext } from "@/modules/shared/client-organization-context";
@@ -13,19 +15,39 @@ import { WalletAction } from "@/modules/client/screens/credits/wallet-action";
 import { resolveClientSpace } from "@/modules/client/data/spaces/context";
 import { spaceCopy } from "@/modules/client/data/spaces/copy";
 import { ClientAppShell } from "@/modules/client/ui/client-app-shell";
+import Link from "next/link";
 
 export default async function Credits({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string }> }) {
   const { locale } = await params;
   const { organizationId } = await searchParams;
   if (!isLocale(locale)) notFound();
   const space = await resolveClientSpace({ locale, organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/credits` }));
   const result = await (await createServerCreditsRepository(organizationId)).load();
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
-  if (result.status === "error") throw new Error("CREDITS_UNAVAILABLE");
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/client/credits` }));
+  const m = messages(locale);
+  const c = spaceCopy(locale);
+  const shell = (body: ReactNode) => (
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="finance" title={m.title} lead={m.intro} kicker={c.kicker}>
+      <main className="client-page">{body}</main>
+    </ClientAppShell>
+  );
+  if (result.status === "error") return shell(<p role="alert" className="client-card">{m.unavailable}</p>);
 
-  const context = resolveClientOrganizationContext(result.value.organizations.map((organization) => ({ organization_id: organization.id })), organizationId);
-  if (context.status === "error") throw new Error("CLIENT_ORGANIZATION_CONTEXT_REQUIRED");
+  const context = resolveClientOrganizationContext(result.value.organizations.map((organization) => ({ organization_id: organization.id, name: organization.name })), organizationId);
+  if (context.status === "error" && context.reason === "ORGANIZATION_SELECTION_REQUIRED") {
+    return shell(
+      <section className="client-card">
+        <h2>{m.selectOrg}</h2>
+        <ul className="client-feed">
+          {result.value.organizations.map((organization) => (
+            <li key={organization.id}><Link href={`/${locale}/client/credits?organizationId=${organization.id}`}>{organization.name}</Link></li>
+          ))}
+        </ul>
+      </section>,
+    );
+  }
+  if (context.status === "error") return shell(<p role="alert" className="client-card">{context.reason === "NO_CLIENT_ORGANIZATION" ? m.noOrg : m.unavailable}</p>);
   const selectedOrganizationId = context.membership.organization_id;
   const selectedWalletIds = new Set(result.value.wallets.filter((wallet) => wallet.organizationId === selectedOrganizationId).map((wallet) => wallet.id));
   const data = {
@@ -36,12 +58,10 @@ export default async function Credits({ params, searchParams }: { params: Promis
     customerBoxes: result.value.customerBoxes.filter((box) => box.organizationId === selectedOrganizationId),
     redemptions: result.value.redemptions.filter((redemption) => redemption.organizationId === selectedOrganizationId),
   };
-  const m = messages(locale);
-  const c = spaceCopy(locale);
   const today = getServerTimestamp();
 
   return (
-    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="finance" title={m.title} lead={m.intro} kicker={c.kicker}>
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="finance" title={m.title} lead={m.intro} kicker={c.kicker}>
     <main className="client-page">
 
     <section aria-labelledby="wallets"><h2 id="wallets" className="mb-3 text-xl font-semibold">{m.wallet}</h2><div className="grid gap-4 sm:grid-cols-2">

@@ -87,14 +87,14 @@ const publicMessages = {
       roles: [
         { title: "Vos responsabilités", description: "Gérer votre bibliothèque de services mandatée, préparer et soumettre à Matricia les services, questions et règles d’usage, animer les professionnels qualifiés." },
         { title: "Notre accompagnement", description: "Un cadre méthodologique, un processus de validation clair, des formations et un support continu pour le développement de votre réseau local." },
-        { title: "Une gouvernance de confiance", description: "Un territoire exclusif par franchisé, des standards de qualité définis par Matricia, un pilotage régulier et des indicateurs de performance." },
+        { title: "Une gouvernance de confiance", description: "Un territoire défini par le contrat versionné, des standards de qualité définis par Matricia, un pilotage régulier et des indicateurs de performance." },
       ],
       frameworkTitle: "Les étapes",
       framework: [
         "Candidature. Vous nous présentez votre profil et votre projet pour un territoire donné.",
         "Évaluation. Nous étudions l’adéquation de votre profil, de votre territoire et de vos ambitions.",
         "Bibliothèque mandatée. Vous préparez une bibliothèque de services, de questions et de règles pour validation par Matricia.",
-        "Contrat. Nous officialisons la collaboration et votre territoire exclusif.",
+        "Contrat. Nous officialisons la collaboration et le territoire prévu au contrat versionné.",
         "Développement du réseau. Vous accompagnez des professionnels qualifiés et répondez aux besoins des entreprises locales.",
         "Pilotage. Vous suivez la qualité et la performance avec le support de Matricia.",
       ],
@@ -223,14 +223,14 @@ const publicMessages = {
       roles: [
         { title: "مسؤولياتكم", description: "تدبير مكتبتكم المكلَّفة، وإعداد الخدمات والأسئلة والقواعد لعرضها على ماتريسيا، وتنشيط المهنيين المؤهلين." },
         { title: "مرافقتنا", description: "إطار منهجي ومسار مصادقة واضح وتكوين ودعم مستمر لتنمية شبكتكم المحلية." },
-        { title: "حكامة موثوقة", description: "إقليم حصري لكل صاحب امتياز، ومعايير جودة تحددها ماتريسيا، وقيادة منتظمة ومؤشرات أداء." },
+        { title: "حكامة موثوقة", description: "إقليم يحدده العقد ذو الإصدار، ومعايير جودة تحددها ماتريسيا، وقيادة منتظمة ومؤشرات أداء." },
       ],
       frameworkTitle: "المراحل",
       framework: [
         "الترشيح. تقدّمون ملفكم ومشروعكم لإقليم محدد.",
         "التقييم. ندرس ملاءمة ملفكم وإقليمكم وطموحاتكم.",
         "المكتبة المكلَّفة. تعدّون مكتبة خدمات وأسئلة وقواعد لمصادقة ماتريسيا.",
-        "العقد. نوسّع التعاون وإقليمكم الحصري.",
+        "العقد. نوثّق التعاون والإقليم المنصوص عليه في العقد ذي الإصدار.",
         "تنمية الشبكة. ترافقون مهنيين مؤهلين وتستجيبون لاحتياجات المؤسسات المحلية.",
         "القيادة. تتابعون الجودة والأداء بدعم ماتريسيا.",
       ],

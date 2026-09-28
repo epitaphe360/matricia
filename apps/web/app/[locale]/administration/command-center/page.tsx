@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { loadAdminCommandCenter } from "@/modules/admin/data/command-center/repository";
 import { resolveAdminSpace } from "@/modules/admin/data/spaces/context";
@@ -20,11 +21,11 @@ export default async function AdminCommandCenterPage({
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveAdminSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/administration/command-center` }));
   const m = getCommandCenterMessages(locale);
   const c = adminCopy(locale);
   const [result, supervision] = await Promise.all([loadAdminCommandCenter(), loadAdminSupervisionDashboard(50)]);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/command-center` }));
   const alternate = locale === "fr" ? "ar" : "fr";
   const keyCount = result.status === "success" ? result.dashboard.workItems.length * 2 + result.dashboard.actions.length + 1 : 1;
   const enrichment = supervision.status === "success" ? supervision.value.work_enrichment : {};
@@ -37,28 +38,28 @@ export default async function AdminCommandCenterPage({
       userEmail={space.userEmail}
       active="home"
       alternateHref={`/${alternate}/administration/command-center${space.selectedQuery}`}
-      title={m.today}
+      title={c.space}
       lead={c.homeLead}
       kicker={c.kicker}
     >
-      {result.status === "error" ? (
-        <Alert variant="destructive">
-          <AlertTitle>{result.reason === "FORBIDDEN" ? m.forbiddenPage : m.loadError}</AlertTitle>
-          <AlertDescription>{result.reason}</AlertDescription>
-        </Alert>
-      ) : (
-        <CommandCenterPanel
-          dashboard={result.dashboard}
-          locale={locale}
-          m={m}
-          enrichment={enrichment}
-          currentTime={new Date().toISOString()}
-          keys={Array.from({ length: keyCount }, () => crypto.randomUUID())}
-        />
-      )}
-      <details className="client-ops">
-        <summary>{c.homeTitle}</summary>
-        <AdminDirectoryBoard locale={locale} query={space.selectedQuery} />
+      <AdminDirectoryBoard locale={locale} query={space.selectedQuery} />
+      <details className="client-ops" id="command-today">
+        <summary>{m.today}</summary>
+        {result.status === "error" ? (
+          <Alert variant="destructive">
+            <AlertTitle>{result.reason === "FORBIDDEN" ? m.forbiddenPage : result.reason === "MFA_REQUIRED" ? m.mfaRequired : m.loadError}</AlertTitle>
+            <AlertDescription>{result.reason}</AlertDescription>
+          </Alert>
+        ) : (
+          <CommandCenterPanel
+            dashboard={result.dashboard}
+            locale={locale}
+            m={m}
+            enrichment={enrichment}
+            currentTime={new Date().toISOString()}
+            keys={Array.from({ length: keyCount }, () => crypto.randomUUID())}
+          />
+        )}
       </details>
     </AdminAppShell>
   );

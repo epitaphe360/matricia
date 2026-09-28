@@ -12,7 +12,7 @@ describe("demo offer detail", () => {
     expect(isDemoOfferId("11111111-1111-4111-8111-111111111111")).toBe(false);
     process.env.MATRICIA_DEMO_ACCESS_ENABLED = "true";
     process.env.APP_ENV = "development";
-    expect(canApplyDemoOffer("Client · Communication, marketing et création")).toBe(true);
+    expect(canApplyDemoOffer("Client · Communication, marketing et création")).toBe(false);
     expect(canApplyDemoOffer("Epitaphe Market")).toBe(false);
     const offer = demoClientOfferDetail({
       locale: "fr",

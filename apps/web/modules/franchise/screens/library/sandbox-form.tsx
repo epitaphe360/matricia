@@ -2,7 +2,7 @@
 
 import { useActionState, useId } from "react";
 import { libraryCopy } from "@/modules/franchise/data/library/copy";
-import type { FranchiseLibraryWorkspace } from "@/modules/franchise/data/library/workspace";
+import type { FranchiseLibraryWorkspace } from "@/modules/franchise/data/library/workspace-model";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import { simulateFranchiseQuestionnaireAction, type FranchiseSimulationActionState } from "./actions";
 

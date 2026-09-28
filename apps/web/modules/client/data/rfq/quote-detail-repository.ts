@@ -150,7 +150,7 @@ export async function loadClientOfferDetail(input: {
       const docs = z.array(documentRow).max(12).safeParse(docsResult.data ?? []);
       if (docs.success) {
         for (const document of docs.data) {
-          documents.push({ id: document.id, fileName: document.original_file_name, kind: documentKind(document.original_file_name), href: documentsHref });
+          documents.push({ id: document.id, fileName: document.original_file_name, kind: documentKind(document.original_file_name), href: `/api/client/documents/${document.id}` });
         }
       }
     }

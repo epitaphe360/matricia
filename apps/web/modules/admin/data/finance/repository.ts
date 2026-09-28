@@ -1,8 +1,7 @@
 import { z } from "zod";
-import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
+import { hasPlatformRole, loadMyPlatformAccess } from "@/modules/shared/lib/account-security/platform-access";
 import { adminFinanceDashboardSchema, adminFinanceUuid, exactMinor, reconciliationSchema, type AdminFinanceDashboard, type AdminFinanceResult } from "./model";
 
-const roleRow = z.object({ role_code: z.enum(["SUPER_ADMIN", "MATRICIA_ADMIN", "FINANCE_MANAGER"]) }).strict();
 const paymentRow = z.object({ id: adminFinanceUuid, provider_organization_id: adminFinanceUuid, currency: z.string().regex(/^[A-Z]{3}$/u), amount_minor: exactMinor }).strict();
 const allocationRow = z.object({ amount_minor: exactMinor }).strict();
 const invoiceRow = z.object({ id: adminFinanceUuid, provider_organization_id: adminFinanceUuid, currency: z.string().regex(/^[A-Z]{3}$/u), outstanding_minor: exactMinor }).strict();
@@ -10,15 +9,13 @@ const reconciliationOutput = z.object({ outcome: z.literal("PROVIDER_PAYMENT_REC
 const platformRoles = ["SUPER_ADMIN", "MATRICIA_ADMIN", "FINANCE_MANAGER"] as const;
 
 async function authorizedClient() {
-  const client = await getSupabaseServerClient();
-  const { data: auth, error } = await client.auth.getUser();
-  if (error || !auth.user) return { status: "error", reason: "UNAUTHENTICATED" } as const;
-  const rolesQuery = await client.from("platform_user_roles").select("role_code").eq("user_id", auth.user.id).is("revoked_at", null).in("role_code", [...platformRoles]).limit(10);
-  if (rolesQuery.error) return { status: "error", reason: "UNAVAILABLE" } as const;
-  const roles = z.array(roleRow).max(10).safeParse(rolesQuery.data);
-  if (!roles.success) return { status: "error", reason: "INVALID_RESPONSE" } as const;
-  if (roles.data.length === 0) return { status: "error", reason: "FORBIDDEN" } as const;
-  return { status: "success", client } as const;
+  const access = await loadMyPlatformAccess();
+  if (access.status === "error") {
+    return { status: "error", reason: access.reason === "UNAUTHENTICATED" ? "UNAUTHENTICATED" : access.reason === "INVALID_RESPONSE" ? "INVALID_RESPONSE" : "UNAVAILABLE" } as const;
+  }
+  if (!hasPlatformRole(access.roles, platformRoles)) return { status: "error", reason: "FORBIDDEN" } as const;
+  if (!access.requirementSatisfied) return { status: "error", reason: "MFA_REQUIRED" } as const;
+  return { status: "success", client: access.client } as const;
 }
 
 export async function loadAdminFinanceDashboard(): Promise<AdminFinanceResult<AdminFinanceDashboard>> {

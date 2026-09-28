@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { resolveAdminSpace } from "@/modules/admin/data/spaces/context";
 import { actorCopy } from "@/modules/admin/data/spaces/actors-copy";
@@ -20,9 +21,9 @@ export default async function ClientComplianceAdministrationPage({
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveAdminSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/administration/conformite-clients` }));
   const result = await listClientComplianceReviews();
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/conformite-clients` }));
   const a = actorCopy(locale);
   const messages = getComplianceMessages(locale);
   const alternate = locale === "ar" ? "fr" : "ar";

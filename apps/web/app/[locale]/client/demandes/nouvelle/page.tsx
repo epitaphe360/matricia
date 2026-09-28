@@ -93,7 +93,7 @@ export default async function NewRequestPage({
       locale={locale}
       selectedQuery={space.selectedQuery}
       selectedOrganizationId={space.selectedOrganizationId}
-      userEmail={space.userEmail}
+      userEmail={space.userEmail} organizationName={space.organizationName}
       active="requests"
       title={c.newRequestTitle}
       lead={c.newRequestLead}

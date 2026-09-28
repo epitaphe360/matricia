@@ -1,6 +1,7 @@
 import { ArrowRight, BookOpen, Search } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { Badge } from "@/modules/shared/ui/badge";
 import { buttonVariants } from "@/modules/shared/ui/button";
@@ -29,7 +30,7 @@ export default async function CatalogPage({
   if (!isLocale(locale)) notFound();
   const query = parseCatalogQuery({ releaseId: rawQuery.release, librarySlug: rawQuery.bibliotheque, search: rawQuery.q, cursor: rawQuery.cursor });
   const libraryResult = await listPublishedLibraries(locale);
-  if (libraryResult.status === "error" && libraryResult.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (libraryResult.status === "error" && libraryResult.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/catalogue` }));
   const copy = getCatalogMessages(locale);
   const alternate = locale === "fr" ? "ar" : "fr";
 
@@ -52,7 +53,7 @@ export default async function CatalogPage({
       ? { status: "error" as const, reason: "INVALID_RESPONSE" as const }
       : await searchPublishedCatalog({ locale, releaseId: selectedLibrary.releaseId, search: query.search, cursor: query.cursor })
     : null;
-  if (searchResult?.status === "error" && searchResult.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (searchResult?.status === "error" && searchResult.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/catalogue` }));
 
   return (
     <main className="min-h-dvh bg-muted/40 px-4 py-6 sm:px-6 sm:py-8">

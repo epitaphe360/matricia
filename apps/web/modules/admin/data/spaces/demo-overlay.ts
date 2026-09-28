@@ -12,7 +12,8 @@ import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import { mapAdminOrgRows, type AdminOrgRow } from "./view-model";
 
 export function canApplyAdminDemo() {
-  return isDemoClientHomeEnabled();
+  void isDemoClientHomeEnabled;
+  return false;
 }
 
 export const demoSupervisionOrganizations: AdminSupervisionDashboard["organizations"] = [

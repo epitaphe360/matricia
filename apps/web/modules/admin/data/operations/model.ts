@@ -33,4 +33,4 @@ export type AdminOperationsDashboard = {
 
 export type AdminOperationsResult =
   | { status: "success"; value: AdminOperationsDashboard }
-  | { status: "error"; reason: "UNAUTHENTICATED" | "FORBIDDEN" | "UNAVAILABLE" | "INVALID_RESPONSE" };
+  | { status: "error"; reason: "UNAUTHENTICATED" | "MFA_REQUIRED" | "FORBIDDEN" | "UNAVAILABLE" | "INVALID_RESPONSE" };

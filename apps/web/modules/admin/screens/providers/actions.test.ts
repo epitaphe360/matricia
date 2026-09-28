@@ -65,8 +65,8 @@ describe("admin provider finance actions", () => {
   it("émet un avoir sans réécrire la facture", async () => {
     const form = base();
     form.set("invoiceId", id); form.set("creditNumber", "AV-2026-01"); form.set("issuedOn", "2026-09-21");
-    form.set("subtotal", "1 000,00"); form.set("tax", "200,00"); form.set("reason", "Avoir partiel documenté");
+    form.set("subtotal", "1 000,00"); form.set("reason", "Avoir partiel documenté");
     expect(await issueAdminCreditNote(idle, form)).toEqual({ status: "success", outcome: "RECORDED" });
-    expect(mocks.rpc).toHaveBeenCalledWith("issue_provider_credit_note", expect.objectContaining({ p_invoice_id: id, p_subtotal_minor: "100000", p_tax_minor: "20000" }));
+    expect(mocks.rpc).toHaveBeenCalledWith("issue_provider_credit_note", expect.objectContaining({ p_invoice_id: id, p_subtotal_minor: "100000", p_tax_minor: "0" }));
   });
 });

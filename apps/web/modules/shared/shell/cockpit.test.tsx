@@ -63,10 +63,10 @@ describe("cockpit SIP primitives", () => {
     const finance = await readFile(new URL("../../../app/[locale]/administration/finance/page.tsx", import.meta.url), "utf8");
     expect(clients).toContain("AdminAppShell");
     expect(clients).not.toContain("bg-muted/40");
-    expect(franchise).toContain("territoires");
+    expect(franchise).toContain("/administration/gouvernance");
     expect(franchise).not.toContain("bg-muted/40");
     expect(providers).toContain("renderAdminSpacePage");
-    expect(finance).toContain("AdminModuleChrome");
+    expect(finance).toContain("AdminModulePage");
     expect(finance).toContain("FinanceSorties");
   });
 

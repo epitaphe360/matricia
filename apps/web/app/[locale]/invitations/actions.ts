@@ -3,7 +3,6 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { getServerEnvironment } from "@/modules/shared/lib/env";
 import { isLocale, type Locale } from "@/modules/shared/lib/i18n/locale";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 
@@ -187,16 +186,7 @@ export async function createInvitation(
     p_correlation_id: randomUUID(),
   });
   if (error) return { status: "error", reason: "UNAVAILABLE" };
-
-  const environment = getServerEnvironment();
-  const { error: deliveryError } = await supabase.auth.signInWithOtp({
-    email: parsed.data.invitedEmail,
-    options: {
-      shouldCreateUser: true,
-      emailRedirectTo: `${environment.NEXT_PUBLIC_APP_URL}/${locale}/invitations`,
-    },
-  });
-  if (deliveryError) return { status: "error", reason: "UNAVAILABLE" };
+  // Email delivery is owned by OrganizationEmailInvitationRequestedV1 → outbox consumer.
   revalidatePath(`/${locale}/invitations`);
   return { status: "success" };
 }

@@ -92,6 +92,23 @@ describe("provider nested workbenches 09-15", () => {
     expect(empty).toContain("Aucun document n’a encore été partagé");
     expect(empty).not.toContain("Extrait d’immatriculation");
     expect(empty).not.toContain("Attestation fiscale");
+
+    const panel = <div>panel</div>;
+    const open = renderToStaticMarkup(<ConsultationDetailWorkbench locale="fr" query="" consultationId={invitation.id} invitation={invitation} quotePanel={panel} />);
+    expect(open).toContain("href=\"#invitation-decision\"");
+    expect(open).not.toContain("data-state=\"done\"");
+    const submitted = renderToStaticMarkup(
+      <ConsultationDetailWorkbench
+        locale="fr"
+        query=""
+        consultationId={invitation.id}
+        invitation={{ ...invitation, status: "ACCEPTED", quote: { id: "77777777-7777-4777-8777-777777777777", status: "SUBMITTED", currentVersionId: null, versionNumber: 1, currency: "MAD", subtotalMinor: "100", taxMinor: "20", totalMinor: "120" } }}
+        quotePanel={panel}
+      />,
+    );
+    expect(submitted).not.toContain("href=\"#invitation-decision\"");
+    expect(submitted.match(/data-state="done"/g)?.length).toBe(1);
+    expect(submitted.match(/data-state="current"/g)?.length).toBe(1);
   });
 
   it("affiche une facture réelle sans inventer de montant ni de téléchargement", () => {
@@ -102,6 +119,7 @@ describe("provider nested workbenches 09-15", () => {
       totalMinor: "1250",
       paidMinor: "0",
       outstandingMinor: "1250",
+      creditedMinor: "0",
       paymentStatus: "OPEN",
       dueOn: "2026-10-01",
     };

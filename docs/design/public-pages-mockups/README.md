@@ -18,6 +18,7 @@ Ce dossier regroupe la proposition visuelle consolidée des pages et états publ
 
 | Fichier | Écran couvert |
 | --- | --- |
+| `00-home-v2-premium.png` | **Nouvelle Home recommandée** — Hero B2B dynamique et cycle Matricia intégré |
 | `00-home.png` | Accueil public et cycle Matricia |
 | `01-diagnostic-question.png` | Diagnostic public, une question par écran |
 | `02-diagnostic-resultat.png` | Résultat indicatif et priorités |
@@ -39,4 +40,3 @@ Ce dossier regroupe la proposition visuelle consolidée des pages et états publ
 | `18-reference-mobile-390.png` | Référence mobile 390 px : Home, diagnostic, professionnel |
 
 Les images sont des maquettes de conception. Les textes légaux, bénéfices publiables, règles d'abonnement et traductions arabes doivent être validés avant leur intégration finale. Elles ne constituent pas une preuve que les parcours sont déjà implémentés.
-

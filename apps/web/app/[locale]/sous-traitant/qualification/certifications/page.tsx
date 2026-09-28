@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { loadProviderDashboard } from "@/modules/provider/data/qualification/repository";
 import { resolveProviderSpace } from "@/modules/provider/data/spaces/context";
 import { getProviderStatusLabel } from "@/modules/provider/screens/qualification/messages";
@@ -79,9 +80,9 @@ export default async function ProviderCertificationsPage({
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveProviderSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/qualification/certifications` }));
   const result = await loadProviderDashboard();
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/qualification/certifications` }));
   const documents = result.status === "success" ? result.dashboard.documents : [];
   const copy = locale === "ar"
     ? { title: "الشهادات والمراجع", lead: "الشهادات والرخص والمراجع المودعة في ملف التأهيل.", certs: "الشهادات والرخص", refs: "مراجع المشاريع", emptyCerts: "لا شهادة أو رخصة مسجّلة.", emptyRefs: "لا مرجع أو محفظة مسجّلة.", error: "تعذر تحميل الإثباتات." }

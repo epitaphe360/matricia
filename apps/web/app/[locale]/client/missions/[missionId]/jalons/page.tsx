@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { resolveClientSpace } from "@/modules/client/data/spaces/context";
 import { spaceCopy } from "@/modules/client/data/spaces/copy";
@@ -23,7 +24,7 @@ export default async function ClientMissionJalonsPage({
   const [{ locale, missionId }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale) || !missionId) notFound();
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/missions/${missionId}/jalons` }));
   const messages = getMissionMessages(locale);
   const c = spaceCopy(locale);
   const [result, amendments] = await Promise.all([loadContractMissions(locale, query.organizationId), loadClientAmendments(query.organizationId)]);
@@ -33,7 +34,7 @@ export default async function ClientMissionJalonsPage({
   const mission = dashboard?.missions[0] ?? null;
 
   return (
-    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="missions" title={c.jalonsTitle} lead={c.jalonsLead} kicker={c.kicker}>
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="missions" title={c.jalonsTitle} lead={c.jalonsLead} kicker={c.kicker}>
       <JalonsBoard locale={locale} query={space.selectedQuery} organizationName={space.organizationName} mission={mission} messages={messages} assistanceHref={`/${locale}/client/diagnostics/assistance${space.selectedQuery}`}>
         {result.status === "error" ? (
           <Alert><AlertTitle>{messages.noOrg}</AlertTitle><AlertDescription>{result.reason}</AlertDescription></Alert>

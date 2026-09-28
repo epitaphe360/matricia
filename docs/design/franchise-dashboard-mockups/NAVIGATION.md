@@ -2,6 +2,26 @@
 
 Les chemins ci-dessous décrivent les destinations fonctionnelles attendues. Le préfixe `/{locale}` vaut `/fr` ou `/ar`.
 
+Références maquettes (PNG dans ce dossier) :
+
+| Route | Maquette |
+|-------|----------|
+| Accueil | `00`, mobile `22`, AR `21` |
+| File de travail | `04` |
+| Bibliothèque | `05` |
+| Services / constructeur | `01`, `06` |
+| Questionnaires / constructeur / aperçu | `02`, `07`, `08` |
+| Règles / simulation | `03`, `09` |
+| Validations | `10` |
+| Fournisseurs / dossier | `11`, `12` |
+| Demandes / matching | `13`, `14` |
+| Qualité | `15` |
+| Performance | `16` |
+| Relances / pipeline | `17` |
+| Gouvernance | `18` |
+| Documents | `19` |
+| Messages | `20` |
+
 ## Accueil
 
 - Accueil : `/{locale}/franchise/accueil` (alias racine : `/{locale}/franchise`)

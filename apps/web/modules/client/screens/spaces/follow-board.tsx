@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Bell, Calendar, FileText, MessageSquare } from "lucide-react";
+import { ArrowRight, Bell, Calendar, ChevronRight, FileText, MessageSquare, Scale } from "lucide-react";
 import type { ReactNode } from "react";
 import { canApplyClientSpaceDemo, demoClientSpaces } from "@/modules/client/data/spaces/demo";
 import { spaceCopy } from "@/modules/client/data/spaces/copy";
@@ -14,6 +14,24 @@ function Cta({ href, children }: { href: string; children: ReactNode }) {
       <ArrowRight className="size-4 rtl:rotate-180" aria-hidden />
     </Link>
   );
+}
+
+function formatDue(value: string | null, locale: Locale, fallback: string) {
+  if (!value) return fallback;
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-MA" : "fr-MA", {
+    dateStyle: "medium",
+    timeZone: "Africa/Casablanca",
+  }).format(new Date(parsed));
+}
+
+function isTerminalMilestone(status: string) {
+  return status === "ACCEPTED" || status === "DONE" || status === "COMPLETED" || status === "CANCELLED";
+}
+
+function isAwaitingDeliverable(status: string) {
+  return status === "SUBMITTED" || status === "PENDING_ACCEPTANCE" || status === "IN_REVIEW";
 }
 
 export function FollowBoard({
@@ -39,36 +57,83 @@ export function FollowBoard({
       : [];
   const steps = mission
     ? mission.milestones.map((item, index, all) => {
-        const done = item.status === "ACCEPTED" || item.status === "DONE" || item.status === "COMPLETED";
-        const current = !done && (index === 0 || all.slice(0, index).every((row) => row.status === "ACCEPTED" || row.status === "DONE" || row.status === "COMPLETED"));
-        return { id: item.id, title: item.title, detail: item.status, state: (done ? "done" : current ? "current" : "todo") as "done" | "current" | "todo" };
+        const done = isTerminalMilestone(item.status);
+        const current = !done && (index === 0 || all.slice(0, index).every((row) => isTerminalMilestone(row.status)));
+        const detail = done
+          ? (locale === "ar" ? "مكتمل" : "Terminé")
+          : current
+            ? c.inProgress
+            : formatDue(item.dueAt, locale, c.comingSoon);
+        return { id: item.id, title: item.title, detail, state: (done ? "done" : current ? "current" : "todo") as "done" | "current" | "todo" };
       })
     : preferDemo
       ? demo.missions.steps
       : [];
   const offerHref = `/${locale}/client/demandes${query}`;
-  const offers = preferDemo ? demo.compareOffers.slice(0, 2) : [];
-  const files = preferDemo ? demo.missions.files : (mission?.deliverables ?? []).map((item) => ({
+  const offers = preferDemo && !mission ? demo.compareOffers.slice(0, 2) : [];
+  const files = preferDemo && !mission ? demo.missions.files : (mission?.deliverables ?? []).map((item) => ({
     id: item.id,
     title: item.label,
-    href: `/${locale}/client/documents${query}`,
+    href: `/${locale}/client/missions/${mission!.id}/jalons${query}`,
     kind: "file" as const,
   }));
 
+  const openMilestones = (mission?.milestones ?? []).filter((item) => !isTerminalMilestone(item.status));
+  const awaitingDeliverables = (mission?.deliverables ?? []).filter((item) => isAwaitingDeliverable(item.status));
+  const priorities: Array<{ id: string; href: string; label: string; chip: string; tone: "peach" | "violet" | "sky" }> = [];
+  if (mission) {
+    if (awaitingDeliverables.length > 0) {
+      priorities.push({
+        id: "deliverable",
+        href: `/${locale}/client/missions/${mission.id}/jalons${query}`,
+        label: c.examineDeliverableNow,
+        chip: c.awaiting,
+        tone: "sky",
+      });
+    }
+    if (openMilestones.length > 0) {
+      priorities.push({
+        id: "milestone",
+        href: `/${locale}/client/missions/${mission.id}/jalons${query}`,
+        label: openMilestones[0]!.title,
+        chip: c.actionRequired,
+        tone: "peach",
+      });
+    }
+  } else if (preferDemo) {
+    priorities.push(
+      { id: "demo-bilan", href: `/${locale}/client/diagnostics${query}`, label: c.resumeBilan, chip: c.actionRequired, tone: "peach" },
+      { id: "demo-offers", href: offerHref, label: c.compareOffers, chip: c.inProgress, tone: "violet" },
+      { id: "demo-deliverable", href: `/${locale}/client/missions${query}`, label: c.examineDeliverableNow, chip: c.awaiting, tone: "sky" },
+      { id: "demo-docs", href: `/${locale}/client/documents${query}`, label: c.completePiece, chip: c.toCompleteChip, tone: "peach" },
+    );
+  }
+  const upcomingDeadlines = (mission?.milestones ?? [])
+    .filter((item) => !isTerminalMilestone(item.status))
+    .slice(0, 3);
+
   return (
-    <main className="client-page">
+    <main className="client-page client-follow-page">
       <section className="client-board client-board-compare">
         <article className="client-card">
           <header className="client-priority-head">
             <h2>{c.treatNow}</h2>
             <Link href={`/${locale}/client/missions${query}`} className="client-text-link">{c.seeAll}</Link>
           </header>
-          <ul className="client-feed">
-            <li><Link href={`/${locale}/client/diagnostics${query}`}><span className="client-feed-icon" data-tone="peach"><FileText className="size-4" aria-hidden /></span><span>{c.resumeBilan}</span><em><span className="client-status-chip" data-tone="peach">{c.actionRequired}</span></em></Link></li>
-            <li><Link href={offerHref}><span className="client-feed-icon" data-tone="violet"><FileText className="size-4" aria-hidden /></span><span>{c.compareOffers}</span><em><span className="client-status-chip" data-tone="violet">{c.inProgress}</span></em></Link></li>
-            <li><Link href={mission ? `/${locale}/client/missions/${mission.id}/jalons${query}` : `/${locale}/client/missions${query}`}><span className="client-feed-icon" data-tone="sky"><FileText className="size-4" aria-hidden /></span><span>{c.examineDeliverableNow}</span><em><span className="client-status-chip" data-tone="sky">{c.awaiting}</span></em></Link></li>
-            <li><Link href={`/${locale}/client/documents${query}`}><span className="client-feed-icon" data-tone="peach"><FileText className="size-4" aria-hidden /></span><span>{c.completePiece}</span><em><span className="client-status-chip" data-tone="peach">{c.toCompleteChip}</span></em></Link></li>
-          </ul>
+          {priorities.length === 0 ? <p>{c.emptyBoard}</p> : (
+            <ul className="client-feed">
+              {priorities.map((item) => (
+                <li key={item.id}>
+                  <Link href={item.href}>
+                    <span className="client-feed-icon" data-tone={item.tone}><FileText className="size-4" aria-hidden /></span>
+                    <span>{item.label}</span>
+                    <em><span className="client-status-chip" data-tone={item.tone}>{item.chip}</span></em>
+                    <ChevronRight className="size-4 rtl:rotate-180" aria-hidden />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </article>
         <article className="client-card">
           <header className="client-priority-head">
@@ -78,7 +143,14 @@ export function FollowBoard({
           {folders.length === 0 ? <p>{locale === "ar" ? "لا ملف جارٍ للعرض." : "Aucun dossier en cours à afficher."}</p> : (
             <ul className="client-feed">
               {folders.map((row) => (
-                <li key={row.id}><Link href={row.href}><span className="client-feed-icon" data-tone={row.tone} /><span>{row.title}</span><em><span className="client-status-chip" data-tone={row.tone}>{row.status}</span></em></Link></li>
+                <li key={row.id}>
+                  <Link href={row.href}>
+                    <span className="client-feed-icon" data-tone={row.tone} />
+                    <span>{row.title}</span>
+                    <em><span className="client-status-chip" data-tone={row.tone}>{row.status}</span></em>
+                    <ChevronRight className="size-4 rtl:rotate-180" aria-hidden />
+                  </Link>
+                </li>
               ))}
             </ul>
           )}
@@ -89,11 +161,17 @@ export function FollowBoard({
           <h2>{c.myRequestsMissions}</h2>
           <Cta href={mission ? `/${locale}/client/missions/${mission.id}${query}` : `/${locale}/client/missions${query}`}>{c.openTheFolder}</Cta>
         </header>
-        <ol className="client-journey">
-          {steps.map((step, index) => (
-            <li key={step.id} data-state={step.state}><span><JourneyGlyph index={index} /></span><small>{step.title}</small></li>
-          ))}
-        </ol>
+        {steps.length === 0 ? <p>{c.emptyBoard}</p> : (
+          <ol className="client-journey">
+            {steps.map((step, index) => (
+              <li key={step.id} data-state={step.state}>
+                <span><JourneyGlyph index={index} /></span>
+                <strong>{step.title}</strong>
+                <small>{step.detail}</small>
+              </li>
+            ))}
+          </ol>
+        )}
       </article>
       <article className="client-card">
         <header className="client-priority-head">
@@ -115,39 +193,75 @@ export function FollowBoard({
                 <tr><th>{locale === "ar" ? "النطاق" : "Périmètre"}</th>{offers.map((offer) => <td key={`${offer.slot}-p`}>{offer.tagline}</td>)}</tr>
                 <tr><th>{c.durationLabel}</th>{offers.map((offer) => <td key={`${offer.slot}-d`}>{offer.weeks} {locale === "ar" ? "أسابيع" : "semaines"}</td>)}</tr>
                 <tr><th>{c.exclusions}</th>{offers.map((offer) => <td key={`${offer.slot}-e`}>{offer.exclusions[0]}</td>)}</tr>
+                <tr><th>{locale === "ar" ? "الشروط" : "Conditions"}</th>{offers.map((offer) => <td key={`${offer.slot}-c`}>{offer.guarantees}</td>)}</tr>
               </tbody>
             </table>
           </div>
         )}
         <div className="client-next-action">
-          <Link href={offerHref} className="client-cta">{c.nextDecision} : {c.compareCta}</Link>
+          <Link href={offerHref} className="client-next-action-link">
+            <Scale className="size-4" aria-hidden />
+            <span>{c.nextDecision} : {c.compareCta}</span>
+            <ChevronRight className="size-4 rtl:rotate-180" aria-hidden />
+          </Link>
         </div>
       </article>
       <section className="client-follow-triple">
         <article className="client-card">
           <header className="client-priority-head"><h2>{c.documentsRenewals}</h2><Link href={`/${locale}/client/documents${query}`} className="client-text-link">{c.seeAll}</Link></header>
-          <ul className="client-feed">
-            {files.slice(0, 3).map((file) => (
-              <li key={file.id}><Link href={file.href}><FileText className="size-4" aria-hidden /><span>{file.title}</span><em>{c.open}</em></Link></li>
-            ))}
-          </ul>
+          {files.length === 0 ? <p>{c.emptyBoard}</p> : (
+            <ul className="client-feed">
+              {files.slice(0, 3).map((file) => (
+                <li key={file.id}>
+                  <Link href={file.href}>
+                    <FileText className="size-4" aria-hidden />
+                    <span>{file.title}</span>
+                    <em><span className="client-status-chip" data-tone="peach">{c.toCompleteChip}</span></em>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </article>
         <article className="client-card">
           <header className="client-priority-head"><h2>{c.nextDeadlines}</h2><Link href={`/${locale}/client/missions${query}`} className="client-text-link">{c.seeAll}</Link></header>
           <ul className="client-feed">
-            {(mission?.milestones ?? []).slice(0, 3).map((item) => (
-              <li key={item.id}><span className="client-feed-icon" data-tone="sky"><Calendar className="size-4" aria-hidden /></span><span>{item.title}</span><em>{c.comingSoon}</em></li>
+            {upcomingDeadlines.map((item) => (
+              <li key={item.id}>
+                <span className="client-feed-icon" data-tone="sky"><Calendar className="size-4" aria-hidden /></span>
+                <span>{item.title}</span>
+                <em><span className="client-status-chip" data-tone="peach">{formatDue(item.dueAt, locale, c.comingSoon)}</span></em>
+              </li>
             ))}
             {!mission && preferDemo ? demo.missions.steps.filter((step) => step.state !== "done").slice(0, 3).map((step) => (
-              <li key={step.id}><span className="client-feed-icon" data-tone="sky"><Calendar className="size-4" aria-hidden /></span><span>{step.title}</span><em>{c.comingSoon}</em></li>
+              <li key={step.id}>
+                <span className="client-feed-icon" data-tone="sky"><Calendar className="size-4" aria-hidden /></span>
+                <span>{step.title}</span>
+                <em><span className="client-status-chip" data-tone="peach">{c.comingSoon}</span></em>
+              </li>
             )) : null}
+            {upcomingDeadlines.length === 0 && !( !mission && preferDemo) ? (
+              <li><span className="client-feed-icon" data-tone="sky"><Calendar className="size-4" aria-hidden /></span><span>{c.emptyBoard}</span></li>
+            ) : null}
           </ul>
         </article>
         <article className="client-card">
           <header className="client-priority-head"><h2>{c.messagesNotifs}</h2><Link href={`/${locale}/messagerie${query}`} className="client-text-link">{c.seeAll}</Link></header>
           <ul className="client-feed">
-            <li><Link href={`/${locale}/messagerie${query}`}><span className="client-feed-icon" data-tone="violet"><MessageSquare className="size-4" aria-hidden /></span><span>{c.threadTitle}</span><em><Bell className="size-4" aria-hidden /></em></Link></li>
-            <li><Link href={`/${locale}/notifications${query}`}><span className="client-feed-icon" data-tone="peach"><Bell className="size-4" aria-hidden /></span><span>{c.notif}</span><em>{c.open}</em></Link></li>
+            <li>
+              <Link href={`/${locale}/messagerie${query}`}>
+                <span className="client-feed-icon" data-tone="violet"><MessageSquare className="size-4" aria-hidden /></span>
+                <span>{c.threadTitle}</span>
+                <em className="client-notif-dot" aria-hidden><Bell className="size-4" /></em>
+              </Link>
+            </li>
+            <li>
+              <Link href={`/${locale}/notifications${query}`}>
+                <span className="client-feed-icon" data-tone="peach"><Bell className="size-4" aria-hidden /></span>
+                <span>{c.notif}</span>
+                <em>{c.open}</em>
+              </Link>
+            </li>
           </ul>
         </article>
       </section>

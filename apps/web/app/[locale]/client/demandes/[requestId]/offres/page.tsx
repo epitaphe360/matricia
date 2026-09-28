@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { ComparisonPanel } from "@/modules/client/screens/demandes/comparison-panel";
 import { getClientRfqMessages } from "@/modules/client/screens/demandes/messages";
 import { createServerClientRfqRepository } from "@/modules/client/data/rfq/server-repository";
@@ -21,12 +22,12 @@ export default async function CompareOffersPage({
   const [{ locale, requestId }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale) || !uuidSchema.safeParse(requestId).success) notFound();
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/demandes/${requestId}/offres` }));
   const messages = getClientRfqMessages(locale);
   const c = spaceCopy(locale);
   const repository = await createServerClientRfqRepository();
   const detail = await repository.detail(requestId);
-  if (detail.status === "error" && detail.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (detail.status === "error" && detail.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/client/demandes/${requestId}/offres` }));
   if (detail.status === "error" || !detail.value) notFound();
 
   const rfqId = query.rfq ?? detail.value.rfqId;
@@ -37,22 +38,28 @@ export default async function CompareOffersPage({
   }
   if (!rfqId || !uuidSchema.safeParse(rfqId).success) {
     return (
-      <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="requests" title={c.comparePageTitle} lead={c.comparePageLead} kicker={c.kicker}>
+      <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="requests" title={c.comparePageTitle} lead={c.comparePageLead} kicker={c.kicker}>
         <RequestsBoard locale={locale} query={space.selectedQuery} compareHref={`/${locale}/client/demandes/${requestId}${space.selectedQuery}`} rows={[]} organizationName={space.organizationName} />
       </ClientAppShell>
     );
   }
 
   const comparison = await repository.comparison(rfqId);
-  if (comparison.status === "error" && comparison.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
-  if (comparison.status === "error") throw new Error("QUOTE_COMPARISON_UNAVAILABLE");
+  if (comparison.status === "error" && comparison.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/client/demandes/${requestId}/offres` }));
+  if (comparison.status === "error") {
+    return (
+      <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="requests" title={c.comparePageTitle} lead={c.comparePageLead} kicker={c.kicker}>
+        <main className="client-page"><p role="alert" className="client-card">{locale === "ar" ? "تعذر تحميل المقارنة." : "Impossible de charger la comparaison."}</p></main>
+      </ClientAppShell>
+    );
+  }
   const facts = comparison.value
     ? await loadComparisonOfferFacts(comparison.value.rows.map((row) => row.quoteVersionId), locale)
     : new Map();
   const offerFacts = Object.fromEntries(facts);
 
   return (
-    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="requests" title={c.comparePageTitle} lead={c.comparePageLead} kicker={c.kicker}>
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="requests" title={c.comparePageTitle} lead={c.comparePageLead} kicker={c.kicker}>
       <main className="client-page">
         <ComparisonPanel
           locale={locale}

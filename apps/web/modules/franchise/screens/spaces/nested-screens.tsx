@@ -1,10 +1,17 @@
 import { randomUUID } from "node:crypto";
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { libraryCopy } from "@/modules/franchise/data/library/copy";
 import { resolveFranchiseNestedView } from "@/modules/franchise/data/spaces/nested-views";
 import { franchiseCopy } from "@/modules/franchise/data/spaces/copy";
-import { FranchiseLibraryHomeBoard, FranchiseLibraryStructureBoard, FranchiseQuestionsBoard } from "@/modules/franchise/screens/library/library-boards";
+import { FranchiseLibraryHomeBoard, FranchiseLibraryStructureBoard, FranchiseQuestionsBoard, FranchiseWorkQueueBoard } from "@/modules/franchise/screens/library/library-boards";
+import {
+  FranchiseClientPreviewBranches,
+  FranchiseQuestionnaireConstructor,
+  FranchiseRuleConstructor,
+  FranchiseServiceConstructor,
+} from "@/modules/franchise/screens/library/constructors";
 import { FranchiseQuestionnairesWorkbench, FranchiseRulesWorkbench, FranchiseServicesWorkbench } from "@/modules/franchise/screens/library/library-workbenches";
 import { FranchiseValidationsWorkbench, FRANCHISE_VALIDATION_BUCKETS } from "@/modules/franchise/screens/library/validations-workbench";
 import { requireFranchiseLibrary, franchiseMandateName, loadFranchiseSpaceFromLibrary } from "@/modules/franchise/screens/library/page-helper";
@@ -12,7 +19,6 @@ import {
   DocumentsBoard,
   FollowupsBoard,
   FranchiseFinanceBoard,
-  FranchiseHomeBoard,
   FranchiseRequestsBoard,
   GovernanceBoard,
   MessagesBoard,
@@ -31,20 +37,26 @@ function commandIdentity() {
 function titleFor(locale: Locale, nested: NonNullable<ReturnType<typeof resolveFranchiseNestedView>>) {
   const n = libraryCopy(locale);
   const c = franchiseCopy(locale);
-  if (nested.kind === "home" && nested.view === "actions") return { title: n.queue, lead: n.homeLead };
+  if (nested.kind === "home" && nested.view === "actions") return { title: n.queueTitle, lead: n.queueLead };
   if (nested.kind === "home" && nested.view === "activite") return { title: n.activity, lead: n.homeLead };
   if (nested.kind === "library") return { title: n.libraryTitle, lead: n.libraryLead };
+  if (nested.kind === "services" && (nested.create || nested.itemId)) return { title: undefined, lead: undefined };
   if (nested.kind === "services") return { title: n.servicesTitle, lead: n.servicesLead };
+  if (nested.kind === "questionnaires" && (nested.create || nested.itemId || nested.tool === "apercu" || nested.tool === "simulation" || nested.view === "apercu" || nested.view === "simulation")) {
+    return { title: undefined, lead: undefined };
+  }
   if (nested.kind === "questionnaires") return { title: n.questionnairesTitle, lead: n.questionnairesLead };
+  if (nested.kind === "rules" && (nested.create || nested.itemId)) return { title: undefined, lead: undefined };
   if (nested.kind === "rules") return { title: n.rulesTitle, lead: n.rulesLead };
   if (nested.kind === "validations") return { title: n.validationsTitle, lead: n.validationsLead };
-  if (nested.kind === "network") return { title: c.netTitle, lead: c.netLead };
+  if (nested.kind === "network" && nested.itemId) return { title: c.providerFolderTitle, lead: c.providerFolderLead };
+  if (nested.kind === "network") return { title: c.netTitleRich, lead: c.netLeadRich };
   if (nested.kind === "requests") return { title: c.reqTitle, lead: c.reqLead };
-  if (nested.kind === "quality") return { title: c.qualTitle, lead: c.qualLead };
-  if (nested.kind === "performance") return { title: c.perfTitle, lead: c.perfLead };
+  if (nested.kind === "quality") return { title: c.qualTitleRich, lead: c.qualLeadRich };
+  if (nested.kind === "performance") return { title: c.perfTitleRich, lead: c.perfLeadRich };
   if (nested.kind === "followups") return { title: c.folTitle, lead: c.folLead };
-  if (nested.kind === "documents") return { title: n.documentsTitle, lead: n.documentsLead };
-  if (nested.kind === "messages") return { title: nested.view === "notifications" ? n.notifications : n.messagesTitle, lead: n.messagesLead };
+  if (nested.kind === "documents") return { title: c.docsTitleRich, lead: c.docsLeadRich };
+  if (nested.kind === "messages") return { title: nested.view === "notifications" ? n.notifications : c.messagesTitleRich, lead: c.messagesLeadRich };
   if (nested.kind === "governance") return { title: c.govTitle, lead: c.govLead };
   if (nested.kind === "perimeter") return { title: c.periTitle, lead: c.periLead };
   return { title: c.finTitle, lead: c.finLead };
@@ -55,7 +67,7 @@ export async function FranchiseNestedPage({
   searchParams,
 }: {
   params: Promise<{ locale: string; slug: string[] }>;
-  searchParams: Promise<{ organizationId?: string; q?: string; stage?: string; owner?: string; page?: string }>;
+  searchParams: Promise<{ organizationId?: string; q?: string; stage?: string; owner?: string; page?: string; bucket?: string }>;
 }) {
   const [{ locale, slug }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale) || !slug?.length) notFound();
@@ -66,7 +78,7 @@ export async function FranchiseNestedPage({
   const heading = titleFor(locale, nested);
   const c = libraryCopy(locale);
   const needsLive = ["home", "network", "requests", "quality", "performance", "followups", "governance", "perimeter", "finance", "documents", "messages"].includes(nested.kind);
-  const board = needsLive ? await loadFranchiseSpaceFromLibrary({ locale, query: space.selectedQuery, result }) : undefined;
+  const board = needsLive && nested.view !== "actions" ? await loadFranchiseSpaceFromLibrary({ locale, query: space.selectedQuery, result }) : undefined;
   const commandScope = result.status === "success"
     ? {
       libraryId: result.workspace.mandate.libraryId,
@@ -74,6 +86,10 @@ export async function FranchiseNestedPage({
       services: result.workspace.services.map((item) => ({ id: item.id, title: item.title })),
     }
     : { libraryId: null as string | null, organizationId: space.selectedOrganizationId, services: [] as Array<{ id: string; title: string }> };
+  const queueBucket = query.bucket === "waiting" || query.bucket === "corrections" || query.bucket === "done" ? query.bucket : "todo";
+  const shellActions = nested.kind === "network" && nested.itemId ? (
+    <Link href={`/${locale}/franchise/fournisseurs${space.selectedQuery}`} className="franchise-tool">{franchiseCopy(locale).providerFolderBack}</Link>
+  ) : undefined;
   return (
     <FranchiseAppShell
       locale={locale}
@@ -85,6 +101,7 @@ export async function FranchiseNestedPage({
       lead={heading.lead}
       kicker={c.scope}
       mandateName={mandateName}
+      actions={shellActions}
     >
       {result.status === "error" ? (
         <Alert variant="destructive">
@@ -92,17 +109,27 @@ export async function FranchiseNestedPage({
           <AlertDescription>{result.reason === "NO_MANDATE" ? c.noMandate : c.scopeHelp}</AlertDescription>
         </Alert>
       ) : nested.kind === "home" && nested.view === "actions" ? (
-        <FranchiseHomeBoard locale={locale} query={space.selectedQuery} mandateName={mandateName} board={board} />
+        <FranchiseWorkQueueBoard locale={locale} query={space.selectedQuery} workspace={result.workspace} bucket={queueBucket} />
       ) : nested.kind === "home" ? (
         <FranchiseLibraryHomeBoard locale={locale} query={space.selectedQuery} workspace={result.workspace} />
       ) : nested.kind === "library" && (nested.view === "categories" || nested.view === "version" || nested.view === "historique") ? (
         <FranchiseLibraryStructureBoard locale={locale} query={space.selectedQuery} workspace={result.workspace} view={nested.view} commandIdentity={commandIdentity()} organizationId={commandScope.organizationId} />
+      ) : nested.kind === "services" && nested.create ? (
+        <FranchiseServiceConstructor locale={locale} query={space.selectedQuery} workspace={result.workspace} service={null} createMode commandIdentity={commandIdentity()} organizationId={space.selectedOrganizationId} />
+      ) : nested.kind === "services" && (nested.tool === "simulation" || nested.view === "simulation") && nested.itemId ? (
+        <FranchiseServiceConstructor locale={locale} query={space.selectedQuery} workspace={result.workspace} service={result.workspace.services.find((row) => row.id === nested.itemId) ?? null} createMode={false} commandIdentity={commandIdentity()} organizationId={space.selectedOrganizationId} />
       ) : nested.kind === "services" ? (
         <FranchiseServicesWorkbench locale={locale} query={space.selectedQuery} workspace={result.workspace} selectedId={nested.itemId} createMode={nested.create} organizationId={space.selectedOrganizationId} commandIdentity={commandIdentity()} />
       ) : nested.kind === "questionnaires" && nested.view === "questions" ? (
         <main className="client-page"><FranchiseQuestionsBoard locale={locale} questions={result.workspace.questions} /></main>
+      ) : nested.kind === "questionnaires" && (nested.tool === "apercu" || nested.tool === "simulation" || nested.view === "apercu" || nested.view === "simulation") ? (
+        <FranchiseClientPreviewBranches locale={locale} query={space.selectedQuery} workspace={result.workspace} questionnaireId={nested.itemId} organizationId={space.selectedOrganizationId} />
+      ) : nested.kind === "questionnaires" && (nested.create || nested.itemId) ? (
+        <FranchiseQuestionnaireConstructor locale={locale} query={space.selectedQuery} workspace={result.workspace} selectedId={nested.itemId} createMode={nested.create} commandIdentity={commandIdentity()} organizationId={space.selectedOrganizationId} />
       ) : nested.kind === "questionnaires" ? (
         <FranchiseQuestionnairesWorkbench locale={locale} query={space.selectedQuery} workspace={result.workspace} selectedId={nested.itemId} createMode={nested.create} commandIdentity={commandIdentity()} organizationId={space.selectedOrganizationId} />
+      ) : nested.kind === "rules" && (nested.create || nested.itemId) ? (
+        <FranchiseRuleConstructor locale={locale} query={space.selectedQuery} workspace={result.workspace} selectedId={nested.itemId} createMode={nested.create} commandIdentity={commandIdentity()} organizationId={space.selectedOrganizationId} />
       ) : nested.kind === "rules" ? (
         <FranchiseRulesWorkbench locale={locale} query={space.selectedQuery} workspace={result.workspace} selectedId={nested.itemId} createMode={nested.create} commandIdentity={commandIdentity()} organizationId={space.selectedOrganizationId} />
       ) : nested.kind === "validations" ? (
@@ -146,8 +173,8 @@ export async function FranchiseServiceDetailPage({
   const c = libraryCopy(locale);
   const item = result.workspace.services.find((row) => row.id === serviceId) ?? null;
   return (
-    <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="services" title={item?.title ?? c.servicesTitle} lead={c.servicesLead} kicker={c.scope} mandateName={result.workspace.mandate.libraryName}>
-      <FranchiseServicesWorkbench locale={locale} query={space.selectedQuery} workspace={result.workspace} selectedId={serviceId} createMode={false} organizationId={space.selectedOrganizationId} commandIdentity={commandIdentity()} />
+    <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="services" title={item?.title ?? c.servicesTitle} lead={c.serviceConstructorLead} kicker={c.scope} mandateName={result.workspace.mandate.libraryName}>
+      <FranchiseServiceConstructor locale={locale} query={space.selectedQuery} workspace={result.workspace} service={item} createMode={false} organizationId={space.selectedOrganizationId} commandIdentity={commandIdentity()} />
     </FranchiseAppShell>
   );
 }
@@ -173,9 +200,16 @@ export async function FranchiseQuestionnaireToolPage({
       </FranchiseAppShell>
     );
   }
+  if (tool === "apercu" || tool === "simulation") {
+    return (
+      <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="questionnaires" title={c.clientPreviewBranchesTitle} lead={c.clientPreviewBranchesLead} kicker={c.scope} mandateName={result.workspace.mandate.libraryName}>
+        <FranchiseClientPreviewBranches locale={locale} query={space.selectedQuery} workspace={result.workspace} questionnaireId={questionnaireId} organizationId={space.selectedOrganizationId} />
+      </FranchiseAppShell>
+    );
+  }
   return (
-    <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="questionnaires" title={c.questionnairesTitle} lead={c.questionnairesLead} kicker={c.scope} mandateName={result.workspace.mandate.libraryName}>
-      <FranchiseQuestionnairesWorkbench locale={locale} query={space.selectedQuery} workspace={result.workspace} selectedId={questionnaireId} createMode={false} commandIdentity={commandIdentity()} organizationId={space.selectedOrganizationId} />
+    <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="questionnaires" title={c.questionnaireConstructorTitle} lead={c.questionnaireConstructorLead} kicker={c.scope} mandateName={result.workspace.mandate.libraryName}>
+      <FranchiseQuestionnaireConstructor locale={locale} query={space.selectedQuery} workspace={result.workspace} selectedId={questionnaireId} createMode={false} commandIdentity={commandIdentity()} organizationId={space.selectedOrganizationId} />
     </FranchiseAppShell>
   );
 }

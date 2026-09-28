@@ -1,12 +1,13 @@
 import { z } from "zod";
-import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
+import { hasPlatformRole, loadMyPlatformAccess } from "@/modules/shared/lib/account-security/platform-access";
 
 const list = z.array(z.record(z.string(), z.unknown()));
 export type AdminIncentives = { organizations:Record<string,unknown>[];rules:Record<string,unknown>[];policies:Record<string,unknown>[];evaluations:Record<string,unknown>[];decisions:Record<string,unknown>[];reputations:Record<string,unknown>[];reputationPolicies:Record<string,unknown>[];serviceVersions:Record<string,unknown>[] };
-export async function loadAdminIncentives():Promise<{status:"success";value:AdminIncentives}|{status:"error";reason:"UNAUTHENTICATED"|"FORBIDDEN"|"UNAVAILABLE"}>{
- const c=await getSupabaseServerClient(),{data:auth}=await c.auth.getUser();if(!auth.user)return{status:"error",reason:"UNAUTHENTICATED"};
- const role=await c.from("platform_user_roles").select("role_code").eq("user_id",auth.user.id).is("revoked_at",null).in("role_code",["SUPER_ADMIN","MATRICIA_ADMIN"]).limit(10);
- if(role.error)return{status:"error",reason:"UNAVAILABLE"};if(!Array.isArray(role.data)||!role.data.length)return{status:"error",reason:"FORBIDDEN"};
+export async function loadAdminIncentives():Promise<{status:"success";value:AdminIncentives}|{status:"error";reason:"UNAUTHENTICATED"|"MFA_REQUIRED"|"FORBIDDEN"|"UNAVAILABLE"}>{
+ const access=await loadMyPlatformAccess();if(access.status==="error")return{status:"error",reason:access.reason==="UNAUTHENTICATED"?"UNAUTHENTICATED":"UNAVAILABLE"};
+ if(!hasPlatformRole(access.roles,["SUPER_ADMIN","MATRICIA_ADMIN"]))return{status:"error",reason:"FORBIDDEN"};
+ if(!access.requirementSatisfied)return{status:"error",reason:"MFA_REQUIRED"};
+ const c=access.client;
  const q=await Promise.all([
   c.from("organizations").select("id,display_name,kind,status").eq("status","ACTIVE").order("display_name").limit(300),
   c.from("reward_rule_versions").select("id,rule_code,version_number,status,trigger_event,audience_type,bonus_credits,per_recipient_cap_credits,global_cap_credits,window_days,cooldown_hours,credit_validity_days,requires_approval,effective_from,effective_until,change_reason").order("created_at",{ascending:false}).limit(300),

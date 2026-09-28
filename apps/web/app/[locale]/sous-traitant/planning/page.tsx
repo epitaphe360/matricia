@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { loadProviderQuotes } from "@/modules/provider/data/quotes/repository";
 import { loadProviderMissions } from "@/modules/provider/data/missions/repository";
@@ -30,7 +31,7 @@ export default async function ProviderPlanningPage({
   const query = await searchParams;
   if (!isLocale(locale)) notFound();
   const space = await resolveProviderSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/planning` }));
   const [quotes, missions, qualification] = await Promise.all([
     loadProviderQuotes(query.organizationId),
     loadProviderMissions(locale),

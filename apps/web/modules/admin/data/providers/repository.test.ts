@@ -44,6 +44,9 @@ describe("loadAdminProviders", () => {
     mocks.selects.length = 0;
     mocks.getUser.mockReset().mockResolvedValue({ data: { user: { id: userId } } });
     mocks.rpc.mockReset().mockImplementation(async (name: string) => {
+      if (name === "get_my_account_security_requirement") {
+        return { data: [{ requirement_satisfied: true, matched_role_codes: ["MATRICIA_ADMIN"] }], error: null };
+      }
       if (name === "list_admin_supervision_projection") {
         return { data: { organizations: [{ id: orgId, display_name: "Atelier Atlas" }] }, error: null };
       }
@@ -74,8 +77,9 @@ describe("loadAdminProviders", () => {
   });
 
   it("fails closed on a role query error", async () => {
-    mocks.from.mockImplementation(() => thenable({ data: null, error: { code: "42501" } }));
+    mocks.rpc.mockResolvedValue({ data: null, error: { code: "42501" } });
     await expect(loadAdminProviders()).resolves.toEqual({ status: "error", reason: "QUERY_FAILED" });
+    expect(mocks.from).not.toHaveBeenCalled();
   });
 
   it("loads the dashboard without nested PostgREST joins and accepts numeric money", async () => {
@@ -99,9 +103,11 @@ describe("loadAdminProviders", () => {
       if (table === "provider_services") return thenable({ data: [{ id: providerServiceId, provider_organization_id: orgId, service_id: serviceId, request_status: "SUBMITTED" }], error: null });
       return empty();
     });
-    mocks.rpc.mockImplementation(async (name: string) => name === "explain_provider_service_eligibility"
-      ? { data: null, error: { code: "42501" } }
-      : { data: { organizations: [] }, error: null });
+    mocks.rpc.mockImplementation(async (name: string) => {
+      if (name === "get_my_account_security_requirement") return { data: [{ requirement_satisfied: true, matched_role_codes: ["MATRICIA_ADMIN"] }], error: null };
+      if (name === "explain_provider_service_eligibility") return { data: null, error: { code: "42501" } };
+      return { data: { organizations: [] }, error: null };
+    });
     const result = await loadAdminProviders();
     expect(result.status).toBe("success");
     if (result.status !== "success") return;

@@ -83,15 +83,15 @@ export function ServiceNeedComposer({
         </div>
         <p className="mt-4 text-sm font-semibold">{fr ? "Votre besoin se structure au fur et à mesure" : "يُنظَّم احتياجكم تدريجياً"}</p>
         <div className="journey-need-tags">
-          <span className={`inline-flex min-h-10 items-center rounded-full border px-3 text-sm ${objective ? "border-[#6d3cc7] bg-[#f3eaff]" : "border-[#eadfce]"}`}>{fr ? "Objectif" : "الهدف"} : {objective || "—"}</span>
-          <span className={`inline-flex min-h-10 items-center rounded-full border px-3 text-sm ${delay ? "border-[#6d3cc7] bg-[#f3eaff]" : "border-[#eadfce]"}`}>{fr ? "Délai" : "الأجل"} : {delay || "—"}</span>
-          <span className={`inline-flex min-h-10 items-center rounded-full border px-3 text-sm ${context ? "border-[#6d3cc7] bg-[#f3eaff]" : "border-[#eadfce]"}`}>{fr ? "Contexte" : "السياق"} : {context || "—"}</span>
+          <span className={`inline-flex min-h-10 items-center rounded-full border px-3 text-sm ${objective ? "border-[var(--mat-violet)] bg-[var(--mat-violet-soft)]" : "border-[var(--mat-border)]"}`}>{fr ? "Objectif" : "الهدف"} : {objective || "—"}</span>
+          <span className={`inline-flex min-h-10 items-center rounded-full border px-3 text-sm ${delay ? "border-[var(--mat-violet)] bg-[var(--mat-violet-soft)]" : "border-[var(--mat-border)]"}`}>{fr ? "Délai" : "الأجل"} : {delay || "—"}</span>
+          <span className={`inline-flex min-h-10 items-center rounded-full border px-3 text-sm ${context ? "border-[var(--mat-violet)] bg-[var(--mat-violet-soft)]" : "border-[var(--mat-border)]"}`}>{fr ? "Contexte" : "السياق"} : {context || "—"}</span>
         </div>
       </article>
       <aside className="journey-understood">
         <h2>{fr ? "Ce que Matricia a compris" : "ما فهمته ماتريسيا"}</h2>
         <p className="public-muted mt-2">{fr ? "Voici la synthèse de votre besoin. Vous pourrez la modifier avant de continuer." : "هذا ملخص احتياجكم. يمكنكم التعديل قبل المتابعة."}</p>
-        <p className="mt-4 text-sm font-semibold text-[#1a2340]" lang="fr">{serviceName}</p>
+        <p className="mt-4 text-sm font-semibold text-[var(--mat-navy)]" lang="fr">{serviceName}</p>
         <p className="mt-2 text-sm text-slate-600">{missing.length ? (fr ? `Aucun élément sélectionné pour le moment. ${missing.join(", ")}.` : `لا عنصر محدد بعد. ${missing.join("، ")}.`) : summary}</p>
         <div className="journey-actions">
           <Link className="journey-secondary" href={`/${locale}/besoin`}><Pencil size={16} aria-hidden="true" />{fr ? "Modifier" : "تعديل"}</Link>

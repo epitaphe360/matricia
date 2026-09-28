@@ -11,9 +11,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/modules/shared/lib/supabase/server", () => ({
   getSupabaseServerClient: async () => ({ auth: { getUser: mocks.getUser, signInWithOtp: mocks.signInWithOtp }, rpc: mocks.rpc, from: mocks.from }),
 }));
-vi.mock("@/modules/shared/lib/env", () => ({
-  getServerEnvironment: () => ({ NEXT_PUBLIC_APP_URL: "https://app.matricia.test" }),
-}));
 vi.mock("@/modules/shared/lib/i18n/locale", () => ({
   isLocale: (value: string) => value === "fr" || value === "ar",
 }));
@@ -97,13 +94,7 @@ describe("invitation mutations", () => {
       p_idempotency_key: "invitation-test-key-001",
       p_correlation_id: "11111111-1111-4111-8111-111111111111",
     });
-    expect(mocks.signInWithOtp).toHaveBeenCalledWith({
-      email: invitedEmail,
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: "https://app.matricia.test/fr/invitations",
-      },
-    });
+    expect(mocks.signInWithOtp).not.toHaveBeenCalled();
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/fr/invitations");
   });
 

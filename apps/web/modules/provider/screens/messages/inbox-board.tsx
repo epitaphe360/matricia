@@ -41,8 +41,14 @@ export function ProviderInboxBoard({
   const empty = locale === "ar" ? "لا توجد محادثة مرتبطة باستشارة." : "Aucune conversation liée à une consultation.";
   return (
     <main className="client-page provider-workbench provider-messages">
+      <header className="provider-workbench-hero">
+        <div>
+          <h2>{m.title}</h2>
+          <p>{m.description}</p>
+        </div>
+      </header>
       <section className="provider-messages-grid" id="messages">
-        <article className="client-card">
+        <article className="client-card provider-thread-list">
           <header><h2>{m.threads}</h2></header>
           {threads.length === 0 ? <p>{m.empty}</p> : (
             <ul className="client-feed">
@@ -69,7 +75,7 @@ export function ProviderInboxBoard({
             successSuffix={query}
           />
         </article>
-        <article className="client-card">
+        <article className="client-card provider-message-pane">
           {conversation ? (
             <>
               <header className="client-priority-head">
@@ -79,9 +85,9 @@ export function ProviderInboxBoard({
                 </div>
                 <Link href={`/${locale}/sous-traitant/consultations/${conversation.thread.object_id}${query}`} className="client-text-link">{m.consultation}</Link>
               </header>
-              <ol className="client-feed">
+              <ol className="client-feed provider-message-thread">
                 {conversation.messages.map((message) => (
-                  <li key={message.id}>
+                  <li key={message.id} data-mine={message.mine ? "true" : "false"}>
                     <span>
                       <strong>{message.sender_alias === "CLIENT" ? m.client : m.provider}</strong>
                       <small>{date(message.created_at, locale)}</small>
@@ -102,26 +108,26 @@ export function ProviderInboxBoard({
             <p>{threads.length === 0 ? empty : m.choose}</p>
           )}
         </article>
+        <article className="client-card" id="notifications">
+          <header className="client-priority-head">
+            <h2>{n.center}</h2>
+            <Link href={`/${locale}/notifications${query}`} className="client-text-link">{n.preferences}</Link>
+          </header>
+          {notifications.length === 0 ? <p role="status">{n.empty}</p> : (
+            <ul className="client-feed">
+              {notifications.map((item) => (
+                <li key={item.id}>
+                  <span>
+                    <strong>{item.subject}</strong>
+                    <small>{date(item.createdAt, locale)}{item.unread ? ` · ${n.unread}` : ""}</small>
+                  </span>
+                  <Link href={item.href ?? `/${locale}/notifications${query}`} className="client-text-link">{n.open}</Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </article>
       </section>
-      <article className="client-card" id="notifications">
-        <header className="client-priority-head">
-          <h2>{n.center}</h2>
-          <Link href={`/${locale}/notifications${query}`} className="client-text-link">{n.preferences}</Link>
-        </header>
-        {notifications.length === 0 ? <p role="status">{n.empty}</p> : (
-          <ul className="client-feed">
-            {notifications.map((item) => (
-              <li key={item.id}>
-                <span>
-                  <strong>{item.subject}</strong>
-                  <small>{date(item.createdAt, locale)}{item.unread ? ` · ${n.unread}` : ""}</small>
-                </span>
-                <Link href={item.href ?? `/${locale}/notifications${query}`} className="client-text-link">{n.open}</Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </article>
     </main>
   );
 }

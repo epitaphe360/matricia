@@ -12,7 +12,19 @@ function source(overrides: Partial<QuestionnaireSessionSource> = {}): Questionna
 describe("questionnaire sessions repository", () => {
   it("fails closed without authentication or Client role", async () => {
     expect(await createQuestionnaireSessionsRepository(source({ user: async () => null })).load()).toEqual({ status: "error", reason: "UNAUTHENTICATED" });
-    expect(await createQuestionnaireSessionsRepository(source({ roles: async () => ok([]) })).load()).toEqual({ status: "error", reason: "FORBIDDEN" });
+    expect(await createQuestionnaireSessionsRepository(source({ roles: async () => ok([]) })).load()).toEqual({ status: "error", reason: "NO_CLIENT_ORGANIZATION" });
+  });
+  it("asks for an explicit organization when several Client memberships exist", async () => {
+    const result = await createQuestionnaireSessionsRepository(source({
+      async memberships() { return ok([{ id: id(2), organization_id: id(3) }, { id: id(12), organization_id: id(13) }]); },
+      async roles() { return ok([{ membership_id: id(2), role_code: "CLIENT_OWNER", revoked_at: null }, { membership_id: id(12), role_code: "CLIENT_BUYER", revoked_at: null }]); },
+      async organizations() { return ok([{ id: id(3), display_name: "Atelier Atlas" }, { id: id(13), display_name: "Maison Nord" }]); },
+    })).load();
+    expect(result).toEqual({
+      status: "error",
+      reason: "ORGANIZATION_SELECTION_REQUIRED",
+      organizations: [{ id: id(3), name: "Atelier Atlas" }, { id: id(13), name: "Maison Nord" }],
+    });
   });
   it("loads only the bounded published dashboard", async () => {
     const result = await createQuestionnaireSessionsRepository(source()).load();

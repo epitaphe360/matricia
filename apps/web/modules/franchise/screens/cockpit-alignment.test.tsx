@@ -57,7 +57,7 @@ describe("alignement cockpit SIP de l’espace franchisé", () => {
     expect(await source(pages.governance)).toContain("GovernanceBoard");
     expect(await source(pages.performance)).toContain("PerformanceBoard");
     expect(await source(pages.followups)).toContain("FollowupsBoard");
-    expect(await source(pages.library)).toContain("franchise-workbench");
+    expect(await source(pages.library)).toContain("FranchiseLibraryOverviewBoard");
   });
 
   it("les modules franchise restent dans l’espace /franchise", async () => {

@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { resolveAdminSpace } from "@/modules/admin/data/spaces/context";
+import type { AdminDirectoryGroup } from "@/modules/admin/data/spaces/directory";
+import { AdminHubStrip } from "@/modules/admin/screens/spaces/boards";
 import { AdminAppShell, type AdminNavKey } from "@/modules/admin/ui/admin-app-shell";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 
@@ -12,6 +14,7 @@ export async function AdminModulePage({
   lead,
   kicker,
   querySuffix,
+  hubGroup,
   children,
 }: {
   locale: Locale;
@@ -21,6 +24,7 @@ export async function AdminModulePage({
   lead?: string;
   kicker?: string;
   querySuffix?: string;
+  hubGroup?: AdminDirectoryGroup["id"];
   children: ReactNode;
 }) {
   const space = await resolveAdminSpace({ locale });
@@ -41,6 +45,11 @@ export async function AdminModulePage({
       lead={lead}
       kicker={kicker}
     >
+      {hubGroup ? (
+        <div className="client-page admin-hub-wrap">
+          <AdminHubStrip locale={locale} query={space.selectedQuery} groupId={hubGroup} />
+        </div>
+      ) : null}
       {children}
     </AdminAppShell>
   );

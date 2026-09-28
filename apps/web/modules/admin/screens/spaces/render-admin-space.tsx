@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { mfaRequiredMessage } from "@/modules/shared/lib/account-security/platform-access";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { resolveAdminSpace } from "@/modules/admin/data/spaces/context";
 import { isAdminSpaceId, isReservedView, type AdminSpaceId } from "@/modules/admin/data/spaces/admin-nav";
@@ -30,6 +31,7 @@ export async function renderAdminSpacePage({
   action,
   organizationId,
   q,
+  vue,
 }: {
   locale: string;
   space: string;
@@ -37,6 +39,7 @@ export async function renderAdminSpacePage({
   action?: string;
   organizationId?: string;
   q?: string;
+  vue?: string;
 }) {
   if (!isLocale(localeParam) || !isAdminSpaceId(spaceParam)) notFound();
   const locale = localeParam;
@@ -83,7 +86,7 @@ export async function renderAdminSpacePage({
   let body;
   if (view === "queue") {
     body = (
-      <SpaceQueueBoard locale={locale} query={admin.selectedQuery} space={space} rows={snapshot.rows} treat={snapshot.treat} search={q}>
+      <SpaceQueueBoard locale={locale} query={admin.selectedQuery} space={space} rows={snapshot.rows} treat={snapshot.treat} search={q} vue={vue}>
         {space === "providers" && snapshot.providers ? (
           <details className="client-ops">
             <summary>{getAdminProviderMessages(locale).title}</summary>
@@ -153,6 +156,12 @@ export async function renderAdminSpacePage({
       kicker={row ? row.status : undefined}
       actions={specialKind ? <SpecialBoardActions locale={locale} kind={specialKind} /> : <SpaceHeaderActions locale={locale} query={admin.selectedQuery} spec={spec} />}
     >
+      {snapshot.reason === "MFA_REQUIRED" ? (
+        <Alert variant="destructive">
+          <AlertTitle>{mfaRequiredMessage(locale)}</AlertTitle>
+          <AlertDescription>{locale === "ar" ? "الملفات تبقى مخفية حتى تفعيل العامل الثاني." : "Les files restent masquées tant que le second facteur n’est pas actif."}</AlertDescription>
+        </Alert>
+      ) : null}
       {snapshot.reason === "FORBIDDEN" && snapshot.rows.length === 0 ? (
         <Alert variant="destructive">
           <AlertTitle>{locale === "ar" ? "وصول غير مسموح" : "Accès non autorisé"}</AlertTitle>

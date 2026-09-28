@@ -9,7 +9,7 @@ L'arbre local contient des modifications suivies et non suivies : il n'est pas f
 | Branche/SHA de production réconciliés | PASS | `codex/bootstrap-foundation` / `b4050fc3...` |
 | Build, lint, typecheck | PASS provisoire | exécutés sur l'arbre local audité; à rejouer après gel du HEAD |
 | Unitaires/intégration | PASS sur l'arbre courant | 910 tests, dont Web 755/755; replay encore requis après commit/gel du HEAD |
-| SQL/RLS | PARTIEL FINAL | 154 fichiers et 3 590 assertions PASS; 311/311 RPC avec indice DENY; migrations 205–207 appliquées en development et dry-run `upToDate=true`; 0154/0155 ciblés + 4 concurrences PASS; replay complet Outbox à refaire sans worker concurrent |
+| SQL/RLS | PARTIEL | 171 fichiers et 3 786 assertions PASS sur development le 2026-09-21, plus 4 concurrences ; contrats 0160–0169 verts en local après alignement `20260921250000` ; preuves ALLOW atomiques encore incomplètes |
 | E2E public et critiques | PARTIEL | 34/34 publics FR/AR/responsive, smoke routes 8/8 et 3/3 authentifiés messagerie/comparaison/matching; MAT-FUNC-020 et le nouveau smoke authentifié 16 scénarios ne sont pas verts; tout rejouer sur le HEAD figé |
 | Aucune P0 exploitable reproduite | PASS audit DB | aucun P0 DB/RLS reproduit; preuves fournisseurs distants, signature réelle et outbox bout-en-bout restent des gates de release |
 | Taxonomie prestataire structurée | PASS | 10 domaines, 79 catégories actives et 200 services canoniques; sélection structurée, recherche, brouillon et reprise |

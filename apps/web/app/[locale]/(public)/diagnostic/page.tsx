@@ -9,8 +9,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params; if (!isLocale(locale)) return {};
   return localizedRouteMetadata(locale, "/diagnostic", locale === "fr" ? "Prédiagnostic entreprise | Matricia" : "تقييم أولي للشركة | ماتريسيا", locale === "fr" ? "Comprenez vos priorités avant d’agir." : "افهموا أولوياتكم قبل التحرك.");
 }
-export default async function DiagnosticPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function DiagnosticPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams?: Promise<{ reprendre?: string | string[] }> }) {
   const { locale } = await params; if (!isLocale(locale)) notFound();
+  const resumeSave = (await searchParams)?.reprendre === "enregistrer";
   const client = await getSupabaseServerClient();
   const { data: auth } = await client.auth.getUser();
   let organizations: { id: string; name: string }[] = [];
@@ -23,5 +24,5 @@ export default async function DiagnosticPage({ params }: { params: Promise<{ loc
     const organizationResult = organizationIds.length ? await client.from("organizations").select("id,display_name").in("id", organizationIds).order("display_name").limit(100) : { data: [], error: null };
     organizations = (organizationResult.data ?? []).map((organization) => ({ id: organization.id, name: organization.display_name }));
   }
-  return <PrediagnosticFlow locale={locale} organizations={organizations} authenticated={Boolean(auth.user)} saveAction={savePublicDiagnosticIntake} />;
+  return <PrediagnosticFlow locale={locale} organizations={organizations} authenticated={Boolean(auth.user)} resumeSave={resumeSave && Boolean(auth.user)} saveAction={savePublicDiagnosticIntake} />;
 }

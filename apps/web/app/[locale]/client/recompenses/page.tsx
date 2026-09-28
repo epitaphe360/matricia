@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { resolveClientSpace } from "@/modules/client/data/spaces/context";
 import { spaceCopy } from "@/modules/client/data/spaces/copy";
@@ -22,21 +23,21 @@ export default async function RewardsPage({
   if (!isLocale(locale)) notFound();
 
   const space = await resolveClientSpace({ locale, organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/recompenses` }));
 
   const result = await loadRewardsDashboard(space.selectedOrganizationId ?? organizationId);
   const messages = getValueMessages(locale);
   const c = spaceCopy(locale);
   const alternate = locale === "fr" ? "ar" : "fr";
 
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/client/recompenses` }));
 
   return (
     <ClientAppShell
       locale={locale}
       selectedQuery={space.selectedQuery}
       selectedOrganizationId={space.selectedOrganizationId}
-      userEmail={space.userEmail}
+      userEmail={space.userEmail} organizationName={space.organizationName}
       active="rewards"
       title={messages.title}
       lead={messages.intro}

@@ -1,10 +1,9 @@
 import { z } from "zod";
 import { loadFranchiseDashboard } from "@/modules/franchise/data/governance/repository";
-import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
+import { hasPlatformRole, loadMyPlatformAccess } from "@/modules/shared/lib/account-security/platform-access";
 import type { AdminGovernanceResult } from "./model";
 
 const uuid = z.string().uuid();
-const platformRole = z.object({ role_code: z.string() }).strict();
 const disputeCase = z.object({ id: uuid, mission_id: uuid, obligation_key: z.string(), urgency: z.enum(["STANDARD", "URGENT"]), status: z.string(), policy_snapshot: z.record(z.string(), z.unknown()), response_due_at: z.string(), review_due_at: z.string().nullable(), opened_by: uuid }).strict();
 const decision = z.object({ dispute_case_id: uuid, decision_number: z.number().int().positive(), outcome: z.string(), reason: z.string(), evidence_ids: z.array(uuid), rule_snapshot: z.record(z.string(), z.unknown()), decided_by: uuid, decided_at: z.string() }).strict();
 const reassignment = z.object({ dispute_case_id: uuid, reassignment_key: z.string(), status: z.string(), original_cost_minor: z.union([z.string(), z.number().int().safe()]), proposed_cost_minor: z.union([z.string(), z.number().int().safe()]).nullable(), cost_delta_minor: z.union([z.string(), z.number().int().safe()]).nullable(), currency: z.string().length(3), client_cost_approved_by: uuid.nullable(), replacement_contract_id: uuid.nullable(), replacement_mission_id: uuid.nullable() }).strict();
@@ -16,23 +15,20 @@ const governanceRoles = new Set(["SUPER_ADMIN", "MATRICIA_ADMIN", "FINANCE_MANAG
 const financeRoles = new Set(["SUPER_ADMIN", "MATRICIA_ADMIN", "FINANCE_MANAGER", "READ_ONLY_AUDITOR"]);
 const disputeRoles = new Set(["SUPER_ADMIN", "MATRICIA_ADMIN", "DISPUTE_MANAGER", "READ_ONLY_AUDITOR"]);
 
-function error(reason: "UNAUTHENTICATED" | "FORBIDDEN" | "UNAVAILABLE" | "INVALID_RESPONSE"): AdminGovernanceResult {
+function error(reason: "UNAUTHENTICATED" | "MFA_REQUIRED" | "FORBIDDEN" | "UNAVAILABLE" | "INVALID_RESPONSE"): AdminGovernanceResult {
   return { status: "error", reason };
 }
 
 export async function loadAdminGovernanceDashboard(locale: "fr" | "ar"): Promise<AdminGovernanceResult> {
-  const client = await getSupabaseServerClient();
-  const { data: auth, error: authError } = await client.auth.getUser();
-  if (authError || !auth.user) return error("UNAUTHENTICATED");
-  const roleQuery = await client.from("platform_user_roles").select("role_code").eq("user_id", auth.user.id).is("revoked_at", null).limit(20);
-  if (roleQuery.error) return error("UNAVAILABLE");
-  const parsedRoles = z.array(platformRole).max(20).safeParse(roleQuery.data);
-  if (!parsedRoles.success) return error("INVALID_RESPONSE");
-  const roles = new Set(parsedRoles.data.map(value => value.role_code));
-  const canGovern = [...roles].some(role => governanceRoles.has(role));
-  const canFinance = [...roles].some(role => financeRoles.has(role));
-  const canDispute = [...roles].some(role => disputeRoles.has(role));
+  const access = await loadMyPlatformAccess();
+  if (access.status === "error") return error(access.reason === "UNAUTHENTICATED" ? "UNAUTHENTICATED" : access.reason === "INVALID_RESPONSE" ? "INVALID_RESPONSE" : "UNAVAILABLE");
+  const roles = access.roles;
+  const canGovern = hasPlatformRole(roles, [...governanceRoles]);
+  const canFinance = hasPlatformRole(roles, [...financeRoles]);
+  const canDispute = hasPlatformRole(roles, [...disputeRoles]);
   if (!canGovern && !canDispute) return error("FORBIDDEN");
+  if (!access.requirementSatisfied) return error("MFA_REQUIRED");
+  const client = access.client;
 
   const franchiseResult = canGovern ? await loadFranchiseDashboard(locale) : null;
   if (franchiseResult?.status === "error") return error(franchiseResult.reason === "INVALID_RESPONSE" ? "INVALID_RESPONSE" : "UNAVAILABLE");

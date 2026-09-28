@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Bell, Lock, Search } from "lucide-react";
+import { Bell, BookOpen, Lock, Search } from "lucide-react";
 import type { ReactNode } from "react";
 import { libraryCopy } from "@/modules/franchise/data/library/copy";
 import { franchiseCopy } from "@/modules/franchise/data/spaces/copy";
 import { buildFranchiseNav, type FranchiseNavKey } from "@/modules/franchise/ui/franchise-nav";
+import { WorkspaceAccountMenu } from "@/modules/shared/ui/workspace-account-menu";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import "@/modules/client/ui/client-experience.css";
 import "./franchise-experience.css";
@@ -58,7 +59,7 @@ export function FranchiseAppShell({
   };
 
   return (
-    <div dir={locale === "ar" ? "rtl" : "ltr"} className="client-workspace">
+    <div dir={locale === "ar" ? "rtl" : "ltr"} className="client-workspace franchise-workspace">
       <aside className="client-side" aria-label={c.space}>
         <Link href={`/${locale}/franchise/accueil${selectedQuery}`} className="client-brand">
           <span className="client-brand-mark" aria-hidden>
@@ -91,30 +92,77 @@ export function FranchiseAppShell({
           <div className="client-scene-palms" />
           <div className="client-scene-pattern" />
         </div>
-        <div className="client-topbar">
+        <div className="client-topbar franchise-topbar">
+          <Link href={`/${locale}/franchise/accueil${selectedQuery}`} className="franchise-mobile-brand" aria-label="Matricia">
+            <strong>Matricia</strong>
+            <small>{n.brandSpace}</small>
+          </Link>
           {mandateName ? (
-            <>
-              <span className="franchise-mandate-chip">
-                <Lock className="size-3.5" aria-hidden />
-                <span><small>{n.mandateChip}</small><strong> {mandateName}</strong></span>
+            <span className="franchise-mandate-chip">
+              <span className="franchise-mandate-chip-icon" aria-hidden>
+                <BookOpen className="size-3.5" />
               </span>
-              <span className="franchise-scope-chip">{n.scope}</span>
-            </>
+              <span>
+                <small>{n.mandateChip}</small>
+                <strong>{mandateName}</strong>
+              </span>
+              <Lock className="size-3.5 franchise-mandate-lock" aria-hidden />
+            </span>
           ) : null}
+          {mandateName ? <span className="franchise-scope-chip">{n.scope}</span> : null}
           <form className="client-top-search client-shell-search" method="get" action={`/${locale}/franchise/bibliotheque`} role="search" aria-label={n.search}>
             {selectedOrganizationId ? <input type="hidden" name="organizationId" value={selectedOrganizationId} /> : null}
             <Search aria-hidden className="size-4" />
             <label className="sr-only" htmlFor="franchise-shell-search">{n.search}</label>
             <input id="franchise-shell-search" name="q" placeholder={n.search} />
           </form>
-          <Link href={`/${locale}/notifications${selectedQuery}`} className="client-icon-btn" aria-label={locale === "ar" ? "الإشعارات" : "Notifications"}><Bell className="size-4" /></Link>
+          <Link href={`/${locale}/notifications${selectedQuery}`} className="client-icon-btn" aria-label={locale === "ar" ? "الإشعارات" : "Notifications"}>
+            <Bell className="size-4" />
+            <span className="franchise-notify-dot" aria-hidden />
+          </Link>
           <nav className="client-lang-switch" aria-label={n.language}>
             <Link href={`/fr/franchise/${routeByActive[active]}${selectedQuery}`} aria-current={locale === "fr" ? "page" : undefined}>FR</Link>
+            <span aria-hidden>|</span>
             <Link href={`/ar/franchise/${routeByActive[active]}${selectedQuery}`} aria-current={locale === "ar" ? "page" : undefined}>AR</Link>
           </nav>
-          <Link href={`/${locale}/securite/compte${selectedQuery}`} className="client-space-chip" aria-label={n.account}>{n.account}</Link>
-          <span className="client-account" aria-label={n.account}><span className="client-chip">{userEmail?.slice(0, 1).toUpperCase() ?? "F"}</span></span>
+          <WorkspaceAccountMenu
+            locale={locale}
+            userEmail={userEmail}
+            returnTo={`/${locale}/franchise/accueil${selectedQuery}`}
+            fallbackInitial="F"
+            label={n.account}
+            displayName={n.account}
+            className="client-account client-account-named"
+          />
         </div>
+        <nav className="franchise-mobile-dock" aria-label={n.navHome}>
+          {([
+            { key: "home" as const, href: `/${locale}/franchise/accueil${selectedQuery}`, label: n.navHome, Icon: nav.find((item) => item.key === "home")!.icon },
+            { key: "library" as const, href: `/${locale}/franchise/bibliotheque${selectedQuery}`, label: locale === "ar" ? "المحتويات" : "Contenus", Icon: nav.find((item) => item.key === "library")!.icon },
+            { key: "network" as const, href: `/${locale}/franchise/fournisseurs${selectedQuery}`, label: n.navProviders, Icon: nav.find((item) => item.key === "network")!.icon },
+            { key: "requests" as const, href: `/${locale}/franchise/demandes${selectedQuery}`, label: n.navRequests, Icon: nav.find((item) => item.key === "requests")!.icon },
+          ]).map((item) => {
+            const Icon = item.Icon;
+            const dockActive =
+              item.key === "home" ? active === "home"
+                : item.key === "library" ? active === "library" || active === "services" || active === "questionnaires" || active === "rules" || active === "validations"
+                  : item.key === "network" ? active === "network"
+                    : active === "requests";
+            return (
+              <Link key={item.key} href={item.href} data-active={dockActive ? "true" : undefined}>
+                <Icon aria-hidden className="size-4" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+          <Link
+            href={`/${locale}/franchise/gouvernance${selectedQuery}`}
+            data-active={active === "governance" || active === "quality" || active === "performance" || active === "followups" || active === "documents" || active === "messages" || active === "perimeter" || active === "finance" ? "true" : undefined}
+          >
+            <span aria-hidden>⋯</span>
+            <span>{locale === "ar" ? "المزيد" : "Plus"}</span>
+          </Link>
+        </nav>
         {title ? (
           <header className="client-mast">
             <div>

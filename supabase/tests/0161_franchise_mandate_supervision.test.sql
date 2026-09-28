@@ -23,12 +23,12 @@ select ok(
 
 select ok(
   (
-    select count(*) = 30
+    select count(*) = 31
       from pg_policies
      where schemaname = 'public'
        and policyname like '%franchise_library_read'
   ),
-  'thirty additive franchise library read policies exist'
+  'thirty-one additive franchise library read policies exist'
 );
 
 select ok(
@@ -102,10 +102,10 @@ select ok(
 
 select ok(
   (
-    select qual like '%franchise_supervises_catalog_service%'
+    select qual ilike '%franchise_supervises_catalog_service%'
       from pg_policies
      where policyname = 'provider_capacity_versions_franchise_library_read'
-       and qual like '%service_id is not null%'
+       and qual ilike '%service_id is not null%'
   ),
   'capacity supervision is limited to library-scoped service rows'
 );

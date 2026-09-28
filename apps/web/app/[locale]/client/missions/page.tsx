@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { resolveClientSpace } from "@/modules/client/data/spaces/context";
 import { spaceCopy } from "@/modules/client/data/spaces/copy";
@@ -19,13 +20,13 @@ export default async function ClientMissionsPage({ params, searchParams }: { par
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/missions` }));
   const messages = getMissionMessages(locale);
   const c = spaceCopy(locale);
   const [result, amendments, vault] = await Promise.all([loadContractMissions(locale, query.organizationId), loadClientAmendments(query.organizationId), loadClientDocumentVault(query.organizationId)]);
   const expired = vault.status === "success" ? expiredDocuments(vault.value.documents) : [];
   return (
-    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="missions" title={c.misTitle} lead={c.misLead} kicker={c.kicker} actions={<SpaceActions href={`/${locale}/client/demandes${space.selectedQuery}`} label={c.openFolder} />}>
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="missions" title={c.misTitle} lead={c.misLead} kicker={c.kicker} actions={<SpaceActions href={`/${locale}/client/demandes${space.selectedQuery}`} label={c.openFolder} />}>
       {expired.length > 0 ? (
         <Alert>
           <AlertTitle>{messages.expiredDocumentTitle}</AlertTitle>
@@ -50,7 +51,7 @@ export default async function ClientMissionsPage({ params, searchParams }: { par
         steps: (result.dashboard.missions[0]?.milestones ?? []).map((item, index, all) => {
           const done = item.status === "ACCEPTED" || item.status === "DONE" || item.status === "COMPLETED";
           const current = !done && (index === 0 || all.slice(0, index).every((row) => row.status === "ACCEPTED" || row.status === "DONE" || row.status === "COMPLETED"));
-          return { id: item.id, title: item.title, detail: item.status, state: (done ? "done" : current ? "current" : "todo") as "done" | "current" | "todo" };
+          return { id: item.id, title: item.title, detail: item.status, state: (done ? "done" : current ? "current" : "upcoming") as "done" | "current" | "upcoming" };
         }),
         decision: result.dashboard.missions.flatMap((mission) => mission.milestones.filter((item) => item.status === "SUBMITTED" || item.status === "IN_REVIEW")).map((item) => ({
           title: item.title,

@@ -11,10 +11,12 @@ const scenes = {
 
 export function PublicPhoto({
   caption,
+  lead,
   scene = "arch",
   className = "",
 }: {
-  caption: string;
+  caption?: string;
+  lead?: string;
   scene?: keyof typeof scenes;
   className?: string;
 }) {
@@ -22,7 +24,12 @@ export function PublicPhoto({
     <figure className={`public-photo ${className}`.trim()}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={scenes[scene]} alt="" />
-      <figcaption>{caption}</figcaption>
+      {caption || lead ? (
+        <figcaption>
+          {lead ? <strong>{caption}</strong> : caption}
+          {lead ? <span>{lead}</span> : null}
+        </figcaption>
+      ) : null}
     </figure>
   );
 }

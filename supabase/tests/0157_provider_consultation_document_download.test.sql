@@ -107,11 +107,19 @@ select ok(
 );
 select ok(
   (
-    select pg_get_functiondef(p.oid) like '%RFQ_DOCUMENT_DENIED%'
-       and pg_get_functiondef(p.oid) not like '%INSERT%'
+    select pg_get_functiondef(p.oid) not like '%INSERT%'
+       and pg_get_functiondef(p.oid) like '%provider_consultation_invitation%'
     from pg_proc p
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and p.proname = 'list_provider_consultation_documents'
+  )
+  and exists (
+    select 1
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'private'
+      and p.proname = 'provider_consultation_invitation'
+      and pg_get_functiondef(p.oid) like '%RFQ_DOCUMENT_DENIED%'
   ),
   'list is read-only and fail-closed'
 );

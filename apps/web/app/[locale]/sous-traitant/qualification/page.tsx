@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertTitle } from "@/modules/shared/ui/alert";
 import { resolveProviderSpace } from "@/modules/provider/data/spaces/context";
 import { providerCopy } from "@/modules/provider/data/spaces/copy";
@@ -7,21 +8,25 @@ import { QualificationBoard } from "@/modules/provider/screens/spaces/boards";
 import { getProviderMessages } from "@/modules/provider/screens/qualification/messages";
 import { QualificationForms } from "@/modules/provider/screens/qualification/qualification-forms";
 import { ProviderActions, ProviderAppShell } from "@/modules/provider/ui/provider-app-shell";
+import { ProviderProfileRail } from "@/modules/provider/ui/provider-profile-rail";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 
 export default async function ProviderQualificationPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string }> }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveProviderSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/qualification` }));
   const messages = getProviderMessages(locale);
   const result = await loadProviderDashboard();
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/qualification` }));
   const c = providerCopy(locale);
   return (
     <ProviderAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="qualify" title={c.qualTitle} lead={c.qualLead} kicker={c.kicker} actions={<ProviderActions href="#qualification" label={c.completeFolder} />}>
+      <div className="provider-settings-layout">
+        <ProviderProfileRail locale={locale} query={space.selectedQuery} active="profile" />
+        <div className="client-stack">
       <QualificationBoard locale={locale} query={space.selectedQuery} dashboard={result.status === "success" ? result.dashboard : null} />
-      <details id="qualification" className="client-ops">
+      <details id="qualification" className="client-ops" open>
         <summary>{c.opsQual}</summary>
         {result.status === "error" ? (
           <Alert data-error-reason={result.reason} variant={result.reason === "NO_PROVIDER_ORGANIZATION" ? "default" : "destructive"}>
@@ -31,6 +36,8 @@ export default async function ProviderQualificationPage({ params, searchParams }
           <QualificationForms dashboard={result.dashboard} locale={locale} messages={messages} keys={{ profile: crypto.randomUUID(), service: crypto.randomUUID(), capacity: crypto.randomUUID(), document: crypto.randomUUID() }} />
         )}
       </details>
+        </div>
+      </div>
     </ProviderAppShell>
   );
 }

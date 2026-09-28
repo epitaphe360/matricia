@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { loadMyPlatformAccess, mfaRequiredMessage } from "@/modules/shared/lib/account-security/platform-access";
 import { loadAdminBoxesDashboard } from "@/modules/admin/data/boxes/repository";
 import { loadAdminCommerceCatalog } from "@/modules/admin/data/catalog/repository";
 import { loadAdminClosureDashboard } from "@/modules/admin/data/closure/repository";
@@ -17,6 +19,7 @@ import { FinanceSorties } from "@/modules/admin/screens/finance/finance-sorties"
 import { getAdminFinanceMessages } from "@/modules/admin/screens/finance/messages";
 import { PnlPanel } from "@/modules/admin/screens/finance/pnl-panel";
 import { AdminModulePage } from "@/modules/admin/ui/admin-module-page";
+import { adminCopy } from "@/modules/admin/data/spaces/copy";
 
 export const dynamic = "force-dynamic";
 
@@ -29,26 +32,30 @@ export default async function AdminFinancePage({
 }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
-  const [result, boxes, pnl, closure, catalog] = await Promise.all([
+  const [result, boxes, pnl, closure, catalog, access] = await Promise.all([
     loadAdminFinanceDashboard(),
     loadAdminBoxesDashboard(),
     loadAdminPnlDashboard(),
     loadAdminClosureDashboard(),
     loadAdminCommerceCatalog(),
+    loadMyPlatformAccess(),
   ]);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/finance` }));
   const m = getAdminFinanceMessages(locale);
   const commerce = getCommerceMessages(locale);
+  const c = adminCopy(locale);
   const ar = locale === "ar";
+  const mfaBlocked = access.status === "ok" && !access.requirementSatisfied;
+  const blockedCopy = (reason: string) => mfaBlocked && reason === "FORBIDDEN" ? mfaRequiredMessage(locale) : reason === "FORBIDDEN" ? m.forbidden : m.unavailable;
   const auditOrganizationId = query.organizationId
     ?? (boxes.status === "success" ? boxes.value.wallets[0]?.organization_id ?? null : null)
     ?? (result.status === "success" ? result.value.subscriptions[0]?.organization_id ?? null : null);
 
   return (
-    <AdminModulePage locale={locale} active="finance" path="finance" title={m.title} lead={m.intro}>
+    <AdminModulePage locale={locale} active="finance" path="finance" title={m.title} lead={c.hubFinanceLead} hubGroup="finance">
       {result.status === "error" ? (
         <Alert variant="destructive">
-          <AlertTitle>{result.reason === "FORBIDDEN" ? m.forbidden : m.unavailable}</AlertTitle>
+          <AlertTitle>{result.reason === "MFA_REQUIRED" ? mfaRequiredMessage(locale) : result.reason === "FORBIDDEN" ? m.forbidden : m.unavailable}</AlertTitle>
           <AlertDescription>
             <Link href={`/${locale}/administration/finance`} className="admin-btn-outline mt-3 inline-flex">{m.retry}</Link>
           </AlertDescription>
@@ -63,7 +70,7 @@ export default async function AdminFinancePage({
             <div id="credits" className="scroll-mt-24" />
             <h2 className="text-xl font-semibold">{commerce.boxes}</h2>
             {boxes.status === "error" ? (
-              <p className="mt-2 text-sm text-muted-foreground">{boxes.reason === "FORBIDDEN" ? m.forbidden : m.unavailable}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{blockedCopy(boxes.reason)}{mfaBlocked && boxes.reason === "FORBIDDEN" ? <> <Link href={`/${locale}/securite/compte`}>{ar ? "فتح أمان الحساب" : "Ouvrir la sécurité du compte"}</Link></> : null}</p>
             ) : (
               <BoxesPanel
                 locale={locale}
@@ -85,7 +92,7 @@ export default async function AdminFinancePage({
           <section id="catalogue-credits" className="scroll-mt-24 rounded-xl border bg-card p-5">
             <h2 className="text-xl font-semibold">{commerce.packs}</h2>
             {catalog.status === "error" ? (
-              <p className="mt-2 text-sm text-muted-foreground">{catalog.reason === "FORBIDDEN" ? m.forbidden : m.unavailable}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{blockedCopy(catalog.reason)}{mfaBlocked && catalog.reason === "FORBIDDEN" ? <> <Link href={`/${locale}/securite/compte`}>{ar ? "فتح أمان الحساب" : "Ouvrir la sécurité du compte"}</Link></> : null}</p>
             ) : (
               <CommerceCatalogPanel
                 locale={locale}

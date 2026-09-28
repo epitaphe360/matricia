@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { z } from "zod";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { resolveAdminSpace } from "@/modules/admin/data/spaces/context";
@@ -26,9 +27,9 @@ export default async function ClientComplianceDecisionPage({
   const [{ locale, caseId }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale) || !z.string().uuid().safeParse(caseId).success) notFound();
   const space = await resolveAdminSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/administration/conformite-clients/${caseId}` }));
   const result = await listClientComplianceReviews();
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/conformite-clients/${caseId}` }));
   const a = actorCopy(locale);
   const messages = getComplianceMessages(locale);
   const alternate = locale === "ar" ? "fr" : "ar";

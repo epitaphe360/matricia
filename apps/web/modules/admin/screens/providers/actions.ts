@@ -90,10 +90,10 @@ export async function issueAdminCreditNote(_: AdminProviderActionState, data: Fo
   if (invoiceResult.error) return failure(invoiceResult.error);
   const currency = z.object({ currency: z.string().regex(/^[A-Z]{3}$/u) }).safeParse(invoiceResult.data);
   if (!currency.success) return { status: "error", reason: "FORBIDDEN" };
-  const parsed = creditNoteInput.safeParse({ invoiceId, creditNumber: text(data, "creditNumber"), issuedOn: text(data, "issuedOn"), subtotalMinor: parseMoneyToMinor(text(data, "subtotal"), currency.data.currency), taxMinor: parseMoneyToMinor(text(data, "tax"), currency.data.currency) ?? "0", reason: text(data, "reason"), idempotencyKey: text(data, "idempotencyKey") });
+  const parsed = creditNoteInput.safeParse({ invoiceId, creditNumber: text(data, "creditNumber"), issuedOn: text(data, "issuedOn"), subtotalMinor: parseMoneyToMinor(text(data, "subtotal"), currency.data.currency), reason: text(data, "reason"), idempotencyKey: text(data, "idempotencyKey") });
   if (!parsed.success) return { status: "error", reason: "VALIDATION" };
   const value = parsed.data;
-  return rpc("issue_provider_credit_note", { p_invoice_id: value.invoiceId, p_credit_number: value.creditNumber, p_issued_on: value.issuedOn, p_subtotal_minor: value.subtotalMinor, p_tax_minor: value.taxMinor, p_reason: value.reason, p_idempotency_key: value.idempotencyKey });
+  return rpc("issue_provider_credit_note", { p_invoice_id: value.invoiceId, p_credit_number: value.creditNumber, p_issued_on: value.issuedOn, p_subtotal_minor: value.subtotalMinor, p_tax_minor: "0", p_reason: value.reason, p_idempotency_key: value.idempotencyKey });
 }
 export async function decideAdminPaymentPlan(_: AdminProviderActionState, data: FormData): Promise<AdminProviderActionState> {
   const parsed = paymentPlanDecisionInput.safeParse({ planId: text(data, "planId"), status: text(data, "status"), reason: text(data, "reason"), idempotencyKey: text(data, "idempotencyKey") });

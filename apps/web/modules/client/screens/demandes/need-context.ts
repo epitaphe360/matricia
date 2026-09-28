@@ -2,6 +2,7 @@ import { z } from "zod";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 import { uuidSchema } from "@/modules/client/data/rfq/model";
 import { serviceCodeFromNeedSnapshot } from "@/modules/public/data/need-intent/model";
+import { regionCodeFromText } from "@/modules/shared/lib/geo/morocco-regions";
 
 const serviceCodeSchema = z.string().regex(/^[A-Z][A-Z0-9_-]{1,79}$/u);
 const intakeSchema = z.object({
@@ -51,8 +52,7 @@ export type NeedRequestContext = {
 };
 
 export function regionCodeFromLocation(text: string): string {
-  const value = text.trim().toUpperCase();
-  return /^[A-Z]{2}-[A-Z0-9_-]{1,37}$/u.test(value) ? value : "";
+  return regionCodeFromText(text);
 }
 
 export async function createRequestFromNeed(input: {

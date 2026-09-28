@@ -116,9 +116,9 @@ export async function ModuleHub({ locale, selectedOrganizationId }: { locale: Lo
   const spaces = spaceOrder.filter((space) => visible.some((item) => item.space === space));
 
   return (
-    <Card dir={locale === "ar" ? "rtl" : "ltr"} className="overflow-hidden border-[#d7e3dc] bg-[#fbfdfc] shadow-[0_18px_48px_rgb(5_53_40_/_8%)]">
-      <CardHeader className="border-b border-[#d7e3dc] bg-gradient-to-br from-[#053528] via-[#03261d] to-[#0a3d30] text-white">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#e8d5b5]">{messages.spaces.admin}</p>
+    <Card dir={locale === "ar" ? "rtl" : "ltr"} className="overflow-hidden border-[var(--mat-border)] bg-[var(--mat-canvas)] shadow-[0_18px_48px_rgb(18_29_88_/_8%)]">
+      <CardHeader className="border-b border-[var(--mat-border)] bg-gradient-to-br from-[var(--mat-navy)] via-[var(--mat-navy-strong)] to-[var(--mat-navy-strong)] text-white">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--mat-rose-tint)]">{messages.spaces.admin}</p>
         <CardTitle className="text-white">{messages.title}</CardTitle>
         <CardDescription className="max-w-3xl text-white/75">{messages.description}</CardDescription>
       </CardHeader>
@@ -142,7 +142,7 @@ export async function ModuleHub({ locale, selectedOrganizationId }: { locale: Lo
                         <li key={item.id}>
                           <Link
                             href={`/${locale}/${item.path}${organizationQuery}`}
-                            className={cn(buttonVariants({ variant: "outline" }), "min-h-11 w-full justify-start whitespace-normal border-[#d7e3dc] bg-white text-start hover:border-[#053528]/hover:bg-[#f4f7f5]")}
+                            className={cn(buttonVariants({ variant: "outline" }), "min-h-11 w-full justify-start whitespace-normal border-[var(--mat-border)] bg-white text-start hover:border-[var(--mat-navy)]/hover:bg-[var(--mat-canvas)]")}
                           >
                             {messages.links[item.id]}
                           </Link>

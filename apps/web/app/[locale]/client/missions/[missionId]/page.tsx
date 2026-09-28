@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { resolveClientSpace } from "@/modules/client/data/spaces/context";
 import { spaceCopy } from "@/modules/client/data/spaces/copy";
@@ -24,7 +25,7 @@ export default async function ClientMissionFollowPage({
   const [{ locale, missionId }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale) || !missionId) notFound();
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/missions/${missionId}` }));
   const messages = getMissionMessages(locale);
   const c = spaceCopy(locale);
   const [result, amendments] = await Promise.all([loadContractMissions(locale, query.organizationId), loadClientAmendments(query.organizationId)]);
@@ -34,7 +35,7 @@ export default async function ClientMissionFollowPage({
   const mission = dashboard?.missions[0] ?? null;
 
   return (
-    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="missions" theme="follow" title={c.followTitle} lead={c.followLead} kicker={c.kicker} actions={<SpaceActions href={`/${locale}/besoin${space.selectedQuery}`} label={locale === "ar" ? "وصف حاجتي" : "Décrire mon besoin"} />}>
+    <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="missions" theme="follow" title={c.followTitle} lead={c.followLead} kicker={c.kicker} actions={<SpaceActions href={`/${locale}/besoin${space.selectedQuery}`} label={locale === "ar" ? "وصف حاجتي" : "Décrire mon besoin"} />}>
       <FollowBoard locale={locale} query={space.selectedQuery} organizationName={space.organizationName} mission={mission} />
       <details className="client-ops">
         <summary>{c.opsMissions}</summary>

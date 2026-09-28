@@ -13,11 +13,12 @@ import { getCommerceMessages } from "@/modules/admin/screens/finance/commerce-me
 const control = "min-h-11 w-full rounded-md border bg-background px-3";
 
 export function VolumeNegotiatePanel({
-  locale, dashboard, ownerOrganizationId, keys,
+  locale, dashboard, ownerOrganizationId, keys, providerOptions = [],
 }: {
   locale: Locale;
   dashboard: AdminVolumeDashboard;
   ownerOrganizationId: string | null;
+  providerOptions?: Array<{ id: string; name: string }>;
   keys: { negotiate: string; activate: string };
 }) {
   const m = getCommerceMessages(locale);
@@ -108,7 +109,12 @@ export function VolumeNegotiatePanel({
           <label className="grid gap-1 text-sm">{m.contracted}<Input name="contractedUnits" dir="ltr" className="min-h-11" pattern="(?:0|[1-9][0-9]*)(?:\.[0-9]{1,6})?" /></label>
           <label className="grid gap-1 text-sm">{m.threshold}<Input name="lowStockThresholdUnits" required dir="ltr" defaultValue="0" className="min-h-11" pattern="(?:0|[1-9][0-9]*)(?:\.[0-9]{1,6})?" /></label>
           <label className="grid gap-1 text-sm">{m.ttlHours}<Input name="reservationTtlHours" required inputMode="numeric" defaultValue="168" className="min-h-11" dir="ltr" pattern="[1-9][0-9]*" /></label>
-          <label className="grid gap-1 text-sm">{m.providerOrg}<Input name="providerOrganizationId" className="min-h-11" dir="ltr" /></label>
+          <label className="grid gap-1 text-sm">{m.providerOrg}
+            <select name="providerOrganizationId" className={control} defaultValue="">
+              <option value="">{m.noProvider}</option>
+              {providerOptions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          </label>
           <label className="grid gap-1 text-sm">{m.providerCapacity}<Input name="providerCapacityUnits" dir="ltr" className="min-h-11" pattern="(?:0|[1-9][0-9]*)(?:\.[0-9]{1,6})?" /></label>
           <label className="grid gap-1 text-sm">{m.unitPrice}<Input name="unitPriceMinor" inputMode="numeric" pattern="[0-9]+" className="min-h-11" dir="ltr" /></label>
           <Button type="submit" disabled={activating} className="min-h-11 md:col-span-2">{activating ? m.processing : m.activatePool}</Button>

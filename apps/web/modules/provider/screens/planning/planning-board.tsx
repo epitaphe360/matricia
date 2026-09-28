@@ -42,7 +42,7 @@ export function PlanningWeekBoard({
 
   return (
     <main className="client-page provider-planning">
-      <div className="provider-planning-toolbar">
+      <div className="provider-planning-toolbar client-card">
         <p className="provider-planning-range">
           <strong>{range.format(new Date(`${first}T12:00:00.000Z`))}</strong>
           <span aria-hidden> – </span>
@@ -50,7 +50,7 @@ export function PlanningWeekBoard({
         </p>
         <nav className="provider-planning-nav" aria-label={ar ? "أسبوع" : "Semaine"}>
           <Link href={prevHref} className="client-ghost-link">{ar ? "السابق" : "Semaine précédente"}</Link>
-          <Link href={todayHref} className="client-ghost-link">{ar ? "اليوم" : "Aujourd’hui"}</Link>
+          <Link href={todayHref} className="client-cta">{ar ? "اليوم" : "Aujourd’hui"}</Link>
           <Link href={nextHref} className="client-ghost-link">{ar ? "التالي" : "Semaine suivante"}</Link>
         </nav>
         <p className="client-access-note">{ar ? "التوقيت: إفريقيا/الدار البيضاء" : "Fuseau horaire : Afrique/Casablanca"}</p>

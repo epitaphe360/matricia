@@ -10,7 +10,7 @@ import { compareQuotesAction, createRequestAction, selectQuoteAction, type Actio
 
 const uid = (n: number) => `${String(n).padStart(8, "0")}-0000-4000-8000-000000000000`;
 const context = { opportunityId: uid(2), organizationId: uid(3), libraryId: uid(4), serviceId: uid(5), questionnaireVersionId: uid(6), catalogSnapshotHash: "a".repeat(64), questionnaireSnapshotHash: "b".repeat(64), existingRequestId: null };
-function createForm(overrides: Record<string, string> = {}) { const form = new FormData(); const values = { locale: "fr", opportunityId: uid(2), organizationId: uid(3), description: "Une description suffisamment détaillée", urgency: "NORMAL", desiredDate: "2026-10-01", budget: "1 250,50", currency: "MAD", regionCode: "MA-CASABLANCA", ...overrides }; for (const [key, value] of Object.entries(values)) form.set(key, value); return form; }
+function createForm(overrides: Record<string, string> = {}) { const form = new FormData(); const values = { locale: "fr", opportunityId: uid(2), organizationId: uid(3), description: "Une description suffisamment détaillée", urgency: "NORMAL", desiredDate: "2026-10-01", budget: "1 250,50", currency: "MAD", regionCode: "CASABLANCA_SETTAT", ...overrides }; for (const [key, value] of Object.entries(values)) form.set(key, value); return form; }
 
 describe("actions RFQ Client", () => {
   beforeEach(() => { vi.clearAllMocks(); mocks.context.mockResolvedValue(context); });

@@ -66,7 +66,7 @@ export function SecurityBoard({
           <p className="client-access-note">{organizationName ? `${organizationName} · ${c.orgActive}` : c.orgTitle}</p>
         </div>
         <Link href={`/${locale}/organisation${query}`} className="client-ghost-link">{c.publicProfile}</Link>
-        <Link href={`/${locale}/notifications${query}`} className="client-text-link">{c.notificationPrefs}</Link>
+        <span className="client-access-note">{c.notificationPrefs}</span>
       </header>
       <OrganizationTabs locale={locale} query={query} active="security" />
       <section className="client-board" id="securite">
@@ -85,8 +85,8 @@ export function SecurityBoard({
             </li>
             <li>
               <span className="client-feed-icon" data-tone="sky"><Smartphone className="size-4" aria-hidden /></span>
-              <span><strong>{c.recoveryPhone}</strong><small>{locale === "ar" ? "يُحدَّث من أمان الحساب" : "À renseigner depuis la sécurité du compte"}</small></span>
-              <a href="#mfa" className="client-text-link">{c.updatePhone}</a>
+              <span><strong>{c.recoveryPhone}</strong><small>{locale === "ar" ? "يُدار مع عامل التحقق القوي أدناه" : "Géré avec le second facteur ci-dessous"}</small></span>
+              <a href="#mfa" className="client-text-link">{c.manageMethod}</a>
             </li>
           </ul>
         </article>
@@ -161,7 +161,7 @@ export function SecurityBoard({
             </div>
           )}
         </article>
-        <article className="client-card">
+        <article className="client-card" id="invitation">
           <header><h2>{c.inviteMember}</h2></header>
           <p>{c.accessNote}</p>
           <MemberInviteForm locale={locale} organizationId={organizationId ?? null} />

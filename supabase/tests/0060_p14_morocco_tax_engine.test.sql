@@ -47,7 +47,7 @@ select ok((select bool_and(length(btrim(name_fr))>=2 and length(btrim(name_ar))>
 -- 22
 select ok((select category_kind='CREDIT_NOTE'and requires_source_rule from public.tax_categories where code='CREDIT_NOTE'),'credit notes require their source tax rule');
 -- 23
-select ok((select count(*)=9 from public.tax_rule_versions where jurisdiction_code='MA'and status='ACTIVE'and professional_validation_status='DEMO'),'nine explicit non-production demo rules are active');
+select ok((select count(*)=9 from public.tax_rule_versions where jurisdiction_code='MA'and status='RETIRED'and professional_validation_status='DEMO'),'nine explicit non-production demo rules are retired until accountant validation');
 -- 24
 select ok(not exists(select 1 from public.tax_rule_versions where jurisdiction_code='MA'and category_code='CREDIT_NOTE'and status='ACTIVE'),'credit notes never receive an independent active rate');
 -- 25
@@ -55,16 +55,18 @@ select ok((select bool_and(conditions->>'environment_class'='NON_PRODUCTION_DEMO
 -- 26
 select ok((select bool_and(legal_reference like'%validation expert-comptable Maroc requise%'and change_reason like'%interdite%production%')from public.tax_rule_versions where jurisdiction_code='MA'and professional_validation_status='DEMO'),'demo seeds carry an explicit professional-validation warning');
 -- 27
-select ok((select rate_basis_points=2000 and rule_type='VAT'from public.tax_rule_versions where jurisdiction_code='MA'and category_code='PROVIDER_COMMISSION'and status='ACTIVE'),'provider commission demo rate is versioned data');
+select ok((select rate_basis_points=2000 and rule_type='VAT'from public.tax_rule_versions where jurisdiction_code='MA'and category_code='PROVIDER_COMMISSION'and professional_validation_status='DEMO' order by version desc limit 1),'provider commission demo rate is versioned data');
 -- 28
-select ok((select rate_basis_points=0 and rule_type='OUT_OF_SCOPE'from public.tax_rule_versions where jurisdiction_code='MA'and category_code='PENALTY'and status='ACTIVE'),'penalty classification is independently versioned');
+select ok((select rate_basis_points=0 and rule_type='OUT_OF_SCOPE'from public.tax_rule_versions where jurisdiction_code='MA'and category_code='PENALTY'and professional_validation_status='DEMO' order by version desc limit 1),'penalty classification is independently versioned');
 -- 29
-select ok(not exists(select 1 from public.tax_rule_versions where jurisdiction_code='MA'and status='ACTIVE'and professional_validation_status not in('DEMO','VALIDATED')),'no unreviewed tax rule is active');
+select ok(not exists(select 1 from public.tax_rule_versions where jurisdiction_code='MA'and status='ACTIVE'and professional_validation_status<>'VALIDATED'),'active tax rules must be professionally validated');
 -- 30
-select ok((select p.prosrc like'%p_actor=auth.uid()%'and p.prosrc like'%coalesce(auth.jwt()->>''aal'','''')=''aal2''%'and p.prosrc like'%FINANCE_MANAGER%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private'and p.proname='morocco_tax_admin'),'tax administration binds the caller identity, fails closed on AAL2 and checks privileged roles');
+select ok(not exists(select 1 from public.tax_rule_versions where jurisdiction_code='MA'and status='ACTIVE'and professional_validation_status='DEMO'),'no DEMO tax rule remains ACTIVE');
 -- 31
-select ok((select count(*)=4 and bool_and(pg_get_functiondef(p.oid)like'%morocco_tax_admin%')from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname=any(array['list_morocco_tax_rules','simulate_morocco_tax','propose_morocco_tax_rule','decide_morocco_tax_rule'])),'all public tax workflows enforce the central AAL2 authorization helper');
+select ok((select p.prosrc like'%p_actor=auth.uid()%'and p.prosrc like'%coalesce(auth.jwt()->>''aal'','''')=''aal2''%'and p.prosrc like'%FINANCE_MANAGER%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private'and p.proname='morocco_tax_admin'),'tax administration binds the caller identity, fails closed on AAL2 and checks privileged roles');
 -- 32
+select ok((select count(*)=4 and bool_and(pg_get_functiondef(p.oid)like'%morocco_tax_admin%')from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname=any(array['list_morocco_tax_rules','simulate_morocco_tax','propose_morocco_tax_rule','decide_morocco_tax_rule'])),'all public tax workflows enforce the central AAL2 authorization helper');
+-- 33
 select ok((select strpos(p.prosrc,'begin_contract_command')<strpos(p.prosrc,'select coalesce(max(version)')and strpos(p.prosrc,'request_hash')<strpos(p.prosrc,'begin_contract_command')from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='propose_morocco_tax_rule'),'proposal reserves idempotency before allocating a version number');
 -- 33
 select ok((select pg_get_functiondef(p.oid)like'%morocco.tax_rule.proposed%'and pg_get_functiondef(p.oid)like'%MoroccoTaxRuleProposedV1%'from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'and p.proname='propose_morocco_tax_rule'),'tax proposals are audited and emit Outbox events');

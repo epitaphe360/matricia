@@ -20,9 +20,15 @@ describe("ClientOfferDetailView", () => {
     expect(html).toContain("Offre A");
     expect(html).toContain("Ce que couvre cette offre");
     expect(html).toContain("Détail du devis");
+    expect(html).toContain("Résumé pour comparer");
+    expect(html).toContain("Pièces partagées");
+    expect(html).toContain("Exclusions et points à clarifier");
     expect(html).toContain("Direction artistique");
     expect(html).toContain("Retour à la comparaison");
     expect(html).toContain("Poser une question");
+    expect(html).toContain("client-offer-layout");
+    expect(html).toContain("À examiner");
+    expect(html).toContain("À clarifier");
     expect(html).toContain("/fr/client/demandes/11111111-1111-4111-8111-111111111111/offres?rfq=22222222-2222-4222-8222-222222222222");
     expect(html).toContain("/fr/messagerie?organizationId=org-1");
     expect(html).not.toMatch(/exemple illustratif/i);

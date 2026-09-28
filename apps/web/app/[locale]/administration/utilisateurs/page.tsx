@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Download, UserPlus } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { resolveAdminSpace } from "@/modules/admin/data/spaces/context";
 import { actorCopy } from "@/modules/admin/data/spaces/actors-copy";
 import { loadAdminActorDirectory } from "@/modules/admin/data/spaces/actors-repository";
@@ -13,12 +14,12 @@ export default async function AdminUsersPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ organizationId?: string; q?: string }>;
+  searchParams: Promise<{ organizationId?: string; q?: string; org?: string; role?: string; status?: string }>;
 }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveAdminSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/administration/utilisateurs` }));
   const directory = await loadAdminActorDirectory();
   const a = actorCopy(locale);
   const alternate = locale === "ar" ? "fr" : "ar";
@@ -40,12 +41,12 @@ export default async function AdminUsersPage({
       lead={a.usersLead}
       actions={
         <>
-          <Link href={`/${locale}/administration/utilisateurs/export${space.selectedQuery}`} className="admin-dir-action" data-tone="white"><Download className="size-4" aria-hidden />{locale === "ar" ? "تصدير" : "Exporter"}</Link>
+          <a href={`/${locale}/administration/utilisateurs/export${space.selectedQuery}`} className="admin-dir-action" data-tone="white"><Download className="size-4" aria-hidden />{locale === "ar" ? "تصدير" : "Exporter"}</a>
           <Link href={`/${locale}/administration/utilisateurs/inviter${space.selectedQuery}`} className="admin-primary-cta"><UserPlus className="size-4" aria-hidden />{a.inviteUser}</Link>
         </>
       }
     >
-      <UsersBoard locale={locale} query={space.selectedQuery} users={users} invites={directory.invites} search={query.q} />
+      <UsersBoard locale={locale} query={space.selectedQuery} users={users} invites={directory.invites} search={query.q} filters={{ org: query.org, role: query.role, status: query.status }} />
     </AdminAppShell>
   );
 }

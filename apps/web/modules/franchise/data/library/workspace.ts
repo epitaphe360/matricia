@@ -1,6 +1,27 @@
 import { z } from "zod";
 import { overlayFranchiseLibraryDemo } from "@/modules/franchise/data/library/demo-overlay";
+import {
+  draftStatuses,
+  publishedStatuses,
+  reviewStatuses,
+  type FranchiseCatalogRow,
+  type FranchiseCategoryNode,
+  type FranchiseLibraryLoadResult,
+  type FranchiseQuestionRow,
+} from "@/modules/franchise/data/library/workspace-model";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
+
+export type {
+  FranchiseCatalogKind,
+  FranchiseCatalogRow,
+  FranchiseCategoryNode,
+  FranchiseHierarchyNode,
+  FranchiseLibraryLoadResult,
+  FranchiseLibraryWorkspace,
+  FranchiseQuestionRow,
+  FranchiseServiceCommand,
+} from "@/modules/franchise/data/library/workspace-model";
+export { catalogStatusLabel, catalogStatusTone } from "@/modules/franchise/data/library/workspace-model";
 
 const id = z.string().uuid();
 const franchiseRow = z.object({
@@ -124,112 +145,6 @@ const changeRow = z.object({ id, status: z.string() });
 
 const franchiseRoles = ["FRANCHISE_OWNER", "FRANCHISE_MANAGER", "FRANCHISE_EXPERT", "FRANCHISE_PROVIDER_MANAGER", "FRANCHISE_VIEWER"] as const;
 
-export type FranchiseCatalogKind = "SERVICE" | "QUESTIONNAIRE" | "RULE";
-export type FranchiseServiceCommand = {
-  draftVersionId: string;
-  identityRowVersion: number;
-  versionRowVersion: number;
-  slug: string;
-  descriptionFr: string;
-  descriptionAr: string;
-  longDescriptionFr: string;
-  longDescriptionAr: string;
-  serviceType: string;
-  unitLabelFr: string;
-  unitLabelAr: string;
-  creditEligible: boolean;
-  volumeEligible: boolean;
-  recurringEligible: boolean;
-  trialEligible: boolean;
-  rfqRequired: boolean;
-  fixedFulfillmentAllowed: boolean;
-  baseCurrency: string;
-  sortOrder: number;
-  fulfillmentConfig: Record<string, unknown>;
-  visibilityRules: Record<string, unknown>;
-  sensitive: boolean;
-};
-export type FranchiseCatalogRow = {
-  id: string;
-  kind: FranchiseCatalogKind;
-  title: string;
-  code: string;
-  status: string;
-  versionLabel: string | null;
-  href: string;
-  category: string | null;
-  subcategory: string | null;
-  subcategoryId: string | null;
-  description: string | null;
-  nameFr: string | null;
-  nameAr: string | null;
-  questionnaireVersionId?: string | null;
-  draftVersionId?: string | null;
-  identityRowVersion?: number | null;
-  versionRowVersion?: number | null;
-  command?: FranchiseServiceCommand | null;
-  ruleActions?: Array<{ type: string; target?: string }>;
-};
-
-export type FranchiseQuestionRow = {
-  id: string;
-  key: string;
-  status: string;
-  label: string;
-  help: string;
-  labelFr?: string;
-  labelAr?: string;
-  helpFr?: string;
-  helpAr?: string;
-  versionId?: string | null;
-  answerType: string | null;
-  required: boolean;
-  questionnaireId: string | null;
-};
-
-export type FranchiseHierarchyNode = {
-  id: string;
-  title: string;
-  status?: string;
-  draftVersionId?: string | null;
-  identityRowVersion?: number;
-  versionRowVersion?: number;
-};
-
-export type FranchiseCategoryNode = FranchiseHierarchyNode & {
-  children: FranchiseHierarchyNode[];
-};
-
-export type FranchiseLibraryWorkspace = {
-  mandate: {
-    franchiseId: string;
-    operatorCode: string;
-    type: "IT" | "STANDARD";
-    libraryId: string;
-    libraryCode: string;
-    libraryName: string;
-    libraryStatus: string;
-    libraryRowVersion: number;
-    currentReleaseId: string | null;
-    operatorOrganizationId?: string;
-  };
-  counts: { drafts: number; inReview: number; published: number; returns: number };
-  categories: FranchiseCategoryNode[];
-  services: FranchiseCatalogRow[];
-  questionnaires: FranchiseCatalogRow[];
-  rules: FranchiseCatalogRow[];
-  questions: FranchiseQuestionRow[];
-  releases: Array<{ id: string; key: string; status: string }>;
-};
-
-export type FranchiseLibraryLoadResult =
-  | { status: "success"; workspace: FranchiseLibraryWorkspace }
-  | { status: "error"; reason: "UNAUTHENTICATED" | "FORBIDDEN" | "NO_MANDATE" | "QUERY_FAILED" | "INVALID_RESPONSE" };
-
-const reviewStatuses = new Set(["IN_REVIEW", "FRANCHISE_REVIEW", "CENTRAL_REVIEW", "LOCAL_TEST"]);
-const draftStatuses = new Set(["DRAFT"]);
-const publishedStatuses = new Set(["PUBLISHED", "APPROVED"]);
-
 function bucket(status: string): "drafts" | "inReview" | "published" | "other" {
   if (draftStatuses.has(status)) return "drafts";
   if (reviewStatuses.has(status)) return "inReview";
@@ -304,7 +219,14 @@ export async function loadFranchiseLibraryWorkspace(input: { locale: "fr" | "ar"
   const locale = input.locale;
   const namedLibrary = libraryVersions.find((item) => item.id === library.data[0]!.current_published_version_id) ?? libraryVersions.find((item) => item.id === library.data[0]!.current_draft_version_id) ?? libraryVersions[0];
   const q = "";
-  const pickName = (version: { name_fr: string; name_ar: string } | undefined, fallback: string) => version ? (locale === "ar" ? version.name_ar : version.name_fr) : fallback;
+  const pickName = (version: { name_fr: string; name_ar: string } | undefined, fallback: string) => {
+    if (!version) return fallback;
+    const primary = locale === "ar" ? version.name_ar : version.name_fr;
+    const secondary = locale === "ar" ? version.name_fr : version.name_ar;
+    const trimmed = primary?.trim();
+    if (trimmed && trimmed !== fallback) return trimmed;
+    return secondary?.trim() || fallback;
+  };
   const namedCategory = (item: z.infer<typeof categoryRow>) => pickName(categoryVersions.find((value) => value.id === item.current_published_version_id) ?? categoryVersions.find((value) => value.id === item.current_draft_version_id), item.code);
   const namedSubcategory = (item: z.infer<typeof subcategoryRow>) => pickName(subcategoryVersions.find((value) => value.id === item.current_published_version_id) ?? subcategoryVersions.find((value) => value.id === item.current_draft_version_id), item.code);
   const categories: FranchiseCategoryNode[] = categoryItems.filter((item) => item.library_id === libraryId).map((item) => {
@@ -336,7 +258,7 @@ export async function loadFranchiseLibraryWorkspace(input: { locale: "fr" | "ar"
     return {
       id: item.id,
       kind: "SERVICE",
-      title: version ? (locale === "ar" ? version.name_ar : version.name_fr) : item.code,
+      title: pickName(version, item.code),
       code: item.code,
       status: version?.status ?? item.status,
       versionLabel: version ? `v${version.version}` : null,
@@ -378,7 +300,15 @@ export async function loadFranchiseLibraryWorkspace(input: { locale: "fr" | "ar"
     return {
       id: item.id,
       kind: "QUESTIONNAIRE",
-      title: version ? (locale === "ar" ? version.title_ar : version.title_fr) : item.code,
+      title: version
+        ? (() => {
+            const primary = locale === "ar" ? version.title_ar : version.title_fr;
+            const secondary = locale === "ar" ? version.title_fr : version.title_ar;
+            const trimmed = primary?.trim();
+            if (trimmed && trimmed !== item.code) return trimmed;
+            return secondary?.trim() || item.code;
+          })()
+        : item.code,
       code: item.code,
       status: version?.status ?? item.status,
       versionLabel: version ? `v${version.version}` : null,
@@ -414,7 +344,7 @@ export async function loadFranchiseLibraryWorkspace(input: { locale: "fr" | "ar"
       draftVersionId: version?.id ?? null,
       identityRowVersion: item.row_version,
       versionRowVersion: version?.row_version ?? null,
-      ruleActions: version?.actions ?? [],
+      ruleActions: Array.isArray(version?.actions) ? version.actions : [],
     };
   });
   const questionByVersion = new Map(questionVersions.map((item) => [item.id, item]));
@@ -454,7 +384,9 @@ export async function loadFranchiseLibraryWorkspace(input: { locale: "fr" | "ar"
         type: selected.franchise_type,
         libraryId,
         libraryCode: library.data[0].code,
-        libraryName: namedLibrary ? (locale === "ar" ? namedLibrary.name_ar : namedLibrary.name_fr) : library.data[0].code,
+        libraryName: namedLibrary
+          ? pickName(namedLibrary, library.data[0].code)
+          : library.data[0].code,
         libraryStatus: library.data[0].status,
         libraryRowVersion: library.data[0].row_version,
         currentReleaseId: library.data[0].current_release_id,
@@ -469,45 +401,4 @@ export async function loadFranchiseLibraryWorkspace(input: { locale: "fr" | "ar"
       releases: releases.filter((item) => item.library_id === libraryId).map((item) => ({ id: item.id, key: item.release_key, status: item.status })),
     }, locale, q),
   };
-}
-
-export function catalogStatusLabel(status: string, locale: "fr" | "ar") {
-  const fr: Record<string, string> = {
-    DRAFT: "Brouillon",
-    IN_REVIEW: "En validation",
-    FRANCHISE_REVIEW: "Revue interne",
-    CENTRAL_REVIEW: "Revue Matricia",
-    LOCAL_TEST: "Simulation",
-    APPROVED: "Validé",
-    PUBLISHED: "Publié",
-    SCHEDULED: "Planifié",
-    SUPERSEDED: "Remplacé",
-    RETIRED: "Retiré",
-    ARCHIVED: "Archivé",
-    REJECTED: "Retours Matricia",
-    CHANGES_REQUESTED: "Correction demandée",
-  };
-  const ar: Record<string, string> = {
-    DRAFT: "مسودة",
-    IN_REVIEW: "قيد الاعتماد",
-    FRANCHISE_REVIEW: "مراجعة داخلية",
-    CENTRAL_REVIEW: "مراجعة ماتريسيا",
-    LOCAL_TEST: "محاكاة",
-    APPROVED: "معتمد",
-    PUBLISHED: "منشور",
-    SCHEDULED: "مجدول",
-    SUPERSEDED: "مستبدل",
-    RETIRED: "مسحوب",
-    ARCHIVED: "مؤرشف",
-    REJECTED: "ملاحظات ماتريسيا",
-    CHANGES_REQUESTED: "تصحيح مطلوب",
-  };
-  return (locale === "ar" ? ar : fr)[status] ?? status;
-}
-
-export function catalogStatusTone(status: string): "violet" | "sky" | "mint" | "peach" {
-  if (draftStatuses.has(status) || status === "REJECTED" || status === "CHANGES_REQUESTED") return "peach";
-  if (reviewStatuses.has(status)) return "sky";
-  if (publishedStatuses.has(status)) return "mint";
-  return "violet";
 }

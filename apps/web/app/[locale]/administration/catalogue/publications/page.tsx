@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { buttonVariants } from "@/modules/shared/ui/button";
 import { loadPublicationDashboard } from "@/modules/shared/lib/catalogue-publications/repository";
@@ -16,7 +17,7 @@ export default async function CataloguePublicationsPage({ params }: { params: Pr
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const result = await loadPublicationDashboard();
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/catalogue/publications` }));
   const messages = getPublicationMessages(locale);
   const commandIds = result.status === "success"
     ? Object.fromEntries(result.value.libraries.map((library) => [library.id, { idempotencyKey: randomUUID(), correlationId: randomUUID() }]))

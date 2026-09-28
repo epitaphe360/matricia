@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { mfaRequiredMessage } from "@/modules/shared/lib/account-security/platform-access";
 import { loadAdminOperationsDashboard } from "@/modules/admin/data/operations/repository";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { getAdminOperationsMessages } from "@/modules/admin/screens/operations/messages";
@@ -12,14 +14,14 @@ export default async function AdminOperationsPage({ params }: { params: Promise<
   if (!isLocale(locale)) notFound();
   const messages = getAdminOperationsMessages(locale);
   const result = await loadAdminOperationsDashboard();
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/operations` }));
 
   return (
-    <AdminModulePage locale={locale} active="settings" path="operations" title={messages.title} lead={messages.description}>
+    <AdminModulePage locale={locale} active="settings" path="operations" title={messages.title} lead={messages.description} hubGroup="ops">
       {result.status === "error" ? (
         <Alert variant="destructive">
-          <AlertTitle>{result.reason === "FORBIDDEN" ? messages.forbidden : messages.unavailable}</AlertTitle>
-          <AlertDescription>{result.reason === "FORBIDDEN" ? messages.forbiddenText : messages.unavailableText}</AlertDescription>
+          <AlertTitle>{result.reason === "MFA_REQUIRED" ? mfaRequiredMessage(locale) : result.reason === "FORBIDDEN" ? messages.forbidden : messages.unavailable}</AlertTitle>
+          <AlertDescription>{result.reason === "MFA_REQUIRED" ? mfaRequiredMessage(locale) : result.reason === "FORBIDDEN" ? messages.forbiddenText : messages.unavailableText}</AlertDescription>
         </Alert>
       ) : (
         <div className="admin-panel">

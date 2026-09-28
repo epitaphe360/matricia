@@ -144,7 +144,7 @@ function DemoDisputeDetail({ locale, query }: { locale: Locale; query: string })
           <Link href={`/${locale}/messagerie${query}`}>{c.tabExchanges}</Link>
           <Link href={docsHref}>{c.tabDocs}</Link>
           <a href="#mediation">{c.tabMediation}</a>
-          <a href="#mediation">{c.tabHistory}</a>
+          <a href="#history">{c.tabHistory}</a>
         </nav>
         <section id="details" className="client-dispute-split">
           <div>
@@ -191,6 +191,17 @@ function DemoDisputeDetail({ locale, query }: { locale: Locale; query: string })
           <Link href={newHref} className="client-cta">{c.submitResponse}</Link>
           <Link href={docsHref} className="client-ghost-link">{c.addProof}</Link>
         </div>
+      </article>
+      <article className="client-card" id="history">
+        <header><h2>{c.tabHistory}</h2></header>
+        <ol className="client-mediation">
+          {detail.mediation.map((step) => (
+            <li key={`history-${step.id}`} data-state={step.state}>
+              <strong>{step.title}</strong>
+              <small>{step.date}</small>
+            </li>
+          ))}
+        </ol>
       </article>
     </>
   );

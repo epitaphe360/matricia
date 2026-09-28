@@ -62,6 +62,7 @@ const cycleSchema = z.object({
   amount_minor: exactInteger,
   period_start: z.string(),
   period_end: z.string(),
+  payment_reference: z.string().min(3).max(200).optional(),
   plan: historicalPlanSchema,
 });
 const historicalProjectionSchema = z.object({
@@ -182,6 +183,7 @@ export async function loadSubscriptionDashboard(requestedOrganizationId?: string
           amountMinor: cycle.amount_minor,
           periodStart: cycle.period_start,
           periodEnd: cycle.period_end,
+          paymentReference: cycle.payment_reference ?? null,
           plan: mapHistoricalPlan(cycle.plan),
         })) : [],
         transitions: transitions.data.map((event) => ({ id: event.id, fromStatus: event.from_status, toStatus: event.to_status, reasonCode: event.reason_code, occurredAt: event.occurred_at })),

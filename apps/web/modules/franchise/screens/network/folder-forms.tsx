@@ -9,10 +9,12 @@ import { franchiseCopy } from "@/modules/franchise/data/spaces/copy";
 import { franchiseStageLabel } from "@/modules/franchise/data/spaces/labels";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import { advanceFranchiseFolderPipeline, recordFranchiseFolderActivity, type FranchiseInviteState } from "./actions";
+import { canMutateFranchiseFolder } from "./folder-guards";
+
+export { canMutateFranchiseFolder };
 
 const idle: FranchiseInviteState = { status: "idle" };
 const control = "min-h-11 w-full rounded-md border border-input bg-background px-3";
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const activityLabels = {
   fr: { CALL: "Appel", EMAIL: "Courriel", MEETING: "Réunion", NOTE: "Note", FOLLOW_UP: "Relance", INVITATION: "Invitation" },
@@ -45,10 +47,6 @@ function Feedback({ state, locale, success }: { state: FranchiseInviteState; loc
             : c.folderFailed
       : "";
   return <p role={state.status === "error" ? "alert" : "status"} aria-live="polite" className={state.status === "error" ? "min-h-5 text-sm text-destructive" : "min-h-5 text-sm text-primary"}>{value}</p>;
-}
-
-export function canMutateFranchiseFolder(id: string, canWrite?: boolean) {
-  return Boolean(canWrite && uuidPattern.test(id));
 }
 
 export function FranchiseFolderActivityForm({

@@ -6,7 +6,7 @@ export const invoiceInput=z.object({statementId:uuid,invoiceNumber:z.string().tr
 export const paymentInput=z.object({organizationId:uuid,paymentReference:z.string().trim().min(3).max(200),paidOn:date,paymentMethod:z.enum(["BANK_TRANSFER","CARD","CHECK","CASH","OTHER"]),currency,amountMinor:minor,proofHash:hash,cashAccountId:uuid,receivableAccountId:uuid,idempotencyKey:uuid});
 export const reconciliationInput=z.object({paymentId:uuid,invoiceId:uuid,amountMinor:minor,idempotencyKey:uuid});
 export const zeroMinor=z.string().regex(/^\d+$/).refine(value=>BigInt(value)<=maxPgBigint,{message:"AMOUNT_EXCEEDS_BIGINT"});
-export const creditNoteInput=z.object({invoiceId:uuid,creditNumber:z.string().trim().min(3).max(80),issuedOn:date,subtotalMinor:zeroMinor,taxMinor:zeroMinor,reason:z.string().trim().min(10).max(2000),idempotencyKey:uuid}).refine(v=>BigInt(v.subtotalMinor)+BigInt(v.taxMinor)>BigInt(0),{path:["subtotalMinor"]});
+export const creditNoteInput=z.object({invoiceId:uuid,creditNumber:z.string().trim().min(3).max(80),issuedOn:date,subtotalMinor:zeroMinor,reason:z.string().trim().min(10).max(2000),idempotencyKey:uuid}).refine(v=>BigInt(v.subtotalMinor)>BigInt(0),{path:["subtotalMinor"]});
 export const paymentPlanRequestInput=z.object({invoiceId:uuid,reason:z.string().trim().min(10).max(2000),dueOn1:date,dueOn2:date,amountMinor1:minor,amountMinor2:minor,idempotencyKey:uuid});
 export const paymentPlanDecisionInput=z.object({planId:uuid,status:z.enum(["APPROVED","REJECTED"]),reason:z.string().trim().min(10).max(2000),idempotencyKey:uuid});
 export const collectionOpenInput=z.object({invoiceId:uuid,reason:z.string().trim().min(10).max(2000),idempotencyKey:uuid});

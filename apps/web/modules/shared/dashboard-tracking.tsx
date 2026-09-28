@@ -18,17 +18,17 @@ type TrackingCopy = {
 const priorityColors = {
   CRITICAL: "#a12828",
   HIGH: "#b7791f",
-  MEDIUM: "#1d6b54",
+  MEDIUM: "#1e7a5c",
   LOW: "#8aa396",
 } as const;
 
 const kindColors = {
-  APPROVAL: "#053528",
+  APPROVAL: "#121d58",
   EXCEPTION: "#a12828",
   RISK_REVIEW: "#b7791f",
-  WORK_ITEM: "#0a4a38",
-  NOTIFICATION: "#3d7a66",
-  MESSAGE: "#e8d5b5",
+  WORK_ITEM: "#2a3a8c",
+  NOTIFICATION: "#32ad84",
+  MESSAGE: "#f9cfe1",
 } as const;
 
 export function DashboardTrackingCharts({
@@ -52,10 +52,10 @@ export function DashboardTrackingCharts({
   const kindConfig = Object.fromEntries(kindData.map((entry) => [entry.key, { label: entry.name, color: entry.fill }])) satisfies ChartConfig;
 
   const scoreTone = summary.followUpScore >= 75 ? "ok" : summary.followUpScore >= 45 ? "warn" : "critical";
-  const scoreColor = scoreTone === "ok" ? "#17643a" : scoreTone === "warn" ? "#b7791f" : "#a12828";
+  const scoreColor = scoreTone === "ok" ? "#1e7a5c" : scoreTone === "warn" ? "#b7791f" : "#a12828";
   const scoreRing = [
     { name: "score", value: summary.followUpScore, fill: scoreColor },
-    { name: "rest", value: Math.max(0, 100 - summary.followUpScore), fill: "#e5efe9" },
+    { name: "rest", value: Math.max(0, 100 - summary.followUpScore), fill: "#ebeef8" },
   ];
 
   return (
@@ -102,7 +102,7 @@ export function DashboardTrackingCharts({
         )}
         <ul className="grid gap-2 sm:grid-cols-2">
           {(["CRITICAL", "HIGH", "MEDIUM", "LOW"] as const).map((key) => (
-            <li key={key} className="flex items-center justify-between gap-2 rounded-xl border border-[var(--ad-border)] bg-[#fbfdfc] px-3 py-2 text-sm">
+            <li key={key} className="flex items-center justify-between gap-2 rounded-xl border border-[var(--ad-border)] bg-[var(--mat-canvas)] px-3 py-2 text-sm">
               <span className="inline-flex items-center gap-2">
                 <span className="size-2.5 rounded-full" style={{ background: priorityColors[key] }} aria-hidden />
                 {copy.priority[key]}
@@ -120,9 +120,9 @@ export function DashboardTrackingCharts({
         ) : (
           <ChartContainer config={kindConfig} className="aspect-[4/3] max-h-[240px]" initialDimension={{ width: 320, height: 220 }}>
             <BarChart data={kindData} layout="vertical" margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
-              <CartesianGrid horizontal={false} stroke="#d7e3dc" />
+              <CartesianGrid horizontal={false} stroke="#e4e7f0" />
               <XAxis type="number" hide />
-              <YAxis type="category" dataKey="name" width={88} tickLine={false} axisLine={false} tick={{ fill: "#5a6f66", fontSize: 11 }} />
+              <YAxis type="category" dataKey="name" width={88} tickLine={false} axisLine={false} tick={{ fill: "#5e6a93", fontSize: 11 }} />
               <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
               <Bar dataKey="value" radius={[0, 8, 8, 0]}>
                 {kindData.map((entry) => (

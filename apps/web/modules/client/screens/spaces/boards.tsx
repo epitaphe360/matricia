@@ -8,17 +8,34 @@ import { OrganizationTabs } from "./organization-tabs";
 import { JourneyGlyph } from "@/modules/shared/ui/journey-glyph";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 
-function Cta({ href, children, soft = false, tone }: { href: string; children: ReactNode; soft?: boolean; tone?: "violet" | "peach" | "mint" }) {
-  const className = tone ? "client-kpi-cta" : soft ? "client-soft-link" : "client-ghost-link";
-  return <Link href={href} className={className} data-tone={tone}>{children}<ArrowRight className="size-4 rtl:rotate-180" aria-hidden /></Link>;
+function Cta({
+  href,
+  children,
+  soft = false,
+  tone,
+}: {
+  href: string;
+  children: ReactNode;
+  soft?: boolean;
+  tone?: "violet" | "peach" | "mint" | "sky";
+}) {
+  const className = tone && !soft ? "client-kpi-cta" : soft ? "client-soft-link" : "client-ghost-link";
+  return (
+    <Link href={href} className={className} data-tone={tone}>
+      {children}
+      <ArrowRight className="size-4 rtl:rotate-180" aria-hidden />
+    </Link>
+  );
 }
+
+const PRIORITY_TONES = ["peach", "violet", "sky"] as const;
 
 function FileGlyph({ kind }: { kind: "pdf" | "docx" | "xlsx" | "file" | "message" | "folder" }) {
   const label = kind === "pdf" ? "PDF" : kind === "docx" ? "W" : kind === "xlsx" ? "X" : kind === "message" ? "M" : kind === "folder" ? "D" : "F";
   return <span className="client-file-glyph" data-kind={kind} aria-hidden>{label}</span>;
 }
 
-function stepStateLabel(state: "done" | "current" | "todo", locale: Locale) {
+function stepStateLabel(state: "done" | "current" | "todo" | "upcoming", locale: Locale) {
   if (state === "done") return locale === "ar" ? "منجز" : "Terminé";
   if (state === "current") return locale === "ar" ? "قيد الانتظار" : "En attente";
   return locale === "ar" ? "للمعالجة" : "À traiter";
@@ -83,7 +100,7 @@ export function DiagnosticsBoard({
 }) {
   const c = spaceCopy(locale);
   const demo = demoClientSpaces(locale, "");
-  const analyseHref = "#analyse";
+  const analyseHref = evolutionHref;
   const preferDemo = canApplyClientSpaceDemo(organizationName ?? null) && findings.length === 0;
   const priorities = preferDemo
     ? demo.priorities.map((row) => ({
@@ -119,68 +136,152 @@ export function DiagnosticsBoard({
       <section className="client-board client-board-compare">
         <article className="client-card">
           <header>
-            <h2>{c.diagNow}</h2>
-            {score ? <p><strong dir="ltr">{score}/100</strong>{ratingLabel ? ` · ${ratingLabel}` : ""}</p> : <p>{c.diagNowLead}</p>}
+            <h2>
+              <Target className="size-4" aria-hidden />
+              {c.diagNow}
+            </h2>
+            {score ? (
+              <p>
+                <strong dir="ltr">{score}/100</strong>
+                {ratingLabel ? ` · ${ratingLabel}` : ""}
+              </p>
+            ) : (
+              <p>{c.diagNowLead}</p>
+            )}
           </header>
           {libraryScores.length > 0 ? (
             <dl className="client-fact-grid">
               {libraryScores.map((item) => (
-                <div key={item.key}><small>{item.key}</small><span dir="ltr">{item.score}/100</span></div>
+                <div key={item.key}>
+                  <small>{item.key}</small>
+                  <span dir="ltr">{item.score}/100</span>
+                </div>
               ))}
             </dl>
           ) : null}
           {priorities.length === 0 ? (
             <div className="client-offer-actions">
-              <Cta href={questionnaireHref} soft>{c.startQuestionnaire}</Cta>
+              <Cta href={questionnaireHref} soft>
+                {c.startQuestionnaire}
+              </Cta>
               {hasSubmittedAssessment ? <Cta href={analyseHref}>{c.computeAnalysis}</Cta> : null}
             </div>
-          ) : priorities.map((row, index) => (
-            <div key={row.id} className="client-priority-card">
-              <div className="client-priority-head">
-                <strong><span className="client-num">{index + 1}</span>{row.title}</strong>
-                <Cta href={row.href} soft={row.cta !== "need"}>{row.cta === "need" ? c.describeNeed : c.seePlan}</Cta>
-              </div>
-              <dl className="client-fact-grid">
-                <div><small>{c.constat}</small><span>{row.constat}</span></div>
-                <div><small>{c.impact}</small><span>{row.impact}</span></div>
-                <div><small>{c.recommended}</small><span>{row.action}</span></div>
-                <div><small>{c.why}</small><span>{row.why}</span></div>
-              </dl>
-            </div>
-          ))}
+          ) : (
+            priorities.map((row, index) => {
+              const tone = PRIORITY_TONES[index % PRIORITY_TONES.length];
+              return (
+                <div key={row.id} className="client-priority-card" data-tone={tone}>
+                  <div className="client-priority-head">
+                    <strong>
+                      <span className="client-num" data-tone={tone}>
+                        {index + 1}
+                      </span>
+                      {row.title}
+                    </strong>
+                    <Cta href={row.href} soft tone={tone}>
+                      {row.cta === "need" ? c.describeNeed : c.seePlan}
+                    </Cta>
+                  </div>
+                  <dl className="client-fact-grid">
+                    <div>
+                      <small>{c.constat}</small>
+                      <span>{row.constat}</span>
+                    </div>
+                    <div>
+                      <small>{c.impact}</small>
+                      <span>{row.impact}</span>
+                    </div>
+                    <div>
+                      <small>{c.recommended}</small>
+                      <span>{row.action}</span>
+                    </div>
+                    <div>
+                      <small>{c.why}</small>
+                      <span>{row.why}</span>
+                    </div>
+                  </dl>
+                </div>
+              );
+            })
+          )}
         </article>
         <div className="client-stack">
           <article className="client-card">
-            <header><h2>{c.understood}</h2></header>
+            <header>
+              <h2>{c.understood}</h2>
+            </header>
             <p>{c.understoodLead}</p>
             <ul className="client-feed">
-              <li><span className="client-feed-icon" data-tone="violet"><Briefcase className="size-4" aria-hidden /></span><span><strong>{c.activity}</strong><small>{understood.activity}</small></span></li>
-              <li><span className="client-feed-icon" data-tone="sky"><Target className="size-4" aria-hidden /></span><span><strong>{c.objectives}</strong><small>{understood.objectives}</small></span></li>
-              <li><span className="client-feed-icon" data-tone="mint"><Goal className="size-4" aria-hidden /></span><span><strong>{c.attention}</strong><small>{understood.attention}</small></span></li>
+              <li>
+                <span className="client-feed-icon" data-tone="violet">
+                  <Briefcase className="size-4" aria-hidden />
+                </span>
+                <span>
+                  <strong>{c.activity}</strong>
+                  <small>{understood.activity}</small>
+                </span>
+              </li>
+              <li>
+                <span className="client-feed-icon" data-tone="sky">
+                  <Target className="size-4" aria-hidden />
+                </span>
+                <span>
+                  <strong>{c.objectives}</strong>
+                  <small>{understood.objectives}</small>
+                </span>
+              </li>
+              <li>
+                <span className="client-feed-icon" data-tone="mint">
+                  <Goal className="size-4" aria-hidden />
+                </span>
+                <span>
+                  <strong>{c.attention}</strong>
+                  <small>{understood.attention}</small>
+                </span>
+              </li>
             </ul>
             <div className="client-offer-actions">
               <Cta href={questionnaireHref}>{c.modify}</Cta>
-              <Cta href={analyseHref} soft>{c.validate}</Cta>
+              <Cta href={analyseHref} soft>
+                {c.validate}
+              </Cta>
             </div>
           </article>
-          <article className="client-card">
-            <header><h2>{c.resume}</h2></header>
+          <article className="client-card client-resume-card">
+            <header>
+              <h2>{c.resume}</h2>
+            </header>
             <p>{c.resumeLead}</p>
-            <Cta href={questionnaireHref} soft>{c.continue}</Cta>
+            <Cta href={questionnaireHref} soft>
+              {c.continue}
+            </Cta>
+            <div className="client-quote-art" aria-hidden />
           </article>
           <article className="client-card">
-            <header><h2>{c.myRuns}</h2></header>
+            <header>
+              <h2>{c.myRuns}</h2>
+            </header>
             <p>{c.myRunsLead}</p>
             {shownRuns.length === 0 ? (
-              <Cta href={questionnaireHref} soft>{c.startQuestionnaire}</Cta>
+              <Cta href={questionnaireHref} soft>
+                {c.startQuestionnaire}
+              </Cta>
             ) : (
               <ul className="client-feed">
                 {shownRuns.map((run) => (
-                  <li key={run.id}><Link href={run.href}><FileText className="size-4" aria-hidden /><span>{run.title}</span><ArrowRight className="size-4 rtl:rotate-180" aria-hidden /></Link></li>
+                  <li key={run.id}>
+                    <Link href={run.href}>
+                      <FileText className="size-4" aria-hidden />
+                      <span>{run.title}</span>
+                      <ArrowRight className="size-4 rtl:rotate-180" aria-hidden />
+                    </Link>
+                  </li>
                 ))}
               </ul>
             )}
-            <Cta href={evolutionHref} soft>{locale === "ar" ? "تطور التشخيصات" : "Évolution des diagnostics"}</Cta>
+            <Cta href={evolutionHref} soft>
+              {locale === "ar" ? "تطور التشخيصات" : "Évolution des diagnostics"}
+            </Cta>
           </article>
           {continuity ? (
             <article className="client-card">
@@ -334,7 +435,7 @@ export function RequestsBoard({ locale, query, compareHref, rows, organizationNa
 
 export type MissionBoardView = {
   validations: Array<{ id: string; title: string; detail: string; href: string }>;
-  steps: Array<{ id: string; title: string; detail: string; state: "done" | "current" | "todo" }>;
+  steps: Array<{ id: string; title: string; detail: string; state: "done" | "current" | "todo" | "upcoming" }>;
   decision: { title: string; context: string; impact: string; href: string } | null;
   files: Array<{ id: string; title: string; href: string; kind: "pdf" | "docx" | "xlsx" | "file" | "message" | "folder" }>;
 };
@@ -388,10 +489,6 @@ export function MissionsBoard({ locale, query, organizationName, view }: { local
               </ul>
             </>
           )}
-          <div className="client-collab">
-            <strong>{c.collaboration}</strong>
-            <p>{c.collaborationLead}</p>
-          </div>
         </article>
         <div className="client-stack">
           <article className="client-card">
@@ -426,6 +523,13 @@ export function MissionsBoard({ locale, query, organizationName, view }: { local
           </article>
         </div>
       </section>
+      <article className="client-quote-banner client-collab-banner">
+        <div>
+          <h2>{c.collaboration}</h2>
+          <p>{c.collaborationLead}</p>
+        </div>
+        <blockquote>{locale === "ar" ? "أبعد اليوم، من أجل الغد." : "Plus loin aujourd’hui, pour demain."}</blockquote>
+      </article>
     </main>
   );
 }
@@ -485,11 +589,12 @@ export function DocumentsBoard({ locale, query, children, organizationName, docu
             )}
           </article>
           <article className="client-card">
-            <div className="client-drop">
+            <div className="client-drop" role="note">
               <Cloud className="size-6" aria-hidden />
               <p>{c.drop}</p>
               <small>{c.formats}</small>
             </div>
+            <p className="client-access-note">{locale === "ar" ? "إيداع الملفات يتم من تفاصيل الطلب أو المهمة المعنية." : "Le dépôt de fichiers se fait depuis le dossier de demande ou de mission concerné."}</p>
             <p className="client-verified">{c.verified}</p>
           </article>
         </div>
@@ -503,6 +608,7 @@ export function DocumentsBoard({ locale, query, children, organizationName, docu
           <a href="#documents-recents" aria-current="page">{c.all}</a>
           <Link href={`/${locale}/client/demandes${query}`}>{c.requestsTab}</Link>
           <Link href={`/${locale}/client/missions${query}`}>{c.missionsTab}</Link>
+          <Link href={`/${locale}/client/contrats${query}`}>{c.contractsTab}</Link>
           <Link href={`/${locale}/client/documents${query}`}>{c.contractsTab}</Link>
         </nav>
         {recentRows.length === 0 ? <p>{c.emptyBoard}</p> : (
@@ -530,13 +636,13 @@ export function FinancesBoard({ locale, query, organizationName, rows }: { local
           <span className="client-feed-icon" data-tone="violet"><FileText className="size-4" aria-hidden /></span>
           <h2>{c.invoices}</h2>
           <p>{c.invoiceLead}</p>
-          <Cta href={`/${locale}/client/documents${query}`} tone="violet">{c.open}</Cta>
+          <Cta href={`/${locale}/client/abonnement${query}`} tone="violet">{c.open}</Cta>
         </article>
         <article className="client-card client-kpi-card">
           <span className="client-feed-icon" data-tone="peach"><FileText className="size-4" aria-hidden /></span>
           <h2>{c.payments}</h2>
           <p>{c.paymentLead}</p>
-          <Cta href={`/${locale}/client/missions${query}`} tone="peach">{c.open}</Cta>
+          <Cta href={`/${locale}/client/abonnement${query}#plans`} tone="peach">{c.open}</Cta>
         </article>
         <article className="client-card client-kpi-card">
           <span className="client-feed-icon" data-tone="mint"><FileText className="size-4" aria-hidden /></span>
@@ -547,7 +653,7 @@ export function FinancesBoard({ locale, query, organizationName, rows }: { local
       </section>
       <section className="client-board client-board-compare">
         <article className="client-card">
-          <header><h2>{c.finDocs}</h2></header>
+          <header className="client-priority-head"><h2>{c.finDocs}</h2><Link href={`/${locale}/client/abonnement${query}`} className="client-text-link">{c.seeAllToHandle}</Link></header>
           <p>{c.finDocsLead}</p>
           {list.length === 0 ? <p>{c.emptyBoard}</p> : (
             <div className="client-table-wrap">
@@ -567,7 +673,7 @@ export function FinancesBoard({ locale, query, organizationName, rows }: { local
               </table>
             </div>
           )}
-          <Link href={`/${locale}/client/documents${query}`} className="client-text-link">{c.seeAllFin}</Link>
+          <Link href={`/${locale}/client/abonnement${query}`} className="client-text-link">{c.seeAllFin}</Link>
         </article>
         <div className="client-stack">
           <article className="client-card">
@@ -590,29 +696,40 @@ export function FinancesBoard({ locale, query, organizationName, rows }: { local
   );
 }
 
-export function CompanyBoard({ locale, query, organizationName, alternate }: { locale: Locale; query: string; organizationName: string | null; alternate: "fr" | "ar" }) {
+export function CompanyBoard({ locale, query, organizationName, alternate, people }: { locale: Locale; query: string; organizationName: string | null; alternate: "fr" | "ar"; people?: Array<{ id: string; name: string; role: string }> }) {
   const c = spaceCopy(locale);
   const demo = demoClientSpaces(locale, query);
   const demoOn = canApplyClientSpaceDemo(organizationName);
   const legalName = organizationName ?? (demoOn ? (locale === "ar" ? "عميل · تواصل وتسويق وإبداع" : "Client · Communication, marketing et création") : "—");
-  const people = demoOn ? demo.people : [];
+  const members = people ?? (demoOn ? demo.people : []);
   return (
     <main className="client-page" data-client-layout="company">
       <OrganizationTabs locale={locale} query={query} active="profile" />
       <section className="client-board" id="sites">
         <article className="client-card">
-          <header className="client-priority-head"><h2>{c.orgInfo}</h2><Cta href={`#modifier`}>{c.modify}</Cta></header>
+          <header className="client-priority-head"><h2>{c.orgInfo}</h2><Cta href={`/${locale}/organisation${query}#modifier`}>{c.modify}</Cta></header>
           <dl className="client-fact-grid client-org-grid">
             <div><small>{c.legalName}</small><span>{legalName}</span></div>
-            <div><small>{c.address}</small><span>{demoOn ? (locale === "ar" ? "الدار البيضاء، المغرب" : "Casablanca, Maroc") : "—"}</span></div>
-            <div><small>{c.orgActivity}</small><span>{demoOn ? demo.understood.activity : "—"}</span></div>
-            <div><small>{c.contacts}</small><span>{demoOn ? (locale === "ar" ? "عبر فضاء ماتريسيا" : "Via l’espace Matricia") : "—"}</span></div>
+            {demoOn ? (
+              <>
+                <div><small>{c.address}</small><span>{locale === "ar" ? "الدار البيضاء، المغرب" : "Casablanca, Maroc"}</span></div>
+                <div><small>{c.orgActivity}</small><span>{demo.understood.activity}</span></div>
+                <div><small>{c.contacts}</small><span>{locale === "ar" ? "عبر فضاء ماتريسيا" : "Via l’espace Matricia"}</span></div>
+              </>
+            ) : (
+              <div>
+                <small>{locale === "ar" ? "الملف" : "Compléter"}</small>
+                <span className="client-access-note">
+                  {locale === "ar" ? "العنوان والنشاط وجهات الاتصال تُدار من تعديل المؤسسة." : "Adresse, activité et contacts se gèrent depuis la modification de l’entreprise."}
+                </span>
+              </div>
+            )}
           </dl>
         </article>
         <article className="client-card">
           <header><h2>{c.security}</h2></header>
           <ul className="client-feed">
-            <li><Link href={`/${locale}/securite${query}`}><span>{c.accountSec}</span><ArrowRight className="size-4 rtl:rotate-180" aria-hidden /></Link></li>
+            <li><Link href={`/${locale}/securite/compte${query}`}><span>{c.accountSec}</span><ArrowRight className="size-4 rtl:rotate-180" aria-hidden /></Link></li>
             <li><Link href={`/${locale}/securite/sessions`}><span>{c.sessions}</span><ArrowRight className="size-4 rtl:rotate-180" aria-hidden /></Link></li>
             <li><Link href={`/${locale}/notifications${query}`}><span>{c.notif}</span><ArrowRight className="size-4 rtl:rotate-180" aria-hidden /></Link></li>
           </ul>
@@ -624,11 +741,11 @@ export function CompanyBoard({ locale, query, organizationName, alternate }: { l
             <h2>{c.people}</h2>
             <div className="client-offer-actions">
               <Cta href={`/${locale}/organisation/roles${query}`}>{c.manageAccess}</Cta>
-              <Cta href={`/${locale}/organisation/roles${query}`} soft>{c.invite}</Cta>
+              <Cta href={`/${locale}/securite/compte${query}#invitation`} soft>{c.invite}</Cta>
             </div>
           </header>
           <ul className="client-feed">
-            {people.length === 0 ? <li><span>{c.emptyPeople}</span></li> : people.map((person) => (
+            {members.length === 0 ? <li><span>{c.emptyPeople}</span></li> : members.map((person) => (
               <li key={person.id}><span className="client-feed-icon" data-tone="violet" /><span><strong>{person.name}</strong></span><em>{person.role}</em></li>
             ))}
           </ul>
@@ -647,20 +764,8 @@ export function CompanyBoard({ locale, query, organizationName, alternate }: { l
             </div>
           </div>
           <p><strong>{c.commPrefs}</strong></p>
-          <ul className="client-toggle-list">
-            <li>
-              <span><strong>{c.news}</strong><small>{c.newsLead}</small></span>
-              <input type="checkbox" defaultChecked name="news" aria-label={c.news} />
-            </li>
-            <li>
-              <span><strong>{c.projectUpdates}</strong><small>{c.projectUpdatesLead}</small></span>
-              <input type="checkbox" defaultChecked name="projects" aria-label={c.projectUpdates} />
-            </li>
-            <li>
-              <span><strong>{c.advice}</strong><small>{c.adviceLead}</small></span>
-              <input type="checkbox" name="advice" aria-label={c.advice} />
-            </li>
-          </ul>
+          <p>{c.newsLead}</p>
+          <Cta href={`/${locale}/notifications${query}`}>{c.openPreferences}</Cta>
         </article>
       </section>
       <footer className="client-space-footer">
@@ -675,19 +780,26 @@ export function CompanyBoard({ locale, query, organizationName, alternate }: { l
   );
 }
 
-export function MessagesBoard({ locale, query, children, threads, organizationName }: { locale: Locale; query: string; children: ReactNode; threads?: Array<{ id: string; title: string; meta: string; href: string }>; organizationName?: string | null }) {
+export function MessagesBoard({ locale, query, search, children, threads, organizationName }: { locale: Locale; query: string; search?: string; children: ReactNode; threads?: Array<{ id: string; title: string; meta: string; href: string }>; organizationName?: string | null }) {
   const c = spaceCopy(locale);
   const demo = demoClientSpaces(locale, query);
-  const preferDemo = canApplyClientSpaceDemo(organizationName ?? null);
-  const inbox = preferDemo ? demo.inbox : threads ?? [];
+  const liveThreads = threads ?? [];
+  const showDemo = canApplyClientSpaceDemo(organizationName ?? null) && liveThreads.length === 0;
+  const needle = (search ?? "").trim().toLocaleLowerCase();
+  const inbox = (showDemo ? demo.inbox : liveThreads).filter((item) => !needle || `${item.title} ${item.meta}`.toLocaleLowerCase().includes(needle));
+  const organizationId = new URLSearchParams(query.replace(/^\?/, "")).get("organizationId");
   return (
     <main className="client-page">
       <div className="client-msg-grid">
         <article className="client-card">
-          <label className="client-top-search"><Search className="size-4" aria-hidden /><span className="sr-only">{c.searchThread}</span><input placeholder={c.searchThread} /></label>
+          <form className="client-top-search" action={`/${locale}/messagerie`} method="get" role="search">
+            {organizationId ? <input type="hidden" name="organizationId" value={organizationId} /> : null}
+            <Search className="size-4" aria-hidden />
+            <label><span className="sr-only">{c.searchThread}</span><input name="q" defaultValue={search} placeholder={c.searchThread} /></label>
+          </form>
           <nav className="client-tabs" aria-label={c.msgTitle}>
-            <a href="#messages-inbox" aria-current="page">{c.all}</a>
-            <Link href={`/${locale}/messagerie${query}`}>{c.unread}</Link>
+            <Link href={`/${locale}/messagerie${query}`} aria-current={search ? undefined : "page"}>{c.all}</Link>
+            <Link href={`/${locale}/notifications${query}`}>{c.unread}</Link>
             <Link href={`/${locale}/client/demandes${query}`}>{c.linked}</Link>
           </nav>
           <ul className="client-feed" id="messages-inbox">
@@ -697,7 +809,7 @@ export function MessagesBoard({ locale, query, children, threads, organizationNa
           </ul>
         </article>
         <article className="client-card client-msg-thread">
-          {preferDemo ? (
+          {showDemo ? (
             <>
               <header className="client-priority-head">
                 <h2>{c.threadTitle} — {demo.thread.folder}</h2>
@@ -711,24 +823,13 @@ export function MessagesBoard({ locale, query, children, threads, organizationNa
                 ))}
               </ol>
               <p className="client-access-note">{c.accessNote}</p>
-              <form className="client-composer" action={`/${locale}/messagerie${query}`} method="get">
-                <label>
-                  <span className="sr-only">{c.write}</span>
-                  <textarea name="corps" placeholder={c.write} required rows={2} />
-                </label>
-                <div>
-                  <Link href={`/${locale}/client/documents${query}`} className="client-ghost-link">{c.attach}</Link>
-                  <button type="submit" className="client-cta">{c.send}</button>
-                </div>
-              </form>
             </>
-          ) : (
-            children
-          )}
+          ) : null}
+          {children}
         </article>
         <article className="client-card">
           <header><h2>{c.context}</h2></header>
-          {preferDemo ? (
+          {showDemo ? (
             <>
               <p><strong>{demo.thread.folder}</strong></p>
               <ul className="client-feed">

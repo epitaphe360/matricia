@@ -5,8 +5,8 @@ export default async function AdminSpacePage({
   searchParams,
 }: {
   params: Promise<{ locale: string; space: string }>;
-  searchParams: Promise<{ organizationId?: string; q?: string }>;
+  searchParams: Promise<{ organizationId?: string; q?: string; vue?: string }>;
 }) {
   const [{ locale, space }, query] = await Promise.all([params, searchParams]);
-  return renderAdminSpacePage({ locale, space, organizationId: query.organizationId, q: query.q });
+  return renderAdminSpacePage({ locale, space, organizationId: query.organizationId, q: query.q, vue: query.vue });
 }

@@ -32,9 +32,8 @@ describe("demo client home scenario", () => {
       items: [],
       snapshot,
     });
-    expect(filled.items.length).toBeGreaterThan(3);
-    expect(filled.snapshot.status === "success" && filled.snapshot.comparison?.columns).toHaveLength(2);
-    expect(filled.items.some((item) => item.title.includes("Comparer"))).toBe(true);
+    expect(filled.items).toHaveLength(0);
+    expect(filled.snapshot.status === "success" && filled.snapshot.comparison).toBeNull();
     expect(JSON.stringify(filled)).not.toMatch(/exemple illustratif/i);
   });
 

@@ -14,7 +14,7 @@ export default async function FranchiseNetworkPage({ params, searchParams }: { p
   const board = await loadFranchiseSpaceFromLibrary({ locale, query: space.selectedQuery, result });
   const scope = franchiseCommandScope(result, space.selectedOrganizationId);
   return (
-    <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="network" title={c.netTitle} lead={c.netLead} kicker={c.inviteHint} mandateName={mandateName} actions={<FranchiseActions href={`/${locale}/franchise/fournisseurs/inviter${space.selectedQuery}`} label={c.invite} />}>
+    <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="network" title={c.netTitleRich} lead={c.netLeadRich} kicker={c.inviteHint} mandateName={mandateName} actions={<FranchiseActions href={`/${locale}/franchise/fournisseurs/inviter${space.selectedQuery}`} label={c.invite} />}>
       <NetworkBoard locale={locale} query={space.selectedQuery} mandateName={mandateName} board={board} search={query.q} page={query.page} organizationId={scope.organizationId} />
     </FranchiseAppShell>
   );

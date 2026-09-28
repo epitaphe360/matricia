@@ -20,7 +20,7 @@ export default async function ServicesTransition({ params, searchParams }: { par
 
   return (
     <main id="contenu-principal" className="public-page pb-16">
-      <section className="public-wrap grid gap-10 py-14 lg:grid-cols-[1.15fr_.85fr] lg:items-center">
+      <section className="public-hero-split">
         <div>
           <p className="journey-eyebrow">{copy.eyebrow}</p>
           <h1>{copy.title}</h1>
@@ -87,10 +87,10 @@ export default async function ServicesTransition({ params, searchParams }: { par
             const Icon = domainIcons[index] ?? Sparkles;
             return (
               <Link key={`${code}-${name}`} href={`/${locale}/besoin?library=${encodeURIComponent(code)}`} className="public-card block no-underline">
-                <Icon aria-hidden="true" className="text-[#6d3cc7]" />
+                <Icon aria-hidden="true" className="text-[var(--mat-violet)]" />
                 <h3 className="mt-3">{name}</h3>
                 <p className="public-muted mt-2">{text}</p>
-                <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-[#6d3cc7]">{locale === "ar" ? "البدء" : "Commencer"}<ArrowRight className="rtl-mirror" size={14} /></span>
+                <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-[var(--mat-violet)]">{locale === "ar" ? "البدء" : "Commencer"}<ArrowRight className="rtl-mirror" size={14} /></span>
               </Link>
             );
           })}

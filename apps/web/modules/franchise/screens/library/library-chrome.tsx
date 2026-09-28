@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CheckCircle2, Lock, ShieldAlert } from "lucide-react";
 import { libraryCopy } from "@/modules/franchise/data/library/copy";
-import { catalogStatusLabel, catalogStatusTone } from "@/modules/franchise/data/library/workspace";
+import { catalogStatusLabel, catalogStatusTone } from "@/modules/franchise/data/library/workspace-model";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 
 export function validationChipLabel(status: string, locale: Locale) {

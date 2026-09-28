@@ -115,12 +115,12 @@ async function main() {
       await tx`insert into public.organization_memberships(id,organization_id,user_id,status,activated_at)
         values(${membership}::uuid,${operatorOrg}::uuid,${user.id}::uuid,'ACTIVE',clock_timestamp())
         on conflict(id) do update set user_id=excluded.user_id,status='ACTIVE',activated_at=coalesce(public.organization_memberships.activated_at,clock_timestamp())`;
-      await tx`insert into public.organization_member_roles(membership_id,role_code,granted_by,revoked_at)
-        values(${membership}::uuid,'FRANCHISE_OWNER',${user.id}::uuid,null)
-        on conflict(membership_id,role_code) do update set granted_by=excluded.granted_by,revoked_at=null`;
       await tx`insert into public.franchises(id,library_id,operator_organization_id,franchise_type,operator_code,territory_code,status,created_by)
         values(${franchise}::uuid,${library.id}::uuid,${operatorOrg}::uuid,'STANDARD','FRANCHISEE','SOUSS','ACTIVE',${user.id}::uuid)
-        on conflict(id) do update set status='ACTIVE'`;
+        on conflict(id) do update set status='ACTIVE',library_id=excluded.library_id,operator_organization_id=excluded.operator_organization_id`;
+      await tx`insert into public.organization_member_roles(membership_id,role_code,franchise_id,granted_by,revoked_at)
+        values(${membership}::uuid,'FRANCHISE_OWNER',${franchise}::uuid,${user.id}::uuid,null)
+        on conflict(membership_id,role_code) do update set franchise_id=excluded.franchise_id,granted_by=excluded.granted_by,revoked_at=null`;
       await tx`insert into public.franchise_territory_versions(id,franchise_id,version,territory_code,name_fr,name_ar,scope_snapshot,effective_from,content_hash,created_by)
         values(${territory}::uuid,${franchise}::uuid,1,'SOUSS','Souss-Massa (démo)','سوس ماسة (تجريبي)',${tx.json({ regions: ["Souss-Massa"], origin: "demo" })},${new Date(now - 30 * dayMs).toISOString()},${digest(`${franchise}:territory:v1`)},${user.id}::uuid)
         on conflict(id) do nothing`;

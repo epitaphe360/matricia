@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { buttonVariants } from "@/modules/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/modules/shared/ui/card";
@@ -15,6 +16,7 @@ import { RuleBuilder } from "@/modules/admin/screens/catalogue/rule-builder";
 import { QuestionnaireBuilder } from "@/modules/admin/screens/catalogue/questionnaire-builder";
 import { getRuleValidationMessages } from "@/modules/admin/screens/catalogue/validation/messages";
 import { AdminModulePage } from "@/modules/admin/ui/admin-module-page";
+import { adminCopy } from "@/modules/admin/data/spaces/copy";
 
 export const dynamic = "force-dynamic";
 
@@ -32,15 +34,16 @@ export default async function CatalogueReleaseAdministrationPage({ params, searc
   const selectedServiceId = queryValue(query.service);
   const repository = await createServerCatalogBuilderRepository();
   const result = await repository.loadWorkspace(libraryId);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/catalogue` }));
   const messages = getBuilderMessages(locale);
   const validationMessages = getRuleValidationMessages(locale);
+  const c = adminCopy(locale);
 
   const selectedLibrary = result.status === "success" ? result.value.libraries.find((item) => item.id === libraryId) : undefined;
   const selectedService = result.status === "success" ? result.value.services.find((item) => item.id === selectedServiceId) : undefined;
 
   return (
-    <AdminModulePage locale={locale} active="catalog" path="catalogue" title={messages.title} lead={messages.description}>
+    <AdminModulePage locale={locale} active="catalog" path="catalogue" title={messages.title} lead={c.hubCatalogLead} hubGroup="catalog">
       <p>
         <Link href={`/${locale}/administration/catalogue/validation`} className={cn(buttonVariants({ variant: "outline" }), "min-h-11")}>{validationMessages.title}</Link>
       </p>

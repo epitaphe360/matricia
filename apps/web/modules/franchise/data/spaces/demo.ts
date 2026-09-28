@@ -1,8 +1,7 @@
-import { isDemoClientHomeEnabled } from "@/modules/client/data/home/demo-scenario";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 
 export function canApplyFranchiseSpaceDemo(_organizationName?: string | null) {
-  return isDemoClientHomeEnabled();
+  return process.env.MATRICIA_DEMO_ACCESS_ENABLED === "true";
 }
 
 export type Tone = "mint" | "peach" | "violet" | "sky";
@@ -15,7 +14,7 @@ export type DocumentRow = { id: string; title: string; owner: string; status: st
 export type MessageRow = { id: string; title: string; meta: string; href: string; tone: Tone };
 export type NoticeRow = { id: string; title: string; meta: string; href: string };
 export type SupervisionRow = { id: string; title: string; status: string; meta?: string; href: string; tone?: Tone; rowVersion?: number };
-export type QualityRow = { id: string; title: string; type: string; status: string; next: string; tone: Tone };
+export type QualityRow = { id: string; title: string; type: string; status: string; next: string; tone: Tone; href?: string };
 export type FinanceKind = "statement" | "entryFee" | "payout" | "preStatement";
 export type FinanceRow = { id: string; title: string; object: string; status: string; auth: string; tone: Tone; amount?: string; kind?: FinanceKind };
 
@@ -108,25 +107,28 @@ export function demoFranchiseSpaces(locale: Locale, query: string) {
       { id: "d6", title: fr ? "Mise en conformité" : "وضع في حالة امتثال", stage: fr ? "En attente d’information" : "بانتظار معلومة", owner: fr ? "Partenaire local" : "شريك محلي", flag: fr ? "Informations manquantes" : "معلومات ناقصة", tone: "peach" as const, stageCode: "PROFILE_STARTED", matching: [] },
     ] as RequestRow[],
     documents: [
-      { id: "doc1", title: "invite://atlas", owner: fr ? "Studio Atlas" : "ستوديو أطلس", status: fr ? "Qualifié" : "مؤهل", href: `/${locale}/franchise/fournisseurs/pr1/documents${q}`, kind: "evidence" as const },
-      { id: "doc2", title: "rfq://d1", owner: fr ? "Conseil stratégique" : "استشارة استراتيجية", status: fr ? "À examiner" : "للمراجعة", href: `/${locale}/franchise/demandes/d1/consultation${q}`, kind: "evidence" as const },
+      { id: "doc1", title: fr ? "Contrat de prestation Studio Atlas" : "عقد خدمة ستوديو أطلس", owner: fr ? "Studio Atlas" : "ستوديو أطلس", status: fr ? "Valide" : "ساري", href: `/${locale}/franchise/fournisseurs/pr1/documents${q}`, kind: "evidence" as const },
+      { id: "doc2", title: fr ? "Attestation fiscale 2026" : "شهادة ضريبية 2026", owner: fr ? "Studio Atlas" : "ستوديو أطلس", status: fr ? "Expire bientôt" : "ينتهي قريباً", href: `/${locale}/franchise/fournisseurs/pr1/documents${q}`, kind: "evidence" as const },
+      { id: "doc3", title: fr ? "Références clients anonymisées" : "مراجع زبائن مجهولة", owner: fr ? "Conseil stratégique" : "استشارة استراتيجية", status: fr ? "À vérifier" : "للمراجعة", href: `/${locale}/franchise/demandes/d1/consultation${q}`, kind: "evidence" as const },
     ] as DocumentRow[],
     renewals: [
-      { id: "rn1", title: fr ? "Studio Atlas" : "ستوديو أطلس", owner: fr ? "Studio Atlas" : "ستوديو أطلس", status: fr ? "Qualifié" : "مؤهل", href: `/${locale}/franchise/fournisseurs/pr1/capacite${q}`, kind: "renewal" as const, due: "2026-12-01" },
+      { id: "rn1", title: fr ? "Attestation fiscale Studio Atlas" : "شهادة ضريبية ستوديو أطلس", owner: fr ? "Studio Atlas" : "ستوديو أطلس", status: fr ? "Expire bientôt" : "ينتهي قريباً", href: `/${locale}/franchise/fournisseurs/pr1/capacite${q}`, kind: "renewal" as const, due: "2026-12-01" },
+      { id: "rn2", title: fr ? "Assurance RC professionnelle" : "تأمين المسؤولية المهنية", owner: fr ? "Conseil Anfa" : "استشارة أنفا", status: fr ? "À vérifier" : "للمراجعة", href: `/${locale}/franchise/fournisseurs/pr2/documents${q}`, kind: "renewal" as const, due: "2026-10-15" },
     ] as DocumentRow[],
     messages: [
-      { id: "m1", title: fr ? "Invitation envoyée au professionnel." : "أُرسلت الدعوة للمهني.", meta: fr ? "Studio Atlas · INVITATION" : "ستوديو أطلس · INVITATION", href: `/${locale}/franchise/fournisseurs/pr1${q}`, tone: "mint" as const },
-      { id: "m2", title: fr ? "Besoin cadré, pièces à vérifier." : "حُددت الحاجة، وثائق للمراجعة.", meta: fr ? "Conseil stratégique · NOTE" : "استشارة استراتيجية · NOTE", href: `/${locale}/franchise/demandes/d1/consultation${q}`, tone: "violet" as const },
+      { id: "m1", title: fr ? "Sofiane Lahbabi" : "سفيان لهبابي", meta: fr ? "REQ-2026-031 · Fournisseur Studio Atlas" : "REQ-2026-031 · مزود ستوديو أطلس", href: `/${locale}/franchise/fournisseurs/pr1${q}`, tone: "mint" as const },
+      { id: "m2", title: fr ? "Marie Colin" : "ماري كولين", meta: fr ? "Validation · Questionnaire Diagnostic SI" : "اعتماد · استبيان تشخيص نظم المعلومات", href: `/${locale}/franchise/validations${q}`, tone: "violet" as const },
+      { id: "m3", title: fr ? "Nadia Farouk" : "نادية فاروق", meta: fr ? "Qualité · Plan correctif ouvert" : "جودة · خطة تصحيحية مفتوحة", href: `/${locale}/franchise/qualite${q}`, tone: "peach" as const },
     ] as MessageRow[],
     notifications: [
       { id: "n1", title: fr ? "Conformité à vérifier" : "امتثال للمراجعة", meta: "WARNING", href: `/${locale}/franchise/qualite${q}` },
       { id: "n2", title: fr ? "Conseil Anfa" : "استشارة أنفا", meta: fr ? "Aujourd’hui" : "اليوم", href: `/${locale}/franchise/relances${q}` },
     ] as NoticeRow[],
     quality: [
-      { id: "q1", title: fr ? "Dossier — Conseil stratégique" : "ملف — استشارة استراتيجية", type: fr ? "Pièce" : "وثيقة", status: fr ? "À vérifier" : "للتحقق", next: fr ? "Consulter le dossier" : "عرض الملف", tone: "peach" as const },
-      { id: "q2", title: fr ? "Qualification — Digital Maarif" : "تأهيل — رقمي المعاريف", type: fr ? "Qualification" : "تأهيل", status: fr ? "Complément demandé" : "تكملة مطلوبة", next: fr ? "Relancer le professionnel" : "متابعة المهني", tone: "sky" as const },
-      { id: "q3", title: fr ? "Preuve de mission — Studio Atlas" : "دليل مهمة — ستوديو أطلس", type: fr ? "Preuve" : "دليل", status: fr ? "En revue" : "قيد المراجعة", next: fr ? "Motiver la décision" : "تعليل القرار", tone: "violet" as const },
-      { id: "q4", title: fr ? "Incident signalé — Anfa" : "حادثة مبلغ عنها — أنفا", type: fr ? "Incident" : "حادثة", status: fr ? "Décision communiquée" : "قرار مبلَّغ", next: fr ? "Consulter la traçabilité" : "عرض التتبع", tone: "mint" as const },
+      { id: "q1", title: fr ? "Dossier — Conseil stratégique" : "ملف — استشارة استراتيجية", type: fr ? "Pièce" : "وثيقة", status: fr ? "À vérifier" : "للتحقق", next: fr ? "Consulter le dossier" : "عرض الملف", tone: "peach" as const, href: `/${locale}/franchise/documents${q}` },
+      { id: "q2", title: fr ? "Qualification — Digital Maarif" : "تأهيل — رقمي المعاريف", type: fr ? "Qualification" : "تأهيل", status: fr ? "Complément demandé" : "تكملة مطلوبة", next: fr ? "Relancer le professionnel" : "متابعة المهني", tone: "sky" as const, href: `/${locale}/franchise/fournisseurs${q}` },
+      { id: "q3", title: fr ? "Preuve de mission — Studio Atlas" : "دليل مهمة — ستوديو أطلس", type: fr ? "Preuve" : "دليل", status: fr ? "En revue" : "قيد المراجعة", next: fr ? "Motiver la décision" : "تعليل القرار", tone: "violet" as const, href: `/${locale}/franchise/qualite${q}` },
+      { id: "q4", title: fr ? "Incident signalé — Anfa" : "حادثة مبلغ عنها — أنفا", type: fr ? "Incident" : "حادثة", status: fr ? "Décision communiquée" : "قرار مبلَّغ", next: fr ? "Consulter la traçabilité" : "عرض التتبع", tone: "mint" as const, href: `/${locale}/franchise/qualite/incidents${q}` },
     ] as QualityRow[],
     obligations: [
       { id: "o1", title: fr ? "Documents" : "وثائق", detail: fr ? "Suivi des documents attendus et de leur disponibilité." : "متابعة الوثائق المنتظرة وتوفرها." },

@@ -2,6 +2,7 @@ import type { Locale } from "@/modules/shared/lib/i18n/locale";
 
 const fr = {
   brandLabel: "Matricia — accueil",
+  tagline: "Des bonnes rencontres pour de vrais progrès",
   navigationLabel: "Navigation publique",
   menu: "Menu",
   home: "Accueil",
@@ -24,6 +25,7 @@ const fr = {
 
 const ar: typeof fr = {
   brandLabel: "ماتريسيا — الصفحة الرئيسية",
+  tagline: "معاً نبني ما يليق بالغَد",
   navigationLabel: "التنقل العام",
   menu: "القائمة",
   home: "الرئيسية",
@@ -36,8 +38,8 @@ const ar: typeof fr = {
   contact: "اتصل بنا",
   signIn: "تسجيل الدخول",
   footerLabel: "تذييل الصفحة",
-  footerStatement: "خدمات مهنية محكومة وشفافة ومتاحة بالفرنسية والعربية.",
-  legalStatement: "ماتريسيا — منصة خدمات للشركات.",
+  footerStatement: "خبرات تدفع المغرب إلى الأمام، بالفرنسية والعربية.",
+  legalStatement: "ماتريسيا — مؤسسات أقوى، ومغرب أكثر طموحاً.",
   legalMentions: "الإشعارات القانونية",
   legalPrivacy: "الخصوصية",
   legalTerms: "شروط الاستخدام",

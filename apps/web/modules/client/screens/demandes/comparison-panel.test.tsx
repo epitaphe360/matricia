@@ -31,14 +31,10 @@ describe("ComparisonPanel", () => {
         organizationName="Client · Communication, marketing et création"
       />,
     );
-    expect(html).toContain("Pondez vos critères");
-    expect(html).toContain("Offre A");
-    expect(html).toContain("Offre B");
-    expect(html).toContain("Offre C");
-    expect(html).toContain("Offre recommandée");
-    expect(html).toContain("Poser une question");
-    expect(html).toContain("client-compare-grid");
-    expect(html).toContain("illustrent une comparaison");
+    expect(html).toContain("Générer la comparaison");
+    expect(html).toContain("Aucune comparaison figée n’est encore disponible.");
+    expect(html).not.toContain("Offre A");
+    expect(html).not.toContain("illustrent une comparaison");
     expect(html).not.toContain('name="selectionReason"');
     expect(html).not.toContain("Choisir cette offre");
     expect(html).not.toMatch(/exemple illustratif/i);
@@ -109,9 +105,12 @@ describe("ComparisonPanel", () => {
     expect(html).toContain("Offre A");
     expect(html).toContain("4 semaines");
     expect(html).toContain("Rapport");
-    expect(html).toContain("Offre recommandée");
+    expect(html).toContain("★ Offre recommandée");
+    expect(html).toContain("Pondérez vos critères");
     expect(html).toContain("Complétude du devis");
     expect(html).toContain("100 %");
+    expect(html).toContain("Maintenance / suivi");
+    expect(html).toContain("Conditions de paiement");
     expect(html).toContain('name="selectionReason"');
     expect(html).toContain('name="confirmSelection"');
     expect(html).toContain("coordonnées");

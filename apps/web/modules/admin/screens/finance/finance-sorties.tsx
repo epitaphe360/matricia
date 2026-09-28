@@ -37,7 +37,7 @@ export function FinanceSorties({
           ) : (
             <ul className="grid gap-3">
               {openInvoices.map((invoice) => (
-                <li key={invoice.id} className="rounded-xl border border-[var(--ad-border)] bg-[#fbfdfc] p-4">
+                <li key={invoice.id} className="rounded-xl border border-[var(--ad-border)] bg-[var(--mat-canvas)] p-4">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <p className="font-semibold">{invoice.organization_name}</p>
                     <span className="admin-badge" data-tone={invoice.payment_status === "OVERDUE" ? "critical" : "warn"}>
@@ -73,7 +73,7 @@ export function FinanceSorties({
           ) : (
             <ul className="grid gap-3">
               {payments.map((payment) => (
-                <li key={payment.id} className="rounded-xl border border-[var(--ad-border)] bg-[#fbfdfc] p-4">
+                <li key={payment.id} className="rounded-xl border border-[var(--ad-border)] bg-[var(--mat-canvas)] p-4">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <p className="font-semibold">{payment.organization_name}</p>
                     <span className="admin-badge">{m.states.PAID}</span>

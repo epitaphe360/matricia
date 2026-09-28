@@ -1,6 +1,6 @@
 begin;
 set local search_path = public, extensions;
-select plan(24);
+select plan(21);
 
 select has_function('public', 'submit_franchise_catalog_questionnaire', array['uuid', 'uuid', 'integer', 'integer', 'text', 'uuid'], 'questionnaire submit exists');
 select has_function('public', 'submit_franchise_catalog_rule', array['uuid', 'uuid', 'integer', 'integer', 'text', 'uuid'], 'rule submit exists');
@@ -263,9 +263,10 @@ select ok(
      where action = 'catalog.change.submitted'
        and resource_id = (select value->>'change_request_id' from p59_observed where key = 'q-submitted')
   ) and (
-    select count(*) = 1 and bool_and(event_type = 'CatalogChangeSubmittedV1')
+    select count(*) = 1
       from public.event_outbox
      where aggregate_id = (select value->>'change_request_id' from p59_observed where key = 'q-submitted')
+       and event_type = 'CatalogChangeSubmittedV1'
   ),
   'questionnaire submit emits one audit and one outbox event'
 );

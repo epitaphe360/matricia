@@ -54,45 +54,50 @@ export function emptyFranchiseSpaces(locale: Locale, query: string): FranchiseSp
   const demo = demoFranchiseSpaces(locale, query);
   return {
     ...demo,
-    treat: demo.treat,
-    pipeline: demo.pipeline.map((step) => ({ ...step, detail: step.detail, status: locale === "ar" ? "—" : "—" })),
+    // Never leak invented narrative CTAs / rights from the demo seed.
+    treat: [],
+    pipeline: demo.pipeline.map((step) => ({ ...step, detail: "—", status: "—" })),
     attention: [],
     homeRequests: [],
     homePros: [],
     homeGov: [],
+    canDo: [],
+    needsValidation: [],
+    rights: [],
+    periHistory: [],
     perimeter: {
-      territory: locale === "ar" ? "—" : "—",
-      domains: locale === "ar" ? "—" : "—",
-      mandate: locale === "ar" ? "—" : "—",
-      status: locale === "ar" ? "—" : "—",
+      territory: "—",
+      domains: "—",
+      mandate: "—",
+      status: "—",
     },
     canWrite: false,
-    people: [],
-    requests: [],
+    people: [] as PersonRow[],
+    requests: [] as RequestRow[],
     documents: [],
     renewals: [],
-    messages: [],
+    messages: [] as MessageRow[],
     notifications: [],
-    quality: [],
+    quality: [] as QualityRow[],
     performance: [],
     followups: [],
     decisions: [],
     mandates: [],
     govHistory: [],
-    finance: [],
+    finance: [] as FinanceRow[],
     journal: [],
     corrective: [],
-    quotes: [],
-    missions: [],
-    users: [],
-    volume: [],
-    anomalies: [],
-    recommendations: [],
-    opportunities: [],
-    qualifications: [],
-    definitions: [],
-    risks: [],
-    incidents: [],
+    quotes: [] as SupervisionRow[],
+    missions: [] as SupervisionRow[],
+    users: [] as SupervisionRow[],
+    volume: [] as SupervisionRow[],
+    anomalies: [] as SupervisionRow[],
+    recommendations: [] as SupervisionRow[],
+    opportunities: [] as SupervisionRow[],
+    qualifications: [] as SupervisionRow[],
+    definitions: [] as SupervisionRow[],
+    risks: [] as SupervisionRow[],
+    incidents: [] as SupervisionRow[],
   };
 }
 
@@ -270,6 +275,7 @@ export function buildFranchiseSpaceBoard(input: {
       status: item.severity,
       next: item.metricCode ?? item.status,
       tone: item.severity === "CRITICAL" ? "peach" as const : item.severity === "WARNING" ? "violet" as const : "sky" as const,
+      href: `/${locale}/franchise/qualite${q}`,
     })),
     ...(input.operations?.anomalies ?? []).map((item) => ({
       id: item.id,
@@ -278,6 +284,7 @@ export function buildFranchiseSpaceBoard(input: {
       status: item.severity,
       next: item.status,
       tone: item.severity === "CRITICAL" || item.severity === "HIGH" ? "peach" as const : "violet" as const,
+      href: `/${locale}/franchise/qualite/anomalies${q}`,
     })),
   ];
   const performance = objectives.map((item) => ({
@@ -295,13 +302,27 @@ export function buildFranchiseSpaceBoard(input: {
       ? `/${locale}/franchise/fournisseurs/${prospect.id}${q}`
       : prospect?.type === "CLIENT"
         ? `/${locale}/franchise/demandes/${prospect.id}${q}`
-        : `/${locale}/franchise/relances${q}`;
+        : `/${locale}/franchise/fournisseurs${q}`;
+    const dueAt = item.nextFollowupAt ?? null;
+    const dueMs = dueAt ? Date.parse(dueAt) : Number.NaN;
+    const now = Date.now();
+    const startOfToday = new Date();
+    startOfToday.setUTCHours(0, 0, 0, 0);
+    const endOfToday = new Date(startOfToday);
+    endOfToday.setUTCDate(endOfToday.getUTCDate() + 1);
+    let tone: FranchiseSpaceBoardData["followups"][number]["tone"] = "sky";
+    if (Number.isFinite(dueMs)) {
+      if (dueMs < startOfToday.getTime()) tone = "peach";
+      else if (dueMs < endOfToday.getTime()) tone = "violet";
+      else tone = "sky";
+    }
+    void now;
     return {
       id: "id" in item && typeof item.id === "string" ? item.id : String(index),
       title: "displayName" in item ? item.displayName : "",
-      due: (item.nextFollowupAt ?? "").slice(0, 10) || "—",
+      due: (dueAt ?? "").slice(0, 10) || "—",
       action: c.contact,
-      tone: (tones[index % tones.length] ?? "sky") as FranchiseSpaceBoardData["followups"][number]["tone"],
+      tone,
       href,
     };
   });
@@ -540,14 +561,19 @@ export function buildFranchiseSpaceBoard(input: {
   ].filter((item): item is NonNullable<typeof item> => Boolean(item));
   const live: FranchiseSpaceBoardData = {
     ...empty,
-    treat: treat.length ? treat : empty.treat,
+    treat,
     attention: [
       ...quality.slice(0, 2).map((item) => ({ id: item.id, title: item.title, href: `/${locale}/franchise/qualite${q}` })),
       ...followups.slice(0, 2).map((item) => ({ id: item.id, title: item.title, href: `/${locale}/franchise/relances${q}` })),
     ],
     perimeter: {
       territory,
-      domains: input.libraryName ?? input.governance?.franchises[0]?.libraryCode ?? empty.perimeter.domains,
+      domains: input.libraryName
+        ?? (input.locale === "ar"
+          ? input.governance?.franchises[0]?.libraryNameAr
+          : input.governance?.franchises[0]?.libraryNameFr)
+        ?? input.governance?.franchises[0]?.libraryCode
+        ?? empty.perimeter.domains,
       mandate: franchise && "operatorCode" in franchise ? franchise.operatorCode : empty.perimeter.mandate,
       status: input.governance?.franchises[0]?.status ?? (franchise ? "ACTIVE" : empty.perimeter.status),
     },
@@ -581,7 +607,14 @@ export function buildFranchiseSpaceBoard(input: {
   };
   const hasLive = people.length + requests.length + quality.length + performance.length + followups.length + decisions.length + mandates.length + finance.length + corrective.length + quotes.length + missions.length + anomalies.length + users.length + volume.length + definitions.length + incidents.length > 0
     || (territory !== "—" && territory.length > 1);
-  if (hasLive) return live;
-  if (canApplyFranchiseSpaceDemo()) return demoFranchiseSpaces(locale, q);
-  return live;
+  if (!hasLive && canApplyFranchiseSpaceDemo()) return demoFranchiseSpaces(locale, q);
+  if (!canApplyFranchiseSpaceDemo()) return live;
+  const demo = demoFranchiseSpaces(locale, q);
+  return {
+    ...live,
+    documents: live.documents.length ? live.documents : demo.documents,
+    renewals: live.renewals.length ? live.renewals : demo.renewals,
+    messages: live.messages.length ? live.messages : demo.messages,
+    notifications: live.notifications.length ? live.notifications : demo.notifications,
+  };
 }
