@@ -186,7 +186,7 @@ async function main() {
           values(${id(`${org}:company:v1`)}::uuid,${org}::uuid,1,'VERIFIED','SIGNED',clock_timestamp()+interval '1 year','Société de démonstration vérifiée','DEMO-QUAL-V1',${adminUser}::uuid,${id(`${org}:company:correlation`)}::uuid)
           on conflict(provider_organization_id,decision_version) do nothing`;
         await tx`insert into public.provider_match_profiles(provider_organization_id,company_verified,documents_valid,financial_status,quality_status,capacity_status,region_codes,partner_contract_signed)
-          values(${org}::uuid,true,true,'OK','OK','AVAILABLE',${tx.array(["CASABLANCA"])}::text[],true)
+          values(${org}::uuid,true,true,'OK','OK','AVAILABLE',${tx.array(["CASABLANCA_SETTAT"])}::text[],true)
           on conflict(provider_organization_id) do update set company_verified=true,documents_valid=true,financial_status='OK',quality_status='OK',capacity_status='AVAILABLE',region_codes=excluded.region_codes,partner_contract_signed=true`;
         await tx`insert into public.provider_service_match_profiles(id,provider_organization_id,service_id,qualification_status,required_certifications_valid,service_fit_score,quality_score,historical_delay_score,experience_score,satisfaction_score)
           values(${id(`${org}:service-match`)}::uuid,${org}::uuid,${request.service_id}::uuid,'APPROVED',true,80,80,80,80,80)
@@ -226,7 +226,7 @@ async function main() {
         }
       }
       await tx`insert into public.service_request_versions(id,request_id,client_organization_id,library_id,version_number,description,urgency,currency_code,required_quote_data,required_fields_complete,catalog_snapshot_hash,questionnaire_snapshot_hash,change_reason,content_hash,created_by)
-        values(${requestVersion}::uuid,${request.id}::uuid,${request.client_organization_id}::uuid,${request.library_id}::uuid,2,'Demande de démonstration IT ouverte aux prestataires de Casablanca.','NORMAL','MAD',${tx.json({ region_code: "CASABLANCA" })},true,${digest(`${request.id}:catalog:v2`)},${digest(`${request.id}:questionnaire:v2`)},'Ouverture de la démonstration',${digest(`${requestVersion}:content`)},${clientUser}::uuid)
+        values(${requestVersion}::uuid,${request.id}::uuid,${request.client_organization_id}::uuid,${request.library_id}::uuid,2,'Demande de démonstration IT ouverte aux prestataires de Casablanca.','NORMAL','MAD',${tx.json({ region_code: "CASABLANCA_SETTAT" })},true,${digest(`${request.id}:catalog:v2`)},${digest(`${request.id}:questionnaire:v2`)},'Ouverture de la démonstration',${digest(`${requestVersion}:content`)},${clientUser}::uuid)
         on conflict(request_id,version_number) do nothing`;
       await tx`update public.service_requests set current_version_id=${requestVersion}::uuid, updated_at=clock_timestamp(), row_version=row_version+1
         where id=${request.id}::uuid and current_version_id is distinct from ${requestVersion}::uuid`;

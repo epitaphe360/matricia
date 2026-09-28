@@ -7,6 +7,7 @@ import { Button } from "@/modules/shared/ui/button";
 import { Input } from "@/modules/shared/ui/input";
 import { Textarea } from "@/modules/shared/ui/textarea";
 import { spaceCopy } from "@/modules/client/data/spaces/copy";
+import { moroccoRegionLabel, moroccoRegions } from "@/modules/shared/lib/geo/morocco-regions";
 import type { ClientRfqMessages } from "./messages";
 import { createRequestAction, type ActionState } from "./actions";
 
@@ -136,8 +137,13 @@ export function RequestForm({
                   <option value="CRITICAL">{messages.urgencies.CRITICAL}</option>
                 </select>
               </Field>
-              <Field label={messages.region}>
-                <Input name="regionCode" required dir="ltr" defaultValue={context.regionCode} />
+              <Field label={messages.region} required>
+                <select name="regionCode" required defaultValue={context.regionCode ?? ""}>
+                  <option value="" disabled>{messages.chooseRegion}</option>
+                  {moroccoRegions.map((region) => (
+                    <option key={region.code} value={region.code}>{moroccoRegionLabel(region.code, locale)}</option>
+                  ))}
+                </select>
               </Field>
             </div>
           </div>

@@ -1,3 +1,13 @@
+## 2026-09-28 — Besoin → demande → matching conforme au Gold Master V4
+
+- La demande créée depuis un besoin reprend les réponses du besoin. Le serveur calcule si les informations obligatoires pour les devis sont réunies. Sinon, la demande passe en « Informations requises » et le client ne complète que ce qui manque. Chaque complément crée une nouvelle version immuable, figée avant le matching.
+- Région choisie parmi les 12 régions officielles (FR/AR). Date limite choisie avec un sélecteur, en heure du Maroc. Panel de 10 prestataires au minimum.
+- L’essai de 30 jours bloque les nouvelles demandes dès sa date de fin, même sans traitement planifié.
+- Le diagnostic public revient directement à l’étape d’enregistrement après connexion.
+- Vérification : `tsc` sans erreur dans le code source (seule erreur dans `.next/dev/types`, fichier généré). Vitest : 269 fichiers, 1080 tests verts. Test SQL `0170` écrit mais **non exécuté**.
+- Migration `20260928120000_need_request_quote_completeness.sql` appliquée le 2026-09-28 par l’utilisateur dans l’éditeur SQL Supabase : les 5 fonctions sont présentes. Test pgTAP `0170` pas encore exécuté.
+- **Prochaine étape** : exécuter le test pgTAP `0170`. Ajouter un écran pour que les prestataires ou l’administration renseignent les régions d’intervention (RFQ-REGION-001).
+
 ## 2026-09-28 — Administration : plus d’UUID, de JSON ni d’empreinte à saisir
 
 - Command center : l’action contrôlée se demande en choisissant un dossier ouvert. Le serveur relit le dossier sous RLS, en déduit l’organisation et la ressource, et calcule l’empreinte SHA-256 et le résumé. Les identifiants envoyés par le navigateur sont ignorés.

@@ -552,7 +552,7 @@ export function SaveView({
   const completeAnswers = questionIds.every((id) => answers[id] !== undefined);
 
   if (!authenticated) {
-    const resumeHref = `/${locale}/diagnostic`;
+    const resumeHref = `/${locale}/diagnostic?reprendre=enregistrer`;
     const signupHref = connexionHref(locale, { mode: "inscription", role: "client", next: resumeHref });
     const loginHref = connexionHref(locale, { next: resumeHref });
     return (

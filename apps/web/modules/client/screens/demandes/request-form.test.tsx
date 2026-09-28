@@ -22,7 +22,7 @@ describe("guided client request form", () => {
   });
 
   it("converts a confirmed need without exposing catalog identifiers", () => {
-    const html = renderToStaticMarkup(<RequestForm locale="fr" messages={getClientRfqMessages("fr")} context={{ source: "need", intakeId: "33333333-3333-4333-8333-333333333333", serviceCode: "IT-AUDIT-SI", organizationId: "22222222-2222-4222-8222-222222222222", organizationName: "Entreprise Test", serviceName: "Audit du SI", title: "Audit du SI", description: "Sécuriser le réseau du bureau.", regionCode: "MA-CASABLANCA" }} />);
+    const html = renderToStaticMarkup(<RequestForm locale="fr" messages={getClientRfqMessages("fr")} context={{ source: "need", intakeId: "33333333-3333-4333-8333-333333333333", serviceCode: "IT-AUDIT-SI", organizationId: "22222222-2222-4222-8222-222222222222", organizationName: "Entreprise Test", serviceName: "Audit du SI", title: "Audit du SI", description: "Sécuriser le réseau du bureau.", regionCode: "CASABLANCA_SETTAT" }} />);
     for (const field of ["libraryId", "serviceId", "questionnaireVersionId", "catalogSnapshotHash", "questionnaireSnapshotHash", "opportunityId"]) expect(html).not.toContain(`name="${field}"`);
     expect(html).toContain('name="intakeId"');
     expect(html).toContain('name="serviceCode"');

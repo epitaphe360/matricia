@@ -9,6 +9,8 @@ import { formatMinorExact } from "@/modules/client/data/rfq/model";
 import { createServerClientRfqRepository } from "@/modules/client/data/rfq/server-repository";
 import { getClientRfqMessages } from "@/modules/client/screens/demandes/messages";
 import { WorkflowActions } from "@/modules/client/screens/demandes/workflow-actions";
+import { loadQuoteInformation } from "@/modules/client/screens/demandes/quote-information";
+import { QuoteInformationForm } from "@/modules/client/screens/demandes/quote-information-form";
 import { MatchingHistory } from "@/modules/client/screens/demandes/request-id/matching-history";
 import { ClientAppShell } from "@/modules/client/ui/client-app-shell";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
@@ -29,6 +31,8 @@ export default async function RequestDetailPage({
   if (result.status === "error" || !result.value) notFound();
   const q = result.value;
   const messages = getClientRfqMessages(locale);
+  const editable = q.status === "DRAFT" || q.status === "INFORMATION_REQUIRED";
+  const information = q.canManage && editable ? await loadQuoteInformation(q.id, locale) : null;
   const c = spaceCopy(locale);
   const compareHref = q.rfqId
     ? `/${locale}/client/demandes/${q.id}/offres?rfq=${q.rfqId}${space.selectedOrganizationId ? `&organizationId=${space.selectedOrganizationId}` : ""}`
@@ -51,10 +55,20 @@ export default async function RequestDetailPage({
           {q.rfqId ? <Link href={compareHref} className="client-cta mt-4 inline-flex">{messages.comparison}</Link> : null}
         </article>
         <MatchingHistory locale={locale} runs={q.matchingHistory} />
+        {q.canManage && editable ? (
+          <section className="client-card" aria-labelledby="complete-information">
+            <h2 id="complete-information">{messages.completeTitle}</h2>
+            {information ? (
+              <QuoteInformationForm locale={locale} information={information} messages={messages} idempotencyKey={randomUUID()} />
+            ) : (
+              <p role="status">{messages.completeUnavailable}</p>
+            )}
+          </section>
+        ) : null}
         {q.canManage ? (
           <section className="client-card" aria-labelledby="workflow">
             <h2 id="workflow">{messages.workflow}</h2>
-            <WorkflowActions locale={locale} requestId={q.id} rowVersion={q.rowVersion} status={q.status} matchingRunId={q.matchingRunId} messages={messages} keys={{ ready: randomUUID(), match: randomUUID(), open: randomUUID() }} />
+            <WorkflowActions locale={locale} requestId={q.id} rowVersion={information?.rowVersion ?? q.rowVersion} status={q.status} canMarkReady={Boolean(information?.complete && information.regionCode)} matchingRunId={q.matchingRunId} messages={messages} keys={{ ready: randomUUID(), match: randomUUID(), open: randomUUID() }} />
           </section>
         ) : (
           <p role="status" className="client-card">{messages.readOnly}</p>

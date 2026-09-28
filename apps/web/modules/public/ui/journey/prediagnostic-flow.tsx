@@ -48,7 +48,7 @@ function convertLegacy(raw: string, locale: Locale): Stored | null {
   } catch { return null; }
 }
 
-export function PrediagnosticFlow({ locale, organizations = [], authenticated = false, saveAction }: { locale: Locale; organizations?: OrganizationOption[]; authenticated?: boolean; saveAction?: (state: SaveState, data: FormData) => Promise<SaveState> }) {
+export function PrediagnosticFlow({ locale, organizations = [], authenticated = false, resumeSave = false, saveAction }: { locale: Locale; organizations?: OrganizationOption[]; authenticated?: boolean; resumeSave?: boolean; saveAction?: (state: SaveState, data: FormData) => Promise<SaveState> }) {
   const copy = getPublicJourneyCopy(locale).diagnostic;
   const router = useRouter();
   const [state, setState] = useState<Stored>(initial);
@@ -82,13 +82,13 @@ export function PrediagnosticFlow({ locale, organizations = [], authenticated = 
         }
         if (restored) {
           setState(restored);
-          if (restored.step >= questionIds.length) setPhase("result");
+          if (restored.step >= questionIds.length) setPhase(resumeSave ? "save" : "result");
         }
       } catch { setStorageAvailable(false); }
       setLoaded(true);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [locale]);
+  }, [locale, resumeSave]);
 
   useEffect(() => {
     if (!loaded || !storageAvailable) return;
