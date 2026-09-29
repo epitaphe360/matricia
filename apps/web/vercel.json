@@ -18,6 +18,10 @@
       "schedule": "15 4 * * 1"
     },
     {
+      "path": "/api/workers/marketing-frequency",
+      "schedule": "45 4 * * 1"
+    },
+    {
       "path": "/api/workers/franchise-digests?limit=50",
       "schedule": "*/15 * * * *"
     },

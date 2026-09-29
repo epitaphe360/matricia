@@ -25,6 +25,20 @@ const MANAGE_ROLES=new Set(["CLIENT_OWNER","CLIENT_ADMIN","PROVIDER_OWNER","PROV
 export type MarketingLoadResult={status:"success";dashboard:MarketingDashboard}|{status:"error";reason:"UNAUTHENTICATED"|"FORBIDDEN"|"QUERY_FAILED"|"INVALID_RESPONSE"};
 function parsed<T>(schema:z.ZodType<T>,data:unknown){const result=z.array(schema).safeParse(data);return result.success?result.data:null;}
 
+/** Restricts a loaded dashboard to one organization, as shown in a Provider or Franchise workspace. */
+export function scopeMarketingDashboard(dashboard:MarketingDashboard,organizationId:string):MarketingDashboard{
+  const campaignIds=new Set(dashboard.campaigns.filter(v=>v.organizationId===organizationId).map(v=>v.id)),calendarIds=new Set(dashboard.calendars.filter(v=>v.organizationId===organizationId).map(v=>v.id));
+  return{...dashboard,organizations:dashboard.organizations.filter(v=>v.id===organizationId),consents:dashboard.consents.filter(v=>v.organizationId===organizationId),brandVersions:dashboard.brandVersions.filter(v=>v.organizationId===organizationId),connections:dashboard.connections.filter(v=>v.organizationId===organizationId),socialAccounts:dashboard.socialAccounts.filter(v=>v.organizationId===organizationId),scheduleRules:dashboard.scheduleRules.filter(v=>v.organizationId===organizationId),campaigns:dashboard.campaigns.filter(v=>v.organizationId===organizationId),contents:dashboard.contents.filter(v=>campaignIds.has(v.campaignId)),calendars:dashboard.calendars.filter(v=>v.organizationId===organizationId),calendar:dashboard.calendar.filter(v=>calendarIds.has(v.calendarId)),exceptions:dashboard.exceptions.filter(v=>v.organizationId===organizationId),performance:dashboard.performance.filter(v=>campaignIds.has(v.campaignId)),performanceDimensions:dashboard.performanceDimensions.filter(v=>v.organizationId===organizationId)};
+}
+
+/** Loads the dashboard of one workspace organization; it must be among the organizations the user may manage. */
+export async function loadWorkspaceMarketingDashboard(organizationId:string|null):Promise<MarketingLoadResult|{status:"error";reason:"NO_ORGANIZATION"}>{
+  if(!organizationId||!id.safeParse(organizationId).success)return{status:"error",reason:"NO_ORGANIZATION"};
+  const result=await loadMarketingDashboard();if(result.status==="error")return result;
+  if(!result.dashboard.organizations.some(v=>v.id===organizationId))return{status:"error",reason:"FORBIDDEN"};
+  return{status:"success",dashboard:scopeMarketingDashboard(result.dashboard,organizationId)};
+}
+
 export async function loadMarketingDashboard():Promise<MarketingLoadResult>{
   const access=await loadMyPlatformAccess();if(access.status==="error")return{status:"error",reason:access.reason};
   const client=access.client;

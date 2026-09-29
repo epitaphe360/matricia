@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
+import { recordMarketingFunnelEvent } from "@/modules/shared/lib/marketing-autopilot/funnel";
 
 const ownerRoles = ["CLIENT_OWNER", "PROVIDER_OWNER", "FRANCHISE_OWNER"] as const;
 
@@ -76,5 +77,6 @@ export async function createOrRequestOrganization(
   if (outcome !== "ORGANIZATION_CREATED" && outcome !== "ACCESS_REQUESTED") {
     return { status: "error", reason: "UNAVAILABLE" };
   }
+  if (outcome === "ORGANIZATION_CREATED") await recordMarketingFunnelEvent("REGISTRATION_STARTED", user.id);
   return { status: "success", outcome };
 }

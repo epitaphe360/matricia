@@ -23,6 +23,7 @@ const routeByActive: Record<ProviderNavKey, string> = {
   disputes: "sous-traitant/litiges",
   purchases: "sous-traitant/achats",
   reputation: "sous-traitant/reputation",
+  marketing: "sous-traitant/marketing",
   messages: "sous-traitant/messages",
   modeClient: "sous-traitant/mode-client",
   company: "sous-traitant/entreprise",

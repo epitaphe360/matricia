@@ -6,6 +6,7 @@ import { z } from "zod";
 import { createServerDiagnosticsRepository } from "@/modules/shared/lib/diagnostics-opportunities/server-repository";
 import { uuid } from "@/modules/shared/lib/diagnostics-opportunities/model";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
+import { recordMarketingFunnelEvent } from "@/modules/shared/lib/marketing-autopilot/funnel";
 
 export type State = {
   status: "idle" | "success" | "error";
@@ -48,8 +49,9 @@ export async function completeLatestAction(_: State, f: FormData): Promise<State
     correlationId: randomUUID(),
   });
   if (result.status === "error") return { status: "error", reason: "COMMAND" };
+  await recordMarketingFunnelEvent("OPPORTUNITY_CREATED", latestSession.id);
   revalidatePath(`/${parsed.data.locale}/client/diagnostics`);
   return { status: "success" };
 }
-export async function completeAction(_:State,f:FormData):Promise<State>{const p=base.extend({sessionId:uuid,serviceId:uuid,confirmSnapshot:z.literal("CONFIRMED")}).safeParse(values(f));if(!p.success)return{status:"error",reason:"VALIDATION"};const r=await(await createServerDiagnosticsRepository()).complete({sessionId:p.data.sessionId,serviceId:p.data.serviceId,idempotencyKey:p.data.idempotencyKey,correlationId:randomUUID()});if(r.status==="error")return{status:"error",reason:"COMMAND"};revalidatePath(`/${p.data.locale}/client/diagnostics`);return{status:"success"}}
+export async function completeAction(_:State,f:FormData):Promise<State>{const p=base.extend({sessionId:uuid,serviceId:uuid,confirmSnapshot:z.literal("CONFIRMED")}).safeParse(values(f));if(!p.success)return{status:"error",reason:"VALIDATION"};const r=await(await createServerDiagnosticsRepository()).complete({sessionId:p.data.sessionId,serviceId:p.data.serviceId,idempotencyKey:p.data.idempotencyKey,correlationId:randomUUID()});if(r.status==="error")return{status:"error",reason:"COMMAND"};await recordMarketingFunnelEvent("OPPORTUNITY_CREATED",p.data.sessionId);revalidatePath(`/${p.data.locale}/client/diagnostics`);return{status:"success"}}
 export async function opportunityAction(_:State,f:FormData):Promise<State>{const p=base.extend({runId:uuid,opportunityId:uuid,action:z.enum(["ACCEPT","DEFER","REQUEST_RFQ","CLOSE"]),deferredUntil:z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/u),z.literal("")]),rowVersion:z.coerce.number().int().positive()}).safeParse(values(f));if(!p.success||(p.data.action==="DEFER"&&!p.data.deferredUntil))return{status:"error",reason:"VALIDATION"};const r=await(await createServerDiagnosticsRepository()).transition({opportunityId:p.data.opportunityId,action:p.data.action,deferredUntil:p.data.deferredUntil?`${p.data.deferredUntil}T23:59:59Z`:null,rowVersion:p.data.rowVersion,idempotencyKey:p.data.idempotencyKey,correlationId:randomUUID()});if(r.status==="error")return{status:"error",reason:"COMMAND"};revalidatePath(`/${p.data.locale}/client/diagnostics/${p.data.runId}`);return{status:"success"}}
