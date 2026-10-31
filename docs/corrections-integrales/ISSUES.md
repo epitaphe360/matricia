@@ -36,8 +36,8 @@ Branche `codex/audit-final-2026-09-15`, HEAD `a1e5752`. Aucun déploiement.
 
 ## Restant ouvert sur le parcours besoin → demande
 
-- **RFQ-REGION-001 (P1)** : aucun écran de l’application ne renseigne `provider_match_profiles.region_codes`. Seuls les scripts de démo et les tests le font. Un vrai prestataire est donc exclu du matching (`REGION_MISMATCH`) tant qu’un administrateur ne renseigne pas ses régions en base. Le script de démo a été aligné sur `CASABLANCA_SETTAT`.
-- **PUB-DIAG-004 (P3)** : un nouveau compte sans organisation Client est envoyé vers `/organisation`. Le retour automatique vers l’enregistrement du diagnostic n’est pas conservé à cette étape. Les réponses restent stockées dans le navigateur pendant 7 jours.
+- **RFQ-REGION-001 (P1) — corrigé et appliqué le 2026-10-08 (pgTAP `0172` 10/10)** : `/sous-traitant/qualification` propose les 12 régions officielles (FR/AR). La RPC `declare_provider_regions` vérifie le droit de gestion, valide les codes, est idempotente, versionne chaque déclaration dans `provider_region_versions` (immuable), met à jour `provider_match_profiles.region_codes`, puis audite et publie `ProviderRegionsDeclaredV1`. La migration `20261008100000_provider_intervention_regions.sql` a été appliquée par l’utilisateur ; un contrôle en lecture seule le confirme.
+- **PUB-DIAG-004 (P3) — corrigé le 2026-10-08** : le lien « Configurer mon organisation » transmet `next=/{locale}/diagnostic?reprendre=enregistrer`. La page `/organisation` n’accepte que ce chemin (liste blanche, même langue). Elle le conserve à travers la connexion. Une fois l’organisation Client créée, elle propose « Enregistrer mon diagnostic ».
 - La migration `20260928120000` a été exécutée le 2026-09-28 par l’utilisateur dans l’éditeur SQL Supabase. Les 5 fonctions sont présentes. Le test pgTAP `0170` n’a pas encore été exécuté.
 
 ## Non traité dans cette passe

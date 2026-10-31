@@ -69,6 +69,7 @@ const dictionaries = {
       requestedDescription: "Une organisation avec cet ICE existe déjà. Votre demande d’accès a été transmise sans créer de doublon ni divulguer ses informations.",
       submitAnother: "Effectuer une autre demande",
       continueOnboarding: "Continuer la conformité Client",
+      resumeDiagnostic: "Enregistrer mon diagnostic",
       errors: {
         legalName: "Saisissez une raison sociale de 2 à 200 caractères.",
         displayName: "Saisissez un nom affiché de 2 à 200 caractères.",
@@ -186,6 +187,7 @@ const dictionaries = {
       requestedDescription: "توجد مؤسسة مسجلة برقم ICE هذا. أُرسل طلب وصولك دون إنشاء نسخة مكررة ودون كشف معلوماتها.",
       submitAnother: "إرسال طلب آخر",
       continueOnboarding: "متابعة امتثال العميل",
+      resumeDiagnostic: "حفظ تشخيصي",
       errors: {
         legalName: "أدخل اسماً قانونياً يتكون من 2 إلى 200 حرف.",
         displayName: "أدخل اسماً معروضاً يتكون من 2 إلى 200 حرف.",

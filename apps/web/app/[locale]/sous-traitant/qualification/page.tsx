@@ -7,6 +7,8 @@ import { loadProviderDashboard } from "@/modules/provider/data/qualification/rep
 import { QualificationBoard } from "@/modules/provider/screens/spaces/boards";
 import { getProviderMessages } from "@/modules/provider/screens/qualification/messages";
 import { QualificationForms } from "@/modules/provider/screens/qualification/qualification-forms";
+import { RegionsForm } from "@/modules/provider/screens/qualification/regions-form";
+import { loadProviderRegions } from "@/modules/provider/data/qualification/regions-repository";
 import { ProviderActions, ProviderAppShell } from "@/modules/provider/ui/provider-app-shell";
 import { ProviderProfileRail } from "@/modules/provider/ui/provider-profile-rail";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
@@ -19,6 +21,7 @@ export default async function ProviderQualificationPage({ params, searchParams }
   const messages = getProviderMessages(locale);
   const result = await loadProviderDashboard();
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/qualification` }));
+  const regions = result.status === "success" ? await loadProviderRegions(result.dashboard.organizationId) : [];
   const c = providerCopy(locale);
   return (
     <ProviderAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="qualify" title={c.qualTitle} lead={c.qualLead} kicker={c.kicker} actions={<ProviderActions href="#qualification" label={c.completeFolder} />}>
@@ -33,7 +36,14 @@ export default async function ProviderQualificationPage({ params, searchParams }
             <AlertTitle>{result.reason === "NO_PROVIDER_ORGANIZATION" ? messages.noProvider : messages.loadError}</AlertTitle>
           </Alert>
         ) : (
-          <QualificationForms dashboard={result.dashboard} locale={locale} messages={messages} keys={{ profile: crypto.randomUUID(), service: crypto.randomUUID(), capacity: crypto.randomUUID(), document: crypto.randomUUID() }} />
+          <>
+            <QualificationForms dashboard={result.dashboard} locale={locale} messages={messages} keys={{ profile: crypto.randomUUID(), service: crypto.randomUUID(), capacity: crypto.randomUUID(), document: crypto.randomUUID() }} />
+            {regions === null ? (
+              <Alert variant="destructive" className="mt-6"><AlertTitle>{messages.regionsLoadError}</AlertTitle></Alert>
+            ) : result.dashboard.profile ? (
+              <div className="mt-6"><RegionsForm organizationId={result.dashboard.organizationId} locale={locale} messages={messages} current={regions} idempotencyKey={crypto.randomUUID()} /></div>
+            ) : null}
+          </>
         )}
       </details>
         </div>

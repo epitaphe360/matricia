@@ -28,8 +28,9 @@ Non exécutés : build de production, lint global, SQL/RLS, E2E Playwright, capt
 
 - Revue écran par écran des espaces Client, Prestataire et Franchisé selon le prompt maître.
 - Essai navigateur du Command center avec un compte administrateur et un dossier ouvert.
-- Migration `20260928120000_need_request_quote_completeness.sql` : appliquée le 2026-09-28 par l’utilisateur (éditeur SQL Supabase). Test pgTAP `0170` : pas encore exécuté.
-- Régions d’intervention des prestataires : aucun écran ne les renseigne (RFQ-REGION-001).
+- Migration `20260928120000_need_request_quote_completeness.sql` : appliquée le 2026-09-28 par l’utilisateur (éditeur SQL Supabase). Test pgTAP `0170` : 14/14 le 2026-10-08.
+- Régions d’intervention des prestataires (RFQ-REGION-001) : migration `20261008100000` appliquée le 2026-10-08, pgTAP `0172` 10/10. Reste à essayer l’écran avec un vrai compte prestataire.
+- MFA administrateur : restauration `20260929110000` appliquée le 2026-10-08 (exigence `aal2` vérifiée en lecture seule).
 - Matrices routes, boutons, RBAC, flux de données, FR/AR et tests : non produites. Les écrire sans inventaire réel serait fictif.
 - Audit sécurité indépendant (RLS, IDOR, secrets) avant toute mise en production.
 

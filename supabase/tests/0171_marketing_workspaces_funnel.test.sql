@@ -18,9 +18,20 @@ select ok(has_function_privilege('service_role','public.apply_marketing_weekly_f
 select isnt_empty($$select 1 from pg_get_functiondef('public.apply_marketing_weekly_frequency_v1(date,text,uuid)'::regprocedure)d where d like'%AUTOPILOT%'and d like'%HUMAN_REVIEW_REQUIRED%'and d like'%begin_marketing_worker_command%'$$,'only AUTOPILOT campaigns are adjusted, idempotently; other recommendations wait for a human');
 select isnt_empty($$select 1 from pg_get_functiondef('public.apply_marketing_weekly_frequency_v1(date,text,uuid)'::regprocedure)d where d like'%audit_events%'and d like'%MarketingWeeklyFrequencyReviewedV1%'$$,'weekly frequency decisions are audited and outboxed');
 
+create temp table worker_denial(code text) on commit drop;
+grant insert on worker_denial to authenticated;
 set local role authenticated;
 set local request.jwt.claims='{"role":"authenticated","sub":"00000000-0000-4000-8000-000000000171"}';
-select throws_ok($$select public.apply_marketing_weekly_frequency_v1(date '2026-09-21','marketing-frequency:test')$$,'42501',null,'an authenticated user cannot run the weekly frequency worker');
+do $$
+begin
+  perform public.apply_marketing_weekly_frequency_v1(date '2026-09-21','marketing-frequency:test');
+  insert into worker_denial values ('ALLOWED');
+exception when others then
+  insert into worker_denial values (sqlstate);
+end
+$$;
+reset role;
+select is((select code from worker_denial),'42501','an authenticated user cannot run the weekly frequency worker');
 
 select * from finish();
 rollback;

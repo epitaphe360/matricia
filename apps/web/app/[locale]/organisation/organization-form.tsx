@@ -18,7 +18,7 @@ function SubmitButton({ pendingLabel, submitLabel }: { pendingLabel: string; sub
   return <Button className="min-h-11 w-full" type="submit" disabled={pending} aria-describedby="organization-form-status">{pending ? pendingLabel : submitLabel}</Button>;
 }
 
-export function OrganizationForm({ locale, idempotencyKey, defaultRole = "CLIENT_OWNER" }: { locale: Locale; idempotencyKey: string; defaultRole?: (typeof roleCodes)[number] }) {
+export function OrganizationForm({ locale, idempotencyKey, defaultRole = "CLIENT_OWNER", returnTo = null }: { locale: Locale; idempotencyKey: string; defaultRole?: (typeof roleCodes)[number]; returnTo?: string | null }) {
   const messages = getDictionary(locale).organization;
   const [state, formAction] = useActionState(createOrRequestOrganization, initialState);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -36,7 +36,9 @@ export function OrganizationForm({ locale, idempotencyKey, defaultRole = "CLIENT
           <p className="text-sm leading-6 text-muted-foreground">{created ? messages.createdDescription : messages.requestedDescription}</p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
-          {created && defaultRole === "CLIENT_OWNER" ? (
+          {created && defaultRole === "CLIENT_OWNER" && returnTo ? (
+            <Button asChild><Link href={returnTo}>{messages.resumeDiagnostic}</Link></Button>
+          ) : created && defaultRole === "CLIENT_OWNER" ? (
             <Button asChild><Link href={`/${locale}/client/onboarding`}>{messages.continueOnboarding}</Link></Button>
           ) : (
             <Button asChild><Link href={`/${locale}/tableau-de-bord`}>{messages.backToDashboard}</Link></Button>
