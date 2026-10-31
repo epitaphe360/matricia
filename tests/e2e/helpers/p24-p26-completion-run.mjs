@@ -21,7 +21,7 @@ const runToken = randomUUID();
 const outputDirectory = resolve(root, "artifacts", "test-results", `p24-p26-completion-${runToken}`);
 const authDirectory = resolve(root, "artifacts", "test-results", `.p24-p26-auth-${runToken}`);
 const smokeOnly = process.argv.includes("--authenticated-route-smoke-only");
-const expectedTests = smokeOnly ? 16 : 54;
+const expectedTests = smokeOnly ? 16 : 64;
 const smokeEvidencePath = resolve(root, "artifacts", "test-results", "authenticated-route-smoke-summary.json");
 
 const hash = (value) => createHash("sha256").update(value).digest("hex");
@@ -256,13 +256,14 @@ async function runPlaywright(config, fixture, roleFixture, statePaths) {
     E2E_P25_WORKFLOWS: JSON.stringify(roleFixture.workflows),
     E2E_P28_RUN_TOKEN: runToken,
     E2E_CRON_SECRET: hash(`${runToken}:cron`),
-    DELIVERY_PROOF_SCANNER_MODE: "SANDBOX",
+    E2E_DELIVERY_PROOF_SCANNER_MODE: "SANDBOX",
     E2E_MARKETING_CHAIN_FIXTURE: JSON.stringify({content:{organizationId:roleFixture.organizationId,campaignId:roleFixture.marketing.campaignId,serviceId:roleFixture.marketing.serviceId,libraryId:roleFixture.marketing.libraryId,language:"FR",serviceName:roleFixture.marketing.serviceName,valueProposition:"Une valeur structurée et vérifiable.",primaryCta:"Diagnostiquer",trackedUrl:"https://matricia.ma/diagnostic",approvedHashtags:["#Matricia"],templateKey:"PROBLEM_SOLUTION",sourceHash:roleFixture.marketing.sourceHash,idempotencyKey:randomUUID()},attribution:{organizationId:roleFixture.organizationId,campaignId:roleFixture.marketing.campaignId,contentId:null,eventType:"CTA_CLICKED",source:"linkedin",medium:"social",visitorHash:hash(`${runToken}:visitor`),economicValueMinor:null,occurredAt:new Date().toISOString(),metadata:{utm_campaign:"p24-e2e"},idempotencyKey:randomUUID()}}),
   });
   const specifications = smokeOnly ? [
     "tests/e2e/authenticated-route-smoke.spec.ts",
   ] : [
     "tests/e2e/p24-marketing-completion.spec.ts",
+    "tests/e2e/p29-marketing-workspaces.spec.ts",
     "tests/e2e/p25-client-provider-completion.spec.ts",
     "tests/e2e/p26-transversal-completion.spec.ts",
     "tests/e2e/p28-reputation-checklists.spec.ts",
@@ -337,8 +338,10 @@ async function main() {
     const statePaths = await copyAndVerifyStates(fixture);
     stage = "playwright";
     playwrightResult = await runPlaywright(config, fixture, roleFixture, statePaths);
-    stage = "storage-isolation";
-    await proveP25StorageIsolation(fixture.resources.database,roleFixture);
+    if (!smokeOnly) {
+      stage = "storage-isolation";
+      await proveP25StorageIsolation(fixture.resources.database, roleFixture);
+    }
     stage = "complete";
     console.log(`PASS P24-P26 authenticated E2E suite (${expectedTests} tests, zero skipped)`);
   } catch (error) {

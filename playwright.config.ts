@@ -40,5 +40,9 @@ export default defineConfig({
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
+        env: {
+          ...(process.env.E2E_CRON_SECRET ? { CRON_SECRET: process.env.E2E_CRON_SECRET } : {}),
+          ...(process.env.E2E_DELIVERY_PROOF_SCANNER_MODE === "SANDBOX" ? { DELIVERY_PROOF_SCANNER_MODE: "SANDBOX" } : {}),
+        },
       } }),
 });
