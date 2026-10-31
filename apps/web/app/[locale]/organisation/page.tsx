@@ -14,14 +14,17 @@ import { ConnectedAppShell } from "@/modules/shared/ui/connected-app-shell";
 import { listOrganizationRoles } from "@/app/[locale]/organisation/roles/actions";
 import { getRoleMessages } from "@/app/[locale]/organisation/roles/messages";
 import { OrganizationForm } from "./organization-form";
+import { organizationReturnPath } from "./return-path";
 
-export default async function OrganizationPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ role?: string; organizationId?: string }> }) {
+export default async function OrganizationPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ role?: string; organizationId?: string; next?: string }> }) {
   const { locale } = await params;
   const query = await searchParams;
   if (!isLocale(locale)) notFound();
+  const returnTo = organizationReturnPath(locale, query.next);
+  const selfHref = returnTo ? `/${locale}/organisation?role=client&next=${encodeURIComponent(returnTo)}` : `/${locale}/organisation`;
   const supabase = await getSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect(connexionHref(locale, { next: `/${locale}/organisation` }));
+  if (!user) redirect(connexionHref(locale, { next: selfHref }));
   const messages = getDictionary(locale).organization;
   const alternate = locale === "fr" ? "ar" : "fr";
   const defaultRole = query.role === "fournisseur" ? "PROVIDER_OWNER" : query.role === "franchise" ? "FRANCHISE_OWNER" : "CLIENT_OWNER";
@@ -47,7 +50,7 @@ export default async function OrganizationPage({ params, searchParams }: { param
     );
   }
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/organisation` }));
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: selfHref }));
   const c = spaceCopy(locale);
   const roles = await listOrganizationRoles();
   const roleMessages = getRoleMessages(locale);
@@ -78,9 +81,9 @@ export default async function OrganizationPage({ params, searchParams }: { param
       actions={<SpaceActions href="#modifier" label={c.editInfo} />}
     >
       <CompanyBoard locale={locale} query={space.selectedQuery} organizationName={space.organizationName} alternate={alternate} people={people} />
-      <details id="modifier" className="client-ops">
+      <details id="modifier" className="client-ops" open={returnTo ? true : undefined}>
         <summary>{c.opsOrg}</summary>
-        <OrganizationForm locale={locale} idempotencyKey={randomUUID()} defaultRole={defaultRole} />
+        <OrganizationForm locale={locale} idempotencyKey={randomUUID()} defaultRole={defaultRole} returnTo={returnTo} />
       </details>
     </ConnectedAppShell>
   );

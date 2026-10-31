@@ -94,7 +94,8 @@ describe("quatre espaces connectés — documentation et nav", () => {
     expect(buildClientNav({ locale: "fr", selectedQuery: "" }).some((item) => item.key === "contracts")).toBe(true);
     expect(buildClientNav({ locale: "fr", selectedQuery: "" }).some((item) => item.key === "actions")).toBe(true);
     expect(buildClientNav({ locale: "ar", selectedQuery: "" }).find((item) => item.key === "portfolio")?.label).toBe("المحفظة");
-    expect(buildProviderNav("fr", "")).toHaveLength(16);
+    expect(buildProviderNav("fr", "")).toHaveLength(17);
+    expect(buildProviderNav("ar", "").find((item) => item.key === "marketing")).toMatchObject({ label: "التسويق", href: "/ar/sous-traitant/marketing" });
     expect(buildProviderNav("fr", "").some((item) => item.key === "settings")).toBe(true);
     expect(buildProviderNav("fr", "").some((item) => item.key === "messages")).toBe(true);
     expect(buildProviderNav("fr", "").some((item) => item.key === "reputation")).toBe(true);
@@ -104,7 +105,8 @@ describe("quatre espaces connectés — documentation et nav", () => {
   it("aligne admin et franchisé sur buildAdminNav / buildFranchiseNav", () => {
     expect(buildAdminNav("fr", "")).toHaveLength(7);
     expect(buildAdminNav("fr", "").some((item) => item.href.includes("/administration/command-center"))).toBe(true);
-    expect(buildFranchiseNav("fr", "")).toHaveLength(16);
+    expect(buildFranchiseNav("fr", "")).toHaveLength(17);
+    expect(buildFranchiseNav("fr", "").find((item) => item.key === "marketing")).toMatchObject({ label: "Marketing", href: "/fr/franchise/marketing" });
     expect(buildFranchiseNav("fr", "").some((item) => item.href.includes("/franchise/finance"))).toBe(true);
     expect(buildFranchiseNav("fr", "").some((item) => item.href.includes("/franchise/accueil"))).toBe(true);
   });
@@ -163,6 +165,7 @@ describe("quatre espaces connectés — documentation et nav", () => {
       "sous-traitant/planning",
       "sous-traitant/litiges",
       "sous-traitant/achats",
+      "sous-traitant/marketing",
     ]) {
       expect(source(relative)).toContain("ProviderAppShell");
     }

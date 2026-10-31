@@ -2,6 +2,7 @@ import { createHmac,randomBytes,randomUUID,timingSafeEqual } from "node:crypto";
 import { isIP } from "node:net";
 import { z } from "zod";
 import { getSupabaseAdminClient } from "@/modules/shared/lib/supabase/admin";
+import { MARKETING_TOUCH_TTL_SECONDS, marketingChannel, marketingTouchCookie, marketingTouchVisitorHash, signMarketingTouch } from "@/modules/shared/lib/marketing-autopilot/funnel-touch";
 
 export const dynamic = "force-dynamic";
 const tokenSchema=z.string().regex(/^[0-9a-f]{128}$/);
@@ -32,5 +33,10 @@ export async function GET(request:Request,{params}:{params:Promise<{token:string
   const resolved=resultSchema.safeParse(result.data);if(!resolved.success)return Response.json({code:"CTA_UNAVAILABLE"},{status:503,headers:noStore});
   const destination=new URL(resolved.data.destination_url),source=new URL(request.url);
   if(destination.protocol!=="https:"||(destination.hostname===source.hostname&&destination.pathname.startsWith("/api/marketing/cta/")))return Response.json({code:"CTA_UNAVAILABLE"},{status:503,headers:noStore});
-  return new Response(null,{status:302,headers:{...noStore,location:destination.toString(),...(visitor.cookie?{"set-cookie":visitor.cookie}:{})}});
+  const touch={organizationId:resolved.data.organization_id,campaignId:resolved.data.campaign_id,contentId:resolved.data.content_id,nonce:visitor.nonce,source:marketingChannel(destination.searchParams.get("utm_source"),"matricia_cta"),medium:marketingChannel(destination.searchParams.get("utm_medium"),"social"),expiresAt:Date.now()+MARKETING_TOUCH_TTL_SECONDS*1000};
+  await getSupabaseAdminClient().rpc("ingest_marketing_attribution_event_v1",{p_organization_id:touch.organizationId,p_campaign_id:touch.campaignId,p_content_id:touch.contentId,p_event_type:"CTA_CLICKED",p_source:touch.source,p_medium:touch.medium,p_visitor_hash:marketingTouchVisitorHash(touch.nonce,secret),p_economic_value_minor:null,p_occurred_at:new Date().toISOString(),p_metadata:{},p_idempotency_key:`cta-click:${idempotencyKey}`}).then(()=>undefined,()=>undefined);
+  const headers=new Headers({...noStore,location:destination.toString()});
+  if(visitor.cookie)headers.append("set-cookie",visitor.cookie);
+  headers.append("set-cookie",marketingTouchCookie(signMarketingTouch(touch,secret)));
+  return new Response(null,{status:302,headers});
 }

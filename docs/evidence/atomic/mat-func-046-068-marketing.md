@@ -65,3 +65,14 @@ Autorité : Gold Master V4 FINAL. Audit ciblé sans chargement du catalogue des 
 - E2E P18 FR/AR mobile : 12/12 PASS (accès anonyme/redirection); mutation marketing authentifiée reste manquante.
 - Migration 158 appliquée uniquement sur Supabase development; dry-run final `upToDate: true`. Aucune production.
 - Audit indépendant SQL/RLS : PASS sans P0/P1; aucune promotion fonctionnelle globale au-delà des preuves ci-dessus.
+
+## Complément 2026-09-29
+
+| ID | Nouvelles preuves | Reste exact |
+|---|---|---|
+| 001 | Écrans Prestataire/Franchisé, Brand Kit prérempli (`brand-defaults*.ts`, test `brand-defaults-model.test.ts`), script démo 10+20 (`provision-marketing-demo.mjs`, test `marketing-demo-plan.test.ts`) | Script non exécuté ; E2E et visa indépendant absents. |
+| 004 | Validation globale ASSISTED pour les propriétaires Client/Prestataire/Franchisé (`20260929100000`, pgTAP `0171`) | Migration non appliquée, `0171` non exécuté, E2E absent. |
+| 006 | Cookie de touche signé et `CTA_CLICKED` (`api/marketing/cta/[token]/route.ts`), étapes inscription → diagnostic → opportunité → demande → contrat reliées (`funnel.ts`, tests `funnel*.test.ts`, `route.test.ts`) | Valeur économique du contrat non transmise (null) ; E2E absent. |
+| 008 | Filtres sans UUID (`dimension-labels.ts`, test `marketing-workspace.test.tsx`) ; fréquence hebdomadaire appliquée aux campagnes AUTOPILOT (`apply_marketing_weekly_frequency_v1`, worker `marketing-frequency`, test `route.test.ts`) | Migration non appliquée, E2E et visa indépendant absents. |
+
+Aucun identifiant n'est promu `VERIFIED` : il manque toujours l'E2E authentifié et l'audit indépendant.

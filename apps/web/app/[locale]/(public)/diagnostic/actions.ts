@@ -4,6 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
+import { recordMarketingFunnelEvent } from "@/modules/shared/lib/marketing-autopilot/funnel";
 
 const answersSchema = z.object({
   goals: z.array(z.enum(["save_time", "control_costs", "grow_sales", "secure_activity", "global_review"])).min(1).max(5),
@@ -32,6 +33,7 @@ export async function savePublicDiagnosticIntake(_: SaveIntakeState, formData: F
   if (result.error) return { status: "error", reason: result.error.code === "42501" ? "FORBIDDEN" : "UNAVAILABLE" };
   const response = z.object({ outcome: z.literal("PUBLIC_DIAGNOSTIC_INTAKE_SAVED"), intake_id: z.string().uuid(), status: z.literal("INDICATIVE") }).passthrough().safeParse(result.data);
   if (!response.success) return { status: "error", reason: "UNAVAILABLE" };
+  await recordMarketingFunnelEvent("DIAGNOSTIC_STARTED", response.data.intake_id);
   revalidatePath(`/${input.data.locale}/client/diagnostics`);
   return { status: "success", intakeId: response.data.intake_id };
 }

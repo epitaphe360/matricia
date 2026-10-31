@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { providerCapacityInputSchema, providerDocumentInputSchema, providerProfileInputSchema, providerServiceInputSchema } from "@/modules/provider/data/qualification/model";
+import { providerRegionsInputSchema } from "@/modules/provider/data/qualification/regions";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 import { validateProviderDocumentFile } from "./document-upload";
 
@@ -37,6 +38,12 @@ export async function requestProviderService(_: ProviderActionState,data:FormDat
 }
 export async function declareProviderCapacity(_:ProviderActionState,data:FormData):Promise<ProviderActionState>{
   if(!isLocale(text(data,"locale")))return{status:"error",reason:"VALIDATION"};const status=text(data,"capacityStatus");const unitsRaw=text(data,"availableUnits");const parsed=providerCapacityInputSchema.safeParse({organizationId:text(data,"organizationId"),serviceId:text(data,"serviceId")||null,capacityStatus:status,availableUnits:status==="PAUSED"?null:Number(unitsRaw),leadTimeDays:Number(text(data,"leadTimeDays")),reason:text(data,"reason"),idempotencyKey:text(data,"idempotencyKey")});if(!parsed.success)return{status:"error",reason:"VALIDATION"};const v=parsed.data;return rpc("declare_provider_capacity",{p_provider_organization_id:v.organizationId,p_service_id:v.serviceId,p_capacity_status:v.capacityStatus,p_available_units:v.availableUnits,p_lead_time_days:v.leadTimeDays,p_reason:v.reason,p_idempotency_key:v.idempotencyKey});
+}
+export async function declareProviderRegions(_:ProviderActionState,data:FormData):Promise<ProviderActionState>{
+  if(!isLocale(text(data,"locale")))return{status:"error",reason:"VALIDATION"};
+  const parsed=providerRegionsInputSchema.safeParse({organizationId:text(data,"organizationId"),regionCodes:data.getAll("regionCodes").map(String),reason:text(data,"reason"),idempotencyKey:text(data,"idempotencyKey")});
+  if(!parsed.success)return{status:"error",reason:"VALIDATION"};const v=parsed.data;
+  return rpc("declare_provider_regions",{p_provider_organization_id:v.organizationId,p_region_codes:v.regionCodes,p_reason:v.reason,p_idempotency_key:v.idempotencyKey});
 }
 export async function recordProviderDocument(_:ProviderActionState,data:FormData):Promise<ProviderActionState>{
   if(!isLocale(text(data,"locale")))return{status:"error",reason:"VALIDATION"};

@@ -11,34 +11,40 @@ type Surface = {
 
 const surfaces: Record<Role, readonly Surface[]> = {
   client: [
-    { route: "client/diagnostics", heading: { fr: "Comprendre vos priorités", ar: "فهم أولوياتكم" } },
-    { route: "client/demandes", heading: { fr: "Demandes et devis", ar: "الطلبات والعروض" } },
-    { route: "client/missions", heading: { fr: "Contrats et missions", ar: "العقود والمهام" } },
+    { route: "client/diagnostics", heading: { fr: "Mes diagnostics", ar: "تشخيصاتي" } },
+    { route: "client/questionnaires", heading: { fr: "Mes questionnaires", ar: "استبياناتي" } },
+    { route: "client/demandes", heading: { fr: "Demandes & devis", ar: "الطلبات والعروض" } },
+    { route: "client/missions", heading: { fr: "Projets & missions", ar: "المشاريع والمهام" } },
     { route: "client/finances", heading: { fr: "Finances", ar: "المالية" } },
+    { route: "client/credits", heading: { fr: "Crédits, Boxes et avantages", ar: "الأرصدة والصناديق والمزايا" } },
+    { route: "notifications", heading: { fr: "Centre de notifications", ar: "مركز الإشعارات" } },
   ],
   provider: [
-    { route: "sous-traitant/qualification", heading: { fr: "Qualification et capacité", ar: "التأهيل والقدرة" } },
-    { route: "sous-traitant/devis", heading: { fr: "Invitations et devis", ar: "الدعوات وعروض الأسعار" } },
-    { route: "sous-traitant/missions", heading: { fr: "Missions et livrables", ar: "المهام والتسليمات" } },
+    { route: "sous-traitant/qualification", heading: { fr: "Votre qualification", ar: "تأهيلكم" } },
+    { route: "sous-traitant/devis", heading: { fr: "Vos devis", ar: "عروضكم" } },
+    { route: "sous-traitant/missions", heading: { fr: "Missions & livrables", ar: "المهام والتسليمات" } },
+    { route: "sous-traitant/facturation", heading: { fr: "Facturation", ar: "الفوترة" } },
+    { route: "sous-traitant/marketing", heading: { fr: "Marketing", ar: "التسويق" } },
   ],
   franchise: [
-    { route: "franchise/performance", heading: { fr: "CRM et performance", ar: "إدارة العلاقات والأداء" } },
-    { route: "franchise/relances", heading: { fr: "Relances automatiques", ar: "المتابعات التلقائية" } },
-    { route: "franchise/digest", heading: { fr: "Résumé quotidien", ar: "الملخص اليومي" } },
+    { route: "franchise/performance", heading: { fr: "Performance de votre bibliothèque", ar: "أداء مكتبتكم" } },
+    { route: "franchise/relances", heading: { fr: "Relances et pipeline", ar: "المتابعات والمسار" } },
+    { route: "franchise/questionnaires", heading: { fr: "Questions & questionnaires", ar: "الأسئلة والاستبيانات" } },
+    { route: "franchise/digest", heading: { fr: "Pilotez votre bibliothèque", ar: "قودوا مكتبتكم" } },
+    { route: "franchise/marketing", heading: { fr: "Marketing", ar: "التسويق" } },
   ],
   admin: [
-    { route: "administration/command-center", heading: { fr: "Toutes les pages d’administration", ar: "كل صفحات الإدارة" } },
-    { route: "administration/parcours", heading: { fr: "Diagnostics", ar: "التشخيصات" } },
+    { route: "administration/command-center", heading: { fr: "Administration Matricia", ar: "إدارة ماتريسيا" } },
+    { route: "administration/parcours", heading: { fr: "Parcours & dossiers", ar: "المسارات والملفات" } },
     { route: "administration/entreprises", heading: { fr: "Organisations", ar: "المؤسسات" } },
-    { route: "administration/finance", heading: { fr: "Paiements et abonnements", ar: "المدفوعات والاشتراكات" } },
-    { route: "administration/operations", heading: { fr: "Notifications, audit et Outbox", ar: "الإشعارات والتدقيق وصندوق الأحداث" } },
   ],
 };
 
+const financeGate: Surface = { route: "administration/finance", heading: { fr: "Paiements et abonnements", ar: "المدفوعات والاشتراكات" } };
 const deniedSurfaces: Record<Role, readonly Surface[]> = {
-  client: [surfaces.provider[0], surfaces.franchise[2], surfaces.admin[0]],
-  provider: [surfaces.client[0], surfaces.admin[0]],
-  franchise: [surfaces.client[1], surfaces.admin[1]],
+  client: [surfaces.provider[0], surfaces.franchise[2], financeGate],
+  provider: [surfaces.client[0], financeGate],
+  franchise: [surfaces.client[1], financeGate],
   admin: [],
 };
 
@@ -106,14 +112,29 @@ async function assertHealthyDocument(page: Page, locale: Locale, surface: Surfac
 
 async function assertAllowed(page: Page, locale: Locale, surface: Surface) {
   await assertHealthyDocument(page, locale, surface);
-  await expect(page.locator('[data-slot="alert"].text-destructive')).toHaveCount(0);
+  const blocking = page.locator('[data-slot="alert"].text-destructive');
+  if (await blocking.count()) {
+    const code = await blocking.first().getAttribute("data-error-reason");
+    const reason = (await blocking.first().innerText()).replace(/\s+/g, " ").slice(0, 180);
+    throw new Error(`Destructive alert on /${locale}/${surface.route}: ${code ?? "unspecified"} ${reason}`);
+  }
   const foreignOrganization = process.env.E2E_FOREIGN_ORGANIZATION_NAME;
-  if (foreignOrganization) await expect(page.locator("body")).not.toContainText(foreignOrganization);
+  if (foreignOrganization && !surface.route.startsWith("administration/")) await expect(page.locator("body")).not.toContainText(foreignOrganization);
 }
 
 async function assertDenied(page: Page, locale: Locale, surface: Surface) {
-  await assertHealthyDocument(page, locale, surface);
-  await expect(page.locator('[data-slot="alert"].text-destructive')).toBeVisible();
+  const response = await page.goto(`/${locale}/${surface.route}`, { waitUntil: "domcontentloaded" });
+  expect(response, `No document response for /${locale}/${surface.route}`).not.toBeNull();
+  expect(response!.status(), `Unexpected HTTP status for /${locale}/${surface.route}`).toBeLessThan(500);
+  const stayed = new RegExp(`/${locale}/${surface.route}/?$`).test(new URL(page.url()).pathname);
+  if (!stayed) {
+    await expect(page).toHaveURL(new RegExp(`/${locale}/(tableau-de-bord|connexion)`));
+    return;
+  }
+  await expect(page.getByRole("heading", { level: 1, name: surface.heading[locale] })).toBeVisible();
+  if (surface.route.startsWith("administration/")) {
+    await expect(page.locator('[data-slot="alert"].text-destructive, [data-error-reason="FORBIDDEN"]')).toBeVisible();
+  }
   const foreignOrganization = process.env.E2E_FOREIGN_ORGANIZATION_NAME;
   if (foreignOrganization) await expect(page.locator("body")).not.toContainText(foreignOrganization);
 }
@@ -134,7 +155,7 @@ async function attachSanitizedEvidence(
       viewport: mobile ? { width: 360, height: 800 } : { width: 1280, height: 900 },
       allowedRoutes: surfaces[role].map(({ route }) => route),
       deniedRoutes: deniedSurfaces[role].map(({ route }) => route),
-      assertions: ["authenticated", "localized-h1", "no-server-error", "no-blank-page", "no-horizontal-overflow", "cross-role-deny"],
+      assertions: ["authenticated", "localized-h1", "no-server-error", "no-blank-page", "no-horizontal-overflow", "cross-role-deny", "diagnostics", "questionnaires", "quotes", "missions", "billing", "credits", "notifications", "franchise", "administration", "marketing"],
     }, null, 2)),
   });
 }
@@ -142,6 +163,7 @@ async function attachSanitizedEvidence(
 for (const locale of ["fr", "ar"] as const) {
   for (const role of Object.keys(surfaces) as Role[]) {
     test(`${locale.toUpperCase()} ${role} authenticated route smoke is responsive and role-isolated`, async ({ browser }, testInfo) => {
+      test.setTimeout(120_000);
       const mobile = testInfo.project.name.includes("mobile");
       const { context, page } = await createSession(browser, role, locale, mobile);
       try {

@@ -52,6 +52,7 @@ export function FranchiseAppShell({
     quality: "qualite",
     performance: "performance",
     followups: "relances",
+    marketing: "marketing",
     documents: "documents",
     messages: "messages",
     governance: "gouvernance",

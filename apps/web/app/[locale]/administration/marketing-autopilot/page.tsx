@@ -4,6 +4,7 @@ import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { loadMarketingGovernance } from "@/modules/shared/lib/marketing-autopilot/governance-repository";
+import { loadMarketingDimensionLabels } from "@/modules/shared/lib/marketing-autopilot/dimension-labels";
 import { loadMarketingDashboard } from "@/modules/shared/lib/marketing-autopilot/repository";
 import { GovernancePanel } from "@/modules/admin/screens/marketing-autopilot/governance-panel";
 import { MarketingPanel } from "@/modules/admin/screens/marketing-autopilot/marketing-panel";
@@ -39,6 +40,7 @@ export default async function MarketingAutopilotPage({ params }: { params: Promi
       keys[`approveCalendar:${value.id}`] = randomUUID();
     });
   }
+  const dimensionLabels = result.status === "success" ? await loadMarketingDimensionLabels(result.dashboard, locale) : {};
   return (
     <AdminModulePage locale={locale} active="pilot" path="marketing-autopilot" title={m.title} lead={m.subtitle}>
       {result.status === "error" ? (
@@ -49,7 +51,7 @@ export default async function MarketingAutopilotPage({ params }: { params: Promi
       ) : (
         <>
           <GovernancePanel dashboard={result.dashboard} data={governance ?? { authorizations: [], securityVersions: [], killSwitches: [] }} locale={locale} keys={keys} />
-          <MarketingPanel dashboard={result.dashboard} locale={locale} m={m} keys={keys} />
+          <MarketingPanel dashboard={result.dashboard} dimensionLabels={dimensionLabels} locale={locale} m={m} keys={keys} />
         </>
       )}
     </AdminModulePage>

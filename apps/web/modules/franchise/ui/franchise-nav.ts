@@ -1,4 +1,4 @@
-import { BellRing, BookOpen, Building2, ClipboardList, FileText, Home, Landmark, MessageSquare, Scale, ShieldCheck, Users } from "lucide-react";
+import { BellRing, BookOpen, Building2, ClipboardList, FileText, Home, Landmark, Megaphone, MessageSquare, Scale, ShieldCheck, Users } from "lucide-react";
 import type { ComponentType } from "react";
 import { libraryCopy } from "@/modules/franchise/data/library/copy";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
@@ -16,6 +16,7 @@ export type FranchiseNavKey =
   | "quality"
   | "performance"
   | "followups"
+  | "marketing"
   | "documents"
   | "messages"
   | "governance"
@@ -43,6 +44,7 @@ export function buildFranchiseNav(locale: Locale, selectedQuery: string): Franch
     { key: "quality", href: `/${locale}/franchise/qualite${selectedQuery}`, label: n.navQuality, icon: ShieldCheck },
     { key: "performance", href: `/${locale}/franchise/performance${selectedQuery}`, label: n.navPerformance, icon: Landmark },
     { key: "followups", href: `/${locale}/franchise/relances${selectedQuery}`, label: n.navFollowups, icon: BellRing },
+    { key: "marketing", href: `/${locale}/franchise/marketing${selectedQuery}`, label: n.navMarketing, icon: Megaphone },
     { key: "documents", href: `/${locale}/franchise/documents${selectedQuery}`, label: n.navDocuments, icon: FileText },
     { key: "messages", href: `/${locale}/franchise/messages${selectedQuery}`, label: n.navMessages, icon: MessageSquare },
     { key: "governance", href: `/${locale}/franchise/gouvernance${selectedQuery}`, label: n.navGovernance, icon: Building2 },

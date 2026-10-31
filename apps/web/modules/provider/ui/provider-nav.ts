@@ -7,6 +7,7 @@ import {
   FolderKanban,
   Home,
   Landmark,
+  Megaphone,
   MessageSquare,
   Package,
   Scale,
@@ -32,6 +33,7 @@ export type ProviderNavKey =
   | "disputes"
   | "purchases"
   | "reputation"
+  | "marketing"
   | "messages"
   | "modeClient"
   | "company"
@@ -60,6 +62,7 @@ export function buildProviderNav(locale: Locale, selectedQuery: string): Provide
     { key: "disputes", href: `/${locale}/sous-traitant/litiges${q}`, label: n.navDisputes, icon: Scale },
     { key: "purchases", href: `/${locale}/sous-traitant/achats${q}`, label: n.navPurchases, icon: Package },
     { key: "reputation", href: `/${locale}/sous-traitant/reputation${q}`, label: n.navReputation, icon: Award },
+    { key: "marketing", href: `/${locale}/sous-traitant/marketing${q}`, label: n.navMarketing, icon: Megaphone },
     { key: "messages", href: `/${locale}/sous-traitant/messages${q}`, label: n.navMessages, icon: MessageSquare },
     { key: "modeClient", href: `/${locale}/sous-traitant/mode-client${q}`, label: n.navModeClient, icon: ShoppingCart },
     { key: "company", href: `/${locale}/sous-traitant/entreprise${q}`, label: n.navCompany, icon: Building2 },

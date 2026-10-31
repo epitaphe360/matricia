@@ -103,7 +103,7 @@ function WorkCard({ item, locale, m, keys, enrichment }: { item: AdminWorkItem; 
       <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-2 xl:grid-cols-4">
         <div><dt className="text-muted-foreground">{locale === "ar" ? "الملف" : "Dossier"}</dt><dd>{orgName ?? (locale === "ar" ? "منصة" : "Plateforme")}</dd></div>
         <div><dt className="text-muted-foreground">{locale === "ar" ? "المسؤول" : "Responsable"}</dt><dd>{assignee ?? (locale === "ar" ? "غير معيّن" : "Non assigné")}</dd></div>
-        <div><dt className="text-muted-foreground">{m.due}</dt><dd dir="ltr">{new Intl.DateTimeFormat(dateLocale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(item.dueAt))}</dd></div>
+        <div><dt className="text-muted-foreground">{m.due}</dt><dd dir="ltr">{new Intl.DateTimeFormat(dateLocale, { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Casablanca" }).format(new Date(item.dueAt))}</dd></div>
         <div><dt className="text-muted-foreground">{locale === "ar" ? "الإجراء التالي" : "Prochaine action"}</dt><dd>{next}</dd></div>
       </dl>
       <div className="mt-3 flex flex-wrap gap-2">

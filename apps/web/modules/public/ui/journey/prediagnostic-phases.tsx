@@ -578,7 +578,7 @@ export function SaveView({
         <section className={styles.card}>
           <p className={styles.heroIntro}>{locale === "fr" ? "Votre compte n’a aucune organisation Client autorisée pour cet enregistrement." : "لا يحتوي حسابكم على مؤسسة عميلة مخولة لهذا الحفظ."}</p>
           <div className={styles.stackActions} style={{ maxWidth: 420 }}>
-            <Link className={styles.primaryWide} href={`/${locale}/organisation?role=client`}>{locale === "fr" ? "Configurer mon organisation" : "إعداد مؤسستي"}</Link>
+            <Link className={styles.primaryWide} href={`/${locale}/organisation?role=client&next=${encodeURIComponent(`/${locale}/diagnostic?reprendre=enregistrer`)}`}>{locale === "fr" ? "Configurer mon organisation" : "إعداد مؤسستي"}</Link>
             <button type="button" className={styles.secondaryWide} onClick={onBack}>{copy.backToResult}</button>
           </div>
         </section>
