@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { safeReturnPath } from "@/modules/shared/lib/auth/return-path";
 import { notFound, redirect } from "next/navigation";
 import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
@@ -11,7 +13,7 @@ import { SecurityBoard } from "@/modules/client/screens/spaces/security-board";
 import { listMySessions } from "@/app/[locale]/securite/sessions/actions";
 import { listOrganizationRoles } from "@/app/[locale]/organisation/roles/actions";
 import { getRoleMessages } from "@/app/[locale]/organisation/roles/messages";
-import { resolveClientSpace } from "@/modules/client/data/spaces/context";
+import { resolveConnectedSpace } from "@/modules/shared/lib/account-security/connected-space";
 
 function dateLabel(value: string | null, locale: "fr" | "ar") {
   if (!value) return "—";
@@ -26,19 +28,22 @@ export default async function AccountSecurityPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ organizationId?: string }>;
+  searchParams: Promise<{ organizationId?: string; next?: string }>;
 }) {
   const { locale } = await params;
   const query = await searchParams;
   if (!isLocale(locale)) notFound();
+  const nextPath = safeReturnPath(query.next,locale);
+  const selfPath = `/${locale}/securite/compte${nextPath ? `?${new URLSearchParams({ next: nextPath })}` : ""}`;
   const [result, sessions, roles, space] = await Promise.all([
     getAccountSecurity(),
     listMySessions(),
     listOrganizationRoles(),
-    resolveClientSpace({ locale, organizationId: query.organizationId }),
+    resolveConnectedSpace({ locale, organizationId: query.organizationId }),
   ]);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/securite/compte` }));
-  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/securite/compte` }));
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: selfPath }));
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: selfPath }));
+  if (nextPath && result.status === "success" && result.currentAal === "aal2" && result.requirementSatisfied) redirect(nextPath);
   const messages = getAccountSecurityMessages(locale);
   const roleMessages = getRoleMessages(locale);
   const c = spaceCopy(locale);
@@ -52,6 +57,7 @@ export default async function AccountSecurityPage({
       providerActive="company"
       franchiseActive="governance"
     >
+      <Link className="min-h-11 underline" href={`/${locale}/connexion/consentements`}>{locale==="fr"?"Mes textes versionnés et consentements":"نسخ النصوص وموافقاتي"}</Link>
       {result.status === "error" ? (
         <Alert variant="destructive">
           <AlertTitle>{messages.unavailableTitle}</AlertTitle>
@@ -82,7 +88,7 @@ export default async function AccountSecurityPage({
         >
           <details className="client-ops" open>
             <summary>{messages.mfaTitle}</summary>
-            <AccountSecurityPanel locale={locale} security={result} messages={messages} />
+            <AccountSecurityPanel nextPath={nextPath} locale={locale} security={result} messages={messages} />
           </details>
         </SecurityBoard>
       )}

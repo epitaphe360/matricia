@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+vi.mock("./regions-repository",()=>({loadProviderRegions:vi.fn()}));
 vi.mock("@/modules/shared/lib/supabase/server", () => ({ getSupabaseServerClient: vi.fn() }));
 
 import { diagnoseProviderDashboardProjection, diagnoseProviderServiceLabelCoverage } from "./repository";

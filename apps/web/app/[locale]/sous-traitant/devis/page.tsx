@@ -30,7 +30,7 @@ export default async function ProviderQuotesPage({ params, searchParams }: { par
     ? filterListRows(quoteRowsFromInvitations(filterInvitationsByQuoteTab(result.dashboard.invitations, query.tab), locale, space.selectedQuery), query.q ?? "")
     : [];
   return (
-    <ProviderAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="quotes" title={c.quotesTitle} lead={c.quotesLead} kicker={c.kicker} actions={<ProviderActions href={`/${locale}/sous-traitant/devis/nouveau${space.selectedQuery}`} label={c.createQuote} />}>
+    <ProviderAppShell locale={locale} organizations={space.organizations} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="quotes" title={c.quotesTitle} lead={c.quotesLead} kicker={c.kicker} actions={<ProviderActions href={`/${locale}/sous-traitant/devis/nouveau${space.selectedQuery}`} label={c.createQuote} />}>
       <QuotesBoard locale={locale} query={boardQuery} rows={rows} tab={query.tab} empty={result.status === "error" ? m.loadError : undefined} />
       <details id="devis-operation" className="client-ops">
         <summary>{c.opsQuotes}</summary>

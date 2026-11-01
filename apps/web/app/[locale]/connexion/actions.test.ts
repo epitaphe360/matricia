@@ -3,8 +3,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
   signInWithOtp: vi.fn(),
+  setCookie: vi.fn(),
+  deleteCookie: vi.fn(),
+  getCookie: vi.fn(),
+  userRpc: vi.fn(),
+  getUser: vi.fn(),
+  assurance: vi.fn(),
+  ensureConsent:vi.fn(),
 }));
 
+vi.mock("@/modules/shared/lib/auth/consent/current-documents",()=>({ensureCurrentConsentDocuments:mocks.ensureConsent}));
 vi.mock("@/modules/shared/lib/supabase/admin", () => ({
   getSupabaseAdminClient: () => ({ rpc: mocks.rpc, auth: { signInWithOtp: mocks.signInWithOtp } }),
 }));
@@ -17,16 +25,26 @@ vi.mock("@/modules/shared/lib/auth/otp", () => ({
 vi.mock("@/modules/shared/lib/i18n/locale", () => ({
   isLocale: (value: string) => value === "fr" || value === "ar",
 }));
+vi.mock("@/modules/shared/lib/supabase/server", () => ({ getSupabaseServerClient: () => ({ rpc: mocks.userRpc, auth: { getUser: mocks.getUser, mfa: { getAuthenticatorAssuranceLevel: mocks.assurance } } }) }));
 vi.mock("next/headers", () => ({
+  cookies: async () => ({ set: mocks.setCookie, delete: mocks.deleteCookie, get: mocks.getCookie }),
   headers: async () => new Headers({ "x-forwarded-for": "203.0.113.7, 10.0.0.1" }),
 }));
 
-import { requestOtp } from "./actions";
+import { requestOtp, confirmRegistrationConsent, postLoginDestination } from "./actions";
+import { legalConsent } from "@/modules/shared/lib/auth/legal-consent";
 
 describe("requestOtp", () => {
   beforeEach(() => {
+    mocks.ensureConsent.mockReset().mockResolvedValue({});
     mocks.rpc.mockReset();
     mocks.signInWithOtp.mockReset();
+    mocks.setCookie.mockReset();
+    mocks.deleteCookie.mockReset();
+    mocks.getCookie.mockReset();
+    mocks.userRpc.mockReset();
+    mocks.getUser.mockReset().mockResolvedValue({ data: { user: { id: "actor" } } });
+    mocks.assurance.mockReset().mockResolvedValue({ data: { currentLevel: "aal1", nextLevel: "aal1" }, error: null });
   });
 
   it("rejette une adresse invalide sans interroger Supabase", async () => {
@@ -62,10 +80,45 @@ describe("requestOtp", () => {
     });
   });
 
+  it("refuse une inscription sans consentement ou avec une version ancienne", async () => {
+    await expect(requestOtp("nouveau@example.ma", "fr", undefined, "registration")).resolves.toEqual({ accepted: false, reason: "CONSENT_REQUIRED" });
+    await expect(requestOtp("nouveau@example.ma", "fr", undefined, "registration", { ...legalConsent, termsVersion: "old" })).resolves.toEqual({ accepted: false, reason: "CONSENT_REQUIRED" });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it("bloque l’inscription si la preuve ne peut pas être réservée", async () => {
+    mocks.rpc.mockResolvedValueOnce({ data: [{ allowed: true }], error: null }).mockResolvedValueOnce({ data: null, error: { code: "503" } });
+    await expect(requestOtp("nouveau@example.ma", "fr", undefined, "registration", legalConsent)).resolves.toEqual({ accepted: false, reason: "UNAVAILABLE" });
+    expect(mocks.signInWithOtp).not.toHaveBeenCalled();
+  });
+
+  it("n’envoie aucun OTP d’inscription si le texte a changé sous la même version",async()=>{
+    mocks.rpc.mockResolvedValueOnce({data:[{allowed:true}],error:null});
+    mocks.ensureConsent.mockRejectedValueOnce(new Error("LEGAL_TEXT_VERSION_COLLISION"));
+    expect(await requestOtp("nouveau@example.ma","fr",undefined,"registration",legalConsent)).toEqual({accepted:false,reason:"UNAVAILABLE"});
+    expect(mocks.signInWithOtp).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalledWith("reserve_registration_consent",expect.anything());
+  });
+
+  it("conserve le reçu quand sa confirmation échoue", async () => {
+    mocks.getCookie.mockReturnValue({ value: "receipt" });
+    mocks.userRpc.mockResolvedValue({ error: { code: "42501" } });
+    await expect(confirmRegistrationConsent()).resolves.toBe(false);
+    expect(mocks.deleteCookie).not.toHaveBeenCalled();
+  });
+
+  it("supprime le reçu uniquement après preuve persistée", async () => {
+    mocks.getCookie.mockReturnValue({ value: "receipt" });
+    mocks.userRpc.mockResolvedValue({ error: null });
+    await expect(confirmRegistrationConsent()).resolves.toBe(true);
+    expect(mocks.userRpc).toHaveBeenCalledWith("confirm_registration_consent", { p_receipt_id: "receipt" });
+    expect(mocks.deleteCookie).toHaveBeenCalledWith("matricia.registration-consent");
+  });
+
   it("autorise explicitement la création pour le parcours d’inscription", async () => {
-    mocks.rpc.mockResolvedValue({ data: [{ allowed: true, retry_after_seconds: 0 }], error: null });
+    mocks.rpc.mockResolvedValueOnce({ data: [{ allowed: true, retry_after_seconds: 0 }], error: null }).mockResolvedValueOnce({ data: "a2010000-0000-4000-8000-000000000001", error: null });
     mocks.signInWithOtp.mockResolvedValue({ data: {}, error: null });
-    await expect(requestOtp("nouveau@example.ma", "fr", "/fr/organisation?role=fournisseur", "registration")).resolves.toEqual({ accepted: true });
+    await expect(requestOtp("nouveau@example.ma", "fr", "/fr/organisation?role=fournisseur", "registration", legalConsent)).resolves.toEqual({ accepted: true });
     expect(mocks.signInWithOtp).toHaveBeenCalledWith({
       email: "nouveau@example.ma",
       options: {
@@ -74,4 +127,12 @@ describe("requestOtp", () => {
       },
     });
   });
+});
+
+describe("post login assurance routing", () => {
+  beforeEach(() => { mocks.getUser.mockResolvedValue({data:{user:{id:"actor"}}}); });
+  it("keeps a verified AAL2 dossier and query", async () => { mocks.assurance.mockResolvedValue({data:{currentLevel:"aal2",nextLevel:"aal2"},error:null});mocks.userRpc.mockResolvedValue({data:[{mfa_required:true,current_aal:"aal2",requirement_satisfied:true}],error:null});const next="/ar/client/demandes/id?organizationId=org&tab=offres";await expect(postLoginDestination("ar",next)).resolves.toBe(next); });
+  it("preserves a deep return during the MFA challenge", async () => { mocks.assurance.mockResolvedValue({data:{currentLevel:"aal1",nextLevel:"aal2"},error:null});mocks.userRpc.mockResolvedValue({data:[{mfa_required:true,current_aal:"aal1",requirement_satisfied:false}],error:null});const next="/fr/client/demandes/id?organizationId=org";const result=new URL(await postLoginDestination("fr",next),"https://test.invalid");expect(result.pathname).toBe("/fr/securite/compte");expect(result.searchParams.get("next")).toBe(next); });
+  it("requires enrollment when the role policy requires MFA", async () => { mocks.assurance.mockResolvedValue({data:{currentLevel:"aal1",nextLevel:"aal1"},error:null});mocks.userRpc.mockResolvedValue({data:[{mfa_required:true,current_aal:"aal1",requirement_satisfied:false}],error:null});expect(await postLoginDestination("fr","/fr/administration")).toContain("/fr/securite/compte?"); });
+  it("rejects an external target", async () => { mocks.assurance.mockResolvedValue({data:{currentLevel:"aal2",nextLevel:"aal2"},error:null});mocks.userRpc.mockResolvedValue({data:[{mfa_required:false,current_aal:"aal2",requirement_satisfied:true}],error:null});await expect(postLoginDestination("fr","https://evil.invalid")).resolves.toBe("/fr/tableau-de-bord"); });
 });

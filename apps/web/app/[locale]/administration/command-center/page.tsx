@@ -16,7 +16,7 @@ export default async function AdminCommandCenterPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ organizationId?: string }>;
+  searchParams: Promise<{ organizationId?: string; actionPage?:string;actionStatus?:string }>;
 }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
@@ -24,7 +24,7 @@ export default async function AdminCommandCenterPage({
   if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/administration/command-center` }));
   const m = getCommandCenterMessages(locale);
   const c = adminCopy(locale);
-  const [result, supervision] = await Promise.all([loadAdminCommandCenter(), loadAdminSupervisionDashboard(50)]);
+  const [result, supervision] = await Promise.all([loadAdminCommandCenter(Number(query.actionPage??"1"),query.actionStatus), loadAdminSupervisionDashboard(50)]);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/command-center` }));
   const alternate = locale === "fr" ? "ar" : "fr";
   const keyCount = result.status === "success" ? result.dashboard.workItems.length * 2 + result.dashboard.actions.length + 1 : 1;
@@ -53,6 +53,7 @@ export default async function AdminCommandCenterPage({
         ) : (
           <CommandCenterPanel
             dashboard={result.dashboard}
+            query={space.selectedQuery}
             locale={locale}
             m={m}
             enrichment={enrichment}

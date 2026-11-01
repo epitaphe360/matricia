@@ -21,7 +21,7 @@ export default async function ProviderConsultationsPage({ params, searchParams }
     ? filterListRows(consultationRowsFromInvitations(filterInvitationsByConsultTab(result.dashboard.invitations, query.tab), locale, space.selectedQuery), query.q ?? "")
     : [];
   return (
-    <ProviderAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="consult" title={c.consultTitle} lead={c.consultLead} kicker={c.kicker} actions={<ProviderActions href={`/${locale}/sous-traitant/services${space.selectedQuery}`} label={c.seeCriteria} />}>
+    <ProviderAppShell locale={locale} organizations={space.organizations} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="consult" title={c.consultTitle} lead={c.consultLead} kicker={c.kicker} actions={<ProviderActions href={`/${locale}/sous-traitant/services${space.selectedQuery}`} label={c.seeCriteria} />}>
       <ConsultationsBoard locale={locale} query={boardQuery} rows={rows} tab={query.tab} empty={result.status === "error" ? (locale === "ar" ? "تعذر تحميل الاستشارات." : "Impossible de charger les consultations.") : undefined} />
     </ProviderAppShell>
   );

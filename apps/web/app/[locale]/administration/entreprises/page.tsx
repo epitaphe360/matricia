@@ -25,6 +25,9 @@ export default async function AdminEntreprisesPage({
   if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/administration/entreprises` }));
   const [result, command] = await Promise.all([loadAdminSupervisionDashboard(100), loadAdminCommandCenter()]);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/entreprises` }));
+  const uiParams=new URLSearchParams(space.selectedQuery);
+  for(const key of ["q","archives","type","status","compliance","plan"]as const){if(query[key])uiParams.set(key,query[key]!);}
+  const uiQuery=uiParams.size?`?${uiParams.toString()}`:"";
   const c = adminCopy(locale);
   const alternate = locale === "fr" ? "ar" : "fr";
   const rows = result.status === "success" ? mapAdminOrgRows(result.value.organizations, locale) : [];
@@ -54,13 +57,13 @@ export default async function AdminEntreprisesPage({
       actorCurrent="orgs"
       searchAction={`/${locale}/administration/entreprises`}
       searchPlaceholder={c.searchOrgs}
-      alternateHref={`/${alternate}/administration/entreprises${space.selectedQuery}`}
-      crumb={<AdminCrumb locale={locale} query={space.selectedQuery} />}
+      alternateHref={`/${alternate}/administration/entreprises${uiQuery}`}
+      crumb={<AdminCrumb locale={locale} query={uiQuery} />}
       title={c.orgs}
       lead={c.orgsLead}
       actions={
         <>
-          <a href={`/${locale}/administration/entreprises/export${space.selectedQuery}`} className="admin-dir-action" data-tone="white"><Download className="size-4" aria-hidden />{c.export}</a>
+          <a href={`/${locale}/administration/entreprises/export${uiQuery}`} className="admin-dir-action" data-tone="white"><Download className="size-4" aria-hidden />{c.export}</a>
           <Link href={`/${locale}/administration/entreprises/nouvelle${space.selectedQuery}`} className="admin-primary-cta"><Plus className="size-4" aria-hidden />{c.createOrg}</Link>
         </>
       }
@@ -75,7 +78,7 @@ export default async function AdminEntreprisesPage({
       ) : (
         <OrganizationsBoard
           locale={locale}
-          query={space.selectedQuery}
+          query={uiQuery}
           rows={rows}
           treat={treat}
           search={query.q}

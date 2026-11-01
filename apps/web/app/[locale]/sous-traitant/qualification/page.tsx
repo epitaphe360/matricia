@@ -1,3 +1,4 @@
+import {InterventionForm} from "@/modules/provider/screens/qualification/intervention-form";
 import { notFound, redirect } from "next/navigation";
 import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertTitle } from "@/modules/shared/ui/alert";
@@ -19,15 +20,16 @@ export default async function ProviderQualificationPage({ params, searchParams }
   const space = await resolveProviderSpace({ locale, organizationId: query.organizationId });
   if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/qualification` }));
   const messages = getProviderMessages(locale);
-  const result = await loadProviderDashboard();
+  const result = await loadProviderDashboard(query.organizationId);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/qualification` }));
   const regions = result.status === "success" ? await loadProviderRegions(result.dashboard.organizationId) : [];
   const c = providerCopy(locale);
   return (
-    <ProviderAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="qualify" title={c.qualTitle} lead={c.qualLead} kicker={c.kicker} actions={<ProviderActions href="#qualification" label={c.completeFolder} />}>
+    <ProviderAppShell locale={locale} organizations={space.organizations} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="qualify" title={c.qualTitle} lead={c.qualLead} kicker={c.kicker} actions={<ProviderActions href="#qualification" label={c.completeFolder} />}>
       <div className="provider-settings-layout">
         <ProviderProfileRail locale={locale} query={space.selectedQuery} active="profile" />
         <div className="client-stack">
+      {result.status==="success"&&!result.dashboard.identityReview?.verified?<aside role="status" className="client-card border-amber-500"><h2>{locale==="ar"?"مراجعة الهوية القانونية مطلوبة":"Revue de l’identité juridique requise"}</h2><p>{locale==="ar"?"يلزم تأكيد الهوية القانونية الحالية من المسؤول المختص بعد فحص الوثائق القانونية والضريبية والتأمين. لا تتيح الموافقة السابقة فرصاً جديدة بعد تغيير الهوية. تبقى ملفات المهام السابقة متاحة.":"Un responsable doit vérifier l’identité légale courante contre les pièces légales, fiscales et d’assurance analysées. Une ancienne validation ne suffit pas pour de nouvelles opportunités. Les dossiers des missions précédentes restent accessibles."}</p><a href="#documents" className="client-text-link">{locale==="ar"?"تحديث المستندات":"Mettre à jour les pièces"}</a><a href={`/${locale}/sous-traitant/messages${space.selectedQuery}`} className="client-text-link ms-4">{locale==="ar"?"التواصل مع فريق المراجعة":"Contacter l’équipe de revue"}</a></aside>:null}
       <QualificationBoard locale={locale} query={space.selectedQuery} dashboard={result.status === "success" ? result.dashboard : null} />
       <details id="qualification" className="client-ops" open>
         <summary>{c.opsQual}</summary>
@@ -37,6 +39,7 @@ export default async function ProviderQualificationPage({ params, searchParams }
           </Alert>
         ) : (
           <>
+            {result.dashboard.profile?<InterventionForm organizationId={result.dashboard.organizationId} current={result.dashboard.interventionModes??[]} version={result.dashboard.interventionModeVersion??0} locale={locale} idempotencyKey={crypto.randomUUID()}/>:null}
             <QualificationForms dashboard={result.dashboard} locale={locale} messages={messages} keys={{ profile: crypto.randomUUID(), service: crypto.randomUUID(), capacity: crypto.randomUUID(), document: crypto.randomUUID() }} />
             {regions === null ? (
               <Alert variant="destructive" className="mt-6"><AlertTitle>{messages.regionsLoadError}</AlertTitle></Alert>

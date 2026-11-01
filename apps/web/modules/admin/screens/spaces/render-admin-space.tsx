@@ -1,4 +1,6 @@
+import{loadAdminHistoryPage}from"@/modules/admin/screens/history/actions";
 import Link from "next/link";
+import{loadAdminConversationPage}from"@/modules/admin/screens/conversations/actions";
 import { notFound, redirect } from "next/navigation";
 import { mfaRequiredMessage } from "@/modules/shared/lib/account-security/platform-access";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
@@ -52,10 +54,17 @@ export async function renderAdminSpacePage({
   if (admin.status === "unauthenticated") redirect(`/${locale}/connexion`);
   const snapshot = await loadAdminSpaceSnapshot(locale, space, admin.selectedQuery);
   const spec = spaceSpec(space);
+  const uiParams=new URLSearchParams(admin.selectedQuery);if(q)uiParams.set("q",q);if(vue)uiParams.set("vue",vue);const uiQuery=uiParams.size?`?${uiParams.toString()}`:"";
   const alternate = locale === "ar" ? "fr" : "ar";
   const reserved = itemId && isReservedView(itemId) ? itemId : null;
   const view = action ?? reserved ?? (itemId ? "detail" : "queue");
   const row = itemId && !reserved ? findSpaceRow(snapshot, itemId) : null;
+  if (row) {
+    const history=await loadAdminHistoryPage(row.id,row.organizationId);
+    row.historyPage=history.status==="success"?history.page:null;
+    if(space==="messagerie"&&row.extras?.kind!=="NOTIFICATION"){const chat=await loadAdminConversationPage(row.id);row.conversation=chat.status==="success"?chat.page:null;}
+  }
+
 
   const groupLabel = spec.nav === "actors"
     ? (locale === "ar" ? "الفاعلون" : "Acteurs")
@@ -86,7 +95,7 @@ export async function renderAdminSpacePage({
   let body;
   if (view === "queue") {
     body = (
-      <SpaceQueueBoard locale={locale} query={admin.selectedQuery} space={space} rows={snapshot.rows} treat={snapshot.treat} search={q} vue={vue}>
+      <SpaceQueueBoard locale={locale} query={uiQuery} space={space} rows={snapshot.rows} treat={snapshot.treat} search={q} vue={vue}>
         {space === "providers" && snapshot.providers ? (
           <details className="client-ops">
             <summary>{getAdminProviderMessages(locale).title}</summary>
@@ -103,29 +112,29 @@ export async function renderAdminSpacePage({
       </SpaceQueueBoard>
     );
   } else if (reserved === "comparer") {
-    body = <SpaceCompareBoard locale={locale} query={admin.selectedQuery} space={space} rows={snapshot.rows} />;
+    body = <SpaceCompareBoard locale={locale} query={uiQuery} space={space} rows={snapshot.rows} />;
   } else if (reserved === "preferences" || action === "preferences") {
-    body = <NotificationPreferencesBoard locale={locale} query={admin.selectedQuery} templates={snapshot.supervision?.templates ?? []} />;
+    body = <NotificationPreferencesBoard locale={locale} query={uiQuery} templates={snapshot.supervision?.templates ?? []} />;
   } else if (reserved === "reutilisation" || action === "reutilisation") {
-    body = <DocumentReuseBoard locale={locale} query={admin.selectedQuery} row={row} />;
+    body = <DocumentReuseBoard locale={locale} query={uiQuery} row={row} />;
   } else if (
     reserved === "nouvelle"
     || reserved === "preparer"
     || action === "modifier"
   ) {
-    body = <SpaceWizardBoard locale={locale} query={admin.selectedQuery} space={space} />;
+    body = <SpaceWizardBoard locale={locale} query={uiQuery} space={space} />;
   } else if (action === "consultation") {
     body = row
-      ? <ConsultationSendBoard locale={locale} query={admin.selectedQuery} row={row} />
-      : <MissingRecord locale={locale} space={space} query={admin.selectedQuery} />;
+      ? <ConsultationSendBoard locale={locale} query={uiQuery} row={row} />
+      : <MissingRecord locale={locale} space={space} query={uiQuery} />;
   } else if (action === "decision" || action === "revue" || action === "activation" || action === "activer" || action === "cycle") {
     body = row
-      ? <SpaceDecisionBoard locale={locale} query={admin.selectedQuery} space={space} row={row} />
-      : <MissingRecord locale={locale} space={space} query={admin.selectedQuery} />;
+      ? <SpaceDecisionBoard locale={locale} query={uiQuery} space={space} row={row} />
+      : <MissingRecord locale={locale} space={space} query={uiQuery} />;
   } else if (row) {
-    body = <SpaceDetailBoard locale={locale} query={admin.selectedQuery} space={space} row={row} />;
+    body = <SpaceDetailBoard locale={locale} query={uiQuery} space={space} row={row} />;
   } else {
-    body = <MissingRecord locale={locale} space={space} query={admin.selectedQuery} />;
+    body = <MissingRecord locale={locale} space={space} query={uiQuery} />;
   }
 
   return (
@@ -139,8 +148,8 @@ export async function renderAdminSpacePage({
       parcoursCurrent={spec.nav === "parcours" ? spec.current : undefined}
       searchAction={`/${locale}/administration/${space}`}
       searchPlaceholder={spec.search(locale)}
-      alternateHref={`/${alternate}/administration/${space}${itemId ? `/${itemId}` : ""}${action ? `/${action}` : ""}${admin.selectedQuery}`}
-      crumb={<AdminCrumb locale={locale} query={admin.selectedQuery} items={crumbItems} />}
+      alternateHref={`/${alternate}/administration/${space}${itemId ? `/${itemId}` : ""}${action ? `/${action}` : ""}${uiQuery}`}
+      crumb={<AdminCrumb locale={locale} query={uiQuery} items={crumbItems} />}
       title={
         special
           ? special.title
@@ -154,7 +163,7 @@ export async function renderAdminSpacePage({
       }
       lead={special?.lead ?? spec.lead(locale)}
       kicker={row ? row.status : undefined}
-      actions={specialKind ? <SpecialBoardActions locale={locale} kind={specialKind} /> : <SpaceHeaderActions locale={locale} query={admin.selectedQuery} spec={spec} />}
+      actions={specialKind ? <SpecialBoardActions locale={locale} kind={specialKind} /> : <SpaceHeaderActions locale={locale} query={uiQuery} spec={spec} />}
     >
       {snapshot.reason === "MFA_REQUIRED" ? (
         <Alert variant="destructive">

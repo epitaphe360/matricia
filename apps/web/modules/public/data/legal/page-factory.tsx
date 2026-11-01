@@ -1,3 +1,4 @@
+import { legalPublication } from "./publication";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -18,6 +19,8 @@ export function createLegalPage(documentId: LegalDocumentId) {
     const { locale } = await params;
     if (!isLocale(locale)) notFound();
     const doc = getLegalDocument(locale, documentId);
+    const publication = legalPublication();
+    const identity = publication.values;
     const siblings = [
       { id: "mentions" as const, href: `/${locale}/mentions-legales` },
       { id: "confidentialite" as const, href: `/${locale}/confidentialite` },
@@ -38,6 +41,8 @@ export function createLegalPage(documentId: LegalDocumentId) {
           ["Données relatives aux préférences", "Gérer vos choix (cookies et communications)", "Pendant la durée de conservation des préférences", "Accès, rectification, opposition"],
         ];
 
+    const retention = locale === "fr" ? identity.LEGAL_RETENTION_FR : identity.LEGAL_RETENTION_AR;
+    if (retention) for (const row of table) row[2] = retention;
     return (
       <main id="contenu-principal" className="public-page px-4 py-12 text-[var(--mat-navy)] sm:px-6 sm:py-16" dir={locale === "ar" ? "rtl" : "ltr"}>
         <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[240px_minmax(0,1fr)]">
@@ -55,6 +60,17 @@ export function createLegalPage(documentId: LegalDocumentId) {
             <h1 className="mt-3">{doc.title}</h1>
             <p className="mt-4 text-sm text-slate-500">{locale === "ar" ? `آخر تحديث: ${doc.updated}` : `Date de mise à jour : ${doc.updated}`}</p>
             <p className="mt-6 text-lg leading-8 text-slate-600">{doc.description}</p>
+            {!publication.ready ? <p role="status" className="mt-6 rounded-lg border p-4">{locale === "fr" ? "Les informations légales complètes sont en cours de validation par l’éditeur. Contactez-nous pour les obtenir avant tout engagement contractuel." : "المعلومات القانونية الكاملة قيد التحقق لدى الناشر. تواصلوا معنا للحصول عليها قبل أي التزام تعاقدي."}</p> : null}
+            {documentId === "mentions" ? <dl className="mt-6 grid gap-3">{([
+              [locale === "fr" ? "Raison sociale" : "الاسم القانوني", identity.LEGAL_ENTITY_NAME],
+              [locale === "fr" ? "Forme juridique" : "الشكل القانوني", identity.LEGAL_ENTITY_FORM],
+              [locale === "fr" ? "Siège" : "المقر", identity.LEGAL_ENTITY_ADDRESS],
+              [locale === "fr" ? "Immatriculation" : "التسجيل", identity.LEGAL_REGISTRATION_ID],
+              [locale === "fr" ? "Direction de publication" : "مدير النشر", identity.LEGAL_PUBLICATION_DIRECTOR],
+              [locale === "fr" ? "Hébergeur" : "المضيف", identity.LEGAL_HOST_NAME],
+              [locale === "fr" ? "Adresse de l’hébergeur" : "عنوان المضيف", identity.LEGAL_HOST_ADDRESS],
+            ]).filter(([, value]) => value).map(([label,value]) => <div key={label}><dt className="font-semibold">{label}</dt><dd>{value}</dd></div>)}</dl> : null}
+            {documentId === "confidentialite" && identity.LEGAL_PRIVACY_EMAIL ? <p className="mt-4">{locale === "fr" ? "Contact pour vos données personnelles : " : "جهة الاتصال لبياناتكم الشخصية: "}<a href={`mailto:${identity.LEGAL_PRIVACY_EMAIL}`} className="underline">{identity.LEGAL_PRIVACY_EMAIL}</a></p> : null}
             {documentId === "confidentialite" ? (
               <div id="securite" className="mt-8 overflow-x-auto rounded-2xl border border-[var(--mat-border)] bg-white">
                 <table className="min-w-full text-sm">

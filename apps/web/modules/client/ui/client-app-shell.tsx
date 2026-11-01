@@ -1,3 +1,5 @@
+import Image from "next/image";
+import { safeReturnPath } from "@/modules/shared/lib/auth/return-path";
 import Link from "next/link";
 import { Bell, Search } from "lucide-react";
 import type { ReactNode } from "react";
@@ -26,6 +28,7 @@ export function ClientAppShell({
   userEmail,
   organizationName,
   active,
+  languagePath,
   searchAction,
   searchQuery = "",
   title,
@@ -43,6 +46,7 @@ export function ClientAppShell({
   organizationName?: string | null;
   active?: ClientNavKey;
   messagesUnread?: boolean;
+  languagePath?: string;
   searchAction?: string;
   searchQuery?: string;
   title?: string;
@@ -57,7 +61,8 @@ export function ClientAppShell({
   const alternate: Locale = locale === "fr" ? "ar" : "fr";
   const searchPath = searchAction ?? `/${locale}/client/recherche`;
   const accountLabel = organizationName?.trim() || space.space;
-  const langHref = localeSwitchHref(locale, selectedQuery, active);
+  const currentPath = safeReturnPath(languagePath,locale);
+  const langHref = currentPath ? `/${alternate}/${currentPath.slice(locale.length+2)}` : localeSwitchHref(locale, selectedQuery, active);
 
   return (
     <div dir={locale === "ar" ? "rtl" : "ltr"} className="client-workspace" data-theme={theme}>
@@ -73,7 +78,7 @@ export function ClientAppShell({
         </Link>
         <ClientWorkspaceNav locale={locale} selectedQuery={selectedQuery} messagesUnread={messagesUnread} active={active} />
         <figure className="client-side-art">
-          <img src="/scenes/arch-city.png" alt="" width={220} height={120} />
+          <Image src="/scenes/arch-city.png" alt="" width={220} height={120} />
           <figcaption>{c.brandFooter}</figcaption>
         </figure>
       </aside>

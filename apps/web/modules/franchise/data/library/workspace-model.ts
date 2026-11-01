@@ -1,3 +1,4 @@
+import type {CatalogServerPage}from "./server-page";
 export type FranchiseCatalogKind = "SERVICE" | "QUESTIONNAIRE" | "RULE";
 export type FranchiseServiceCommand = {
   draftVersionId: string;
@@ -42,6 +43,8 @@ export type FranchiseCatalogRow = {
   identityRowVersion?: number | null;
   versionRowVersion?: number | null;
   command?: FranchiseServiceCommand | null;
+  reviewEvents?:Array<{id:string;versionId:string;status:string;requestedAt:string;reviewedAt:string|null;comment:string|null}>;
+  rulePayload?: {condition_ast: Record<string,unknown>;actions: Array<Record<string,unknown>>;dependency_graph: Record<string,unknown>;priority:number;sensitive:boolean}|null;
   ruleActions?: Array<{ type: string; target?: string }>;
 };
 
@@ -87,12 +90,19 @@ export type FranchiseLibraryWorkspace = {
     currentReleaseId: string | null;
     operatorOrganizationId?: string;
   };
+  serverPage?:CatalogServerPage;
+  mandates?:Array<{id:string;organizationId:string;operatorCode:string}>;
   counts: { drafts: number; inReview: number; published: number; returns: number };
   categories: FranchiseCategoryNode[];
   services: FranchiseCatalogRow[];
   questionnaires: FranchiseCatalogRow[];
   rules: FranchiseCatalogRow[];
   questions: FranchiseQuestionRow[];
+  compositionSections?: Array<{ versionId: string; key: string; labelFr: string; labelAr: string;helpFr?:string;helpAr?:string }>;
+  compositionQuestions?: Array<{ versionId: string; questionVersionId: string; sectionKey: string; required: boolean; sortOrder: number }>;
+  compositionRules?:Array<{versionId:string;ruleVersionId:string;order:number}>;
+  ruleVersionBank?:Array<{id:string;title:string;status:string;version:number}>;
+  questionVersionBank?: Array<{ id: string; questionId: string; labelFr: string; labelAr: string; answerType: string; status: string }>;
   releases: Array<{ id: string; key: string; status: string }>;
 };
 

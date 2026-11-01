@@ -8,10 +8,10 @@ import { requireFranchiseLibrary } from "@/modules/franchise/screens/library/pag
 import { FranchiseSecurityPanel } from "@/modules/franchise/screens/library/library-chrome";
 import { FranchiseAppShell } from "@/modules/franchise/ui/franchise-app-shell";
 
-export default async function FranchiseQuestionnairesPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string; q?: string }> }) {
+export default async function FranchiseQuestionnairesPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string; franchiseId?:string;page?:string;status?:string;category?:string;language?:string;completeness?:string;validation?:string; q?: string }> }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
-  const { space, result } = await requireFranchiseLibrary({ locale, organizationId: query.organizationId });
+  const { space, result } = await requireFranchiseLibrary({ locale, organizationId: query.organizationId, franchiseId:query.franchiseId,catalog:{kind:"QUESTIONNAIRE",page:query.page,search:query.q,status:query.status,categoryId:query.category,language:query.language,completeness:query.completeness,validation:query.validation,} });
   const c = libraryCopy(locale);
   return (
     <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="questionnaires" title={c.questionnairesTitle} lead={c.questionnairesLead} kicker={c.scope} mandateName={result.status === "success" ? result.workspace.mandate.libraryName : null} actions={result.status === "success" ? <FranchiseSecurityPanel locale={locale} /> : null}>
