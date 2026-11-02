@@ -159,7 +159,7 @@ function ActionCard({ action, locale, m, keyValue }: { action: AdminCommandCente
   const statusLabel = getCommandCenterCodeLabel(locale, "status", action.status);
 
   return (
-    <article className="admin-work-card">
+    <article className="admin-work-card" id={`admin-action-${action.id}`}>
       <div className="flex flex-wrap justify-between gap-3">
         <h3 className="font-semibold">{actionLabel}</h3>
         <span className="admin-badge" data-tone="default">

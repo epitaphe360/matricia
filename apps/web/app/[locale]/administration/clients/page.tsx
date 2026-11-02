@@ -72,7 +72,7 @@ export default async function AdminClientsPage({
             <AlertDescription>{a.forbiddenSectionLead}</AlertDescription>
           </Alert>
         </main>
-      ) : directory.reason ? <main className="client-page"><AdminReadError locale={locale} reason={directory.reason === "UNAUTHENTICATED" || directory.reason === "QUERY_FAILED" ? "UNAVAILABLE" : directory.reason} retryHref={`/${locale}/administration/clients${uiQuery}`} /></main> : (
+      ) : directory.reason ? <main className="client-page"><AdminReadError locale={locale} reason={directory.reason === "QUERY_FAILED" ? "UNAVAILABLE" : directory.reason} retryHref={`/${locale}/administration/clients${uiQuery}`} /></main> : (
         <>
           <ClientsBoard locale={locale} query={uiQuery} organizations={directory.organizations} cases={directory.cases} diagnostics={directory.diagnostics} search={query.q} filters={boardFilters} />
           {directory.dashboard ? (
