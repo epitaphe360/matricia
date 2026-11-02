@@ -22,5 +22,53 @@
     "rawSha256": "73f295fe5eb903ff8aa71cfafd11a115864e45abb79a60a1cf4fef504200828a",
     "normalizedSha256": "4b3d583242214e97b617eda7ddd5390db0b630723addf1d6bf30196d6ac41217",
     "normalization": "trailing whitespace only"
+  },
+  {
+    "file": "independent-final-45.log",
+    "rawSha256": "aec50190b1267ed8f5c0f4868eb0ff88b2fbf531e3354d502c1fd639e617f717",
+    "normalizedSha256": "33163a2b38f35d5bc55e5c942e5c9d811655583ce2e3b3f5c0c00f939425436a",
+    "normalization": "trailing whitespace only"
+  },
+  {
+    "file": "monthly-final-56.log",
+    "rawSha256": "02ee0be63bb8d65e3183389533769cbab24524a88c1a1bcead546c358ae84206",
+    "normalizedSha256": "25ba258052325aa07ad7bee1ba68bf69843c8d6c18bc53309291ca47402135c3",
+    "normalization": "trailing whitespace only"
+  },
+  {
+    "file": "legacy0168-final-16.log",
+    "rawSha256": "f3b2ecca9406d4e06bb9505f4a0fd51b236e906ee4f0890003dbb38bc5396068",
+    "normalizedSha256": "4b2defd45da6f51bb826f6b9e9d52b422dd4a3cb147e35e2e20d966b59b44d9e",
+    "normalization": "trailing whitespace only"
+  },
+  {
+    "file": "legacy0210-final-13.log",
+    "rawSha256": "097cb485ae8897b5fee0a0658effb44e7f1c5feb1f60181b3b5b98c28307a5d1",
+    "normalizedSha256": "4938851a63d96f693540297affe76b78d8e6f5049942f3be15650a95df8673af",
+    "normalization": "trailing whitespace only"
+  },
+  {
+    "file": "web-unit-final-42.log",
+    "rawSha256": "11779672344752f99504fabaee70749907c466453405027f7b3e14466ef35815",
+    "normalizedSha256": "11779672344752f99504fabaee70749907c466453405027f7b3e14466ef35815",
+    "normalization": "trailing whitespace only"
+  },
+  {
+    "file": "worker-unit-final-2.log",
+    "rawSha256": "b86c62865759d8b6a40d269c15822418943ad70e38fcd9531334162b34f91e85",
+    "normalizedSha256": "b86c62865759d8b6a40d269c15822418943ad70e38fcd9531334162b34f91e85",
+    "normalization": "trailing whitespace only"
+  },
+  {
+    "file": "web-typecheck-final.log",
+    "rawSha256": "6fff46f67b7da4e4a10b93ec1023f94f6e4c8426353984f9e35f0907711b7619",
+    "normalizedSha256": "6fff46f67b7da4e4a10b93ec1023f94f6e4c8426353984f9e35f0907711b7619",
+    "normalization": "trailing whitespace only"
+  },
+  {
+    "file": "web-lint-final.log",
+    "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "normalizedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "normalization": "trailing whitespace only"
   }
 ]
