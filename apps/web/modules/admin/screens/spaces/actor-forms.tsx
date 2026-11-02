@@ -54,6 +54,7 @@ export function InviteUserForm({
   eligibleIds,
   defaultOrganizationId,
   defaultRole,
+  roleFamily,
   franchises = [],
   idempotencyKey,invitationExpiresAt,
 }: {
@@ -63,6 +64,7 @@ export function InviteUserForm({
   eligibleIds: string[];
   defaultOrganizationId?: string;
   defaultRole?: string;
+  roleFamily?: "PROVIDER";
   franchises?:Array<{id:string;organizationId:string;label:string}>;
   idempotencyKey?:string;invitationExpiresAt?:string;
 }) {
@@ -73,7 +75,8 @@ export function InviteUserForm({
   const [state, action, pending] = useActionState(submitActorInvitation, idleInvite);
   const [email, setEmail] = useState("");
   const [organizationId, setOrganizationId] = useState(defaultOrganizationId ?? organizations[0]?.id ?? "");
-  const [role, setRole] = useState(defaultRole && roles.includes(defaultRole as InvitationRole) ? defaultRole : "CLIENT_MEMBER");
+  const availableRoles = roleFamily ? roles.filter(role => role.startsWith(`${roleFamily}_`)) : roles;
+  const [role, setRole] = useState(defaultRole && availableRoles.includes(defaultRole as InvitationRole) ? defaultRole : roleFamily === "PROVIDER" ? "PROVIDER_VIEWER" : "CLIENT_MEMBER");
   const [perimeter, setPerimeter] = useState("organization");
   const [inviteLocale, setInviteLocale] = useState(locale);
   const [message, setMessage] = useState("");
@@ -107,7 +110,7 @@ export function InviteUserForm({
             <Field id="invite-role" label={a.requestedRole} hint={a.roleHint} required>
               <select id="invite-role" name="roleCode" required value={role} onChange={(event) => setRole(event.target.value)}>
                 <option value="">{a.pickRole}</option>
-                {roles.map((item) => <option key={item} value={item}>{inviteMessages.roles[item]}</option>)}
+                {availableRoles.map((item) => <option key={item} value={item}>{inviteMessages.roles[item]}</option>)}
               </select>
             </Field>
             {role.startsWith("FRANCHISE_")?<Field id="invite-franchise"label={locale==="ar"?"التفويض النشط للمؤسسة":"Mandat actif de l’organisation"}required><select id="invite-franchise"name="franchiseId"required><option value="">—</option>{franchises.filter((f)=>f.organizationId===organizationId).map((f)=><option key={f.id}value={f.id}>{f.label}</option>)}</select></Field>:null}
@@ -132,10 +135,10 @@ export function InviteUserForm({
         </article>
         <div className="admin-form-foot">
           <Link href={`/${locale}/administration/utilisateurs${query}`} className="client-ghost-link">{c.cancel}</Link>
-          <button type="submit" name="intent" value="INVITE_DRAFT" className="admin-soft-cta" disabled={pending}>{c.saveDraft}</button>
-          <button type="submit" name="intent" value="INVITE_USER" className="admin-primary-cta" disabled={pending}>{pending ? "…" : a.sendInvite}</button>
+          {!roleFamily ? <button type="submit" name="intent" value="INVITE_DRAFT" className="admin-soft-cta" disabled={pending}>{c.saveDraft}</button> : null}
+          <button type="submit" name="intent" value="INVITE_USER" className="admin-primary-cta" disabled={pending}>{pending ? "…" : roleFamily && !canInvite ? (locale === "ar" ? "إرسال طلب الدعوة للمراجعة" : "Soumettre la demande d’invitation") : a.sendInvite}</button>
         </div>
-        <Feedback state={state} locale={locale} success={a.inviteSent} />
+        <Feedback state={state} locale={locale} success={"outcome" in state ? (locale === "ar" ? "تم تسجيل الطلب؛ الدعوة قيد المراجعة المستقلة ولم تُنفّذ بعد." : "Demande enregistrée ; l’invitation reste en attente de revue indépendante et n’est pas encore exécutée.") : a.inviteSent} />
       </div>
       <aside className="client-stack">
         <article className="client-card">

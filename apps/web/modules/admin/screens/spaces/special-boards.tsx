@@ -4,7 +4,7 @@ import{ProductionReference}from"./production-reference";
 import Link from "next/link";
 import { useActionState, type ReactNode } from "react";
 import {
-  AlertTriangle, CheckCircle2, Eye, FileText, Lock, Plus, RefreshCw, Send, ShieldCheck, Users,
+  CheckCircle2, Eye, FileText, Lock, Plus, RefreshCw, Send, ShieldCheck, Users,
 } from "lucide-react";
 import { requestSpaceMutation, type AdminActionState } from "./space-actions";
 import { PipelineGlyph } from "./pipeline-step";
@@ -284,7 +284,7 @@ export function DocumentReuseBoard({
           <article className="admin-banner" data-tone="danger">
             <strong>{t(locale, "Vérification du périmètre d’organisation", "التحقق من نطاق المؤسسة")}</strong>
             <p>{t(locale, "Le serveur vérifie l’organisation propriétaire, la destination et l’état antivirus. Le propriétaire doit ensuite consentir dans son coffre.", "يتحقق الخادم من المؤسسة والوجهة وحالة فحص الملف. ثم يلزم موافقة المالك في الخزينة.")}</p>
-            <p><AlertTriangle className="size-4" aria-hidden /> {t(locale, "Destination interdite (autre organisation) — cette destination appartient à une autre organisation et n’est pas accessible.", "وجهة محظورة (مؤسسة أخرى) — هذه الوجهة لمؤسسة أخرى وغير متاحة.")}</p>
+            <p>{t(locale, "Les destinations d’une autre organisation sont refusées lors de la vérification.", "تُرفض وجهات المؤسسات الأخرى أثناء التحقق.")}</p>
           </article>
         </section>
         <aside className="client-stack">
@@ -322,7 +322,7 @@ export function DocumentReuseBoard({
         </aside>
         <div className="admin-form-foot" data-span="2">
           <Link href={`/${locale}/administration/documents${query}`} className="client-ghost-link">{t(locale, "Annuler", "إلغاء")}</Link>
-          <button type="submit" name="intent" value="CHANGE_CONFIGURATION" className="admin-soft-cta" disabled={pending}>{t(locale, "Enregistrer le brouillon", "حفظ المسودة")}</button>
+
           <button type="submit" name="decision" value="LINK" className="admin-primary-cta" disabled={pending}>{pending ? "…" : t(locale, "Demander le consentement du propriétaire", "طلب موافقة المالك")}</button>
         </div>
         <Feedback state={state} locale={locale} />

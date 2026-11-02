@@ -1,3 +1,5 @@
+import { CreationPreparation, DocumentSharePreparation, governedPreparationSpaces } from "./creation-preparation";
+import { ProviderInvitationWorkspace } from "./provider-invitation";
 import{loadAdminHistoryPage}from"@/modules/admin/screens/history/actions";
 import Link from "next/link";
 import{loadAdminConversationPage}from"@/modules/admin/screens/conversations/actions";
@@ -47,13 +49,21 @@ export async function renderAdminSpacePage({
 }) {
   if (!isLocale(localeParam) || !isAdminSpaceId(spaceParam)) notFound();
   const locale = localeParam;
+  const returnParams = new URLSearchParams();
+  if (organizationId) returnParams.set("organizationId", organizationId);
+  if (q) returnParams.set("q", q);
+  if (vue) returnParams.set("vue", vue);
+  const returnPath = `/${locale}/administration/${spaceParam}${itemId ? `/${encodeURIComponent(itemId)}` : ""}${action ? `/${encodeURIComponent(action)}` : ""}${returnParams.size ? `?${returnParams.toString()}` : ""}`;
   const space: AdminSpaceId = spaceParam === "territoires" && itemId === "validations" ? "gouvernance" : spaceParam;
   if (space === "gouvernance" && spaceParam === "territoires") {
     itemId = undefined;
     action = undefined;
   }
-  const admin = await resolveAdminSpace({ locale, organizationId });
-  if (admin.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/administration/${space}` }));
+  // Passing the full destination lets the shared account-security guard retain
+  // the dossier and filters through an MFA challenge, before any data is read.
+  const scopeInput = { locale, organizationId, returnPath };
+  const admin = await resolveAdminSpace(scopeInput);
+  if (admin.status === "unauthenticated") redirect(connexionHref(locale, { next: returnPath }));
   const snapshot = await loadAdminSpaceSnapshot(locale, space, admin.selectedQuery);
   const spec = spaceSpec(space);
   const uiParams=new URLSearchParams(admin.selectedQuery);if(q)uiParams.set("q",q);if(vue)uiParams.set("vue",vue);const uiQuery=uiParams.size?`?${uiParams.toString()}`:"";
@@ -99,7 +109,9 @@ export async function renderAdminSpacePage({
   const special = specialKind ? specialBoardCopy(locale, specialKind) : null;
 
   let body;
-  if (view === "queue") {
+  if (failureReason && failureReason !== "OK") {
+    body = null;
+  } else if (view === "queue") {
     body = (
       <SpaceQueueBoard locale={locale} query={uiQuery} space={space} rows={snapshot.rows} treat={snapshot.treat} search={q} vue={vue}>
         {space === "providers" && snapshot.providers ? (
@@ -122,13 +134,16 @@ export async function renderAdminSpacePage({
   } else if (reserved === "preferences" || action === "preferences") {
     body = <NotificationPreferencesBoard locale={locale} query={uiQuery} templates={snapshot.supervision?.templates ?? []} />;
   } else if (reserved === "reutilisation" || action === "reutilisation") {
-    body = <DocumentReuseBoard locale={locale} query={uiQuery} row={row} />;
+    body = row ? <DocumentReuseBoard locale={locale} query={uiQuery} row={row} /> : <DocumentSharePreparation locale={locale} query={uiQuery} snapshot={snapshot} />;
   } else if (
     reserved === "nouvelle"
     || reserved === "preparer"
     || action === "modifier"
   ) {
-    body = <SpaceWizardBoard locale={locale} query={uiQuery} space={space} />;
+    body = space === "documents" ? <DocumentSharePreparation locale={locale} query={uiQuery} snapshot={snapshot} />
+      : space === "providers" ? await ProviderInvitationWorkspace({ locale, query: uiQuery, snapshot })
+        : governedPreparationSpaces.has(space) ? <CreationPreparation locale={locale} query={uiQuery} space={space} snapshot={snapshot} />
+          : <SpaceWizardBoard locale={locale} query={uiQuery} space={space} />;
   } else if (action === "consultation") {
     body = row
       ? <ConsultationSendBoard locale={locale} query={uiQuery} row={row} />
