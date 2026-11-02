@@ -8,9 +8,9 @@ describe("canonical Client evidence",()=>{
  const f=form({...base,missionId:"00000000-0000-4000-8000-000000000002",obligationKey:"DELIVERABLE_1",description:"Retard constaté avec preuve datée.",urgency:"STANDARD",evidenceStatement:"Voir la pièce validée.",visibility:"BOTH_PARTIES",confirmDocumentSharing:"on",documentId:"00000000-0000-4000-8000-000000000003",policyHash:"bad",responseHours:"1",evidenceHash:"forged"});
  expect(await openAction({status:"idle"},f)).toEqual({status:"success"});expect(command).toHaveBeenCalledWith("open_client_contract_dispute_v1",expect.objectContaining({p_document_ids:["00000000-0000-4000-8000-000000000003"],p_statement:"Voir la pièce validée."}));const args=command.mock.calls[0]![1];expect(args).not.toHaveProperty("p_policy_snapshot");expect(JSON.stringify(args)).not.toMatch(/forged|bad|response_hours/);
  });
- it("computes a statement hash on the server for a contradictory response",async()=>{
+ it("sends actual contradictory statement and lets SQL resolve authoritative hashes",async()=>{
  command.mockResolvedValue({status:"success",value:{outcome:"MEDIATION_REVIEW"}});
  const f=form({...base,caseId:"00000000-0000-4000-8000-000000000002",responseType:"CONTEST",reason:"La livraison respecte le contrat.",evidenceStatement:"abc",evidenceHash:"forged",visibility:"BOTH_PARTIES"});
- expect(await respondAction({status:"idle"},f)).toEqual({status:"success"});expect(command).toHaveBeenCalledWith("respond_to_mission_dispute",expect.objectContaining({p_evidence:[expect.objectContaining({hash:"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",statement:"abc"})]}));
+ expect(await respondAction({status:"idle"},f)).toEqual({status:"success"});expect(command).toHaveBeenCalledWith("respond_to_mission_dispute",expect.objectContaining({p_evidence:[expect.objectContaining({statement:"abc"})]}));expect(JSON.stringify(command.mock.calls[0]![1])).not.toContain("forged");
  });
 });
