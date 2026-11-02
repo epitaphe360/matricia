@@ -266,7 +266,8 @@
 
 .client-topbar {
   position: relative;
-  z-index: 1;
+  /* Keep account and organization menus above the mast and page content. */
+  z-index: 2;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
