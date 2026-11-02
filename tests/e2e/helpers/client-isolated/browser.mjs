@@ -13,7 +13,7 @@ if ((await ssr.auth.setSession(owner.session)).error)
 const client = createClient(api, s.anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
 await client.auth.setSession(owner.session);
 const proof = { scope: 'OWNED_ISOLATED_CLIENT_NATIVE_AUTH_BROWSER', nativeOnboardingCertified: false, physicalScanningCertified: false, status: 'RUNNING', candidate: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), sourceArchiveSha256: s.baselineArchiveSha256, actorBootstrap: 'SYNTHETIC_LOCAL_SQL_ROLE_FIXTURE_NOT_GOVERNED_ONBOARDING_PROOF', nativeAuth: { otp: true, totpAal2: true, userJwtFabrication: false }, pages: [], security: [], businessWorkflowCertified: false, externalProvidersCertified: false, pageErrors: [], menus: [], publicSession: [] };
-const directory = resolve(s.directory, process.argv.includes('--menus-probe') ? 'browser-menus-probe' : process.argv.includes('--probe') ? 'browser-probe' : 'browser');
+const directory = resolve(s.directory, process.argv.includes('--full-client') ? 'browser-full-client' : process.argv.includes('--menus-probe') ? 'browser-menus-probe' : process.argv.includes('--probe') ? 'browser-probe' : 'browser');
 await mkdir(directory, { recursive: true });
 const browser = await chromium.launch({ executablePath: '/usr/bin/chromium' });
 const check = (value, code) => { if (!value)
@@ -28,7 +28,8 @@ try {
     const org = await client.from('organizations').select('id').eq('id', foreign.organizationId);
     proof.security.push({ case: 'client-cannot-read-foreign-organization', denied: !org.error && org.data.length === 0 });
     check(!org.error && org.data.length === 0, 'FOREIGN_ORGANIZATION_VISIBLE');
-    const paths = process.argv.includes('--menus-probe') ? [] : process.argv.includes('--probe') ? ['client/portefeuille', 'client/recompenses'] : ['client/diagnostics', 'client/questionnaires', 'client/actions', 'client/portefeuille', 'client/credits', 'client/recompenses', 'client/demandes', 'client/documents', 'notifications'];
+    const fullPaths = ['client/diagnostics','client/questionnaires','client/actions','client/portefeuille','client/credits','client/recompenses','client/demandes','client/documents','notifications','client/abonnement','client/achats-groupes','client/boxes/configuration','client/contrats','client/favoris','client/finances','client/litiges','client/missions','client/onboarding','client/recherche','messagerie','organisation','tableau-de-bord'];
+    const paths = process.argv.includes('--full-client') ? fullPaths : process.argv.includes('--menus-probe') ? [] : process.argv.includes('--probe') ? ['client/portefeuille', 'client/recompenses'] : ['client/diagnostics', 'client/questionnaires', 'client/actions', 'client/portefeuille', 'client/credits', 'client/recompenses', 'client/demandes', 'client/documents', 'notifications'];
     for (const locale of ['fr', 'ar'])
         for (const width of (process.argv.includes('--menus-probe') ? [360] : process.argv.includes('--probe') ? [375, 1440] : [360, 375, 390, 768, 1440])) {
             const context = await browser.newContext({ viewport: { width, height: 960 }, hasTouch: width < 768, serviceWorkers: 'block' });

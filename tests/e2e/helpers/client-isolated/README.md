@@ -32,7 +32,20 @@ APP_ENV=development node tests/e2e/helpers/client-isolated/questionnaire-browser
 APP_ENV=development node tests/e2e/helpers/client-isolated/portfolio-browser.mjs
 APP_ENV=development node tests/e2e/helpers/client-isolated/browser.mjs
 node --test tests/e2e/helpers/client-isolated/safety.test.mjs
+# Run sequentially, with no other fixture/browser script in progress:
+APP_ENV=development node tests/e2e/helpers/client-isolated/quota-race.mjs
 ```
+
+Use `run-app.mjs --production` to run a complete local build (including Next
+TypeScript validation) followed by a loopback-only production-mode server.
+`APP_ENV` remains development and the database stays isolated. A failed build
+does not start the server; no check is skipped.
+
+Use `browser.mjs --full-client` for all 22 existing Client/shared entry routes,
+including subscription, Box configuration, procurement, finance, onboarding
+and organization/dashboard. It records the selected context at every width.
+`browser.mjs --menus-probe` narrows the keyboard/stacking/public-session check
+to FR/AR at 360 pixels.
 
 Use `browser.mjs --probe` for the two modules affected by the composite-role
 pagination regression. The full matrix covers nine Client pages in FR/AR at
@@ -81,3 +94,10 @@ APP_ENV=development node tests/e2e/helpers/client-isolated/cleanup.mjs
 
 Private test files remain ignored for investigation and should be removed when
 no longer needed. Cleanup never removes the source replay or shared services.
+
+The quota race prepares a separate native organization and explicit TEST-only
+cap of one site, launches two genuine authenticated SDK requests concurrently,
+requires exactly one persisted grant and one quota refusal, and verifies
+foreign-organization denial. Its temporary selected-actor/fixture changes are
+restored in `finally`. Never run it concurrently with other harness commands.
+A PostgreSQL deadlock fails the assertion even if only one site persists.
