@@ -19,6 +19,7 @@ Les remboursements consommés sont réalisés dans le domaine indépendant `3002
 
 | Recette | Résultat observé | Preuve |
 | --- | --- | --- |
+| 0249 coordination checkout et reprise PSP | 61 assertions réussies | `/tmp/client-boxes-0249_subscription_checkout_coordination.test.sql.log` ; règles d’exécution approuvées avant source Box/PSP, refus AAL1 et absence d’autorité de capture ou effet monétaire vérifiés |
 | 0256 configuration financée (ordre des approbations réparé) | 38 assertions réussies | Clone isolé piloté par l’intégrateur |
 | 0330 membres / séparation du portefeuille | 24 assertions réussies | `/tmp/client-boxes-0330_scoped_member_box_workflow.test.sql.log` ; aucun droit privé ajouté au navigateur |
 | 0331 achat de A puis publication de B | 16 assertions réussies | Clone isolé piloté par l’intégrateur |
@@ -36,3 +37,5 @@ Les remboursements consommés sont réalisés dans le domaine indépendant `3002
 ## Limites de certification
 
 Les identités/JWT des fixtures SQL et le PSP DEMO/SANDBOX sont synthétiques ; ces tests prouvent les commandes, l’isolation et les effets transactionnels, pas l’identité d’un utilisateur réel ni une signature PSP distante. La recette visuelle navigateur et la revue indépendante sont intégrées séparément avant clôture. Aucun tarif, texte contractuel, règle de remboursement ou montée en gamme de production n’est publié par ces migrations. Les conditions commerciales doivent être approuvées via leur workflow avant vente.
+
+La fixture historique 0249 publie désormais la politique de réalisation humaine et de réception indépendante avant l’approbation du contenu Box. Elle vérifie que la promesse pré-PSP contient la décision indépendante. Le contrôle AAL1 de capture attend le refus actuel `42501 / PAYMENT_CAPTURE_DENIED` de la porte d’entrée commune ; le test confirme en plus que l’ordre reste `REGISTERED`, sans reçu ni journal monétaire. Aucune protection d’exécution ni configuration applicative n’a été modifiée pour cette réparation de fixture.
