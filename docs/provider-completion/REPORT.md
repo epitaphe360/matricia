@@ -22,17 +22,17 @@ Les identifiants E/D ci-dessous appartiennent à l'analyse approfondie du parcou
 | E10 | Filtres documentaires avant pagination, historique | DAL/coffre et SQL0345 ; pièces privées natives vérifiées |
 | E11 | Invitations/devis paginés et détail direct |39100, SQL0346 41 assertions et tests DAL |
 | E12 | Échec de chargement distinct d'un formulaire vide | États explicites, erreurs/prefill bloqués, tests de pages FR/AR |
-| E13 | PDF réel du brouillon et autorisation du dossier | Route privée/PDF, tests ; recette navigateur finale en cours |
+| E13 | PDF réel du brouillon et autorisation du dossier | Route privée/PDF et vrai PDF dans la recette navigateur8941517, tiers refusé |
 | E14 | Complétude fondée sur obligations et scans/revues | SQL0345, ancres et revue documentaire native TEST |
 | E15 | Options HT facultatives et pièces liées à une version |39000, SQL0346, comparatif ; option acceptée par nouvelle version fiscalisée |
-| E16 | Révision volontaire et historique immuable |39200, SQL0346, recette navigateur préparée puis à exécuter |
+| E16 | Révision volontaire et historique immuable |39200, SQL0346, révision Client→brouillonV2Provider caché→republication et V1 immuable réussis sur8941517 |
 | E17 | Rayon et taille déclarés, sans qualification automatique |38200, SQL0345, commandes natives de capacité/périmètre |
 | D01 | Déclaration de paiement puis confirmation Client et revue Finance |40000/40500/40600, SQL0347/0352 et UI ; aucun paiement auto-validé par le Provider |
 | D02 | Échéancier approuvé lié aux échéances réelles |40500, contre-tests financiers et refus échéance impayée |
 | D03 | Pré-relevé, contradiction, exceptions et clôture durable |40100–40950, SQL0347 56 assertions au checkpoint40940 ; délais réels conservés |
 | D04 | RejetV1, correctionV2 et rejeu exact du reçu |41700/41800, SQL0348 102 assertions au checkpoint41830 |
 | D05 | Jalons corrigés avec décisions historiques |41400, SQL0348 ; la recette native navigateur reste à finir |
-| D06 | Contrat complet avant signature et historique | Routes/projections Client/Provider et tests ; signature externe non certifiée |
+| D06 | Contrat complet avant signature et historique | Contrat natif généré après sélectionV2, PDF FR/AR et création de mission réussis ; signature DEV-mock SIMPLE, externe non certifiée |
 | D07 | ADD/REPLACE/REMOVE signés, préparés et exécutés |41950/41960, SQL0355 170,0355b27,0355c18 ; legacy0354 129, chaque transaction annulée |
 | D08 | Encaissement des missions livrées/terminées |40000+, contre-tests financiers et confirmation Client séparée |
 | D09 | Technicien affecté, lecture séparée de l'exécution |41500/41820/41950, rôles composites et révocation SQL ; recette navigateur préparée |

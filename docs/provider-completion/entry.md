@@ -32,3 +32,9 @@ Base préservée : `7e01276`. Autorité : AGENTS.md et Gold Master V4 FINAL §§
 ## Prérequis réels
 
 Des questionnaires Provider publiés et approuvés dans les bibliothèques concernées doivent exister. En leur absence, l’interface donne l’état explicite et renvoie vers l’équipe de qualification. La qualification, les pièces et l’identité restent des décisions humaines selon leurs permissions/MFA ; ce lot ne les fabrique pas. La publication d’identité commune est livrée séparément par le propriétaire du lot identité.
+
+## Revue du dépôt soumis et file du réviseur
+
+La recette navigateur a démontré un blocage supplémentaire : le réviseur indépendant ne pouvait lire les réponses privées d'un autre acteur.38400 ajoute une projection de revue bornée, sans SELECT général des sessions/réponses, et exige la consultation auditée du contexte exact lors de la décision. Sur8941517, le navigateur a exécuté le choix explicite du dépôt original, affiché ses2 vraies réponses et le score figé, saisi un score humain distinct et approuvé A ; B reste en demande de complément, l'auto-approbation est refusée42501. Les libellés des options fournies sont FR/AR ; aucun texte libre n'est traduit.
+
+La file Admin avait aussi un faux vide dû à sa jointure sur organizations sous RLS.38410 conserve la file invoker et résout seulement les noms des profils visibles via la projection Admin bornée existante.0358=19 assertions et contre0357=40 réussissent sur les47 migrations intégrées. Le contrôle visuel de cette dernière migration est encore à consigner avant clôture. Preuves : [revue des questionnaires](../recette/provider-qualification-review-2026-11-02.md), [file Admin](../recette/admin-provider-queue-2026-11-02.md), [rapport consolidé](REPORT.md).
