@@ -69,6 +69,7 @@ for (const locale of ["fr", "ar"] as const) {
     await page.goto("/fr/besoin");
     const originalNeed = "Rénover un local et suivre les travaux à Casablanca.";
     await page.getByRole("textbox", { name: "1. Décrire le besoin", exact: true }).fill(originalNeed);
+    await expectNoHorizontalOverflow(page);
     await page.getByRole("button", { name: "Continuer", exact: true }).first().click();
     await page.locator("#need-library").selectOption("BTP");
     await page.locator("#need-service").selectOption("BTP-RENOV");
@@ -80,21 +81,25 @@ for (const locale of ["fr", "ar"] as const) {
       await expect(page.getByRole("note")).toContainText("أسماء عربية معتمدة");
     }
     await expect(page.getByText(originalNeed, { exact: true })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
     await page.getByRole("button", { name: copy.need.continue, exact: true }).first().click();
     await page.locator("#need-location").fill("Casablanca — الدار البيضاء");
     await page.locator("#need-timing").fill("Trois mois");
     await page.locator("#need-constraints").fill("Accès uniquement en journée");
+    await expectNoHorizontalOverflow(page);
     await page.getByRole("button", { name: copy.need.continue, exact: true }).first().click();
     await expect(page.getByRole("heading", { level: 2, name: `4. ${copy.need.stages.complete[0]}`, exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { level: 3, name: copy.need.docsStepTitle, exact: true })).toBeVisible();
     await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "4");
     await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuemax", "5");
+    await expectNoHorizontalOverflow(page);
     const seeRecap = locale === "fr" ? "Voir le récapitulatif" : "عرض الملخص";
     await page.getByRole("button", { name: seeRecap, exact: true }).first().click();
     await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "5");
     await expect(page.getByText(originalNeed, { exact: true })).toBeVisible();
     await expect(page.getByText("Trois mois", { exact: true })).toBeVisible();
     await expect(page.getByText("Accès uniquement en journée", { exact: true })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
     await page.getByRole("button", { name: copy.need.back, exact: true }).click();
     await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "4");
     await page.getByRole("button", { name: copy.need.back, exact: true }).click();
