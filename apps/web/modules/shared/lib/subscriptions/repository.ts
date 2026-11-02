@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { resolveClientOrganizationContext } from "@/modules/shared/client-organization-context";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
-import type { SubscriptionDashboard } from "./model";
+import { subscriptionCheckoutAvailable, type SubscriptionDashboard } from "./model";
+import { getServerTimestamp } from "@/modules/shared/lib/time/server-clock";
 
 const uuid = z.string().uuid();
 const exactInteger = z.string().regex(/^\d+$/);
@@ -153,7 +154,7 @@ export async function loadSubscriptionDashboard(requestedOrganizationId?: string
     dashboard: {
       organizationId,
       organizationName: parsedMembership.organizations.display_name,
-      capabilities: { canStartTrial: roles.some((role) => role === "CLIENT_OWNER" || role === "CLIENT_ADMIN"), canChangePlan: roles.some((role) => role === "CLIENT_OWNER" || role === "CLIENT_ADMIN") },
+      capabilities: { canStartTrial: roles.some((role) => role === "CLIENT_OWNER" || role === "CLIENT_ADMIN"), canChangePlan: roles.some((role) => role === "CLIENT_OWNER" || role === "CLIENT_ADMIN"), canCheckout: !!subscriptionValue && subscriptionCheckoutAvailable(subscriptionValue.status, subscriptionValue.current_period_end, getServerTimestamp()) },
       plans: plans.data.map((plan) => ({
         id: plan.id,
         code: plan.subscription_plans.code,

@@ -74,7 +74,7 @@ export type SubscriptionDashboard = {
   organizationName: string;
   plans: SubscriptionPlan[];
   subscription: SubscriptionSummary | null;
-  capabilities: { canStartTrial: boolean; canChangePlan: boolean };
+  capabilities: { canStartTrial: boolean; canChangePlan: boolean; canCheckout?: boolean };
 };
 
 export function formatMinor(value: string, currency: string, locale: "fr" | "ar") {
@@ -89,4 +89,12 @@ export function formatMinor(value: string, currency: string, locale: "fr" | "ar"
 
 export function planChangeMode(currentMonthlyMinor: string, targetMonthlyMinor: string): "UPGRADE_IMMEDIATE" | "DOWNGRADE_NEXT_CYCLE" {
   return BigInt(targetMonthlyMinor) > BigInt(currentMonthlyMinor) ? "UPGRADE_IMMEDIATE" : "DOWNGRADE_NEXT_CYCLE";
+}
+
+/** The server supplies now; render paths never infer an unpaid upgrade right. */
+export function subscriptionCheckoutAvailable(status: string, periodEnd: string | null, now: number): boolean {
+  if (["TRIAL_ACTIVE", "TRIAL_EXPIRED", "PAST_DUE", "SUSPENDED"].includes(status)) return true;
+  if (!["ACTIVE", "CANCELLED"].includes(status) || !periodEnd || !Number.isFinite(now)) return false;
+  const end = Date.parse(periodEnd);
+  return Number.isFinite(end) && end <= now;
 }
