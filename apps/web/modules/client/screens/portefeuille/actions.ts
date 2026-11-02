@@ -53,7 +53,7 @@ export async function createCostCenter(_:State,form:FormData):Promise<State>{con
 const allocationSchema = base.extend({
   organizationId: uuid, costCenterId: uuid, budgetId: uuid, projectId: optionalUuid,
   allocationType: z.enum(["COMMITMENT", "ACTUAL", "RELEASE"]),
-  referenceChoice: z.union([z.literal("MANUAL"), z.string().regex(/^(PROJECT|PROJECT_TASK|CONTRACT):[0-9a-f-]{36}$/iu)]),
+  referenceChoice: z.union([z.literal("MANUAL"), z.string().regex(/^(PROJECT|PROJECT_TASK|CONTRACT|MISSION|MISSION_MILESTONE|INVOICE|DOCUMENT|RFQ):[0-9a-f-]{36}$/iu)]),
   amount: z.string().trim().min(1).max(30),
 });
 

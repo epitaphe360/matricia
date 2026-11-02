@@ -33,6 +33,10 @@ const portfolioEventLabels: Record<"fr" | "ar", Record<string, string>> = {
   fr: { CUSTOM: "Autre événement", PROJECT_DEADLINE: "Échéance du projet", APPROVAL: "Validation", DOCUMENT: "Document", INVOICE: "Facture", MISSION: "Mission", RFQ: "Consultation" },
   ar: { CUSTOM: "حدث آخر", PROJECT_DEADLINE: "موعد المشروع", APPROVAL: "اعتماد", DOCUMENT: "مستند", INVOICE: "فاتورة", MISSION: "مهمة تعاقدية", RFQ: "استشارة" },
 };
+const allocationLabels: Record<"fr" | "ar", Record<string, string>> = {
+ fr: {COMMITMENT:"Engagement",ACTUAL:"Dépense réalisée",RELEASE:"Libération d’engagement"},
+ ar: {COMMITMENT:"التزام",ACTUAL:"نفقة فعلية",RELEASE:"تحرير الالتزام"},
+};
 const taskStatuses = ["PENDING", "IN_PROGRESS", "BLOCKED", "SUBMITTED", "ACCEPTED", "CANCELLED"] as const;
 const idle = { status: "idle" } as const;
 
@@ -198,7 +202,7 @@ function OrganizationPortfolio({ locale, data, m, keys, organizationId }: Props 
                 {linked.length === 0 ? null : (
                   <ul>
                     {linked.map((item) => (
-                      <li key={item.id}>{label({ COMMITMENT: "COMMITMENT", ACTUAL: "ACTUAL", RELEASE: "RELEASE" }, item.type)} · {exactMoney(item.amountMinor, item.currency)} · {item.projectId ? projectCode(item.projectId) : m.none}</li>
+                      <li key={item.id}>{label(allocationLabels[locale], item.type)} · {exactMoney(item.amountMinor, item.currency)} · {item.projectId ? projectCode(item.projectId) : m.none}</li>
                     ))}
                   </ul>
                 )}
@@ -212,7 +216,7 @@ function OrganizationPortfolio({ locale, data, m, keys, organizationId }: Props 
         <div className="client-portfolio-forms">
           <BudgetForm locale={locale} orgId={org.id} projects={projects} sites={sites} data={data} m={m} keyValue={keys.budget} />
           <CenterForm locale={locale} orgId={org.id} m={m} keyValue={keys.center} />
-          <AllocationForm locale={locale} orgId={org.id} projects={projects} tasks={orgTasks} contracts={contracts} budgets={budgets.filter((item) => item.status === "APPROVED")} centers={centers.filter((item) => item.status === "ACTIVE")} m={m} keyValue={keys.allocation} />
+          <AllocationForm locale={locale} orgId={org.id} projects={projects} tasks={orgTasks} contracts={contracts} targets={(data.allocationTargets ?? []).filter(item => item.organizationId === org.id)} targetsStatus={data.allocationTargetsStatus ?? "success"} targetsTruncated={data.allocationTargetsTruncated ?? false} invoiceError={data.allocationInvoiceError} budgets={budgets.filter((item) => item.status === "APPROVED")} centers={centers.filter((item) => item.status === "ACTIVE")} m={m} keyValue={keys.allocation} />
         </div>
       ) : null}
 
@@ -396,7 +400,7 @@ function CenterForm({ locale, orgId, m, keyValue }: { locale: "fr" | "ar"; orgId
   );
 }
 
-function AllocationForm({ locale, orgId, projects, tasks, contracts, budgets, centers, m, keyValue }: { locale: "fr" | "ar"; orgId: string; projects: Portfolio["projects"]; tasks: Portfolio["tasks"]; contracts: Portfolio["contracts"]; budgets: Portfolio["budgets"]; centers: Portfolio["costCenters"]; m: Messages; keyValue: string }) {
+function AllocationForm({ locale, orgId, projects, tasks, contracts, targets, targetsStatus, targetsTruncated, invoiceError, budgets, centers, m, keyValue }: { locale: "fr" | "ar"; orgId: string; projects: Portfolio["projects"]; tasks: Portfolio["tasks"]; contracts: Portfolio["contracts"]; targets: NonNullable<Portfolio["allocationTargets"]>; targetsStatus: "success" | "partial" | "unavailable"; targetsTruncated: boolean; invoiceError?: "FORBIDDEN" | "UNAVAILABLE" | "INVALID_RESPONSE"; budgets: Portfolio["budgets"]; centers: Portfolio["costCenters"]; m: Messages; keyValue: string }) {
   const [state, action, pending] = useActionState(recordAllocation, idle);
   return (
     <Card>
@@ -408,15 +412,19 @@ function AllocationForm({ locale, orgId, projects, tasks, contracts, budgets, ce
           <Select name="costCenterId" label={m.center}>{centers.map((item) => <option key={item.id} value={item.id}>{item.code}</option>)}</Select>
           <Select name="projectId" label={m.project} required={false}><option value="">{m.none}</option>{projects.map((item) => <option key={item.id} value={item.id}>{item.code}</option>)}</Select>
           <Select name="allocationType" label={m.allocationType}><option value="COMMITMENT">{locale === "ar" ? "التزام" : "Engagement"}</option><option value="ACTUAL">{locale === "ar" ? "نفقة فعلية" : "Dépense réalisée"}</option><option value="RELEASE">{locale === "ar" ? "تحرير الالتزام" : "Libération d’engagement"}</option></Select>
+          {targetsStatus === "unavailable" ? <p role="alert">{locale === "ar" ? "تعذر تحميل الملفات المتاحة للتخصيص. أعيدوا تحميل الصفحة." : "Les dossiers disponibles pour l’allocation n’ont pas pu être chargés. Rechargez la page."}</p> : null}
+          {targetsTruncated ? <p role="status">{locale === "ar" ? "الاختيار محدود بأول 100 ملف من كل نوع. لا تعرض هذه القائمة جميع الملفات." : "Sélection limitée aux 100 premiers dossiers de chaque type. Cette liste n’est pas exhaustive."}</p> : null}
+          {invoiceError ? <p role="alert">{invoiceError === "FORBIDDEN" ? (locale === "ar" ? "لا تتيح صلاحياتكم اختيار الفواتير في هذا السياق." : "Vos habilitations ne permettent pas de sélectionner des factures dans ce contexte.") : (locale === "ar" ? "اختيار الفواتير غير متاح مؤقتاً. تبقى الملفات الأخرى متاحة؛ أعيدوا التحميل للمحاولة مجدداً." : "La sélection des factures est momentanément indisponible. Les autres dossiers restent utilisables ; rechargez pour réessayer.")}</p> : null}
           <Select name="referenceChoice" label={m.referenceType}>
             <option value="MANUAL">{locale === "ar" ? "تسجيل يدوي مبرر" : "Saisie manuelle justifiée"}</option>
             <optgroup label={m.projects}>{projects.map(item => <option key={item.id} value={`PROJECT:${item.id}`}>{item.code} · {nameOf(locale, item.nameFr, item.nameAr)}</option>)}</optgroup>
             <optgroup label={m.tasks}>{tasks.map(item => <option key={item.id} value={`PROJECT_TASK:${item.id}`}>{item.key} · {nameOf(locale, item.titleFr, item.titleAr)}</option>)}</optgroup>
             <optgroup label={m.contracts}>{contracts.map(item => <option key={item.id} value={`CONTRACT:${item.id}`}>{m.contracts} · {item.id.slice(0, 8)} · v{item.version}</option>)}</optgroup>
+            {targets.map(item => <option key={`${item.type}:${item.id}`} value={`${item.type}:${item.id}`}>{nameOf(locale, item.labelFr, item.labelAr)}</option>)}
           </Select>
           <Field label={m.amount}><Input name="amount" inputMode="decimal" dir="ltr" required /></Field>
           <Field label={m.evidence}><Input name="evidenceFile" type="file" accept="application/pdf,image/png,image/jpeg" required /></Field>
-          <Button disabled={pending || budgets.length === 0 || centers.length === 0}>{m.save}</Button>
+          <Button disabled={pending || targetsStatus === "unavailable" || budgets.length === 0 || centers.length === 0}>{m.save}</Button>
           <Feedback state={state} m={m} />
         </form>
       </CardContent>

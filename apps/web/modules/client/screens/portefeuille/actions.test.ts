@@ -59,6 +59,12 @@ describe("client portfolio actions", () => {
     await expect(recordAllocation(idle,data)).resolves.toEqual({status:"success"});
     expect(mocks.rpc).toHaveBeenCalledWith("record_client_typed_cost_allocation",expect.objectContaining({p_reference_type:"PROJECT",p_reference_id:id(5),p_amount_minor:"1005",p_evidence_hash:createHash("sha256").update(bytes).digest("hex")}));
   });
+  it.each(["MISSION","MISSION_MILESTONE","INVOICE","DOCUMENT","RFQ"])("keeps the native %s reference contract through a business selection", async referenceType => {
+    const data=form({...allocation,referenceChoice:`${referenceType}:${id(5)}`});
+    data.set("evidenceFile",new File(["%PDF-1.7 test"],"test.pdf",{type:"application/pdf"}));
+    await expect(recordAllocation(idle,data)).resolves.toEqual({status:"success"});
+    expect(mocks.rpc).toHaveBeenCalledWith("record_client_typed_cost_allocation",expect.objectContaining({p_reference_type:referenceType,p_reference_id:id(5)}));
+  });
   it("rejects a submitted hash without a file and a file with a forged MIME", async () => {
     const data=form({...allocation,evidenceHash:"a".repeat(64)});
     await expect(recordAllocation(idle,data)).resolves.toEqual({status:"error",reason:"VALIDATION"});

@@ -15,6 +15,7 @@ import { WalletAction } from "@/modules/client/screens/credits/wallet-action";
 import { resolveClientSpace } from "@/modules/client/data/spaces/context";
 import { spaceCopy } from "@/modules/client/data/spaces/copy";
 import { ClientAppShell } from "@/modules/client/ui/client-app-shell";
+import { WorkspaceFailure } from "@/modules/shared/ui/workspace-failure";
 import Link from "next/link";
 
 export default async function Credits({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string }> }) {
@@ -32,7 +33,7 @@ export default async function Credits({ params, searchParams }: { params: Promis
       <main className="client-page">{body}</main>
     </ClientAppShell>
   );
-  if (result.status === "error") return shell(<p role="alert" className="client-card">{m.unavailable}</p>);
+  if (result.status === "error") return shell(<WorkspaceFailure locale={locale} reason={result.reason === "FORBIDDEN" ? "FORBIDDEN" : "UNAVAILABLE"} returnPath={`/${locale}/client/credits${space.selectedQuery}`} supportReference="CLIENT-CREDITS" />);
 
   const context = resolveClientOrganizationContext(result.value.organizations.map((organization) => ({ organization_id: organization.id, name: organization.name })), space.selectedOrganizationId);
   if (context.status === "error" && context.reason === "ORGANIZATION_SELECTION_REQUIRED") {

@@ -75,3 +75,9 @@ describe("PortfolioPanel", () => {
     expect(html).not.toContain("placeholder=");
   });
 });
+
+it.each(["fr", "ar"] as const)("keeps native invoice targets and uses business history labels (%s)", locale => {
+ const invoice="99999999-9999-4999-8999-999999999999";
+ const html=renderToStaticMarkup(<PortfolioPanel locale={locale} data={{...data,allocationTargets:[{id:invoice,organizationId:org,type:"INVOICE",labelFr:"Facture liée au projet",labelAr:"فاتورة مرتبطة بالمشروع"}]}} m={getMessages(locale)} keys={{site:"a",project:"b",task:"c",contract:"d",budget:"e",center:"f",allocation:"g",event:"h"}} />);
+ expect(html).toContain(`value="INVOICE:${invoice}"`);expect(html).not.toContain("ACTUAL ·");expect(html).toContain(locale==="ar"?"نفقة فعلية":"Dépense réalisée");
+});
