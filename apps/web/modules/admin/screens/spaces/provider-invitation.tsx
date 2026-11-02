@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { listInvitations } from "@/app/[locale]/invitations/actions";
 import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
@@ -11,7 +11,7 @@ import { createAdminInvitationFormDefaults } from "./invitation-defaults";
 export async function ProviderInvitationWorkspace({ locale, query, snapshot }: { locale:Locale;query:string;snapshot:SpaceSnapshot }) {
   const ar=locale==="ar";
   const href=`/${locale}/administration/providers/nouvelle${query}`;
-  const invitation = await listInvitations().catch(()=>({status:"error" as const,reason:"UNAVAILABLE" as const}));
+  const invitation = await listInvitations().catch(error=>{unstable_rethrow(error);return {status:"error" as const,reason:"UNAVAILABLE" as const};});
   if(invitation.status==="error") {
     if(invitation.reason==="UNAUTHENTICATED") redirect(connexionHref(locale,{next:href}));
     return <main className="client-page"><AdminReadError locale={locale} reason="UNAVAILABLE" retryHref={href}/></main>;

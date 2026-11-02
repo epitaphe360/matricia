@@ -1,5 +1,6 @@
 "use server";
 
+import { classifyAuthReadFailure } from "@/modules/shared/lib/auth/read-failure";
 import { requestedCapabilityCodes } from "@/modules/admin/data/spaces/role-preview";
 import { bindAdminDeployment } from "./environment";
 import { createHash, randomUUID } from "node:crypto";
@@ -67,7 +68,9 @@ export async function submitActorInvitation(previous: ActorInviteState, form: Fo
     const input=z.object({organizationId:z.string().uuid(),invitedEmail:z.string().trim().toLowerCase().email(),role:z.string().regex(/^(CLIENT_(OWNER|ADMIN|BUYER|ACCOUNTING|MEMBER|VIEWER)|PROVIDER_(OWNER|MANAGER|SALES|TECHNICIAN|ACCOUNTING|VIEWER))$/),key:z.string().min(8).max(200),expiresAt:z.string().datetime()}).safeParse({organizationId:value(form,"organizationId"),invitedEmail:value(form,"invitedEmail"),role:value(form,"roleCode"),key:value(form,"idempotencyKey"),expiresAt:value(form,"invitationExpiresAt")});
     if(!input.success)return{status:"error",reason:"VALIDATION"};
     const client=await getSupabaseServerClient();
-    const {data:auth}=await client.auth.getUser();
+    const {data:auth,error:authError}=await client.auth.getUser();
+    const authFailure=classifyAuthReadFailure(authError);
+    if(authFailure)return{status:"error",reason:authFailure};
     if(!auth.user)return{status:"error",reason:"UNAUTHENTICATED"};
     if(input.data.invitedEmail===auth.user.email?.toLowerCase())return{status:"error",reason:"VALIDATION"};
     const {error}=await client.rpc("invite_organization_member_by_email",{p_organization_id:input.data.organizationId,p_invited_email:input.data.invitedEmail,p_role_codes:[input.data.role],p_expires_at:input.data.expiresAt,p_idempotency_key:input.data.key,p_correlation_id:randomUUID()});
