@@ -18,7 +18,7 @@ const itemRow = z.object({ id, contract_version_id: id, item_key: z.string(), it
 const missionRow = z.object({ id, contract_id: id, contract_version_id: id, status: z.string(), started_at: z.string().nullable(), completed_at: z.string().nullable() });
 const milestoneRow = z.object({ id, mission_id: id, milestone_key: z.string(), title_fr: z.string(), title_ar: z.string(), status: z.string(), due_at: z.string().nullable(), row_version: z.number().int().positive() });
 const deliverableRow = z.object({ id, mission_id: id, deliverable_key: z.string(), label_fr: z.string(), label_ar: z.string(), status: z.string(), current_version: z.number().int().nonnegative() });
-const criterionRow = z.object({ deliverable_id: id, criterion_key: z.string(), status: z.string() });
+const criterionRow = z.object({ deliverable_id: id, delivery_version: z.number().int().nonnegative(), criterion_key: z.string(), status: z.string() });
 const deliveryVersionRow = z.object({ id, deliverable_id: id, version: z.number().int().positive() });
 const deliveryProofRow = z.object({ delivery_version_id: id, scan_status: z.enum(["PENDING","CLEAN","INFECTED","ERROR"]) });
 
@@ -78,7 +78,7 @@ export async function loadContractMissions(locale: "fr" | "ar", requestedOrganiz
 
   const deliverableIds = deliverables.data.map((deliverable) => deliverable.id);
   const [criteriaResult,deliveryVersionsResult] = await Promise.all([
-    deliverableIds.length ? readContractRelations(deliverableIds,(ids,from,to)=>client.from("acceptance_checklists").select("deliverable_id,criterion_key,status").in("deliverable_id", ids).order("deliverable_id").order("criterion_key").range(from,to)) : Promise.resolve({ data: [], error: null }),
+    deliverableIds.length ? readContractRelations(deliverableIds,(ids,from,to)=>client.from("acceptance_checklists").select("deliverable_id,delivery_version,criterion_key,status").in("deliverable_id", ids).order("deliverable_id").order("criterion_key").range(from,to)) : Promise.resolve({ data: [], error: null }),
     deliverableIds.length ? readContractRelations(deliverableIds,(ids,from,to)=>client.from("delivery_versions").select("id,deliverable_id,version").in("deliverable_id", ids).order("id").range(from,to)) : Promise.resolve({ data: [], error: null }),
   ]);
   if (criteriaResult.error||deliveryVersionsResult.error) return { status: "error", reason: "QUERY_FAILED" };
@@ -158,7 +158,7 @@ export async function loadContractMissions(locale: "fr" | "ar", requestedOrganiz
         startedAt: mission.started_at,
         completedAt: mission.completed_at,
         milestones: milestones.data.filter((milestone) => milestone.mission_id === mission.id).map((milestone) => ({ id: milestone.id, key: milestone.milestone_key, title: locale === "ar" ? milestone.title_ar : milestone.title_fr, status: milestone.status, dueAt: milestone.due_at, rowVersion: milestone.row_version })),
-        deliverables: deliverables.data.filter((deliverable) => deliverable.mission_id === mission.id).map((deliverable) => {const current=deliveryVersions.data.find((version)=>version.deliverable_id===deliverable.id&&version.version===deliverable.current_version);const proofs=current?deliveryProofs.data.filter((proof)=>proof.delivery_version_id===current.id):[];const proofScanStatus=proofs.length===0?"NONE":proofs.every((proof)=>proof.scan_status==="CLEAN")?"CLEAN":proofs.some((proof)=>proof.scan_status==="INFECTED")?"INFECTED":proofs.some((proof)=>proof.scan_status==="ERROR")?"ERROR":"PENDING";return { id: deliverable.id, key: deliverable.deliverable_key, label: locale === "ar" ? deliverable.label_ar : deliverable.label_fr, status: deliverable.status, currentVersion: deliverable.current_version, proofScanStatus, criteria: criteria.data.filter((criterion) => criterion.deliverable_id === deliverable.id).map((criterion) => ({ key: criterion.criterion_key, status: criterion.status })) };}),
+        deliverables: deliverables.data.filter((deliverable) => deliverable.mission_id === mission.id).map((deliverable) => {const current=deliveryVersions.data.find((version)=>version.deliverable_id===deliverable.id&&version.version===deliverable.current_version);const proofs=current?deliveryProofs.data.filter((proof)=>proof.delivery_version_id===current.id):[];const proofScanStatus=proofs.length===0?"NONE":proofs.every((proof)=>proof.scan_status==="CLEAN")?"CLEAN":proofs.some((proof)=>proof.scan_status==="INFECTED")?"INFECTED":proofs.some((proof)=>proof.scan_status==="ERROR")?"ERROR":"PENDING";return { id: deliverable.id, key: deliverable.deliverable_key, label: locale === "ar" ? deliverable.label_ar : deliverable.label_fr, status: deliverable.status, currentVersion: deliverable.current_version, proofScanStatus, criteria: criteria.data.filter((criterion) => criterion.deliverable_id === deliverable.id && criterion.delivery_version === deliverable.current_version).map((criterion) => ({ key: criterion.criterion_key, status: criterion.status })) };}),
       }];
     }),
   } };
