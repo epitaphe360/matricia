@@ -52,6 +52,10 @@
     "sha256": "6735321507e75103f0450088740ddae941dacc1fe402003a5977918521475e89"
   },
   {
+    "file": "entry-boundaries.json",
+    "sha256": "60969361e819c3c95f2d4ff62a88e9eac5815cf5b558f120646026b8b981b96a"
+  },
+  {
     "file": "entry-browser.json",
     "sha256": "081cd64ed2d089036099a9291d310e123b3180a636266e7ba83e9c5ff86cf45d"
   },
@@ -269,6 +273,14 @@
   },
   {
     "file": "README.md",
-    "sha256": "493f8124f82c092a40940bc1ed525ef5e7549223434dfb4beffc6aceefc4a0d8"
+    "sha256": "ffbc6620646c8060d8c34653d4dbd80b50ca534a6b2570a3215fa09e1c93399a"
+  },
+  {
+    "file": "reviewer-aal1-boundary.json",
+    "sha256": "6216cf1a923633c45990811971ed28ba42a156df038cb38666e8fd1dde8cbde2"
+  },
+  {
+    "file": "reviewer-aal1-fr-768.png",
+    "sha256": "d5db0ec4cb03d431508b54721d88cd608756ab3d7624d0f447ed0405f336e964"
   }
 ]
