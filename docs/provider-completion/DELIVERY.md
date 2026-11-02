@@ -36,3 +36,11 @@ Le réviseur indépendant `/root/provider_quotes_finish` a trouvé deux reprises
 Les actions confirmées invalident les vues métier, et les formulaires conservent leur clé après erreur puis la renouvellent après succès confirmé. La projection Provider utilise le `contract_version_id` de la mission : une missionV1 terminée ne se présente plus comme une missionV2 terminée lorsque l’avenant signé n’a pas encore été exécuté. Les tests ciblés de ces changements passent34/34 ; les scénarios SQL additionnels restent à rejouer avant clôture.
 
 La revue a aussi découvert le cas des opérations contractuelles REMOVE/REPLACE de l’ABI existante. Le complément de réconciliation de ce périmètre est en cours ; il ne sera pas assimilé à `NO_ADDITIONAL_WORK` ni déclaré clos sur le seul scénario ADD.
+
+## Recette native complémentaire — 0348 et0353
+
+Le rejeu transactionnel sur la cible locale possédée a exécuté les migrations41000–41830 et chaque fichier SQL dans une session séparée : **0348 :102 assertions PASS ;0353 :18 assertions PASS**. Les deux transactions sont annulées, aucun COMMIT envoyé, empreintes de schéma avant/après identiques. Reçus : [102 assertions](evidence/delivery-native-102.json) et [18 assertions](evidence/signed-initial-mission-native-18.json). Il s’agit d’un schéma458 existant avec migrations explicites, pas d’un replay intégral neuf.
+
+Cette recette a reproduit une panne réelle des projections de recherche/compteurs : leurs fonctions SECURITY INVOKER appelaient directement un helper du schéma privé inaccessible au rôle authenticated.41830 expose seulement un prédicat booléen lié à auth.uid(), sans paramètre d’utilisateur, tout en conservant l’exécution des projections sous RLS. Aucun USAGE du schéma privé n’est accordé.
+
+Sont notamment vérifiés : signature de développement via gouvernance/callback réels, ajout signé avant ou après mission initiale, critères signés exacts, reçus de reprise sous quarantaine, rejetV1/reprise aprèsV2, affectations et restrictions Technician. Les métadonnées de preuve SQL ne valent pas scan antivirus physique. REMOVE/REPLACE et recette navigateur intégrée restent ouverts.
