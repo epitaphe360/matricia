@@ -1,3 +1,4 @@
+vi.mock("next/cache",()=>({revalidatePath:vi.fn()}));
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ getUser: vi.fn(), rpc: vi.fn(), maybeSingle: vi.fn(), upload: vi.fn(), remove: vi.fn() }));
