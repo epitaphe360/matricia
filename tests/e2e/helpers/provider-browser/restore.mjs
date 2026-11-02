@@ -36,5 +36,5 @@ docker(['exec', '-i', s.database, 'psql', '-X', '-U', 'supabase_admin', '-d', 'p
 s.status = 'RESTORED_AWAITING_ACL';
 await writeFile(statePath, JSON.stringify(s), { mode: 0o600 });
 execFileSync(process.execPath,[resolve('tests/e2e/helpers/provider-browser/acl-fidelity.mjs'),resolve(process.argv[2]),'--align'],{env:process.env,stdio:['ignore','pipe','pipe'],timeout:90000});
-s.status='RESTORED';await writeFile(statePath,JSON.stringify(s),{mode:0o600});
+s.status='RESTORED';s.schemaStatus='BASELINE_CANONICAL458';await writeFile(statePath,JSON.stringify(s),{mode:0o600});
 console.log(JSON.stringify({ canonicalAclFidelity:'MATCHED',status: s.status, archiveSha256: s.baselineArchiveSha256, database: s.database }));
