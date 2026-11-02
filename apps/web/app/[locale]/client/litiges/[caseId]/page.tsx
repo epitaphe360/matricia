@@ -34,6 +34,7 @@ export default async function DisputePage({
   if (list.status === "error" && list.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/client/litiges/${caseId}` }));
   const m = getDisputeMessages(locale);
   const c = spaceCopy(locale);
+  if (result.status === "error" && result.reason === "INVALID_INPUT") notFound();
   if (result.status === "error") return <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="missions" title={m.title} lead={m.intro} kicker={c.kicker}>
     <section role="alert" className="client-card"><h2>{locale === "ar" ? "تعذر تحميل ملف النزاع" : "Le dossier de litige n’a pas pu être chargé"}</h2>
       <p>{result.reason === "FORBIDDEN" ? (locale === "ar" ? "لا تتيح صلاحياتكم الاطلاع على هذا الملف." : "Vos habilitations ne permettent pas de consulter ce dossier.") : (locale === "ar" ? "القراءة غير متاحة مؤقتا؛ لا يعني ذلك اختفاء الملف." : "La lecture est temporairement indisponible ; cela ne signifie pas que le dossier a disparu.")}</p>

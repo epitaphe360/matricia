@@ -35,6 +35,7 @@ export default async function ProviderDisputePage({
   const [list, result] = await Promise.all([repository.list(), repository.detail(caseId)]);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/litiges/${caseId}` }));
   if (list.status === "error" && list.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/litiges/${caseId}` }));
+  if (result.status === "error" && result.reason === "INVALID_INPUT") notFound();
   if (result.status === "error") return <ProviderAppShell locale={locale} organizations={space.organizations} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="disputes" title={m.title} lead={m.intro}><ProviderReadState locale={locale} state={result.reason === "FORBIDDEN" ? "forbidden" : "unavailable"} retryHref={retryHref} /></ProviderAppShell>;
   if (!result.value) notFound();
   const d = result.value;
