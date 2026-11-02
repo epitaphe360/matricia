@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import Link from "next/link";
+import { z } from "zod";
 import { notFound, redirect } from "next/navigation";
 import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
@@ -23,7 +25,7 @@ export default async function ClientMissionFollowPage({
   searchParams: Promise<{ organizationId?: string }>;
 }) {
   const [{ locale, missionId }, query] = await Promise.all([params, searchParams]);
-  if (!isLocale(locale) || !missionId) notFound();
+  if (!isLocale(locale) || !z.string().uuid().safeParse(missionId).success) notFound();
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
   if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/missions/${missionId}` }));
   const messages = getMissionMessages(locale);
@@ -33,27 +35,33 @@ export default async function ClientMissionFollowPage({
     ? { ...result.dashboard, missions: result.dashboard.missions.filter((item) => item.id === missionId) }
     : null;
   const mission = dashboard?.missions[0] ?? null;
+  if (result.status === "success" && !mission) notFound();
+  const followPath = `/${locale}/client/missions/${missionId}${space.selectedQuery}`;
 
   return (
-    <ClientAppShell languagePath={`/${locale}/client/missions/${missionId}${space.selectedQuery}`} locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="missions" theme="follow" title={c.followTitle} lead={c.followLead} kicker={c.kicker} actions={<SpaceActions href={`/${locale}/besoin${space.selectedQuery}`} label={locale === "ar" ? "وصف حاجتي" : "Décrire mon besoin"} />}>
-      <FollowBoard locale={locale} query={space.selectedQuery} organizationName={space.organizationName} mission={mission} />
-      <details className="client-ops">
-        <summary>{c.opsMissions}</summary>
-        {result.status === "error" ? (
-          <Alert><AlertTitle>{messages.noOrg}</AlertTitle><AlertDescription>{result.reason}</AlertDescription></Alert>
-        ) : dashboard && dashboard.missions.length === 0 ? (
-          <p role="status" className="client-card">{messages.empty}</p>
-        ) : dashboard ? (
+    <ClientAppShell languagePath={followPath} locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="missions" theme="follow" title={c.followTitle} lead={c.followLead} kicker={c.kicker} actions={<SpaceActions href={`/${locale}/besoin${space.selectedQuery}`} label={locale === "ar" ? "وصف حاجتي" : "Décrire mon besoin"} />}>
+      {result.status === "error" ? (
+        <Alert>
+          <AlertTitle>{locale === "ar" ? "متابعة المهمة غير متاحة" : "Suivi de mission indisponible"}</AlertTitle>
+          <AlertDescription>
+            <p>{locale === "ar" ? "تعذر تحميل الملف والتحقق من حالته. أعد المحاولة؛ لا يعني ذلك أن المهمة خالية من الإجراءات." : "Le dossier et son état n’ont pas pu être chargés. Réessayez ; cela ne signifie pas que la mission est sans action à traiter."}</p>
+            <Link href={followPath} className="client-ghost-link">{locale === "ar" ? "إعادة المحاولة" : "Réessayer"}</Link>
+          </AlertDescription>
+        </Alert>
+      ) : dashboard && mission ? <>
+        <FollowBoard locale={locale} query={space.selectedQuery} organizationName={space.organizationName} mission={mission} />
+        <details className="client-ops">
+          <summary>{c.opsMissions}</summary>
           <div className="space-y-6">
             <MissionPanel d={dashboard} locale={locale} m={messages} />
             <MilestoneDecisions dashboard={dashboard} locale={locale} messages={messages} />
             {amendments.status==="error"?<p role="alert">{locale==="fr"?"Les avenants sont momentanément indisponibles ou nécessitent une nouvelle vérification de vos droits. Les autres données restent consultables.":"ملاحق العقود غير متاحة مؤقتاً أو تتطلب التحقق مجدداً من الصلاحيات. ما تزال البيانات الأخرى متاحة."}</p>:null}
-              {amendments.status === "success" && amendments.value.organizationId === dashboard.organizationId ? (
+            {amendments.status === "success" && amendments.value.organizationId === dashboard.organizationId ? (
               <AmendmentPanel d={amendments.value} locale={locale} keys={Object.fromEntries(amendments.value.items.flatMap((item) => [[`submit:${item.id}`, randomUUID()], [`sign:${item.id}`, randomUUID()]]))} />
             ) : null}
           </div>
-        ) : null}
-      </details>
+        </details>
+      </> : null}
     </ClientAppShell>
   );
 }
