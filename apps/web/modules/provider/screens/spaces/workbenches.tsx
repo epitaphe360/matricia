@@ -19,7 +19,6 @@ import {
   Plus,
   Send,
   Settings2,
-  ShieldCheck,
   Target,
   TriangleAlert,
 } from "lucide-react";
@@ -346,7 +345,7 @@ export function QuoteMultilineWorkbench({
 
 function revisionFieldLabel(field:string,locale:Locale){
  if(field.startsWith("line:"))return `${locale==="ar"?"السطر":"Ligne"} ${field.slice(5)}`;
- const labels:Record<string,[string,string]>={currency:["Devise","العملة"],solution:["Solution","الحل"],deliverables:["Livrables","المخرجات"],inclusions:["Inclusions","المشمول"],exclusions:["Exclusions","الاستثناءات"],prerequisites:["Prérequis","المتطلبات"],warranty:["Garantie","الضمان"],correctionTerms:["Corrections","التصحيحات"],proposedStartDate:["Début prévu","البداية المتوقعة"],durationDays:["Durée (jours)","المدة بالأيام"],validUntil:["Validité (Casablanca)","الصلاحية بتوقيت الدار البيضاء"]};
+ const labels:Record<string,[string,string]>={options:["Options","خيارات"],optionPriceBasis:["Base fiscale des options","القاعدة الضريبية للخيارات"],paymentTerms:["Modalités de paiement","شروط الدفع"],maintenanceTerms:["Maintenance","الصيانة"],attachments:["Pièces jointes","المرفقات"],currency:["Devise","العملة"],solution:["Solution","الحل"],deliverables:["Livrables","المخرجات"],inclusions:["Inclusions","المشمول"],exclusions:["Exclusions","الاستثناءات"],prerequisites:["Prérequis","المتطلبات"],warranty:["Garantie","الضمان"],correctionTerms:["Corrections","التصحيحات"],proposedStartDate:["Début prévu","البداية المتوقعة"],durationDays:["Durée (jours)","المدة بالأيام"],validUntil:["Validité (Casablanca)","الصلاحية بتوقيت الدار البيضاء"]};
  return labels[field]?.[locale==="ar"?1:0]??field;
 }
 

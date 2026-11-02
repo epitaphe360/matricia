@@ -68,3 +68,37 @@ Tests supplémentaires exécutés : **17 tests réussis sur 3 fichiers**
 (`/tmp/provider-context-followup-tests.log`), dont huit tests des vrais composants
 serveur imbriqués. Le lot dépend des contrats loaders `a0d7e00`, des champs de
 litige `78fedaf` et des états d’accueil intégrés dans `a751bc1`.
+
+## Continuité du dossier contractuel et droits d'envoi
+
+La création d'un premier fil après sélection et signature échouait réellement avec
+`RFQ_MESSAGING_NOT_OPEN`. Le fil privé existant est désormais accessible lorsque
+le contrat courant relie exactement le devis sélectionné, le Client et le
+Sous-traitant. La consultation ne repasse jamais à l'état ouvert. Le sélecteur
+inclut les dossiers contractuels autorisés, lit toutes ses pages et distingue
+une panne d'un résultat vide. Le lien direct depuis un dossier retrouve son fil
+même hors de la page courante de la boîte.
+
+Les droits de lecture et d'exécution sont séparés. Owner/Manager/Sales peuvent
+envoyer ; un Technician exécute seulement une mission affectée. Ajouter Viewer
+à un Technician non affecté conserve la lecture autorisée par Viewer sans lui
+donner l'envoi, le brouillon ou le dépôt de pièces. Les règles Franchise restent
+celles de leur mandat. La commande serveur garde ces contrôles même si le
+formulaire est forgé. Les trois lecteurs de conversation, y compris le lecteur
+historique, exposent le droit `can_send` courant. L'interface n'affiche aucun
+contrôle d'envoi si le droit est refusé ou absent ; l'absence de projection reste
+un incident explicite, pas une autorisation implicite ni un faux refus.
+
+Contrôles de cette reprise : **29 tests réussis sur 5 fichiers**, journal local
+`/tmp/provider-context-resume-unit-final2.log` ; lint ciblé sans diagnostic,
+`/tmp/provider-context-resume-lint-final.log` ; `git diff --check` réussi. Le test
+positif des pièces vérifie que le composant de brouillon réel est monté : un SSR
+ne prétend pas avoir attendu sa lecture réseau ni chargé un fichier.
+
+`0352_provider_contract_message_continuity.test.sql` étend la fixture contractuelle
+native0338 sans désactiver FK, triggers ou RLS. Il vérifie première ouverture après
+fermeture RFQ, rejeu, recherche directe, affectation/révocation, rôles composites,
+Viewer Client et capacités des lecteurs historiques/paginés. **Ce scénario attend
+encore son créneau SQL isolé à ce point de sauvegarde.** Les migrations42020 et
+42030, les tests et les interfaces sont prêts à l'intégration ; la preuve de
+l'auteur root pour la seule continuité42010 ne couvre pas ces derniers ajouts.

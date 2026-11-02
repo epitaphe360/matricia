@@ -60,7 +60,7 @@ export function ProviderInboxBoard({
   const m = getMessagingMessages(locale);
   const n = getNotificationMessages(locale);
   const filteredOptions = preferredRfqId ? options.filter((item) => item.rfqId === preferredRfqId) : options;
-  const openOptions = filteredOptions.map(item => ({...item,label:`${locale === "ar" ? "استشارة" : "Consultation"} ${item.rfqId.slice(0,8).toUpperCase()}`}));
+  const openOptions = filteredOptions.map(item => ({...item,label:`${item.context === "CONTRACT" ? (locale === "ar" ? "ملف عقد" : "Dossier contractuel") : (locale === "ar" ? "استشارة" : "Consultation")} ${item.rfqId.slice(0,8).toUpperCase()}`}));
   const empty = locale === "ar" ? "لا توجد محادثة مرتبطة باستشارة." : "Aucune conversation liée à une consultation.";
   const tr = (fr: string, ar: string) => locale === "ar" ? ar : fr;
   const base = `/${locale}/sous-traitant/messages`;
@@ -140,14 +140,14 @@ export function ProviderInboxBoard({
                 {history.hasMore && history.nextCursor ? <Link href={historyHref(history.nextCursor)}>{tr("Messages plus anciens", "رسائل أقدم")}</Link> : null}
                 <Link href={historyHref()}>{tr("Messages les plus récents", "أحدث الرسائل")}</Link>
               </nav> : null}
-              <SendMessageForm
+              {conversation.thread.can_send !== true && conversation.thread.status !== "LOCKED" ? <p role="status">{conversation.thread.can_send === false ? tr("Cette conversation est en lecture seule pour votre rôle ou votre affectation.", "هذه المحادثة للقراءة فقط بحسب دوركم أو إسناد المهمة إليكم.") : tr("Les droits d’envoi sont indisponibles. Rechargez cette conversation.", "صلاحيات الإرسال غير متاحة. أعد تحميل المحادثة.")}</p> : <SendMessageForm
                 threadId={conversation.thread.id}
                 senderOrganizationId={conversation.thread.participant_organization_id}
                 locale={locale}
                 m={m}
                 locked={conversation.thread.status === "LOCKED"}
-              />
-              {conversation.thread.status !== "LOCKED" ? <InternalMessageAttachments threadId={conversation.thread.id} senderOrganizationId={conversation.thread.participant_organization_id} locale={locale} /> : null}
+              />}
+              {conversation.thread.status !== "LOCKED" && conversation.thread.can_send === true ? <InternalMessageAttachments threadId={conversation.thread.id} senderOrganizationId={conversation.thread.participant_organization_id} locale={locale} /> : null}
             </>
           ) : (
             <p>{inboxError ? tr("Choisissez une conversation après avoir rétabli le chargement.", "اختر محادثة بعد استعادة تحميل البيانات.") : threads.length === 0 ? empty : m.choose}</p>

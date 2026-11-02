@@ -4,7 +4,6 @@ import { buildProviderNav } from "@/modules/provider/ui/provider-nav";
 import { loadProviderInvoiceDossier } from "@/modules/provider/data/billing/dossier";
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
 import { loadProviderBilling } from "@/modules/provider/data/billing/repository";
 import { loadProviderMissions } from "@/modules/provider/data/missions/repository";
 import { loadConsultationSharedDocuments, loadProviderQuotes, loadProviderQuoteHistory } from "@/modules/provider/data/quotes/repository";
@@ -14,6 +13,7 @@ import { resolveProviderSpace } from "@/modules/provider/data/spaces/context";
 import { providerCopy } from "@/modules/provider/data/spaces/copy";
 import { resolveProviderNestedView } from "@/modules/provider/data/spaces/nested-views";
 import { workbenchCopy } from "@/modules/provider/data/spaces/workbench-copy";
+import { findProviderObjectThread } from "@/modules/provider/data/messages/direct-thread";
 import { loadProviderInbox } from "@/modules/provider/data/messages/inbox";
 import { parseMessageCursor } from "@/app/[locale]/messagerie/history-navigation";
 import { ProviderInboxBoard } from "@/modules/provider/screens/messages/inbox-board";
@@ -100,10 +100,12 @@ export async function ProviderConsultationDetailPage({
   const contextBoundary=providerContextBoundary(locale as Locale,space,"consult",query.organizationId);
   if(contextBoundary)return contextBoundary;
   const w = workbenchCopy(locale as Locale);
-  const result = await loadProviderQuotes(space.selectedOrganizationId ?? undefined,{invitationId:consultationId});
+  let result = await loadProviderQuotes(space.selectedOrganizationId ?? undefined,{invitationId:consultationId});
+  if(result.status==="success"&&result.dashboard.invitations.length===0)result=await loadProviderQuotes(space.selectedOrganizationId??undefined,{rfqId:consultationId});
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
   if (result.status === "error") return <ProviderReadFailure locale={locale as Locale} space={space} active="consult" reason={result.reason} />;
   const found = result.status === "success" ? findInvitation(result.dashboard, consultationId) : null;
+  if(found&&found.id!==consultationId)redirect(`/${locale}/sous-traitant/consultations/${found.id}${space.selectedQuery}`);
   const shared = found ? await loadConsultationSharedDocuments(found.id) : [];
   if(shared===null)return <ProviderReadFailure locale={locale as Locale} space={space} active="consult" reason="QUERY_FAILED"/>;
   const invitation = found
@@ -331,6 +333,11 @@ export async function ProviderMessagesPage({
   const requestedThread = threadId;
   const page = Math.min(100000, Math.max(1, Number.parseInt(query.page ?? "1", 10) || 1));
   const search = (query.q ?? "").trim().slice(0, 120);
+  if(!requestedThread&&query.rfq&&recordId.test(query.rfq)&&space.selectedOrganizationId){
+    const existing=await findProviderObjectThread(query.rfq,space.selectedOrganizationId);
+    if(existing.status==="error")return <ProviderReadFailure locale={locale as Locale} space={space} active="messages" reason={existing.reason}/>;
+    if(existing.value){const retained=new URLSearchParams({organizationId:space.selectedOrganizationId,...(search?{q:search}:{}),...(page>1?{page:String(page)}:{})});redirect(`/${locale}/sous-traitant/messages/${existing.value}?${retained}`);}
+  }
   const repository = await createInternalMessagingRepository();
   const [loaded, notifications] = await Promise.all([
     loadProviderInbox(repository, { organizationId:space.selectedOrganizationId, threadId:requestedThread, search, page, cursor:cursor.cursor }),
