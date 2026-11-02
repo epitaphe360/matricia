@@ -37,6 +37,7 @@ const ar = {
 } as const;
 
 type Status = z.infer<typeof sessionStatus>; type Answer = z.infer<typeof answerType>;
-export type QuestionnaireMessages = Omit<typeof fr, "statuses" | "types"> & { statuses: Record<Status, string>; types: Record<Answer, string> };
-export function getQuestionnaireMessages(locale: Locale): QuestionnaireMessages { return (locale === "ar" ? ar : fr) as QuestionnaireMessages; }
+type LocalizedCopy<T> = {[K in keyof T]:T[K]extends string?string:LocalizedCopy<T[K]>};
+export type QuestionnaireMessages = LocalizedCopy<Omit<typeof fr, "statuses" | "types">> & { statuses: Record<Status, string>; types: Record<Answer, string> };
+export function getQuestionnaireMessages(locale: Locale): QuestionnaireMessages { return locale === "ar" ? ar : fr; }
 export function failureMessage(messages: QuestionnaireMessages, reason: QuestionnaireFailure | "VALIDATION") { if (reason === "VALIDATION" || reason === "INVALID_INPUT" || reason === "INVALID_RESPONSE") return messages.validation; if (reason === "CONFLICT") return messages.conflict; if (reason === "FORBIDDEN") return messages.forbidden; if (reason === "NO_CLIENT_ORGANIZATION") return messages.noOrg; if (reason === "ORGANIZATION_SELECTION_REQUIRED") return messages.selectOrg; if (reason === "REQUIRED_MISSING") return messages.requiredMissing; if (reason === "NOT_EDITABLE") return messages.notEditable; if (reason === "NOT_SUBMITTABLE") return messages.notSubmittable; if (reason === "BOUNDS_EXCEEDED") return messages.bounds; return messages.unavailable; }

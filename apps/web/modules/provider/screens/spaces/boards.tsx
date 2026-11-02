@@ -844,7 +844,7 @@ export function ProviderDocumentsBoard({
                 {rows.map((document) => (
                   <tr key={document.id}>
                     <td><Link className="client-text-link" href={`/${locale}/sous-traitant/documents/${document.id}${query}`}>{document.code} · v{document.version}</Link></td>
-                    <td>{document.kind}</td>
+                    <td>{getProviderStatusLabel(locale,document.kind)}</td>
                     <td><span className="client-status-chip" data-tone={documentTone(document.status)}>{getProviderStatusLabel(locale, document.status)}</span></td>
                     <td>{c.docsPrivate}</td>
                     <td>{document.scanStatus === "CLEAN" ? <a href={`/api/provider/documents/${document.id}`} className="client-ghost-link">{c.open}</a> : <span role="status">{document.scanStatus === "PENDING" ? (locale === "ar" ? "الفحص جارٍ" : "Analyse en attente") : (locale === "ar" ? "في الحجر" : "En quarantaine")}</span>} <Cta href={qualifyHref}>{c.replace}</Cta></td>
