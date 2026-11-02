@@ -9,7 +9,7 @@ test('historical fixture keeps catalogue facts separate from native Provider and
   const result = historicalProviderCatalogue(base);
   assert.equal(result.provenance.scope, 'HISTORICAL_SQL_TEST_PRECONDITION');
   assert.equal(result.provenance.governedCataloguePublicationCertified, false);
-  assert.equal(Object.keys(result.provenance.ids).length, 6);
+  assert.equal(Object.keys(result.provenance.ids).length, 8);
   assert.doesNotMatch(result.sql, /auth\.(users|sessions)|provider_(profiles|qualifications|qualification_decisions)|disable\s+trigger|session_replication_role/iu);
   assert.match(result.sql, /'APPROVED','00000000-0000-4000-8000-000000000003'/u);
   assert.match(result.sql, /'PROVIDER'/u);

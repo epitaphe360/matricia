@@ -11,7 +11,11 @@ const { actor, client, cookies } = await nativeBrowserActor(state, 'provider-own
 const { chromium, expect } = createRequire(resolve('package.json'))('@playwright/test');
 const origin = `http://127.0.0.1:${state.appPort}`, directory = resolve(state.directory, 'questionnaire');
 await mkdir(directory, { recursive: true });
+const resumeFromStart = process.argv.includes('--resume-questionnaire');
+let previous;
+if(resumeFromStart){previous=JSON.parse(await readFile(resolve(directory,'summary.json')));if(previous.appTree!==state.candidate.appTree||previous.status!=='FAILED'||!['services','start'].includes(previous.failureStage)||previous.steps.length!==3||previous.sessionId)throw new Error('EXACT_PRE_START_QUESTIONNAIRE_CHECKPOINT_REQUIRED');}
 const proof = { scope: 'NATIVE_PROVIDER_UI_SERVICES_CAPACITY_AND_CONDITIONAL_QUESTIONNAIRE', candidate: state.candidate.commit, appTree: state.candidate.appTree, status: 'RUNNING', steps: [], pageErrors: [], fixtureScope: fixture.scope };
+if(resumeFromStart)proof.steps.push(...previous.steps);
 const browser = await chromium.launch({ executablePath: '/usr/bin/chromium' });
 const context = await browser.newContext({ viewport: { width: 375, height: 960 }, hasTouch: true, serviceWorkers: 'block' });
 await context.addCookies(cookies);
@@ -19,6 +23,7 @@ const page = await context.newPage();
 page.on('pageerror', error => proof.pageErrors.push(safeError(error.message)));
 let stage = 'services';
 try {
+ if(!resumeFromStart){
   await page.goto(`${origin}/fr/sous-traitant/qualification?organizationId=${actor.organizationId}`, { waitUntil: 'networkidle', timeout: 90000 });
   for (const serviceId of [fixture.ids.serviceA, fixture.ids.serviceB]) {
     const form = page.locator('form').filter({ has: page.locator('select[name="serviceId"]') }).filter({ hasNot: page.locator('select[name="capacityStatus"]') });
@@ -55,10 +60,11 @@ try {
   await scope.getByRole('button').last().focus(); await page.keyboard.press('Enter');
   await expect.poll(async () => { const r = await client.from('provider_work_scope_versions').select('intervention_radius_km').eq('provider_organization_id', actor.organizationId).order('version_number', { ascending: false }).limit(1); return r.data?.[0]?.intervention_radius_km; }, { timeout: 20000 }).toBe(80);
   proof.steps.push({ step: 'native_regions_modes_radius_and_mission_size_declarations', passed: true });
+ }
   stage = 'start';
   await page.goto(`${origin}/fr/sous-traitant/questionnaires?organizationId=${actor.organizationId}`, { waitUntil: 'networkidle', timeout: 90000 });
   await page.locator('select[name="questionnaireVersionId"]').selectOption(fixture.ids.questionnaireVersion);
-  await page.locator('select[name="organizationId"]').selectOption(actor.organizationId);
+  await page.locator('form').filter({has:page.locator('select[name="questionnaireVersionId"]')}).locator('select[name="organizationId"]').selectOption(actor.organizationId);
   await page.getByRole('button', { name: 'Démarrer', exact: true }).focus();
   await page.keyboard.press('Enter');
   await page.getByRole('link', { name: 'Ouvrir la session', exact: true }).click();

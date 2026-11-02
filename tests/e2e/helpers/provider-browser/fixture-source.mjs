@@ -47,6 +47,8 @@ export function historicalProviderCatalogue({ catalogueSource, questionnaireSour
     libraryId: mapped.get('fd300000-0000-4000-8000-000000000001'),
     serviceA: mapped.get('fd300000-0000-4000-8000-000000000007'),
     serviceB: mapped.get('fd300000-0000-4000-8000-000000000008'),
+    serviceVersionA: mapped.get('fd300000-0000-4000-8000-000000000009'),
+    serviceVersionB: mapped.get('fd300000-0000-4000-8000-000000000010'),
     questionnaireVersion: mapped.get('d0660000-0000-0000-0000-000000000001'),
     booleanQuestion: mapped.get('d0690000-0000-0000-0000-000000000001'),
     detailQuestion: mapped.get('d0690000-0000-0000-0000-000000000002'),
