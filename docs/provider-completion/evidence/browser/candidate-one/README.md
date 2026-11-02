@@ -16,4 +16,8 @@ Les références catalogue/questionnaire sont des préconditions SQL historiques
 
 Le harnais a aussi corrigé ses propres sélecteurs (organisation locale au formulaire, détails Admin imbriqués) en reprenant les reçus persistés. Ces erreurs de harnais ne sont pas présentées comme des défauts produit.
 
-La matrice responsive/accessibilité est en cours séparément. Devis, contrats, livraisons, finance et messagerie ne sont pas encore acceptés sur ce candidat. Aucun antivirus externe, registre officiel, signature juridique, envoi réel d’invitation ou conformité WCAG manuelle complète n’est certifié.
+La matrice entrée est terminée :40 pages réelles, FR/AR aux largeurs375/390/768/1440 ; aucune erreur navigateur, perte de contexte ou débordement ; menus ouverts et fermés au clavier/toucher. Les64 scans axe WCAG2/2.1 A/AA sans exclusion ne détectent aucune violation. Ils signalent64 vérifications incomplètes de contraste ; le contraste manuel et la conformité WCAG complète ne sont pas certifiés. Résultats détaillés et40 captures dans `entry-matrix/`.
+
+Le contrôle séparé du menu de compte passe8/8 cas FR/AR aux quatre largeurs :les trois actions sont entièrement dans le viewport et au-dessus du contenu (hit-test réel), l’ordreTab les atteint et le menu s’ouvre/se ferme au clavier et au toucher. Voir `account-menu-matrix/`. Une lecture visuelle AR390 observe encore le statut anglais «not requested» sur un service demandé sans décision :ce libellé doit être corrigé, indépendamment de la protection de qualification.
+
+Devis, contrats, livraisons, finance et messagerie ne sont pas encore acceptés sur ce candidat. Aucun antivirus externe, registre officiel, signature juridique, envoi réel d’invitation ou conformité WCAG manuelle complète n’est certifié.

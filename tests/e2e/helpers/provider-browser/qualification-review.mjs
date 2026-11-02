@@ -10,7 +10,9 @@ requireDevelopment();
 const state = await loadOwnState();
 const questionnaire = JSON.parse(await readFile(resolve(state.directory, 'questionnaire/summary.json')));
 const fixture = JSON.parse(await readFile(resolve(state.directory, 'catalogue-fixture-provenance.json')));
-if (questionnaire.status !== 'PASSED' || questionnaire.appTree !== state.candidate?.appTree) throw new Error('ACTUAL_PROVIDER_QUESTIONNAIRE_SUBMISSION_REQUIRED');
+const resumeQualification=process.argv.includes('--resume-qualification');
+const priorQuestionnaireAllowed=resumeQualification&&state.previousCandidates?.some(pin=>pin.commit===questionnaire.candidate&&pin.appTree===questionnaire.appTree);
+if (questionnaire.status !== 'PASSED' || (questionnaire.appTree !== state.candidate?.appTree&&!priorQuestionnaireAllowed)) throw new Error('ACTUAL_PROVIDER_QUESTIONNAIRE_SUBMISSION_REQUIRED');
 const owner = await nativeBrowserActor(state, 'provider-owner'), reviewer = await nativeBrowserActor(state, 'compliance-reviewer');
 if (owner.actor.userId === reviewer.actor.userId) throw new Error('INDEPENDENT_NATIVE_PROVIDER_REVIEW_REQUIRED');
 const { chromium, expect } = createRequire(resolve('package.json'))('@playwright/test');
@@ -23,12 +25,13 @@ const proof = {
 };
 const resumeReview=process.argv.includes('--resume-review');let previous;
 if(resumeReview){previous=JSON.parse(await readFile(resolve(state.directory,'qualification-reviewed.json')));if(previous.appTree!==state.candidate.appTree||previous.status!=='FAILED'||previous.failureStage!=='company-attestation'||previous.steps.length!==1||!previous.partnerDocument?.id)throw Error('EXACT_PARTNER_REVIEW_CHECKPOINT_REQUIRED');const existing=await owner.client.from('provider_document_versions').select('id,status,content_hash').eq('provider_organization_id',owner.actor.organizationId).eq('content_hash',previous.partnerDocument.sha256).eq('status','VERIFIED').single();if(existing.error||existing.data.status!=='VERIFIED'||existing.data.content_hash!==previous.partnerDocument.sha256)throw Error('ACTUAL_ALREADY_REVIEWED_PARTNER_FILE_REQUIRED');proof.partnerDocument={...previous.partnerDocument,reviewedVersionId:existing.data.id};proof.steps.push(...previous.steps);}
+if(resumeQualification){previous=JSON.parse(await readFile(resolve(state.directory,'qualification-reviewed.json')));if(previous.status!=='FAILED'||previous.failureStage!=='human-service-APPROVED'||previous.steps.length!==3||(!state.previousCandidates?.some(pin=>pin.appTree===previous.appTree)&&previous.appTree!==state.candidate.appTree))throw Error('EXACT_PENDING_SERVICE_REVIEW_CHECKPOINT_REQUIRED');const session=await owner.client.from('questionnaire_sessions').select('organization_id,status,audience,is_simulation').eq('id',questionnaire.sessionId).single(),identity=await owner.client.rpc('get_my_provider_legal_identity_v1',{p_organization_id:owner.actor.organizationId}),partner=await owner.client.from('provider_profiles').select('partner_contract_status').eq('provider_organization_id',owner.actor.organizationId).single();if(session.error||session.data.organization_id!==owner.actor.organizationId||session.data.status!=='SUBMITTED'||session.data.audience!=='PROVIDER'||session.data.is_simulation||identity.error||!identity.data.currently_verified||partner.data?.partner_contract_status!=='SIGNED')throw Error('PERSISTED_NATIVE_ENTRY_AND_REVIEW_MUST_REMAIN_VALID');proof.steps.push(...previous.steps.map(step=>({...step,candidate:previous.candidate})));proof.partnerDocument=previous.partnerDocument;proof.sourceQuestionnaireCandidate=questionnaire.candidate;}
 const browser = await chromium.launch({ executablePath: '/usr/bin/chromium' });
 let context, activeLabel = 'provider-owner', stage = 'partner-document';
 async function call(client, name, input) { const r = await client.rpc(name, input); if (r.error) throw new Error(`NATIVE_PROVIDER_${name}:${r.error.code}`); return r.data; }
 async function openFormDetails(form) { const ancestors=form.locator('xpath=ancestor::details');for(let i=0;i<await ancestors.count();i++){const details=ancestors.nth(i);if(!(await details.evaluate(element=>element.open)))await details.locator(':scope > summary').click();} }
 try {
- if(!resumeReview){
+ if(!resumeReview&&!resumeQualification){
   context = await browser.newContext({ viewport: { width: 390, height: 960 }, hasTouch: true, serviceWorkers: 'block' });
   await context.addCookies(owner.cookies);
   let page = await context.newPage();
@@ -58,9 +61,11 @@ try {
   proof.steps.push({ step: 'actual_private_partner_upload_scan_and_independent_document_review', passed: true });
   await preserveBrowserSession(state, activeLabel, context); await context.close();
  }
-  stage = 'company-attestation'; activeLabel = 'compliance-reviewer';
+  activeLabel = 'compliance-reviewer';
   context = await browser.newContext({ viewport: { width: 768, height: 1024 }, hasTouch: true, serviceWorkers: 'block' });
   await context.addCookies(reviewer.cookies); let page = await context.newPage();
+ if(!resumeQualification){
+  stage = 'company-attestation';
   await page.goto(`${origin}/fr/administration/providers`, { waitUntil: 'networkidle', timeout: 90000 });
   const company = page.locator('form').filter({ has: page.locator(`input[name="organizationId"][value="${owner.actor.organizationId}"]`) }).filter({ has: page.locator('select[name="companyStatus"]') });
   await openFormDetails(company);
@@ -78,6 +83,7 @@ try {
   await page.getByRole('button', { name: 'Vérifier l’identité courante', exact: true }).tap();
   await expect.poll(async () => (await call(owner.client, 'get_my_provider_legal_identity_v1', { p_organization_id: owner.actor.organizationId })).currently_verified, { timeout: 20000 }).toBe(true);
   proof.steps.push({ step: 'current_identity_revalidated_after_company_decision_change', passed: true });
+ }
   const qualifications = await owner.client.from('provider_qualifications').select('id,service_id,row_version').eq('provider_organization_id', owner.actor.organizationId);
   if (qualifications.error || qualifications.data.length !== 2) throw new Error('TWO_NATIVE_REQUESTED_SERVICE_QUALIFICATIONS_REQUIRED');
   for (const [serviceId, status] of [[fixture.ids.serviceA, 'APPROVED'], [fixture.ids.serviceB, 'INFORMATION_REQUIRED']]) {
