@@ -1,3 +1,4 @@
+import { readMissionSignedScopeStates } from "./signed-scope-states";
 import {obligationRetirementRow,milestoneRetirementRow,retirementColumns,milestoneRetirementColumns,projectRetirement} from "./operational-scope";
 import { z } from "zod";
 import {missionPreparationSchema,type MissionPreparation}from"./preparation";
@@ -68,6 +69,8 @@ export async function loadContractMissions(locale: "fr" | "ar", requestedOrganiz
   }
   const versionIds = versions.data.map((version) => version.id);
   const missionIds = missions.data.map((mission) => mission.id);
+  const scopeStates = await readMissionSignedScopeStates(missionIds, ids => client.rpc("get_mission_signed_scope_states_v1", { p_mission_ids: ids }));
+  if (scopeStates.status === "error") return { status: "error", reason: "QUERY_FAILED" };
   const [itemsResult, milestonesResult, deliverablesResult,retirementResult,milestoneRetirementResult] = await Promise.all([
     readContractRelations(versionIds,(ids,from,to)=>client.from("contract_items").select("id,contract_version_id,item_key,item_type,label_fr,label_ar,sort_order").in("contract_version_id", ids).order("sort_order").order("id").range(from,to)),
     missionIds.length ? readContractRelations(missionIds,(ids,from,to)=>client.from("mission_milestones").select("id,mission_id,milestone_key,title_fr,title_ar,status,due_at,row_version").in("mission_id", ids).order("sort_order").order("id").range(from,to)) : Promise.resolve({ data: [], error: null }),
@@ -158,7 +161,7 @@ export async function loadContractMissions(locale: "fr" | "ar", requestedOrganiz
         contractId: mission.contract_id,
         title: versionTitle(contractVersion.selected_quote_version_id),
         contractVersionId: mission.contract_version_id,
-        scopeReconciliationRequired:mission.scope_reconciliation_required,
+        signedScopePending:scopeStates.states.get(mission.id)!,scopeReconciliationRequired:mission.scope_reconciliation_required,
         contractSnapshot: { versionId: contractVersion.id, version: contractVersion.version, selectedQuoteVersionId: contractVersion.selected_quote_version_id, priceMinor: String(contractVersion.price_minor), currency: contractVersion.currency, contentHash: contractVersion.content_hash, changeReason: contractVersion.change_reason, createdAt: contractVersion.created_at, createdAtLabel: timestampLabel(contractVersion.created_at), items: localizedItems(contractVersion.id), signatures: versionSignatures(contractVersion.id) },
         status: mission.status,
         startedAt: mission.started_at,

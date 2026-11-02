@@ -1,3 +1,4 @@
+import { SignedScopePendingNotice } from "@/modules/shared/ui/signed-scope-pending-notice";
 import {workflowStatusLabel}from"@/modules/shared/lib/i18n/workflow-statuses";
 import { InvoiceFacts } from "@/modules/provider/screens/facturation/invoice-facts";
 import type { ProviderInvoiceDossier } from "@/modules/provider/data/billing/dossier";
@@ -449,6 +450,7 @@ export function MissionDeliveryWorkbench({
   const current = steps.find((step) => step.state === "current") ?? steps[0];
   return (
     <main className="client-page provider-workbench provider-mission-delivery">
+      {mission ? <SignedScopePendingNotice pending={mission.signedScopePending} locale={locale} audience="provider" contractId={mission.contractId} query={query} /> : null}
       <p className="provider-breadcrumb">
         <Crumb href={`/${locale}/sous-traitant/missions${query}`}>{w.breadcrumbMissions}</Crumb>
         <span aria-hidden>›</span>

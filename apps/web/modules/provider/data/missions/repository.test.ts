@@ -1,10 +1,11 @@
 import{beforeEach,describe,expect,it,vi}from"vitest";
-const mocks=vi.hoisted(()=>({getUser:vi.fn(),from:vi.fn()}));
-vi.mock("@/modules/shared/lib/supabase/server",()=>({getSupabaseServerClient:async()=>({auth:{getUser:mocks.getUser},from:mocks.from})}));
+const mocks=vi.hoisted(()=>({getUser:vi.fn(),from:vi.fn(),rpc:vi.fn()}));
+vi.mock("@/modules/shared/lib/supabase/server",()=>({getSupabaseServerClient:async()=>({auth:{getUser:mocks.getUser},from:mocks.from,rpc:mocks.rpc})}));
 import{loadProviderMissions}from"./repository";
 function query(result:{data:unknown;error:unknown}){const chain:Record<string,unknown>={};for(const method of["select","eq","is","in","order","limit","range"])chain[method]=vi.fn(()=>chain);chain.maybeSingle=vi.fn(async()=>result);chain.then=(resolve:(v:unknown)=>unknown)=>resolve(result);return chain}
+beforeEach(()=>{vi.clearAllMocks();mocks.getUser.mockResolvedValue({data:{user:{id:"11111111-1111-4111-8111-111111111111"}}});mocks.rpc.mockImplementation(async(name,args)=>name==="get_mission_signed_scope_states_v1"?{data:args.p_mission_ids.map((mission_id:string)=>({mission_id,signed_scope_pending:false})),error:null}:{data:null,error:{code:"UNAVAILABLE"}})});
 describe("provider mission repository",()=>{
- beforeEach(()=>{vi.clearAllMocks();mocks.getUser.mockResolvedValue({data:{user:{id:"11111111-1111-4111-8111-111111111111"}}})});
+
  it("does not query tenant data without authentication",async()=>{mocks.getUser.mockResolvedValue({data:{user:null}});await expect(loadProviderMissions("fr")).resolves.toEqual({status:"error",reason:"UNAUTHENTICATED"});expect(mocks.from).not.toHaveBeenCalled()});
  it("rejects an invalid provider organization identifier",async()=>{mocks.from.mockReturnValue(query({data:{organization_id:"foreign",organizations:{display_name:"Provider"}},error:null}));await expect(loadProviderMissions("ar")).resolves.toEqual({status:"error",reason:"QUERY_FAILED"});expect(mocks.from).toHaveBeenCalledTimes(1)});
  it("fails closed on a membership query error",async()=>{mocks.from.mockReturnValue(query({data:null,error:{code:"42501"}}));await expect(loadProviderMissions("fr")).resolves.toEqual({status:"error",reason:"QUERY_FAILED"})});
@@ -18,7 +19,10 @@ describe("provider mission repository",()=>{
   const id=(n:number)=>`f1000000-0000-4000-8000-${String(n).padStart(12,"0")}`,org=id(1),contract=id(2),mission=id(3),v1=id(4),v2=id(5);
   const tables:Record<string,unknown[]>={organization_memberships:[{organization_id:org,organizations:{display_name:"Provider"},organization_member_roles:[{role_code:"PROVIDER_VIEWER",revoked_at:null}]}],missions:[{id:mission,contract_id:contract,contract_version_id:v1,scope_reconciliation_required:false,status:"COMPLETED",started_at:null,completed_at:"2026-11-01T12:00:00Z"}],contracts:[{id:contract,current_version:2}],contract_versions:[{id:v1,contract_id:contract,version:1,price_minor:"12000",currency:"MAD",content_hash:"a".repeat(64),request_snapshot:{description:"Mission initiale achevée"}},{id:v2,contract_id:contract,version:2,price_minor:"14000",currency:"MAD",content_hash:"b".repeat(64),request_snapshot:{description:"Périmètre signé non exécuté"}}]};
   mocks.from.mockImplementation((table:string)=>query({data:tables[table]??[],error:null}));
-  const result=await loadProviderMissions("fr",org);expect(result.status).toBe("success");if(result.status!=="success")return;expect(result.dashboard.missions[0]?.contract).toMatchObject({currentVersion:1,priceMinor:"12000",contentHash:"a".repeat(64)});expect(result.dashboard.missions[0]?.title).toBe("Mission initiale achevée");
+  mocks.rpc.mockImplementation(async(name,args)=>name==="get_mission_signed_scope_states_v1"?{data:args.p_mission_ids.map((mission_id:string)=>({mission_id,signed_scope_pending:true})),error:null}:{data:null,error:{code:"UNAVAILABLE"}});
+  const result=await loadProviderMissions("fr",org);expect(result.status).toBe("success");if(result.status!=="success")return;expect(result.dashboard.missions[0]).toMatchObject({status:"COMPLETED",scopeReconciliationRequired:false,signedScopePending:true});expect(mocks.rpc).toHaveBeenCalledWith("get_mission_signed_scope_states_v1",{p_mission_ids:[mission]});expect(result.dashboard.missions[0]?.contract).toMatchObject({currentVersion:1,priceMinor:"12000",contentHash:"a".repeat(64)});expect(result.dashboard.missions[0]?.title).toBe("Mission initiale achevée");
+  for(const response of [{data:[],error:null},{data:null,error:{code:"503"}}]){mocks.rpc.mockResolvedValue(response);expect(await loadProviderMissions("fr",org)).toEqual({status:"error",reason:"QUERY_FAILED"});}
+
  });
 });
 
