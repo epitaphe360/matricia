@@ -3,6 +3,8 @@ import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { code, locale, moneyToMinor, uuid } from "@/modules/client/data/portfolio/model";
+import { classifyAuthReadFailure } from "@/modules/shared/lib/auth/read-failure";
+import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 import { portfolioRpc } from "@/modules/client/data/portfolio/server-repository";
 
 export type State = { status: "idle" } | { status: "success" } | { status: "approval_required"; rejected: boolean } | { status: "error"; reason: "VALIDATION" | "FORBIDDEN" | "CONFLICT" | "UNAVAILABLE" };
@@ -54,7 +56,7 @@ const taskSchema=base.extend({projectId:uuid,expectedRowVersion:z.coerce.number(
 export async function saveTask(_:State,form:FormData):Promise<State>{const p=taskSchema.safeParse(Object.fromEntries([...form.keys()].map(key=>[key,field(form,key)])));if(!p.success)return{status:"error",reason:"VALIDATION"};return execute(p.data.locale,"save_client_project_task",{p_project_id:p.data.projectId,p_task_key:p.data.taskKey,p_task_type:p.data.taskType,p_status:p.data.status,p_due_at:nullable(p.data.dueAt),p_assignee_user_id:nullable(p.data.assigneeUserId),p_title_fr:p.data.titleFr,p_title_ar:p.data.titleAr,p_description_fr:p.data.descriptionFr||null,p_description_ar:p.data.descriptionAr||null,p_acceptance_criteria:p.data.acceptanceCriteria.split(/\r?\n/u).map(value=>value.trim()).filter(Boolean).map(text=>({text})),p_change_reason:p.data.changeReason,p_expected_row_version:p.data.expectedRowVersion,p_idempotency_key:p.data.idempotencyKey,p_correlation_id:randomUUID()});}
 
 const budgetSchema=base.extend({organizationId:uuid,fiscalYear:z.coerce.number().int().min(2000).max(2200),currency:z.string().regex(/^[A-Z]{3}$/u),libraryId:optionalUuid,siteId:optionalUuid,projectId:optionalUuid,amount:z.string().trim().min(1).max(30),rationale:z.string().trim().min(3).max(2000),approve:z.enum(["yes","no"])});
-export async function saveBudget(_:State,form:FormData):Promise<State>{const p=budgetSchema.safeParse(Object.fromEntries([...form.keys()].map(key=>[key,field(form,key)])));if(!p.success||(!p.data.libraryId&&!p.data.siteId&&!p.data.projectId))return{status:"error",reason:"VALIDATION"};const amount=moneyToMinor(p.data.amount);if(amount===null)return{status:"error",reason:"VALIDATION"};return execute(p.data.locale,"save_client_annual_budget",{p_organization_id:p.data.organizationId,p_fiscal_year:p.data.fiscalYear,p_currency:p.data.currency,p_library_id:nullable(p.data.libraryId),p_site_id:nullable(p.data.siteId),p_project_id:nullable(p.data.projectId),p_amount_minor:amount,p_rationale:p.data.rationale,p_assumptions:{source:"CLIENT_PORTFOLIO_V1"},p_approve:p.data.approve==="yes",p_idempotency_key:p.data.idempotencyKey,p_correlation_id:randomUUID()});}
+export async function saveBudget(_:State,form:FormData):Promise<State>{const p=budgetSchema.safeParse(Object.fromEntries([...form.keys()].map(key=>[key,field(form,key)])));if(!p.success||(!p.data.libraryId&&!p.data.siteId&&!p.data.projectId))return{status:"error",reason:"VALIDATION"};const amount=moneyToMinor(p.data.amount,p.data.currency);if(amount===null)return{status:"error",reason:"VALIDATION"};return execute(p.data.locale,"save_client_annual_budget",{p_organization_id:p.data.organizationId,p_fiscal_year:p.data.fiscalYear,p_currency:p.data.currency,p_library_id:nullable(p.data.libraryId),p_site_id:nullable(p.data.siteId),p_project_id:nullable(p.data.projectId),p_amount_minor:amount,p_rationale:p.data.rationale,p_assumptions:{source:"CLIENT_PORTFOLIO_V1"},p_approve:p.data.approve==="yes",p_idempotency_key:p.data.idempotencyKey,p_correlation_id:randomUUID()});}
 
 const centerSchema=base.extend({organizationId:uuid,centerCode:code,nameFr:z.string().trim().min(2).max(160),nameAr:z.string().trim().min(2).max(160),changeReason:z.string().trim().min(3).max(500)});
 export async function createCostCenter(_:State,form:FormData):Promise<State>{const p=centerSchema.safeParse(Object.fromEntries([...form.keys()].map(key=>[key,field(form,key)])));if(!p.success)return{status:"error",reason:"VALIDATION"};return execute(p.data.locale,"create_client_cost_center",{p_organization_id:p.data.organizationId,p_code:p.data.centerCode,p_name_fr:p.data.nameFr,p_name_ar:p.data.nameAr,p_manager_user_id:null,p_allocation_policy_snapshot:{version:"1.0",source:"CLIENT_PORTFOLIO_V1"},p_change_reason:p.data.changeReason,p_idempotency_key:p.data.idempotencyKey,p_correlation_id:randomUUID()});}
@@ -77,12 +79,30 @@ async function evidenceFingerprint(entry: FormDataEntryValue | null): Promise<st
   return valid ? createHash("sha256").update(bytes).digest("hex") : null;
 }
 
+/** Currency is read from the authorized budget, never from a hidden field. */
+async function allocationCurrency(organizationId: string, budgetId: string): Promise<{status:"success";currency:string}|{status:"error";reason:"FORBIDDEN"|"UNAVAILABLE"}> {
+  try {
+    const client = await getSupabaseServerClient();
+    const auth = await client.auth.getUser();
+    const authFailure = classifyAuthReadFailure(auth.error);
+    if (authFailure) return {status:"error",reason:authFailure === "UNAUTHENTICATED" ? "FORBIDDEN" : "UNAVAILABLE"};
+    if (!auth.data.user) return {status:"error",reason:"FORBIDDEN"};
+    const response = await client.from("client_annual_budgets").select("organization_id,currency").eq("id",budgetId).eq("organization_id",organizationId).maybeSingle();
+    if (response.error) return {status:"error",reason:response.error.code === "42501" ? "FORBIDDEN" : "UNAVAILABLE"};
+    if (!response.data) return {status:"error",reason:"FORBIDDEN"};
+    const budget = z.object({organization_id:z.literal(organizationId),currency:z.string().regex(/^[A-Z]{3}$/u)}).safeParse(response.data);
+    return budget.success ? {status:"success",currency:budget.data.currency} : {status:"error",reason:"UNAVAILABLE"};
+  } catch { return {status:"error",reason:"UNAVAILABLE"}; }
+}
+
 export async function recordAllocation(_: State, form: FormData): Promise<State> {
   const p = allocationSchema.safeParse(Object.fromEntries([...form.keys()].map(key => [key, field(form, key)])));
   if (!p.success) return { status: "error", reason: "VALIDATION" };
   const [referenceType, referenceId = ""] = p.data.referenceChoice.split(":");
   if (referenceType !== "MANUAL" && !uuid.safeParse(referenceId).success) return { status: "error", reason: "VALIDATION" };
-  const amount = moneyToMinor(p.data.amount);
+  const budgetCurrency = await allocationCurrency(p.data.organizationId, p.data.budgetId);
+  if (budgetCurrency.status === "error") return budgetCurrency;
+  const amount = moneyToMinor(p.data.amount, budgetCurrency.currency);
   if (amount === null || BigInt(amount) <= BigInt(0)) return { status: "error", reason: "VALIDATION" };
   const evidenceHash = await evidenceFingerprint(form.get("evidenceFile"));
   if (!evidenceHash) return { status: "error", reason: "VALIDATION" };

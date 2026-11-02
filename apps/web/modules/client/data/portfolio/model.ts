@@ -1,3 +1,4 @@
+import {formatMoneyInput,parseMoneyInput} from "@/modules/shared/lib/money-input";
 import type { AllocationTarget } from "./allocation-targets";
 import { z } from "zod";
 
@@ -30,12 +31,8 @@ export function displayCalendarDate(item: CalendarItem, localeValue: "fr" | "ar"
 export type RepoResult<T> = { status: "success"; value: T } | { status: "error"; reason: "UNAUTHENTICATED" | "FORBIDDEN" | "CONFLICT" | "UNAVAILABLE" };
 
 export function exactMoney(minor: string, currency: string) {
-  const raw = BigInt(minor);
-  const negative = raw < BigInt(0);
-  const value = negative ? -raw : raw;
-  const whole = value / BigInt(100);
-  const fraction = (value % BigInt(100)).toString().padStart(2, "0");
-  return `${negative ? "-" : ""}${whole}.${fraction} ${currency}`;
+  const amount = formatMoneyInput(minor, currency);
+  return amount ? `${amount} ${currency}` : "—";
 }
 
 export const BUDGET_WATCH_BASIS_POINTS = 8_000;
@@ -78,10 +75,7 @@ export function progressBarPercent(basisPoints: number): number {
   return Math.min(100, Math.max(0, Math.trunc(basisPoints / 100)));
 }
 
-export function moneyToMinor(value: string): string | null {
-  const match = /^(\d+)(?:[.,](\d{1,2}))?$/u.exec(value.trim());
-  if (!match) return null;
-  const whole = match[1] ?? "0";
-  const fraction = (match[2] ?? "").padEnd(2, "0");
-  return (BigInt(whole) * BigInt(100) + BigInt(fraction || "0")).toString();
+export function moneyToMinor(value: string, currency = "MAD"): string | null {
+  const amount = parseMoneyInput(value, currency);
+  return amount === null || BigInt(amount) < BigInt(0) ? null : amount;
 }
