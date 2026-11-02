@@ -51,3 +51,20 @@ strict non exécuté** : la création locale Docker a expiré avant toute migrat
 (0 migration, 0 test SQL, nettoyage réussi). La preuve SQL et la recette navigateur
 intégrée restent à exécuter sur la cible isolée de l’intégrateur ; aucune réussite
 ni certification Supabase/Vercel distante n’est annoncée ici.
+
+Complément d’intégration : les détails consultation/devis sont lus directement,
+indépendamment de la première page. Une version source ou projection documentaire
+indisponible bloque l’édition/la publication au lieu de simuler un brouillon ou
+un coffre vide. La création initiale passe par une vraie sélection d’invitation.
+La consultation des historiques vérifie aussi chaque lot de versions avant de
+les présenter comme complets. Les contextes indéterminé/refusé/absent sont traités
+avant toute lecture métier, sans retomber sur toutes les organisations.
+
+L’accueil consomme les agrégats exhaustifs fournis par les domaines devis,
+missions et facturation. Une agrégation indisponible reste nulle ; un échec de
+qualification ne devient pas un profil nouveau, ni une panne de réputation zéro
+avis. Les jalons acceptés et missions terminées ne sont plus comptés « à faire ».
+Tests supplémentaires exécutés : **17 tests réussis sur 3 fichiers**
+(`/tmp/provider-context-followup-tests.log`), dont huit tests des vrais composants
+serveur imbriqués. Le lot dépend des contrats loaders `a0d7e00`, des champs de
+litige `78fedaf` et des états d’accueil intégrés dans `a751bc1`.

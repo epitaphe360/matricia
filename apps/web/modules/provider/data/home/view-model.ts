@@ -65,11 +65,11 @@ export function computeProviderHomeCounts(input: {
   const consultationsDue = invitations.filter((item) => INVITE_OPEN.has(item.status) && (!item.quote || QUOTE_DRAFT.has(item.quote.status))).length;
   const quotesInProgress = invitations.filter((item) => item.quote && QUOTE_ACTIVE.has(item.quote.status) && item.quote.status !== "SELECTED").length;
   const activeMissions = missions.filter((item) => !["COMPLETED", "CANCELLED", "CLOSED"].includes(item.status)).length;
-  const deliverablesDue = missions.reduce(
+  const deliverablesDue = missions.filter(item => !["COMPLETED", "CANCELLED", "CLOSED"].includes(item.status)).reduce(
     (sum, mission) =>
       sum +
       mission.deliverables.filter((item) => ["PENDING", "REJECTED", "CORRECTION_REQUIRED", "IN_PROGRESS"].includes(item.status)).length +
-      mission.milestones.filter((item) => item.dueAt && !["DONE", "COMPLETED"].includes(item.status) && Date.parse(item.dueAt) <= now + 7 * 86_400_000).length,
+      mission.milestones.filter((item) => item.dueAt && !["DONE", "COMPLETED", "ACCEPTED"].includes(item.status) && Date.parse(item.dueAt) <= now + 7 * 86_400_000).length,
     0,
   );
   const invoicesOutstanding = invoices.filter((item) => item.paymentStatus !== "PAID" && item.outstandingMinor !== "0").length;

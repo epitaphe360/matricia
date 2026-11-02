@@ -39,6 +39,10 @@ const base: Item = {
 };
 
 describe("provider-home view-model", () => {
+  it("does not count accepted milestones or obligations of completed missions as due",()=>{
+    const counts=computeProviderHomeCounts({now:"2026-11-02T00:00:00Z",actionItems:[],missions:[{status:"IN_PROGRESS",milestones:[{status:"ACCEPTED",dueAt:"2026-11-01T00:00:00Z"}],deliverables:[]},{status:"COMPLETED",milestones:[{status:"PENDING",dueAt:"2026-11-01T00:00:00Z"}],deliverables:[{status:"PENDING"}]}]});
+    expect(counts.deliverablesDue).toBe(0);expect(counts.activeMissions).toBe(1);
+  });
   it("n’invente pas de zéro si le snapshot est indisponible", () => {
     const counts = computeProviderHomeCounts({ actionItems: [], now: "2026-09-16T10:00:00Z", snapshotUnavailable: true });
     expect(counts.consultationsDue).toBeNull();
