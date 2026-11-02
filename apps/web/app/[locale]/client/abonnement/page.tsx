@@ -1,3 +1,4 @@
+import {SubscriptionUpgradeOptions} from "@/modules/client/screens/abonnement/upgrade-options";
 import { randomUUID } from "node:crypto";
 import { loadSubscriptionFunding } from "@/modules/client/screens/abonnement/funding";
 import { SubscriptionFundingNotice } from "@/modules/client/screens/abonnement/funding-notice";
@@ -48,6 +49,7 @@ export default async function SubscriptionPage({ params, searchParams }: { param
   return (
     <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="finance" title={c.subPageTitle} lead={c.subPageLead} kicker={result.dashboard.organizationName}>
       {creditsResult.status === "success" && creditsResult.value.catalogUnavailable ? <p role="alert" className="client-card">{locale === "fr" ? "Les versions des Boxes n’ont pas pu être chargées. Les quantités de crédits restent consultables." : "تعذر تحميل نسخ الصناديق. يمكن الاطلاع على كميات الأرصدة."}</p> : null}
+      <SubscriptionUpgradeOptions locale={locale} organizationId={selectedId}/>
       <SubscriptionFundingNotice funding={funding} locale={locale} organizationId={selectedId} />
       <SubscriptionBoard
         locale={locale}
