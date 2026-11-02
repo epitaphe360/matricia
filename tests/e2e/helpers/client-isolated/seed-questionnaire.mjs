@@ -48,6 +48,8 @@ try {
         await sql `update public.organizations set status='ACTIVE' where id=${owner.organizationId}::uuid`;
         await sql `update public.organization_identifiers set verification_status='VERIFIED' where organization_id=${owner.organizationId}::uuid and identifier_type='ICE' and normalized_value=${owner.ice}`;
         await sql.unsafe(fixture);
+        // Explicit TEST-only portfolio quota, no commercial plan or tariff.
+        await sql`insert into public.trial_entitlement_versions(entitlement_code,version,status,enabled,quota_value,configuration,effective_from,content_hash,created_by) values(${`TEST_BROWSER_PROJECTS_${tag}`},1,'ACTIVE',true,5,'{"resource":"PROJECTS"}'::jsonb,clock_timestamp()-interval '1 day',repeat('7',64),${reviewer.userId}::uuid)`;
     });
     const proof = { scope: 'LOCAL_HISTORICAL_SQL_FIXTURE_ONLY', source: sourcePath, sourceSha256: createHash('sha256').update(source).digest('hex'), nativeOnboardingCertified: false, physicalDocumentScanningCertified: false, governedCataloguePublicationCertified: false, organizationId: owner.organizationId, questionnaireVersion: identifiers.get('d0660000-0000-4000-8000-000000000001'), booleanQuestion: identifiers.get('d0690000-0000-4000-8000-000000000001'), detailQuestion: identifiers.get('d0690000-0000-4000-8000-000000000002') };
     await writeFile(resolve(state.directory, 'questionnaire-fixture-provenance.json'), JSON.stringify(proof, null, 2));

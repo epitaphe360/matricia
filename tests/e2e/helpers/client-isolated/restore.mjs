@@ -14,7 +14,7 @@ const source = validateSourceTarget(JSON.parse(await readFile(resolve(process.ar
 const sourceInspect = JSON.parse(docker(['inspect', '--format', '{"labels":{{json .Config.Labels}},"network":"{{.HostConfig.NetworkMode}}","ports":{{json .NetworkSettings.Ports}}}', source.name], { encoding: 'utf8' }));
 if (sourceInspect.labels['matricia.isolated-replay'] !== source.token || sourceInspect.network !== 'none' || Object.values(sourceInspect.ports ?? {}).some(value => value?.length))
     throw new Error('SOURCE_ISOLATION_NOT_VERIFIED');
-const archive = docker(['exec', source.name, 'pg_dump', '-U', 'supabase_admin', '-d', 'postgres', '-Fc']);
+const archive = docker(['exec', source.name, 'pg_dump', '-U', 'supabase_admin', '-d', 'postgres', '-Fc'], { encoding: null });
 await writeFile(resolve(s.directory, 'baseline.private.dump'), archive, { mode: 0o600 });
 s.baselineArchiveSha256 = createHash('sha256').update(archive).digest('hex');
 try {

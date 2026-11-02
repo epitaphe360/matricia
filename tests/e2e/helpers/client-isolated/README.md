@@ -29,6 +29,7 @@ APP_ENV=development node tests/e2e/helpers/client-isolated/seed-questionnaire.mj
 APP_ENV=development node tests/e2e/helpers/client-isolated/run-app.mjs
 # Then run the assertions:
 APP_ENV=development node tests/e2e/helpers/client-isolated/questionnaire-browser.mjs
+APP_ENV=development node tests/e2e/helpers/client-isolated/portfolio-browser.mjs
 APP_ENV=development node tests/e2e/helpers/client-isolated/browser.mjs
 node --test tests/e2e/helpers/client-isolated/safety.test.mjs
 ```
@@ -53,6 +54,11 @@ reviewed historical dossier/catalogue fixture from
 fixture UUID to valid random UUIDs (including UUIDs embedded in rule JSON),
 and preserves existing native user/organization identities. It never executes
 the SQL fixture's fabricated `auth.sessions` or JWT claims.
+
+The portfolio scenario natively creates a site, project, task and exact MAD
+budget draft, verifies persisted organization links and amounts through RLS,
+and reloads entered Arabic labels. Its explicit TEST-only trial project quota
+is not a production offer. Run it once per fresh fixture (site quota is one).
 
 The dossier and document-scan rows are **historical SQL fixtures**. They do not
 certify native compliance onboarding, physical file upload, real antivirus,

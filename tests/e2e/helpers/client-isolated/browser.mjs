@@ -13,7 +13,7 @@ if ((await ssr.auth.setSession(owner.session)).error)
 const client = createClient(api, s.anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
 await client.auth.setSession(owner.session);
 const proof = { scope: 'OWNED_ISOLATED_CLIENT_NATIVE_AUTH_BROWSER', nativeOnboardingCertified: false, physicalScanningCertified: false, status: 'RUNNING', candidate: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), sourceArchiveSha256: s.baselineArchiveSha256, actorBootstrap: 'SYNTHETIC_LOCAL_SQL_ROLE_FIXTURE_NOT_GOVERNED_ONBOARDING_PROOF', nativeAuth: { otp: true, totpAal2: true, userJwtFabrication: false }, pages: [], security: [], businessWorkflowCertified: false, externalProvidersCertified: false, pageErrors: [], menus: [], publicSession: [] };
-const directory = resolve(s.directory, process.argv.includes('--probe') ? 'browser-probe' : 'browser');
+const directory = resolve(s.directory, process.argv.includes('--menus-probe') ? 'browser-menus-probe' : process.argv.includes('--probe') ? 'browser-probe' : 'browser');
 await mkdir(directory, { recursive: true });
 const browser = await chromium.launch({ executablePath: '/usr/bin/chromium' });
 const check = (value, code) => { if (!value)
@@ -28,9 +28,9 @@ try {
     const org = await client.from('organizations').select('id').eq('id', foreign.organizationId);
     proof.security.push({ case: 'client-cannot-read-foreign-organization', denied: !org.error && org.data.length === 0 });
     check(!org.error && org.data.length === 0, 'FOREIGN_ORGANIZATION_VISIBLE');
-    const paths = process.argv.includes('--probe') ? ['client/portefeuille', 'client/recompenses'] : ['client/diagnostics', 'client/questionnaires', 'client/actions', 'client/portefeuille', 'client/credits', 'client/recompenses', 'client/demandes', 'client/documents', 'notifications'];
+    const paths = process.argv.includes('--menus-probe') ? [] : process.argv.includes('--probe') ? ['client/portefeuille', 'client/recompenses'] : ['client/diagnostics', 'client/questionnaires', 'client/actions', 'client/portefeuille', 'client/credits', 'client/recompenses', 'client/demandes', 'client/documents', 'notifications'];
     for (const locale of ['fr', 'ar'])
-        for (const width of (process.argv.includes('--probe') ? [375, 1440] : [360, 375, 390, 768, 1440])) {
+        for (const width of (process.argv.includes('--menus-probe') ? [360] : process.argv.includes('--probe') ? [375, 1440] : [360, 375, 390, 768, 1440])) {
             const context = await browser.newContext({ viewport: { width, height: 960 }, hasTouch: width < 768, serviceWorkers: 'block' });
             await context.addCookies([...cookies.values()].map(c => ({ name: c.name, value: c.value, url: origin, httpOnly: false, secure: false, sameSite: 'Lax' })));
             await context.route('**/*', async (route) => { const h = route.request().headers(); if (h['next-router-prefetch'] !== undefined || /prefetch/.test(h.purpose ?? ''))
@@ -60,6 +60,8 @@ try {
                 const account = menu.locator('a').first();
                 await account.scrollIntoViewIfNeeded();
                 const exposed = await account.evaluate(element => { const r = element.getBoundingClientRect(), hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!hit && (element === hit || element.contains(hit)); });
+                await page.screenshot({path:resolve(directory,`${locale}-${width}-account-menu-before-exposure-check.png`),fullPage:true,caret:'initial'});
+                if(!exposed) proof.menuFailure=await account.evaluate(element=>{const r=element.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return{target:{x:r.x,y:r.y,width:r.width,height:r.height},hit:hit?.outerHTML.slice(0,500)};});
                 check(exposed, 'ACCOUNT_MENU_OCCLUDED');
                 const href = await account.getAttribute('href');
                 check(href?.includes('organizationId=' + owner.organizationId), 'ACCOUNT_MENU_LOST_ORGANIZATION');
