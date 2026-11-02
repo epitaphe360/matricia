@@ -25,3 +25,13 @@ Empreinte schéma avant/après : `e40b335f90e6ac48bee13ec075bec9f7` / `e40b335f9
 ## Limites
 
 Cette preuve SQL est transactionnelle sur la cible TEST existante, pas une reconstruction complète depuis zéro. Elle ne constitue pas une preuve navigateur de l'approbation : la reprise du parcours natif Provider est confiée à la recette navigateur après intégration de ce commit. Le build et les types complets sont centralisés sur la branche d'intégration. Aucun déploiement de production.
+
+## Intégration du test des litiges 0351
+
+Le fichier 0351 transféré depuis la branche d'intégration (empreinte initiale `b2578a35be01d7681fc4c66a2f47471163904f8a27df054d3ad2edacaeb1ef43`) conserve ses ajouts de calendrier et d'habilitation TECH. Son ancien prérequis de qualification insérait directement une session SUBMITTED sans snapshot ni évaluation. Il utilise maintenant un questionnaire de test versionné et publié avec traductions approuvées, les commandes natives start/autosave/submit, puis la projection de revue auditée et son empreinte avant la décision gouvernée.
+
+Commande exécutée : runner `tests/e2e/helpers/provider-isolated/transaction.mjs`, cible locale TEST e3, un seul fichier 0351, les **46 migrations de la branche d'intégration postérieures à 20261102037000** (dont 38400, 41950, 41960 et 44400), toutes dans une transaction annulée.
+
+Résultat : **79 assertions réussies**, aucun SKIP/TODO, `commitSent=false`. Empreintes avant/après : `e40b335f90e6ac48bee13ec075bec9f7` / `e40b335f90e6ac48bee13ec075bec9f7`. Reçu local : work/rollback0351-complete-attempt1/receipt.json. Aucun changement applicatif ni assouplissement de protection requis.
+
+La revue indépendante de la correction 38400 et de ses actions/UI par l'agent d'intégration n'a trouvé aucun blocage sur le périmètre, les manifestes figés, l'indépendance AAL2, les privilèges ou CAS/replay. Son constat mineur de libellés MULTI_SELECT a été corrigé dans 8cd453a : labels approuvés FR/AR pour tableaux de choix, valeurs inconnues et textes libres conservés, 5 tests ciblés réussis.
