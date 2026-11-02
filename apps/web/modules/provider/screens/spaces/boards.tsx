@@ -257,7 +257,7 @@ export function ProviderHomeBoard({
         <article className="client-card provider-reputation-card">
           <header><h2><Star aria-hidden className="size-4" />{c.reputation}</h2></header>
           <p>{c.reputationLead}</p>
-          {live&&snapshot?.status==="success"&&snapshot.reputation.published===null?<p role="alert">{locale==="ar"?"السمعة غير متاحة. أعيدوا المحاولة من قسم السمعة.":"Réputation indisponible. Réessayez depuis la rubrique Réputation."}</p>:live && snapshot?.status === "success" && snapshot.reputation.published > 0 ? (
+          {live&&snapshot?.status==="success"&&snapshot.reputation.published===null?<p role="alert">{locale==="ar"?"السمعة غير متاحة. أعيدوا المحاولة من قسم السمعة.":"Réputation indisponible. Réessayez depuis la rubrique Réputation."}</p>:live && snapshot?.status === "success" && snapshot.reputation.published!==null&&snapshot.reputation.published > 0 ? (
             <p>{snapshot.reputation.latest ?? c.received}</p>
           ) : (
             <div className="provider-reputation-empty">
