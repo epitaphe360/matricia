@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
@@ -16,6 +17,10 @@ beforeEach(() => {
   mocks.navigation.mockResolvedValue({ status: "ok", navigation: { landing: "administration", options: [] } });
 });
 describe("shared account security shell", () => {
+  it("loads every role shell stylesheet on a direct shared security navigation", () => {
+    const source = readFileSync(new URL("./connected-app-shell.tsx", import.meta.url), "utf8");
+    for (const sheet of ["client/ui/client-experience.css", "provider/ui/provider-experience.css", "franchise/ui/franchise-experience.css", "admin/ui/admin-experience.css", "shared/shell/admin-experience.css"]) expect(source).toContain(`import "@/modules/${sheet}"`);
+  });
   it.each(["compte", "sessions"])("keeps verified Admin navigation and exact AR route for %s", async page => {
     const current = `/fr/securite/${page}?${new URLSearchParams({ next: "/fr/administration/entreprises/nouvelle", workspace: "administration" })}`;
     const html = renderToStaticMarkup(await ConnectedAppShell({ locale: "fr", currentPath: current, workspace: "administration", title: "Sécurité", providerActive: "company", franchiseActive: "governance", children: "account content" }));

@@ -1,3 +1,8 @@
+import "@/modules/client/ui/client-experience.css";
+import "@/modules/provider/ui/provider-experience.css";
+import "@/modules/franchise/ui/franchise-experience.css";
+import "@/modules/admin/ui/admin-experience.css";
+import "@/modules/shared/shell/admin-experience.css";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import type { ReactNode } from "react";
