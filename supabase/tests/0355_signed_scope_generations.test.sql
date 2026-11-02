@@ -508,6 +508,13 @@ select throws_ok($$select public.accept_delivery_version_v1(current_setting('tes
 select lives_ok($$select public.accept_delivery_version_v1(current_setting('test.provider348_deliverable')::uuid,2,'[{"criterion_key":"VERIFY","status":"COMPLIANT","comment":"Test correction verified"}]','provider348-accept-v2')$$,'Client can accept corrective V2 after V1 rejection');
 select is((select status from public.acceptance_checklists where deliverable_id=current_setting('test.provider348_deliverable')::uuid and delivery_version=1),'NONCOMPLIANT','accepting V2 preserves noncompliant V1');
 select is((select status from public.acceptance_checklists where deliverable_id=current_setting('test.provider348_deliverable')::uuid and delivery_version=2),'COMPLIANT','V2 has independent compliant receipt');
+-- This assigned actor uploads another valid TEST object before the signed
+-- withdrawal, but does not submit it. The later stale attempt must reach the
+-- retirement guard with a valid mandatory-proof manifest, not fail earlier
+-- because the payload lacks proof. Its uploader remains the exact same actor.
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000006',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000006","role":"authenticated","aal":"aal2"}',true);
+insert into accept338 values('scope355-retired-attempt-proofs',pg_temp.upload_scope355(current_setting('test.provider348_deliverable')::uuid,'fd355000-0000-4000-8000-000000000035','test-scope-stale-after-withdrawal.pdf'));
+select is((select count(*)::integer from storage.objects where bucket_id='delivery-proofs'and name=(select v#>>'{0,storage_path}'from accept338 where k='scope355-retired-attempt-proofs')and owner_id=auth.uid()::text and metadata->>'size'='20'),1,'same assigned uploader prepares valid unbound TEST proof before withdrawal');
 reset role;
 
 -- Native scope engine executes REPLACE and REMOVE with explicit
@@ -591,7 +598,7 @@ select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000006'
 select is((select count(*)::integer from jsonb_array_elements(pg_temp.planning355()->'events')e where e->>'kind'='milestone'),1,'native calendar retains only active replacement milestone after retirement');
 select is((pg_temp.planning355()->>'operational_scope_incomplete')::boolean,false,'fully executed scope has an available calendar again');
 select is(public.get_provider_delivery_command_receipt_v1(current_setting('test.provider348_pending_deliverable')::uuid,'Synthetic pending proof lost-response test','[]',pg_temp.proofs348_pending(),current_setting('test.provider348_pending_key'))->'response',(select v from accept338 where k='pending-file348'),'Provider still recovers historical proof delivery receipt after its retirement');
-select throws_ok($$select public.submit_delivery(current_setting('test.provider348_deliverable')::uuid,'Obsolete accepted report must remain archived','[]','[]','scope355-retired-delivery')$$,'55000','MISSION_OBLIGATION_RETIRED_BY_SIGNED_AMENDMENT','new delivery against retired original is refused');
+select throws_ok($$select public.submit_delivery(current_setting('test.provider348_deliverable')::uuid,'Obsolete accepted report must remain archived','[]',(select v from accept338 where k='scope355-retired-attempt-proofs'),'scope355-retired-valid-proof-attempt')$$,'55000','MISSION_OBLIGATION_RETIRED_BY_SIGNED_AMENDMENT','new delivery against retired original is refused');
 reset role;
 select is((select count(*)from public.delivery_versions),(select delivery_versions from scope354_before),'scope execution preserves every original delivery');
 select is((select count(*)from public.delivery_proofs),(select delivery_proofs from scope354_before),'scope execution preserves every original proof');
