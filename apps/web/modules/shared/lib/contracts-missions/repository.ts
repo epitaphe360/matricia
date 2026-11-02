@@ -1,4 +1,5 @@
 import { z } from "zod";
+import {missionPreparationSchema,type MissionPreparation}from"./preparation";
 import { signatureReadinessSchema } from "./signature-readiness";
 import { readContractPages, readContractRelations } from "./read-pages";
 import { resolveClientOrganizationContext } from "@/modules/shared/client-organization-context";
@@ -59,6 +60,11 @@ export async function loadContractMissions(locale: "fr" | "ar", requestedOrganiz
   const readinessById=new Map<string,z.infer<typeof signatureReadinessSchema>>();
   // A signature subsystem outage does not erase the healthy contractual history.
   for(let offset=0;offset<contractIds.length;offset+=100){try{const ids=contractIds.slice(offset,offset+100),result=await client.rpc("list_contract_signature_readiness_v1",{p_contract_ids:ids}),parsed=z.array(signatureReadinessSchema.extend({contract_id:id})).max(100).safeParse(result.data);if(!result.error&&parsed.success&&parsed.data.every(row=>ids.includes(row.contract_id)))for(const row of parsed.data)readinessById.set(row.contract_id,row);}catch{ /* Explicitly unavailable on the corresponding contract. */ }}
+  const preparationById=new Map<string,MissionPreparation>();
+  for(const contract of contracts.data.filter(row=>["ACTIVE","AMENDED"].includes(row.status)&&!missions.data.some(mission=>mission.contract_id===row.id))){
+    const current=versions.data.find(version=>version.contract_id===contract.id&&version.version===contract.current_version);
+    if(current){try{const result=await client.rpc("get_client_mission_preparation_v1",{p_contract_id:contract.id,p_contract_version_id:current.id});const parsed=missionPreparationSchema.safeParse(result.data);if(!result.error&&parsed.success&&parsed.data.contract_id===contract.id&&parsed.data.contract_version_id===current.id)preparationById.set(contract.id,parsed.data);}catch{ /* The preparation state is explicitly unavailable; contractual history remains readable. */ }}
+  }
   const versionIds = versions.data.map((version) => version.id);
   const missionIds = missions.data.map((mission) => mission.id);
   const [itemsResult, milestonesResult, deliverablesResult] = await Promise.all([
@@ -117,6 +123,7 @@ export async function loadContractMissions(locale: "fr" | "ar", requestedOrganiz
       if (!current) return [];
       return [{
         id: contract.id,
+        missionPreparation:preparationById.get(contract.id)??null,
         providerOrganizationId: contract.provider_organization_id,
         providerOrganizationName: providerName(current.id,contract.provider_organization_id),
         signatureReadiness:readinessById.get(contract.id)??null,

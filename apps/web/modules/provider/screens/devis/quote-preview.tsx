@@ -157,7 +157,7 @@ export function QuotePreviewWorkbench({
                 <section className="provider-quote-notes">
                   <article><h4>{w.quoteInclusions}</h4><ul>{lines(prefill.inclusions).map((item) => <li key={item}>{item}</li>)}</ul></article>
                   <article><h4>{w.quoteExclusions}</h4><ul>{lines(prefill.exclusions).map((item) => <li key={item}>{item}</li>)}</ul></article>
-                  <article><h4>{w.quoteWarranty}</h4><p>{prefill.warranty}</p></article>
+                  <article><h4>{w.quoteWarranty}</h4><p>{prefill.warranty}</p></article><article><h4>{locale==="ar"?"شروط الدفع":"Modalités de paiement"}</h4><p dir="auto">{prefill.paymentTerms||(locale==="ar"?"غير محددة":"Non renseignées")}</p></article>{prefill.maintenanceTerms?<article><h4>{locale==="ar"?"الصيانة والمتابعة":"Maintenance et suivi"}</h4><p dir="auto">{prefill.maintenanceTerms}</p></article>:null}
                 </section>
               </div>
             </article>
