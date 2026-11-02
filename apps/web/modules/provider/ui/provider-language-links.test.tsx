@@ -14,4 +14,11 @@ describe("Provider language continuity",()=>{
   const html=renderToStaticMarkup(<ProviderLanguageLinks locale="ar" fallback="/ar/sous-traitant/planning"/>);
   expect(html).toContain('/fr/sous-traitant/planning?week=2026-11-09');expect(html).toContain('aria-current="page"');
  });
+ it.each(["fr","ar"] as const)("retains the Provider workspace on live dashboard language navigation in %s",locale=>{
+  state.path=`/${locale}/tableau-de-bord`;state.params="organizationId=22222222-2222-4222-8222-222222222222&q=mission&workspace=client";
+  const html=renderToStaticMarkup(<ProviderLanguageLinks locale={locale} fallback={`/${locale}/tableau-de-bord?workspace=provider`}/>);
+  const links=[...html.matchAll(/href="([^"]+)"/gu)].map(match=>new URL(match[1]!.replaceAll("&amp;","&"),"https://matricia.invalid"));
+  expect(links).toHaveLength(2);for(const url of links){expect(url.searchParams.get("workspace")).toBe("provider");expect(url.searchParams.get("q")).toBe("mission");expect(url.searchParams.get("organizationId")).toBe("22222222-2222-4222-8222-222222222222");}
+ });
+
 });

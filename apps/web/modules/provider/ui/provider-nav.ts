@@ -1,3 +1,4 @@
+import { withDashboardWorkspaceHint } from "@/modules/shared/lib/auth/workspace-navigation";
 import {
   Award,
   Building2,
@@ -52,7 +53,7 @@ export function buildProviderNav(locale: Locale, selectedQuery: string): Provide
   const q = selectedQuery;
   const n = providerDashboardCopy[locale];
   return [
-    { key: "home", href: `/${locale}/tableau-de-bord${q}`, label: n.navHome, icon: Home },
+    { key: "home", href: withDashboardWorkspaceHint(`/${locale}/tableau-de-bord${q}`, locale, "provider"), label: n.navHome, icon: Home },
     { key: "questionnaires", href: `/${locale}/sous-traitant/questionnaires${q}`, label: locale === "ar" ? "استبيانات التأهيل" : "Questionnaires de qualification", icon: ClipboardCheck },
     { key: "qualify", href: `/${locale}/sous-traitant/qualification${q}`, label: n.navQualify, icon: ShieldCheck },
     { key: "services", href: `/${locale}/sous-traitant/services${q}`, label: n.navServices, icon: Wrench },

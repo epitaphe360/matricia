@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { safeReturnPath } from "@/modules/shared/lib/auth/return-path";
-import { translateLocalPath } from "@/modules/shared/lib/auth/workspace-navigation";
+import { translateLocalPath, withDashboardWorkspaceHint } from "@/modules/shared/lib/auth/workspace-navigation";
 import { Bell, Search, Sprout } from "lucide-react";
 import { Suspense, type ReactNode } from "react";
 import { ProviderLanguageLinks } from "./provider-language-links";
@@ -68,17 +68,15 @@ export function ProviderAppShell({
   const alternate = locale === "fr" ? "ar" : "fr";
   const route = routeByActive[active];
   const currentPath = safeReturnPath(languagePath, locale);
-  const homeHref = currentPath ?? (active === "home"
-    ? `/${locale}/tableau-de-bord${selectedQuery}`
-    : `/${locale}/${route}${selectedQuery}`);
-  const altHref = currentPath ? translateLocalPath(currentPath, locale, alternate) : active === "home"
-    ? `/${alternate}/tableau-de-bord${selectedQuery}`
-    : `/${alternate}/${route}${selectedQuery}`;
+  const providerHomeHref = withDashboardWorkspaceHint(`/${locale}/tableau-de-bord${selectedQuery}`, locale, "provider");
+  const homeHref = withDashboardWorkspaceHint(currentPath ?? `/${locale}/${route}${selectedQuery}`, locale, "provider");
+  const altHref = translateLocalPath(homeHref, locale, alternate);
+  const dashboardHome = new URL(homeHref, "https://matricia.invalid").pathname === `/${locale}/tableau-de-bord`;
 
   return (
     <div dir={locale === "ar" ? "rtl" : "ltr"} className="client-workspace provider-workspace">
       <aside className="client-side" aria-label={c.space}>
-        <Link href={`/${locale}/tableau-de-bord${selectedQuery}`} className="client-brand">
+        <Link href={providerHomeHref} className="client-brand">
           <span className="client-brand-mark" aria-hidden>
             <svg viewBox="0 0 32 32" className="size-5" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M5 28V16a11 11 0 0 1 22 0v12" />
@@ -120,6 +118,7 @@ export function ProviderAppShell({
             role="search"
             aria-label={c.searchConsult}
           >
+            {dashboardHome ? <input type="hidden" name="workspace" value="provider" /> : null}
             {selectedOrganizationId ? <input type="hidden" name="organizationId" value={selectedOrganizationId} /> : null}
             <Search aria-hidden className="size-4" />
             <label className="sr-only" htmlFor="provider-shell-search">{c.searchConsult}</label>
@@ -144,7 +143,7 @@ export function ProviderAppShell({
             {alternate.toUpperCase()}
           </Link>
         </div>
-        {organizations.length?<form action={`/${locale}/${route}`} method="get" className="client-card mx-4 flex flex-wrap items-end gap-3"><label className="grid gap-2" htmlFor="provider-organization-selector">{locale==="ar"?"منظمة مقدم الخدمات":"Organisation prestataire"}<select id="provider-organization-selector" name="organizationId" defaultValue={selectedOrganizationId??""} required className="min-h-11 rounded-md border px-3"><option value="" disabled>{locale==="ar"?"اختر مؤسسة":"Choisir une organisation"}</option>{organizations.map(org=><option key={org.id} value={org.id}>{org.name}</option>)}</select></label><button className="client-cta" type="submit">{locale==="ar"?"عرض":"Afficher"}</button></form>:null}
+        {organizations.length?<form action={`/${locale}/${route}`} method="get" className="client-card mx-4 flex flex-wrap items-end gap-3">{active === "home" ? <input type="hidden" name="workspace" value="provider" /> : null}<label className="grid gap-2" htmlFor="provider-organization-selector">{locale==="ar"?"منظمة مقدم الخدمات":"Organisation prestataire"}<select id="provider-organization-selector" name="organizationId" defaultValue={selectedOrganizationId??""} required className="min-h-11 rounded-md border px-3"><option value="" disabled>{locale==="ar"?"اختر مؤسسة":"Choisir une organisation"}</option>{organizations.map(org=><option key={org.id} value={org.id}>{org.name}</option>)}</select></label><button className="client-cta" type="submit">{locale==="ar"?"عرض":"Afficher"}</button></form>:null}
         {title ? (
           <header className="client-mast provider-mast">
             <div>
