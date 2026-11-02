@@ -39,11 +39,16 @@ type FeaturedSteps = NonNullable<Extract<ClientHomeSnapshot, { status: "success"
 
 function featuredStatusLabel(status: string, c: (typeof clientDashboardCopy)[Locale]) {
   if (status === "DRAFT") return c.statusDraft;
-  if (status === "RFQ_OPEN") return c.statusMatching;
+  if (status === "INFORMATION_REQUIRED") return c.statusInformationRequired;
+  if (status === "NO_PROVIDER_AVAILABLE") return c.statusNoProvider;
+  if (["READY", "MATCHING", "RFQ_OPEN"].includes(status)) return c.statusMatching;
   if (status === "QUOTES_RECEIVED" || status === "CLIENT_REVIEW") return c.quotesReceived;
   if (status === "PROVIDER_SELECTED" || status === "CONTRACT_PENDING") return c.statusChoice;
-  if (status === "MISSION_ACTIVE" || status === "IN_PROGRESS") return c.statusMission;
-  return c.quotesReceived;
+  if (["CONTRACTED", "MISSION_ACTIVE", "IN_PROGRESS"].includes(status)) return c.statusMission;
+  if (["COMPLETED", "CLOSED"].includes(status)) return c.statusCompleted;
+  if (status === "CANCELLED") return c.statusCancelled;
+  if (status === "EXPIRED") return c.statusExpired;
+  return c.statusUnavailable;
 }
 
 function homeStepLabel(id: "need" | "proposals" | "choice" | "mission", c: (typeof clientDashboardCopy)[Locale]) {
@@ -139,7 +144,7 @@ export function ClientDashboardHome({
   const insights = snapshot.insights;
   const currentStep = project?.steps.find((step) => step.current);
   const homeSteps = project ? compactHomeSteps(project.steps) : null;
-  const pendingDecisions = counts?.pendingDecisions ?? 0;
+  const pendingDecisions = counts?.pendingDecisions ?? null;
   const documents = toClientInboxRows(searchedItems, "DOCUMENT", selectedQuery);
   const messages = toClientInboxRows(searchedItems, "MESSAGE", selectedQuery);
   const deadlines = toClientDeadlineRows({
@@ -151,10 +156,10 @@ export function ClientDashboardHome({
   });
   const progressRows = counts
     ? [
-        { label: c.kpiRequests, value: counts.openRequests ?? 0 },
-        { label: c.kpiQuotes, value: counts.quotesToReview ?? 0 },
-        { label: c.kpiMissions, value: counts.activeMissions ?? 0 },
-      ]
+        { label: c.kpiRequests, value: counts.openRequests },
+        { label: c.kpiQuotes, value: counts.quotesToReview },
+        { label: c.kpiMissions, value: counts.activeMissions },
+      ].filter((row): row is { label: string; value: number } => row.value !== null)
     : [];
   const progressMax = progressRows.reduce((max, row) => Math.max(max, row.value), 1);
   const notifCount = summary.total > 0 ? Math.min(summary.total, 9) : 0;
@@ -308,7 +313,7 @@ export function ClientDashboardHome({
               <header>
                 <h2 id="decisions-ring">{c.kpiDecisions}</h2>
               </header>
-              {counts === null ? <p>{c.unavailable}</p> : (
+              {pendingDecisions === null ? <p>{c.unavailable}</p> : (
                 <div className="client-decisions-ring-wrap">
                   <div
                     className="client-decisions-ring"
@@ -335,7 +340,7 @@ export function ClientDashboardHome({
                 <h2 id="progress-title">{c.projectProgress}</h2>
                 <small>{c.progressLead}</small>
               </header>
-              {counts === null ? <p>{c.unavailable}</p> : progressRows.every((row) => row.value === 0) ? (
+              {counts === null || progressRows.length < 3 ? <p>{c.unavailable}</p> : progressRows.every((row) => row.value === 0) ? (
                 <p>{c.progressEmpty}</p>
               ) : (
                 <div className="client-home-spark">
@@ -457,7 +462,7 @@ export function ClientDashboardHome({
             <p className="client-home-footer-right">{c.homeFooterRight}</p>
           </footer>
 
-          {snapshot.status === "error" ? <p className="admin-notice">{c.snapshotError}</p> : null}
+          {snapshot.status === "error" ? <p role="alert" className="admin-notice">{snapshot.reason === "FORBIDDEN" ? c.snapshotForbidden : c.snapshotError}</p> : snapshot.partialSources?.length ? <div role="status" className="admin-notice">{snapshot.partialSources.map((item) => <p key={item.source}>{item.source === "missions" ? c.kpiMissions : c.kpiRequests} : {item.reason === "FORBIDDEN" ? c.snapshotForbidden : c.snapshotError}</p>)}</div> : null}
         </main>
       </div>
     </div>
