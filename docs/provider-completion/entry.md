@@ -24,7 +24,10 @@ Base préservée : `7e01276`. Autorité : AGENTS.md et Gold Master V4 FINAL §§
 - 17 fichiers / 97 tests ciblés réussis (qualification, moteur et UI questionnaires Client, pages de lecture et boards).
 - Après les derniers ajouts : 3 fichiers / 22 tests réussis, incluant les liens Provider FR/AR et la lecture seule. Ces nombres se recouvrent et ne doivent pas être additionnés.
 - `git diff --check` réussi.
-- Lint ciblé terminé : code 0, aucun avertissement. Premier typecheck complet : un seul diagnostic sur le contrat de traduction hérité de phrases FR littérales. Type de copie localisée corrigé sans changer les clés ni les textes Client ; second contrôle en cours. Root coordonne le replay SQL canonique ; aucun Docker supplémentaire lancé par ce lot.
+- Lint ciblé et complémentaire terminés : code 0, aucun avertissement. Typecheck complet final : code 0 après correction du contrat de copie localisée, sans changement des clés ni textes Client.
+- Replay SQL sur la cible isolée e3 sous verrou : **44/44 assertions PASS**, migrations 38000/38100/38200/38300 dans une unique transaction annulée, `commitSent=false`, empreinte de schéma avant/après identique. Aucun Docker supplémentaire créé par ce lot. Preuves : [receipt](evidence/entry/receipt.json), [transcription SQL](evidence/entry/sql-output.txt).
+- Le premier essai SQL a révélé uniquement des erreurs de fixture (trois UUID mal formés, puis correlation_id requis absent sur les appels questionnaire), corrigées sans retirer ni affaiblir de garde ou assertion métier.
+- Revue indépendante : renouvellement propre réservé à B ne valide pas A ; Admin non membre AAL2 lit les déclarations, Provider étranger lit zéro ligne sans erreur de permission.
 
 ## Prérequis réels
 

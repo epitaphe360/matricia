@@ -55,9 +55,9 @@ insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_co
 insert into public.organization_memberships(id,organization_id,user_id,status)values('d0620000-0000-0000-0000-000000000004','d0610000-0000-0000-0000-000000000001','d0600000-0000-0000-0000-000000000004','ACTIVE');
 insert into public.organization_member_roles(membership_id,role_code)values('d0620000-0000-0000-0000-000000000004','PROVIDER_VIEWER');
 insert into public.catalog_categories(id,library_id,code,slug,created_by)values('d3450000-0000-4000-8000-000000000001','d0630000-0000-0000-0000-000000000001','ENTRY_CATEGORY','entry-category','d0600000-0000-0000-0000-000000000003');
-insert into public.catalog_subcategories(id,library_id,category_id,code,slug,created_by)values('d3450000-0000-4000-8000-000000000002','d0630000-0000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000001','ENTRY_SUBCATEGORY','entry-subcategory','d0600000-0000-0000-000000000003');
+insert into public.catalog_subcategories(id,library_id,category_id,code,slug,created_by)values('d3450000-0000-4000-8000-000000000002','d0630000-0000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000001','ENTRY_SUBCATEGORY','entry-subcategory','d0600000-0000-0000-0000-000000000003');
 insert into public.catalog_services(id,library_id,primary_subcategory_id,code,slug,created_by)values
-('d3450000-0000-4000-8000-000000000003','d0630000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000002','ENTRY_SERVICE_A','entry-service-a','d0600000-0000-0000-000000000003'),
+('d3450000-0000-4000-8000-000000000003','d0630000-0000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000002','ENTRY_SERVICE_A','entry-service-a','d0600000-0000-0000-0000-000000000003'),
 ('d3450000-0000-4000-8000-000000000004','d0630000-0000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000002','ENTRY_SERVICE_B','entry-service-b','d0600000-0000-0000-0000-000000000003');
 create temporary table entry_observed(k text primary key,v jsonb);grant all on entry_observed to authenticated,service_role;
 set local role authenticated;
@@ -82,9 +82,9 @@ insert into entry_observed values('service-capacity',public.declare_provider_cap
 select is(public.explain_provider_service_eligibility('d0610000-0000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000003')->>'capacity_available_units','2','effective service-specific declaration overrides global units');
 select is(public.explain_provider_service_eligibility('d0610000-0000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000003')->>'capacity_lead_time_days','4','effective service-specific lead time matches status');
 
-insert into entry_observed values('start',public.start_questionnaire_session('d0610000-0000-0000-0000-000000000001','d0660000-0000-0000-0000-000000000001','fr-MA',null,'entry-start-0345'));
-insert into entry_observed values('save',public.autosave_questionnaire_answers((select(v->>'session_id')::uuid from entry_observed where k='start'),1,'[{"question_version_id":"d0690000-0000-0000-0000-000000000001","value":false,"expected_answer_row_version":0}]','entry-save-0345'));
-insert into entry_observed values('submit',public.submit_questionnaire_session((select(v->>'session_id')::uuid from entry_observed where k='start'),2,'entry-submit-0345'));
+insert into entry_observed values('start',public.start_questionnaire_session('d0610000-0000-0000-0000-000000000001','d0660000-0000-0000-0000-000000000001','fr-MA',null,'entry-start-0345','d3450000-0000-4000-8000-000000000040'));
+insert into entry_observed values('save',public.autosave_questionnaire_answers((select(v->>'session_id')::uuid from entry_observed where k='start'),1,'[{"question_version_id":"d0690000-0000-0000-0000-000000000001","value":false,"expected_answer_row_version":0}]','entry-save-0345','d3450000-0000-4000-8000-000000000040'));
+insert into entry_observed values('submit',public.submit_questionnaire_session((select(v->>'session_id')::uuid from entry_observed where k='start'),2,'entry-submit-0345','d3450000-0000-4000-8000-000000000040'));
 select is((select v->>'outcome'from entry_observed where k='submit'),'QUESTIONNAIRE_SESSION_SUBMITTED','Provider owner completes real versioned questionnaire commands');
 select is((select audience from public.questionnaire_sessions where id=(select(v->>'session_id')::uuid from entry_observed where k='start')),'PROVIDER','submitted evidence keeps Provider audience');
 select ok(not(public.explain_provider_service_eligibility('d0610000-0000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000003')->>'eligible')::boolean,'questionnaire submission never auto-approves qualification');
@@ -144,12 +144,12 @@ select is(jsonb_array_length(public.list_provider_entry_documents_v1('d0610000-0
 select throws_ok($$select public.declare_provider_work_scope_v1('d0610000-0000-0000-0000-000000000001',null,'Viewer forged declaration',1,'Viewer scope edit denied','d3450000-0000-4000-8000-000000000032')$$,'42501','PROVIDER_SCOPE_DENIED','viewer cannot change declared work scope');
 select throws_ok($$select public.begin_provider_document_upload_v2('d0610000-0000-0000-0000-000000000001','application/pdf',20,repeat('a',64),extensions.gen_random_uuid())$$,'42501','PROVIDER_SCOPE_DENIED','viewer cannot reserve uploads');
 select throws_ok($$select public.declare_provider_capacity('d0610000-0000-0000-0000-000000000001',null,'FULL',0,0,'Viewer forbidden mutation','entry-viewer-capacity')$$,'42501','PROVIDER_SCOPE_DENIED','viewer cannot modify capacity');
-select throws_ok($$select public.start_questionnaire_session('d0610000-0000-0000-0000-000000000001','d0660000-0000-0000-0000-000000000001','fr-MA',null,'entry-viewer-start')$$,'42501',null,'viewer cannot start questionnaire evidence');
+select throws_ok($$select public.start_questionnaire_session('d0610000-0000-0000-0000-000000000001','d0660000-0000-0000-0000-000000000001','fr-MA',null,'entry-viewer-start','d3450000-0000-4000-8000-000000000040')$$,'42501',null,'viewer cannot start questionnaire evidence');
 reset role;
 set local role authenticated;select set_config('request.jwt.claims','{"sub":"d0600000-0000-0000-0000-000000000002","role":"authenticated","aal":"aal1"}',true);
 select throws_ok($$select public.list_provider_entry_documents_v1('d0610000-0000-0000-0000-000000000001')$$,'42501','PROVIDER_SCOPE_DENIED','another provider cannot enumerate documents');
 select throws_ok($$select public.list_provider_questionnaire_documents_v1('d0610000-0000-0000-0000-000000000001')$$,'42501','PROVIDER_SCOPE_DENIED','another provider cannot enumerate questionnaire attachments');
-select is((select count(*)from public.provider_document_versions where provider_organization_id='d0610000-0000-0000-000000000001'),0::bigint,'RLS hides immutable document history across tenants');
+select is((select count(*)from public.provider_document_versions where provider_organization_id='d0610000-0000-0000-0000-000000000001'),0::bigint,'RLS hides immutable document history across tenants');
 select is((select count(*)from public.provider_work_scope_versions where provider_organization_id='d0610000-0000-0000-0000-000000000001'),0::bigint,'another Provider reads zero scope declarations without helper permission errors');
 reset role;
 select throws_ok($$update public.provider_work_scope_versions set mission_size_summary='Changed facts'$$,'55000',null,'work scope history is immutable');
