@@ -65,7 +65,7 @@ export default async function Credits({ params, searchParams }: { params: Promis
   return (
     <ClientAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="finance" title={m.title} lead={m.intro} kicker={c.kicker}>
     <main className="client-page">
-
+    <nav className="flex flex-wrap gap-4"><Link className="client-ghost-link" href={`/${locale}/client/avantages/execution?organizationId=${selectedOrganizationId}`}>{locale === "ar" ? "تنفيذ المزايا وقائمة الانتظار" : "Réalisation et liste d’attente des avantages"}</Link><Link className="client-ghost-link" href={`/${locale}/client/avantages/remboursements?organizationId=${selectedOrganizationId}`}>{locale === "ar" ? "طلبات الاسترداد" : "Demandes de remboursement"}</Link></nav>
     <section aria-labelledby="wallets"><h2 id="wallets" className="mb-3 text-xl font-semibold">{m.wallet}</h2><div className="grid gap-4 sm:grid-cols-2">
       {data.organizations.map(organization => {
         const wallet = data.wallets.find(item => item.organizationId === organization.id);
