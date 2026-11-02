@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { portfolioCalendarTitle } from "./calendar-title";
 import { Badge } from "@/modules/shared/ui/badge";
 import { Button } from "@/modules/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/ui/card";
@@ -238,7 +239,7 @@ function OrganizationPortfolio({ locale, data, m, keys, organizationId }: Props 
           <ol className="client-portfolio-list">
             {calendar.map((item) => (
               <li key={`${item.sourceKind}-${item.itemId}-${item.projectId ?? "org"}`}>
-                <strong>{nameOf(locale, item.titleFr, item.titleAr)}</strong>
+                <strong>{portfolioCalendarTitle(item, locale)}</strong>
                 <span>{displayCalendarDate(item, locale)}{item.projectId ? ` · ${projectCode(item.projectId)}` : ""}</span>
                 <Badge variant="outline">{label(m.calendarSources, item.sourceKind)}</Badge>
               </li>
