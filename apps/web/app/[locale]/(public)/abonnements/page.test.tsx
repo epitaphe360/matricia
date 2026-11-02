@@ -73,6 +73,9 @@ describe("page publique abonnements", () => {
     expect(html).toContain(locale === "fr" ? "30 jours après vérification et activation" : "30 يوماً بعد التحقق من المؤسسة وتفعيلها");
     expect(html).toContain(locale === "fr" ? "Premium, Gold ou Platinum" : "بريميوم أو غولد أو بلاتينيوم");
     expect(html).not.toContain("Sans plan Gold actif");
+    expect(html).toContain(locale === "fr" ? "avant tout engagement ou paiement" : "قبل أي التزام أو دفع");
+    expect(html).not.toContain("confirmés à l’activation");
+    expect(html).not.toContain("تُؤكَّد عند التفعيل");
     expect(html).toContain(`href="/${locale}/contact?motif=CLIENT&amp;plan=GOLD"`);
   });
 

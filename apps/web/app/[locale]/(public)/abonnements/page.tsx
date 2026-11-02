@@ -196,7 +196,7 @@ export default async function PublicSubscriptionsPage({ params }: { params: Prom
             ? [
                 ["هل يمكن تجربة ماتريسيا قبل الاشتراك؟", "نعم، لمدة 30 يوماً بعد التحقق من المؤسسة وتفعيلها، دون إلزام بوسيلة دفع، ودون تحول تلقائي إلى اشتراك."],
                 ["كيف تعمل الأرصدة؟", "تُستخدم الأرصدة للمنافع المؤهلة في صيغتكم. تعرض محفظتكم الكميات والصلاحية والحركات، وتُحدد شروط الاستعمال قبل الشراء."],
-                ["ما هي Box؟", "Box حزمة منافع مرتبطة بالخطة. محتواها وشروطها تُؤكَّد عند التفعيل في المساحة الآمنة."],
+                ["ما هي Box؟", "Box حزمة منافع مرتبطة بالخطة. محتواها وشروطها تُؤكَّد في العرض المكتوب قبل أي التزام أو دفع، ثم تظهر في المساحة الآمنة."],
                 ["هل يمكن تغيير الصيغة لاحقاً؟", "نعم، من مساحة الاشتراك بعد الاتصال. أي تغيير يُطبَّق وفق القواعد النشطة للخطة."],
                 ["ماذا يحدث عند نهاية فترة التجربة؟", "تلزم خطة بريميوم أو غولد أو بلاتينيوم نشطة للإجراءات الجديدة المرتبطة بالخطة. وتبقى البيانات والالتزامات القائمة متاحة."],
                 ["كيف أدير اشتراكي من حسابي؟", "بعد الاتصال، الصفحة Client / Abonnement يعرض الخطة والدورة والحركات المرتبطة."],
@@ -204,7 +204,7 @@ export default async function PublicSubscriptionsPage({ params }: { params: Prom
             : [
                 ["Puis-je essayer Matricia avant de m’abonner ?", "Oui : 30 jours après vérification et activation de l’organisation, sans moyen de paiement obligatoire et sans conversion automatique en abonnement."],
                 ["Comment fonctionnent les crédits ?", "Les crédits servent aux avantages éligibles de votre formule. Votre portefeuille présente les quantités, la validité et les mouvements ; les conditions d’utilisation sont précisées avant l’achat."],
-                ["Qu’est-ce qu’une Box ?", "Une Box est un ensemble d’avantages lié à un plan. Son contenu et ses conditions sont confirmés à l’activation, dans l’espace sécurisé."],
+                ["Qu’est-ce qu’une Box ?", "Une Box est un ensemble d’avantages lié à un plan. Son contenu et ses conditions sont confirmés dans l’offre écrite avant tout engagement ou paiement, puis consultables dans l’espace sécurisé."],
                 ["Puis-je changer de formule plus tard ?", "Oui, depuis l’espace abonnement après connexion. Tout changement s’applique selon les règles actives du plan."],
                 ["Que se passe-t-il à la fin de ma période d’essai ?", "Un plan Premium, Gold ou Platinum actif est nécessaire aux nouvelles actions soumises au plan. Vos données et obligations existantes restent accessibles."],
                 ["Comment gérer mon abonnement depuis mon compte ?", "Après connexion, la page Client / Abonnement affiche le plan, le cycle et les mouvements associés."],
