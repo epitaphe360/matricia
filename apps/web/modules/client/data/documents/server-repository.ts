@@ -1,3 +1,4 @@
+import { classifyAuthReadFailure } from "@/modules/shared/lib/auth/read-failure";
 import { readAllPages } from "@/modules/client/data/pagination";
 import { z } from "zod";
 import { resolveClientOrganizationContext } from "@/modules/shared/client-organization-context";
@@ -13,7 +14,9 @@ const empty = (): VaultResult => ({ status: "success", value: { organizations: [
 
 export async function loadClientDocumentVault(requestedOrganizationId?: string, page = 1, options?: { query?: string; includePending?: boolean }): Promise<VaultResult> {
   const client = await getSupabaseServerClient(), { data: auth, error: authError } = await client.auth.getUser();
-  if (authError || !auth.user) return { status: "error", reason: "UNAUTHENTICATED" };
+  const authFailure = classifyAuthReadFailure(authError);
+  if (authFailure) return { status: "error", reason: authFailure };
+  if (!auth.user) return { status: "error", reason: "UNAUTHENTICATED" };
   const membershipsResult = await client.from("organization_memberships").select("id,organization_id").eq("user_id", auth.user.id).eq("status", "ACTIVE").limit(100);
   if (membershipsResult.error) return { status: "error", reason: "UNAVAILABLE" };
   const memberships = rows(membershipsResult.data), membershipIds = memberships.map((item) => text(item, "id"));

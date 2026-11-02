@@ -1,3 +1,4 @@
+import { classifyAuthReadFailure } from "@/modules/shared/lib/auth/read-failure";
 import { resolveClientOrganizationContext } from "@/modules/shared/client-organization-context";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 import type { Portfolio, RepoResult } from "./model";
@@ -17,7 +18,9 @@ export function validPortfolioTenantPayload(organizationIds:string[],projectRows
 export async function loadClientPortfolio(requestedOrganizationId?: string): Promise<RepoResult<Portfolio>> {
   const client = await getSupabaseServerClient();
   const { data: auth, error: authError } = await client.auth.getUser();
-  if (authError || !auth.user) return { status: "error", reason: "UNAUTHENTICATED" };
+  const authFailure = classifyAuthReadFailure(authError);
+  if (authFailure) return { status: "error", reason: authFailure };
+  if (!auth.user) return { status: "error", reason: "UNAUTHENTICATED" };
   const memberships = await client.from("organization_memberships").select("id,organization_id").eq("user_id", auth.user.id).eq("status", "ACTIVE").limit(100);
   if (memberships.error) return { status: "error", reason: "UNAVAILABLE" };
   const membershipRows = rows(memberships.data);

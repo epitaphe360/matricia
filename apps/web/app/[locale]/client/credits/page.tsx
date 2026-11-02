@@ -34,7 +34,7 @@ export default async function Credits({ params, searchParams }: { params: Promis
   );
   if (result.status === "error") return shell(<p role="alert" className="client-card">{m.unavailable}</p>);
 
-  const context = resolveClientOrganizationContext(result.value.organizations.map((organization) => ({ organization_id: organization.id, name: organization.name })), organizationId);
+  const context = resolveClientOrganizationContext(result.value.organizations.map((organization) => ({ organization_id: organization.id, name: organization.name })), space.selectedOrganizationId);
   if (context.status === "error" && context.reason === "ORGANIZATION_SELECTION_REQUIRED") {
     return shell(
       <section className="client-card">
