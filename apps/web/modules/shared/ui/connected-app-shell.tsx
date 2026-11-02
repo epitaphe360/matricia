@@ -61,7 +61,7 @@ export async function ConnectedAppShell({
   // A role preference may select another membership; resolve that exact membership, never the first unrelated organization.
   let space;
   try {
-    space = await resolveConnectedSpace({ locale, organizationId: kind === "administration" ? undefined : authorizedOrganizationId });
+    space = await resolveConnectedSpace({ locale, organizationId: kind === "administration" ? undefined : authorizedOrganizationId, allowDirectoryFailure: allowContextFailure });
   } catch (error) {
     unstable_rethrow(error);
     if (!allowContextFailure || !(error instanceof Error) || error.message !== "WORKSPACE_CONTEXT_UNAVAILABLE") throw error;

@@ -23,7 +23,14 @@ describe("role independent account workspace",()=>{
    const failed = response([]);
    failed.then = (resolve: (value: unknown) => unknown) => Promise.resolve({ data: null, error: { code: "08006" } }).then(resolve);
    mocks.from.mockReturnValue(failed);
-   await expect(resolveConnectedSpace({ locale: "fr", organizationId: "unverified-selection" })).resolves.toMatchObject({ status: "success", selectedOrganizationId: null, selectedQuery: "", directoryUnavailable: true });
+   await expect(resolveConnectedSpace({ locale: "fr", organizationId: "unverified-selection", allowDirectoryFailure: true })).resolves.toMatchObject({ status: "success", selectedOrganizationId: null, selectedQuery: "", directoryUnavailable: true });
+ });
+ it("does not silently clear the selected organization on a directory failure by default", async () => {
+   mocks.getUser.mockResolvedValue({ data: { user: { id: "actor" } }, error: null });
+   const failed = response([]);
+   failed.then = (resolve: (value: unknown) => unknown) => Promise.resolve({ data: null, error: { code: "08006" } }).then(resolve);
+   mocks.from.mockReturnValue(failed);
+   await expect(resolveConnectedSpace({ locale: "fr", organizationId: "selected" })).rejects.toThrow("WORKSPACE_CONTEXT_UNAVAILABLE");
  });
  it("never falls back on an unauthorized explicit organization",async()=>{mocks.getUser.mockResolvedValue({data:{user:{id:"actor"}}});mocks.from.mockReturnValue(response([{organization_id:"own"}]));await expect(resolveConnectedSpace({locale:"fr",organizationId:"foreign"})).rejects.toThrow("NOT_FOUND");});
 });

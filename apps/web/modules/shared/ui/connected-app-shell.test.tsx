@@ -25,7 +25,7 @@ describe("shared account security shell", () => {
     mocks.navigation.mockResolvedValue({ status: "ok", navigation: { landing: "provider", options: [{ kind: "client", href: "/fr/tableau-de-bord?workspace=client&organizationId=org-client" }, { kind: "provider", href: "/fr/tableau-de-bord?workspace=provider&organizationId=org-provider" }] } });
     const html = renderToStaticMarkup(await ConnectedAppShell({ locale: "fr", workspace: "provider", title: "Sécurité", currentPath: "/fr/securite/sessions?workspace=provider", providerActive: "company", franchiseActive: "governance", children: "sessions" }));
     expect(mocks.navigation).toHaveBeenCalledWith("fr", undefined, "provider");
-    expect(mocks.space).toHaveBeenCalledWith({ locale: "fr", organizationId: "org-provider" });
+    expect(mocks.space).toHaveBeenCalledWith({ locale: "fr", organizationId: "org-provider", allowDirectoryFailure: false });
     expect(html).toContain('data-shell="provider"');
   });
   it("keeps verified personal security content usable when the directory is unavailable", async () => {

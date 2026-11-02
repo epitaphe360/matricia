@@ -48,7 +48,7 @@ export default async function AccountSecurityPage({
     getAccountSecurity(),
     listMySessions(),
     listOrganizationRoles(),
-    resolveConnectedSpace({ locale, organizationId: navigation.status === "ok" && navigation.navigation.landing === "administration" ? undefined : effectiveOrganizationId }).catch(error => {
+    resolveConnectedSpace({ locale, organizationId: navigation.status === "ok" && navigation.navigation.landing === "administration" ? undefined : effectiveOrganizationId, allowDirectoryFailure: true }).catch(error => {
       unstable_rethrow(error);
       if (!(error instanceof Error) || error.message !== "WORKSPACE_CONTEXT_UNAVAILABLE") throw error;
       return { status: "success" as const, selectedOrganizationId: null, selectedQuery: "", organizationName: null, userEmail: null, directoryUnavailable: true };
