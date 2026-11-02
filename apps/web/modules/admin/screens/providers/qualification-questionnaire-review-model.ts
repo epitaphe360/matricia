@@ -32,12 +32,16 @@ export function reviewAnswerText(question:QualificationReviewQuestion,locale:"fr
   if(!question.answered)return locale==="ar"?"لم تُقدّم إجابة":"Aucune réponse déposée";
   const value=question.value;
   if(typeof value==="boolean")return locale==="ar"?(value?"نعم":"لا"):(value?"Oui":"Non");
+  const options=Array.isArray(question.options)?question.options:[];
+  const optionLabel=(selectedValue:string)=>{
+    const selected=options.find((option:unknown)=>typeof option==="object"&&option!==null&&"value"in option&&option.value===selectedValue)as Record<string,unknown>|undefined;
+    const label=selected?.[locale==="ar"?"label_ar":"label_fr"];
+    return typeof label==="string"?label:selectedValue;
+  };
+  if(question.answerType==="MULTI_SELECT"&&Array.isArray(value)&&value.every(item=>typeof item==="string"))return value.map(optionLabel).join(locale==="ar"?"، ":", ");
   if(typeof value==="string"){
     if(["SINGLE_SELECT","MULTI_SELECT","SELECT","RADIO","DROPDOWN"].includes(question.answerType)){
-      const options=Array.isArray(question.options)?question.options:[];
-      const selected=options.find((option:unknown)=>typeof option==="object"&&option!==null&&"value"in option&&option.value===value)as Record<string,unknown>|undefined;
-      const label=selected?.[locale==="ar"?"label_ar":"label_fr"];
-      if(typeof label==="string")return label;
+      return optionLabel(value);
     }
     return value;
   }
