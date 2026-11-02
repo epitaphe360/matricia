@@ -55,10 +55,11 @@ La contre-revue F01–F11 est favorable sur `7bc38fc` et les130 assertions ci-de
 |---|---|---|
 |0356_provider_dispute_economic_authority|76/76 PASS|[Reçu](evidence/finance/f12-signed-authority-final-76.json)|
 |0347_provider_monthly_closing|56/56 PASS|[Reçu](evidence/finance/monthly-with40940-final-56.json)|
+|0047_p10_provider_billing_reconciliation|33/33 PASS|[Reçu](evidence/finance/legacy0047-with40940-33.json)|
 
 Le modèle positif est explicitement TEST, proposé et approuvé par des acteurs distincts puis signé via le flux DEV-mock réel. Une décision native prend ses700+700 de ce modèle, malgré une devise et des montants falsifiés par le caller ; elle accepte aussi un objet de règle vide. Sans clause économique de l'obligation exacte, elle crée une exception et aucune conséquence financière. Le bridge et la clôture refusent aussi une conséquence historique et une ancienne ligne de pré-relevé, sans réécrire le montant immuable. La pénalité Client reste séparée et nécessite son mandat propre. Les lectures étrangères sont refusées. Ces reçus sont chacun annulés et leurs empreintes restaurées ; aucune preuve juridique de production n'est revendiquée.
 
-L'interface d'exception FR/AR a été rejouée :6 tests PASS et ESLint sans avertissement. Les45/16/13 assertions du checkpoint précédent sont conservées avec leurs hashes40000–40930 ; elles ne sont pas présentées comme un nouveau rejeu40940. Le verdict indépendant F12 et la recette de l'UI Admin intégrée restent à recevoir avant clôture.
+La suite historique0047 a été alignée sur les ACL plus strictes, l'unicité par lot et le déplacement des écritures dans la revue indépendante ; aucune garde n'a été abaissée. L'interface d'exception FR/AR a été rejouée :6 tests PASS et ESLint sans avertissement. Les45/16/13 assertions du checkpoint précédent sont conservées avec leurs hashes40000–40930 ; elles ne sont pas présentées comme un nouveau rejeu40940. Le verdict indépendant F12 et la recette de l'UI Admin intégrée restent à recevoir avant clôture.
 
 ## Conditions externes encore nécessaires
 

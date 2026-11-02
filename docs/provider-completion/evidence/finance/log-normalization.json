@@ -100,5 +100,11 @@
     "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "normalizedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "normalization": "trailing whitespace only"
+  },
+  {
+    "file": "legacy0047-with40940-33.log",
+    "rawSha256": "05b2cfd1bb1ca89336826612c4d92863a12b49036118cfd72fcbcaefdb638865",
+    "normalizedSha256": "dad71e281f15e226dec4518b2366d3a54ffd1d477aa82004a69dd476236345d2",
+    "normalization": "trailing whitespace and empty EOF lines only"
   }
 ]
