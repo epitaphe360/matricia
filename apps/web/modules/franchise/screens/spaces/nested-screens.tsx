@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { FranchiseAccessState, FranchiseOrganizationSelector } from "@/modules/franchise/ui/franchise-access-state";
 import { libraryCopy } from "@/modules/franchise/data/library/copy";
 import { resolveFranchiseNestedView } from "@/modules/franchise/data/spaces/nested-views";
 import { franchiseCopy } from "@/modules/franchise/data/spaces/copy";
@@ -103,11 +103,9 @@ export async function FranchiseNestedPage({
       mandateName={mandateName}
       actions={shellActions}
     >
+      <FranchiseOrganizationSelector locale={locale} organizations={space.organizations} selectedOrganizationId={space.selectedOrganizationId} returnPath={`/${locale}/franchise/${slug.join("/")}`} />
       {result.status === "error" ? (
-        <Alert variant="destructive">
-          <AlertTitle>{c.unavailable}</AlertTitle>
-          <AlertDescription>{result.reason === "NO_MANDATE" ? c.noMandate : c.scopeHelp}</AlertDescription>
-        </Alert>
+        <FranchiseAccessState locale={locale} reason={result.reason} returnPath={`/${locale}/franchise/${slug.join("/")}${space.selectedQuery}`} />
       ) : nested.kind === "home" && nested.view === "actions" ? (
         <FranchiseWorkQueueBoard locale={locale} query={space.selectedQuery} workspace={result.workspace} bucket={queueBucket} />
       ) : nested.kind === "home" ? (

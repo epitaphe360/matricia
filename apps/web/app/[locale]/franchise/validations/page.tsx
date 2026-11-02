@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { FranchiseAccessState, FranchiseOrganizationSelector } from "@/modules/franchise/ui/franchise-access-state";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { libraryCopy } from "@/modules/franchise/data/library/copy";
 import { FranchiseValidationsWorkbench } from "@/modules/franchise/screens/library/validations-workbench";
@@ -14,8 +14,9 @@ export default async function FranchiseValidationsPage({ params, searchParams }:
   const mandateName = franchiseMandateName(result);
   return (
     <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="validations" title={c.validationsTitle} lead={c.validationsLead} kicker={c.scope} mandateName={mandateName}>
+      <FranchiseOrganizationSelector locale={locale} organizations={space.organizations} selectedOrganizationId={space.selectedOrganizationId} returnPath={`/${locale}/franchise/validations`} />
       {result.status === "error" ? (
-        <Alert variant="destructive"><AlertTitle>{c.unavailable}</AlertTitle><AlertDescription>{result.reason === "NO_MANDATE" ? c.noMandate : c.scopeHelp}</AlertDescription></Alert>
+        <FranchiseAccessState locale={locale} reason={result.reason} returnPath={`/${locale}/franchise/validations${space.selectedQuery}`} />
       ) : (
         <FranchiseValidationsWorkbench locale={locale} query={space.selectedQuery} workspace={result.workspace} filters={query} />
       )}

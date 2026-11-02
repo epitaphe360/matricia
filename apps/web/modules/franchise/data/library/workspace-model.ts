@@ -108,7 +108,7 @@ export type FranchiseLibraryWorkspace = {
 
 export type FranchiseLibraryLoadResult =
   | { status: "success"; workspace: FranchiseLibraryWorkspace }
-  | { status: "error"; reason: "UNAUTHENTICATED" | "FORBIDDEN" | "NO_MANDATE" | "QUERY_FAILED" | "INVALID_RESPONSE" };
+  | { status: "error"; reason: "UNAUTHENTICATED" | "FORBIDDEN" | "NO_MANDATE" | "ORGANIZATION_REQUIRED" | "QUERY_FAILED" | "INVALID_RESPONSE" };
 
 export const reviewStatuses = new Set(["IN_REVIEW", "FRANCHISE_REVIEW", "CENTRAL_REVIEW", "LOCAL_TEST"]);
 export const draftStatuses = new Set(["DRAFT"]);

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { notFound } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { FranchiseAccessState, FranchiseOrganizationSelector } from "@/modules/franchise/ui/franchise-access-state";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { libraryCopy } from "@/modules/franchise/data/library/copy";
 import { FranchiseServicesWorkbench } from "@/modules/franchise/screens/library/library-workbenches";
@@ -15,8 +15,9 @@ export default async function FranchiseServicesPage({ params, searchParams }: { 
   const c = libraryCopy(locale);
   return (
     <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="services" title={c.servicesTitle} lead={c.servicesLead} kicker={c.scope} mandateName={result.status === "success" ? result.workspace.mandate.libraryName : null} actions={result.status === "success" ? <FranchiseSecurityPanel locale={locale} /> : null}>
+      <FranchiseOrganizationSelector locale={locale} organizations={space.organizations} selectedOrganizationId={space.selectedOrganizationId} returnPath={`/${locale}/franchise/services`} />
       {result.status === "error" ? (
-        <Alert variant="destructive"><AlertTitle>{c.unavailable}</AlertTitle><AlertDescription>{result.reason === "NO_MANDATE" ? c.noMandate : c.scopeHelp}</AlertDescription></Alert>
+        <FranchiseAccessState locale={locale} reason={result.reason} returnPath={`/${locale}/franchise/services${space.selectedQuery}`} />
       ) : (
         <FranchiseServicesWorkbench
           locale={locale}

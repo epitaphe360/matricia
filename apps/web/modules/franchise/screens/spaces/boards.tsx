@@ -1246,7 +1246,7 @@ export function GovernanceBoard({ locale, query, mandateName, view, board }: Spa
               {demo.govHistory.map((item) => (
                 <li key={item.id}><span className="franchise-dot" data-tone="mint" /><span><strong>{item.title}</strong><small>{item.actor}</small></span></li>
               ))}
-              <li><span className="franchise-dot" data-tone="sky" /><span><strong>{c.liveMandate}</strong><small>{locale === "ar" ? "اليوم" : "Aujourd’hui"}</small></span></li>
+              {demo.govHistory.length === 0 ? <li><span>{c.emptyGovernanceHistory}</span></li> : null}
             </ol>
           </article>
           <article className="client-card franchise-mandate-ok">

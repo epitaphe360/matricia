@@ -15,8 +15,19 @@ import type { Locale } from "@/modules/shared/lib/i18n/locale";
 export async function requireFranchiseLibrary(input: { locale: Locale; organizationId?: string;franchiseId?:string;catalog?:CatalogPageInput }) {
   const space = await resolveFranchiseSpace(input);
   if (space.status === "unauthenticated") redirect(`/${input.locale}/connexion`);
-  const result = await loadFranchiseLibraryWorkspace({ locale: input.locale, organizationId: input.organizationId,franchiseId:input.franchiseId,catalog:input.catalog });
+  if (space.errorReason) return { space, result: { status: "error" as const, reason: space.errorReason } };
+  if (space.organizations.length > 1 && !space.selectedOrganizationId) {
+    return { space, result: { status: "error" as const, reason: "ORGANIZATION_REQUIRED" as const } };
+  }
+  const result = await loadFranchiseLibraryWorkspace({ locale: input.locale, organizationId: space.selectedOrganizationId ?? undefined,franchiseId:input.franchiseId,catalog:input.catalog });
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${input.locale}/connexion`);
+  if (result.status === "success") {
+    const organizationId = result.workspace.mandate.operatorOrganizationId ?? null;
+    const selected = new URLSearchParams();
+    if (organizationId) selected.set("organizationId", organizationId);
+    selected.set("franchiseId", result.workspace.mandate.franchiseId);
+    return { space: { ...space, selectedOrganizationId: organizationId, selectedQuery: `?${selected}` }, result };
+  }
   return { space, result };
 }
 
