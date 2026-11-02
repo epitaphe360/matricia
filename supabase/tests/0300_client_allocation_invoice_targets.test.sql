@@ -1,5 +1,8 @@
 begin;
 set local search_path=public,extensions;
+-- pgTAP lives in extensions; role-switch assertions need only this framework
+-- schema access inside the transaction that is rolled back below.
+grant usage on schema extensions to authenticated;
 select plan(23);
 
 select has_function('public','list_client_allocation_invoice_targets',array['uuid','integer'],'invoice target read command exists');
