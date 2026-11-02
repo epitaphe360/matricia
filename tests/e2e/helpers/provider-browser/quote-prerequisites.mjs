@@ -7,13 +7,14 @@ import { createHash, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 requireDevelopment();
 const state=await loadOwnState(), path=resolve(state.directory,'quote-prerequisites.private.json');
+const upstreamOnly=process.argv.includes('--upstream-only');
 const qualification=JSON.parse(await readFile(resolve(state.directory,'qualification-reviewed.json'))), catalogue=JSON.parse(await readFile(resolve(state.directory,'catalogue-fixture-provenance.json')));
-if(qualification.status!=='PASSED'||qualification.appTree!==state.candidate?.appTree)throw Error('ACTUAL_NATIVE_PROVIDER_QUALIFICATION_FIRST');
+if(!upstreamOnly&&(qualification.status!=='PASSED'||qualification.appTree!==state.candidate?.appTree))throw Error('ACTUAL_NATIVE_PROVIDER_QUALIFICATION_FIRST');
 try{await access(path);throw Error('PRESERVE_EXISTING_QUOTE_PREREQUISITES');}catch(error){if(error.code!=='ENOENT')throw error;}
 const owner=await nativeBrowserActor(state,'provider-owner'), client=await nativeBrowserActor(state,'client-owner'), author=await nativeBrowserActor(state,'finance-author'), reviewer=await nativeBrowserActor(state,'finance-reviewer'), compliance=await nativeBrowserActor(state,'compliance-reviewer');
 if(author.actor.userId===reviewer.actor.userId)throw Error('INDEPENDENT_NATIVE_FISCAL_REVIEW_REQUIRED');
 const eligible=await owner.client.rpc('explain_provider_service_eligibility',{p_provider_organization_id:owner.actor.organizationId,p_service_id:catalogue.ids.serviceA});
-if(eligible.error||eligible.data?.eligible!==true)throw Error('NATIVE_PROVIDER_MUST_ALREADY_BE_ELIGIBLE');
+if(!upstreamOnly&&(eligible.error||eligible.data?.eligible!==true))throw Error('NATIVE_PROVIDER_MUST_ALREADY_BE_ELIGIBLE');
 const source=await readFile('supabase/tests/0338_client_native_mission_dispute_acceptance.test.sql','utf8'),taxSource=await readFile('supabase/tests/0346_provider_quote_completion.test.sql','utf8');
 const section=(text,start,end)=>{const from=text.indexOf(start),to=text.indexOf(end,from);if(from<0||to<=from)throw Error('REVIEWED_QUOTE_PREREQUISITE_SOURCE_DRIFT');return text.slice(from,to);};
 const ids={clientCaseId:randomUUID(),requestId:randomUUID(),requestVersionId:randomUUID(),matchingRunId:randomUUID(),matchingCandidateId:randomUUID(),rfqId:randomUUID(),invitationId:randomUUID(),taxRuleVersionId:randomUUID()};
@@ -42,6 +43,7 @@ const profileLine=sql.split('\n').find(line=>line.startsWith('insert into public
 if(!profileLine)throw Error('EXACT_HISTORICAL_CLIENT_PROFILE_LINE_REQUIRED');
 sql=sql.replace(profileLine,profileLine.replace(`}',1,'${client.actor.userId}');`,`}',(select row_version from public.organizations where id='${client.actor.organizationId}'),'${client.actor.userId}');`));
 if(/\bauth\.|organization_memberships|organization_member_roles|platform_user_roles|provider_(profiles|qualifications|qualification_decisions)|\bquotes\b|quote_versions|set_config|disable\s+trigger|session_replication_role/iu.test(sql))throw Error('UPSTREAM_FIXTURE_CANNOT_WRITE_PROVIDER_SUCCESS_OR_AUTH');
+if(upstreamOnly){const requestStart=sql.indexOf('insert into public.service_requests(');if(requestStart<0)throw Error('EXACT_CLIENT_LEGAL_BOUNDARY_REQUIRED');sql=sql.slice(0,requestStart);}
 const {createClient}=createRequire(resolve('apps/web/package.json'))('@supabase/supabase-js'),storage=createClient(`http://127.0.0.1:${state.gatewayPort}`,state.serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
 const docs=[];
 for(const[kind,old,letter]of[['REGISTRATION_DOCUMENT','registration','a'],['REPRESENTATIVE_AUTHORITY','authority','b']]){
@@ -70,5 +72,5 @@ const scope=await call(author.client,'get_service_tax_category_mapping_context_v
 const proposal=await call(author.client,'propose_service_tax_category_mapping_v1',{p_service_version_id:catalogue.ids.serviceVersionA,p_expected_service_hash:scope.source.content_hash,p_expected_scope_hash:scope.scope_hash,p_country_code:'MA',p_currency:'MAD',p_category_code:taxCode,p_valid_from:new Date().toISOString().slice(0,10),p_valid_until:null,p_development_only:true,p_supersedes_mapping_ids:[],p_reason:'TEST ONLY classification for exact native Provider quote acceptance, not a legal tax opinion.',p_idempotency_key:randomUUID()});
 proof.taxProposal=proposal;await writeFile(path,JSON.stringify(proof,null,2),{mode:0o600});
 const decision=await call(reviewer.client,'decide_service_tax_category_mapping_v1',{p_proposal_id:proposal.proposal_id,p_expected_content_hash:proposal.content_hash,p_approve:true,p_approval_reference:'TEST-NATIVE-PROVIDER-QUOTE',p_reason:'TEST ONLY independent fiscal mapping review, no commercial or legal tax claim.'});
-proof.taxDecision=decision;proof.status='READY';await writeFile(path,JSON.stringify(proof,null,2),{mode:0o600});
+proof.taxDecision=decision;proof.status=upstreamOnly?'UPSTREAM_READY':'READY';proof.rfqCreated=!upstreamOnly;await writeFile(path,JSON.stringify(proof,null,2),{mode:0o600});
 console.log(JSON.stringify({status:proof.status,scope:proof.scope,providerQuoteWritten:false,nativeFiscalFourEyes:true,actualHistoricalClientFileBytes:true}));
