@@ -46,6 +46,13 @@ const data: Portfolio = {
   libraries: [],
 };
 
+it.each(["fr", "ar"] as const)("uses business choices and a real evidence file (%s)", locale => {
+ const html=renderToStaticMarkup(<PortfolioPanel locale={locale} data={data} m={getMessages(locale)} keys={{site:"a",project:"b",task:"c",contract:"d",budget:"e",center:"f",allocation:"g",event:"h"}} />);
+ expect(html).toContain('name="referenceChoice"');expect(html).toContain(`value="PROJECT:${project}"`);
+ expect(html).toContain('name="evidenceFile"');expect(html).not.toContain('name="evidenceHash"');expect(html).not.toContain('name="referenceId"');
+ expect(html).not.toContain('>COMMITMENT<');expect(html).not.toContain('>PROJECT_TASK<');
+});
+
 describe("PortfolioPanel", () => {
   it("shows sites, integer progress and a consumption alert without placeholders", () => {
     const html = renderToStaticMarkup(
