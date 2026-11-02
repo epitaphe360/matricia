@@ -50,20 +50,20 @@
   {
     "file": "web-unit-final-42.log",
     "rawSha256": "11779672344752f99504fabaee70749907c466453405027f7b3e14466ef35815",
-    "normalizedSha256": "11779672344752f99504fabaee70749907c466453405027f7b3e14466ef35815",
-    "normalization": "trailing whitespace only"
+    "normalizedSha256": "a483e59e257ce9ee15d3a86247093212ef2989b2fd612d1a67a7db7242f3d9e5",
+    "normalization": "trailing whitespace and empty EOF lines only"
   },
   {
     "file": "worker-unit-final-2.log",
     "rawSha256": "b86c62865759d8b6a40d269c15822418943ad70e38fcd9531334162b34f91e85",
-    "normalizedSha256": "b86c62865759d8b6a40d269c15822418943ad70e38fcd9531334162b34f91e85",
-    "normalization": "trailing whitespace only"
+    "normalizedSha256": "d33ba293023b6aad00aad76bc9b2e29289a5dc701f17dc83456281cb2a6ec0c1",
+    "normalization": "trailing whitespace and empty EOF lines only"
   },
   {
     "file": "web-typecheck-final.log",
     "rawSha256": "6fff46f67b7da4e4a10b93ec1023f94f6e4c8426353984f9e35f0907711b7619",
-    "normalizedSha256": "6fff46f67b7da4e4a10b93ec1023f94f6e4c8426353984f9e35f0907711b7619",
-    "normalization": "trailing whitespace only"
+    "normalizedSha256": "06c3e03676471176a11db13c0241d4374ba92611b4d333c24ca52b0d165efd26",
+    "normalization": "trailing whitespace and empty EOF lines only"
   },
   {
     "file": "web-lint-final.log",
