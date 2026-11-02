@@ -259,8 +259,9 @@ const Hidden = ({ locale, orgId, keyValue }: { locale: string; orgId?: string; k
   </>
 );
 
-function Feedback({ state, m }: { state: { status: string; reason?: string }; m: Messages }) {
+function Feedback({ state, m }: { state: { status: string; reason?: string; rejected?: boolean }; m: Messages }) {
   if (state.status === "idle") return null;
+  if(state.status === "approval_required")return <p role="status">{state.rejected ? m.approvalRejected : m.approvalPending}</p>;
   const value = state.status === "success" ? m.success : state.reason === "VALIDATION" ? m.validation : state.reason === "FORBIDDEN" ? m.forbidden : state.reason === "CONFLICT" ? m.conflict : m.unavailable;
   return <p role={state.status === "error" ? "alert" : "status"} className={state.status === "error" ? "text-sm text-destructive" : "text-sm text-primary"}>{value}</p>;
 }

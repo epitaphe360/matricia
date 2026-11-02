@@ -31,7 +31,7 @@ export async function createServerCreditsRepository(requestedOrganizationId?: st
     async balances(ids) { const scoped = scope(ids); return scoped.length ? c.from("credit_wallet_balances").select("wallet_id,balance::text").in("organization_id", scoped).eq("wallet_type", "CLIENT").limit(100) : { data: [], error: null }; },
     async lots(ids) { const scoped = scope(ids); return scoped.length ? readAllPages((from,to) => c.from("client_credit_lot_positions_v1").select("id,wallet_id,source_type,quantity,expires_at,library_id,available,reserved").in("organization_id", scoped).order("expires_at").order("id").range(from,to)) : { data: [], error: null }; },
     async funding(ids) { const scoped = scope(ids); return scoped.length ? c.rpc("list_credit_lot_funding_statuses_v1", { p_organization_ids: scoped }) : { data: [], error: null }; },
-    async movements(ids) { const scoped = scope(ids); return scoped.length ? Promise.resolve({data:[],error:null}) : { data: [], error: null }; },
+    async movements(ids) { const scoped = scope(ids); return scoped.length ? readAllPages((from,to)=>c.from("credit_lot_movements").select("credit_lot_id,movement_type,quantity::text").in("organization_id",scoped).order("id").range(from,to)) : { data: [], error: null }; },
     async benefits(ids) {
       const result = await publicCatalogue(ids);
       if (result.error || !result.data) return { data: null, error: result.error };

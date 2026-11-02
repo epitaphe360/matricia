@@ -5,12 +5,12 @@ import { z } from "zod";
 import { code, locale, moneyToMinor, uuid } from "@/modules/client/data/portfolio/model";
 import { portfolioRpc } from "@/modules/client/data/portfolio/server-repository";
 
-export type State = { status: "idle" } | { status: "success" } | { status: "error"; reason: "VALIDATION" | "FORBIDDEN" | "CONFLICT" | "UNAVAILABLE" };
+export type State = { status: "idle" } | { status: "success" } | { status: "approval_required"; rejected: boolean } | { status: "error"; reason: "VALIDATION" | "FORBIDDEN" | "CONFLICT" | "UNAVAILABLE" };
 const base = z.object({ locale, idempotencyKey: uuid });
 const optionalUuid = z.union([z.literal(""), uuid]);
 const nullable = (value: string) => value || null;
 const field = (form: FormData, name: string) => String(form.get(name) ?? "");
-async function execute(localeValue: "fr"|"ar", name: string, input: Record<string, unknown>): Promise<State> { const result = await portfolioRpc(name, input); if (result.status === "error") return { status: "error", reason: result.reason === "FORBIDDEN" ? "FORBIDDEN" : result.reason === "CONFLICT" ? "CONFLICT" : "UNAVAILABLE" }; revalidatePath(`/${localeValue}/client/portefeuille`); return { status: "success" }; }
+async function execute(localeValue: "fr"|"ar", name: string, input: Record<string, unknown>): Promise<State> { const result = await portfolioRpc(name, input); if (result.status === "error") return { status: "error", reason: result.reason === "FORBIDDEN" ? "FORBIDDEN" : result.reason === "CONFLICT" ? "CONFLICT" : "UNAVAILABLE" }; if(result.value.outcome === "CLIENT_APPROVAL_REQUIRED") return {status:"approval_required",rejected:result.value.status === "REJECTED"}; revalidatePath(`/${localeValue}/client/portefeuille`); return { status: "success" }; }
 
 const siteSchema = base.extend({
   organizationId: uuid,

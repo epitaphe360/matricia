@@ -1,3 +1,4 @@
+import {z} from "zod";
 import { readAllPages } from "@/modules/shared/lib/data/read-pages";
 import { loadAllocationTargets } from "./allocation-targets";
 import { classifyAuthReadFailure } from "@/modules/shared/lib/auth/read-failure";
@@ -113,6 +114,10 @@ export async function portfolioRpc(name: string, input: Record<string, unknown>)
   if (!auth.user) return { status: "error", reason: "UNAUTHENTICATED" };
   const { data, error } = await client.rpc(name, input);
   if (error) return { status: "error", reason: error.code === "42501" ? "FORBIDDEN" : error.code === "40001" ? "CONFLICT" : "UNAVAILABLE" };
+  if (name === "record_client_typed_cost_allocation" && data?.outcome === "CLIENT_APPROVAL_REQUIRED") {
+    const pending=z.object({outcome:z.literal("CLIENT_APPROVAL_REQUIRED"),approval_request_id:z.string().uuid(),status:z.enum(["PENDING","REJECTED","CANCELLED"])}).safeParse(data);
+    return pending.success ? {status:"success",value:pending.data} : {status:"error",reason:"UNAVAILABLE"};
+  }
   if (name === "record_client_typed_cost_allocation" && (!data || typeof data !== "object" || data.outcome !== "CLIENT_TYPED_COST_ALLOCATED" || !uuid.safeParse(data.allocation_id).success)) return {status:"error",reason:"UNAVAILABLE"};
   return { status: "success", value: (data ?? {}) as Record<string, unknown> };
 }

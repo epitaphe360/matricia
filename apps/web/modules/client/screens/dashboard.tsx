@@ -159,7 +159,7 @@ export function ClientDashboardHome({
         { label: c.kpiRequests, value: counts.openRequests },
         { label: c.kpiQuotes, value: counts.quotesToReview },
         { label: c.kpiMissions, value: counts.activeMissions },
-      ].filter((row): row is { label: string; value: number } => row.value !== null)
+      ].flatMap((row) => row.value === null ? [] : [{label: row.label, value: row.value}])
     : [];
   const progressMax = progressRows.reduce((max, row) => Math.max(max, row.value), 1);
   const notifCount = summary.total > 0 ? Math.min(summary.total, 9) : 0;
@@ -346,21 +346,15 @@ export function ClientDashboardHome({
                 <div className="client-home-spark">
                   <svg viewBox="0 0 320 120" role="img" aria-label={c.projectProgress}>
                     {progressRows.map((row, index) => {
-                      const y = 100 - Math.round((row.value / progressMax) * 72);
-                      const color = index === 0 ? "#642bef" : index === 1 ? "#f86b71" : "#1e7a5c";
-                      const points = `16,100 112,${y + 8} 208,${y} 304,${Math.max(28, y - 10)}`;
-                      return (
-                        <g key={row.label}>
-                          <polyline fill={`${color}22`} stroke="none" points={`${points} 304,110 16,110`} />
-                          <polyline fill="none" stroke={color} strokeWidth="3" points={points} />
-                        </g>
-                      );
+                      const height = Math.round((row.value / progressMax) * 80);
+                      const color = index === 0 ? "#1d4ed8" : index === 1 ? "#9a3412" : "#166534";
+                      return <g key={row.label}><title>{row.label}: {row.value}</title><rect x={24 + index * 100} y={100 - height} height={height} width={64} fill={color} rx={4} /></g>;
                     })}
                   </svg>
                   <ul className="client-home-progress">
-                    <li><span data-tone="violet" /><span>{c.progressPrep}</span><strong dir="ltr">{counts.openRequests}</strong></li>
-                    <li><span data-tone="peach" /><span>{c.progressRun}</span><strong dir="ltr">{counts.activeMissions}</strong></li>
-                    <li><span data-tone="mint" /><span>{c.progressReview}</span><strong dir="ltr">{counts.quotesToReview}</strong></li>
+                    <li><span data-tone="violet" /><span>{c.kpiRequests}</span><strong dir="ltr">{counts.openRequests}</strong></li>
+                    <li><span data-tone="peach" /><span>{c.kpiMissions}</span><strong dir="ltr">{counts.activeMissions}</strong></li>
+                    <li><span data-tone="mint" /><span>{c.kpiQuotes}</span><strong dir="ltr">{counts.quotesToReview}</strong></li>
                   </ul>
                 </div>
               )}

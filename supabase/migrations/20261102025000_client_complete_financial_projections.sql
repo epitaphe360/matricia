@@ -36,14 +36,5 @@ end$$;
 revoke all on function public.search_client_allocation_invoice_targets_v1(uuid,uuid,text,integer)from public,anon,authenticated,service_role;
 grant execute on function public.search_client_allocation_invoice_targets_v1(uuid,uuid,text,integer)to authenticated;
 
--- The original command validates the editor and CAS, but previously accepted an
--- assignee from a different organization. This guard also protects direct RPCs.
-create function private.guard_client_task_assignee_v1()returns trigger language plpgsql security definer set search_path=pg_catalog as $$
-begin
- if new.assignee_user_id is not null and not private.is_active_org_member(new.organization_id,new.assignee_user_id)then raise exception 'CLIENT_TASK_ASSIGNEE_DENIED'using errcode='42501';end if;
- return new;
-end$$;
-revoke all on function private.guard_client_task_assignee_v1()from public,anon,authenticated,service_role;
-create trigger client_task_assignee_tenant_guard_v1 before insert or update of assignee_user_id on public.client_project_tasks for each row execute function private.guard_client_task_assignee_v1();
 notify pgrst,'reload schema';
 commit;

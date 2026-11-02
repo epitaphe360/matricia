@@ -1,6 +1,8 @@
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 
 const fr = {
+  approvalPending: "Demande transmise aux approbateurs. Consultez Actions puis reprenez cette affectation après approbation.",
+  approvalRejected: "Cette affectation a été refusée. Consultez Actions pour connaître la décision.",
   title: "Portefeuille Client",
   intro: "Pilotez sites, projets, contrats, tâches, budgets annuels, centres de coûts et échéances dans un espace isolé par organisation.",
   organization: "Organisation",
@@ -90,6 +92,8 @@ const fr = {
 
 const ar: typeof fr = {
   ...fr,
+  approvalPending: "تم إرسال الطلب للموافقة. راجعوا الإجراءات ثم استأنفوا التخصيص بعد الموافقة.",
+  approvalRejected: "رُفض هذا التخصيص. راجعوا الإجراءات للاطلاع على القرار.",
   title: "محفظة العميل",
   intro: "أدر المواقع والمشاريع والعقود والمهام والميزانيات السنوية ومراكز التكلفة والمواعيد ضمن مساحة مؤسسية معزولة.",
   organization: "المؤسسة",
