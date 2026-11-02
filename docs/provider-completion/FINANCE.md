@@ -59,7 +59,19 @@ La contre-revue F01–F11 est favorable sur `7bc38fc` et les130 assertions ci-de
 
 Le modèle positif est explicitement TEST, proposé et approuvé par des acteurs distincts puis signé via le flux DEV-mock réel. Une décision native prend ses700+700 de ce modèle, malgré une devise et des montants falsifiés par le caller ; elle accepte aussi un objet de règle vide. Sans clause économique de l'obligation exacte, elle crée une exception et aucune conséquence financière. Le bridge et la clôture refusent aussi une conséquence historique et une ancienne ligne de pré-relevé, sans réécrire le montant immuable. La pénalité Client reste séparée et nécessite son mandat propre. Les lectures étrangères sont refusées. Ces reçus sont chacun annulés et leurs empreintes restaurées ; aucune preuve juridique de production n'est revendiquée.
 
-La suite historique0047 a été alignée sur les ACL plus strictes, l'unicité par lot et le déplacement des écritures dans la revue indépendante ; aucune garde n'a été abaissée. L'interface d'exception FR/AR a été rejouée :6 tests PASS et ESLint sans avertissement. Les45/16/13 assertions du checkpoint précédent sont conservées avec leurs hashes40000–40930 ; elles ne sont pas présentées comme un nouveau rejeu40940. Le verdict indépendant F12 et la recette de l'UI Admin intégrée restent à recevoir avant clôture.
+La suite historique0047 a été alignée sur les ACL plus strictes, l'unicité par lot et le déplacement des écritures dans la revue indépendante ; aucune garde n'a été abaissée. L'interface d'exception FR/AR a été rejouée :6 tests PASS et ESLint sans avertissement. Les45/16/13 assertions du checkpoint précédent sont conservées avec leurs hashes40000–40930 ; elles ne sont pas présentées comme un nouveau rejeu40940. La contre-revue indépendante F12 est favorable sur `e558d6e` ; la recette de l'UI Admin intégrée reste à valider par root.
+
+## Contre-test de transition sur appel
+
+La contre-revue40940 a identifié une condition héritée qui n'appliquait les effets de non-conformité qu'à une première décision. Le scénario natif première décision `COMPLIANT`, appel recevable du Client puis `NON_COMPLIANT_CONFIRMED` finissait ainsi sans conséquence, retrait ni R1. Le [reçu avant40950](evidence/finance/f12-appeal-reproduced-before40950-failed85.json) conserve les **quatre échecs de reproduction** ; il ne représente pas une recette réussie. La source test est identique à celle du contre-test final.
+
+`e558d6e` ajoute40950 : les effets canoniques s'appliquent lors de la transition vers la non-conformité depuis une issue différente. Les décisions antérieures sont conservées, l'indépendance/AAL2 et l'autorité économique signée demeurent requises. Le rejeu ne crée ni seconde conséquence ni seconde R1 ni second audit de la même décision.
+
+| Recette40000–40950 | Résultat | Preuve |
+|---|---|---|
+|0356_provider_dispute_economic_authority, dont le parcours mensuel et l'appel natif|85/85 PASS|[Reçu final](evidence/finance/f12-signed-authority-final40950-85.json)|
+
+Cette transaction finale a été entièrement annulée et l'empreinte du schéma restaurée. La contre-revue indépendante est favorable sur `e558d6e` : sources40940/40950 et parcours0356 relus,16 SHA du reçu final recalculés et concordants, aucun reliquat concret trouvé. Le relecteur n'a exécuté lui-même aucun SQL : les85 assertions restent les preuves de l'auteur. Les reçus76/56/33 précédents sont des checkpoints40940 explicites. L'UI de décision et la recette navigateur intégrées ne sont pas certifiées par ce verdict backend.
 
 ## Conditions externes encore nécessaires
 

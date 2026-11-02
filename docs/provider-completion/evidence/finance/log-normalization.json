@@ -106,5 +106,17 @@
     "rawSha256": "05b2cfd1bb1ca89336826612c4d92863a12b49036118cfd72fcbcaefdb638865",
     "normalizedSha256": "dad71e281f15e226dec4518b2366d3a54ffd1d477aa82004a69dd476236345d2",
     "normalization": "trailing whitespace and empty EOF lines only"
+  },
+  {
+    "file": "f12-appeal-reproduced-before40950-failed85.log",
+    "rawSha256": "03ba27b1a925fcaf40755f00d11c4046aa8a327c816162cd66658137febcf71b",
+    "normalizedSha256": "4a8712aca3d37f465a91473d76724b751cb779107e470a362fb71c756e175233",
+    "normalization": "trailing whitespace and empty EOF lines only"
+  },
+  {
+    "file": "f12-signed-authority-final40950-85.log",
+    "rawSha256": "190f43adf63901f9d9d9f8218a6284e424eb2e82e4ef71ee4bac903e8ab07eb0",
+    "normalizedSha256": "444f5bd23b38326fb0e30b6a28185467edcdbade6dd7f964ea8ac5893c1c0f6d",
+    "normalization": "trailing whitespace and empty EOF lines only"
   }
 ]
