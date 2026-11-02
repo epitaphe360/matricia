@@ -40,7 +40,7 @@ export async function loadClientPortfolio(requestedOrganizationId?: string): Pro
   }
   const organizationIds = [context.membership.organization_id];
   const [roles, organizations, sites, siteVersions, projects, projectVersions, contracts, projectContracts, tasks, taskVersions, budgets, budgetVersions, costCenters, costCenterVersions, allocations, calendar, libraries, budgetTotals, members] = await Promise.all([
-    readAllPages((from,to) => client.from("organization_member_roles").select("membership_id,role_code,revoked_at").in("membership_id", membershipIds).is("revoked_at", null).order("id").range(from,to)),
+    readAllPages((from,to) => client.from("organization_member_roles").select("membership_id,role_code,revoked_at").in("membership_id", membershipIds).is("revoked_at", null).order("membership_id").order("role_code").order("library_id",{nullsFirst:true}).order("franchise_id",{nullsFirst:true}).range(from,to)),
     readAllPages((from,to) => client.from("organizations").select("id,display_name").in("id", organizationIds).order("id").range(from,to)),
     readAllPages((from,to) => client.from("client_sites").select("id,organization_id,code,current_version,status").in("organization_id", organizationIds).eq("status", "ACTIVE").order("id").range(from,to)),
     readAllPages((from,to) => client.from("client_site_versions").select("site_id,organization_id,version,name_fr,name_ar").in("organization_id", organizationIds).order("id").range(from,to)),

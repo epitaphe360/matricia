@@ -1,3 +1,4 @@
+import type {Metadata} from "next";
 import {randomUUID} from "node:crypto";
 import Link from "next/link";
 import {notFound,redirect} from "next/navigation";
@@ -8,6 +9,7 @@ import {connexionHref} from "@/modules/shared/lib/auth/connexion-href";
 import {readAllPages} from "@/modules/shared/lib/data/read-pages";
 import {ReferralClaimForm} from "./claim-form";
 import {claimMessages} from "./messages";
+export const metadata:Metadata={robots:{index:false,follow:false}};
 export default async function ReferralClaimPage({params}:{params:Promise<{locale:string;code:string}>}){
  const {locale,code:rawCode}=await params;
  const code=rawCode.toUpperCase();
@@ -22,7 +24,7 @@ export default async function ReferralClaimPage({params}:{params:Promise<{locale
   if(members.error||!parsed.success)unavailable=true;
   else if(parsed.data.length){
    const ids=parsed.data.map(member=>member.id);
-   const roles=await readAllPages((from,to)=>client.from("organization_member_roles").select("membership_id").in("membership_id",ids).in("role_code",["CLIENT_OWNER","CLIENT_ADMIN"]).is("revoked_at",null).order("id").range(from,to));
+   const roles=await readAllPages((from,to)=>client.from("organization_member_roles").select("membership_id").in("membership_id",ids).in("role_code",["CLIENT_OWNER","CLIENT_ADMIN"]).is("revoked_at",null).order("membership_id").order("role_code").order("library_id",{nullsFirst:true}).order("franchise_id",{nullsFirst:true}).range(from,to));
    const validated=z.array(z.object({membership_id:z.string().uuid()})).safeParse(roles.data);
    if(roles.error||!validated.success)unavailable=true;
    else {const allowed=new Set(validated.data.map(role=>role.membership_id));organizations=parsed.data.filter(member=>allowed.has(member.id)).map(member=>({id:member.organization_id,name:member.organizations.display_name}));}
