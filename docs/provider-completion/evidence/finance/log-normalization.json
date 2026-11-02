@@ -1,0 +1,26 @@
+[
+  {
+    "file": "independent-initial-27.log",
+    "rawSha256": "e43242ae3b631efc24c5fd5b86dd385a472c2e87031857cf4edb3f7b43002cca",
+    "normalizedSha256": "7c0ffbfeedb3a8e75321de6bc2922dcef97469fd830392caaae3335b13f8f8da",
+    "normalization": "trailing whitespace only"
+  },
+  {
+    "file": "legacy0168-initial-16.log",
+    "rawSha256": "4e4fecb2e297190fec5847607dc0f5a6e3a6ca1986e8d4ccf3b27d47e800623b",
+    "normalizedSha256": "e04971e467e61f7039e5a65802afe3d4b72024fc04c711b97a9456e468d7aa4d",
+    "normalization": "trailing whitespace only"
+  },
+  {
+    "file": "legacy0210-initial-13.log",
+    "rawSha256": "cec47edd697f18ffa5d593ffcb228900a6188ecb0e83a0f69b81ded09cc73af2",
+    "normalizedSha256": "3367a63c06c0275c06ab134921e4650353bfdb07e2c1d3aeaf121ef454d2d3e1",
+    "normalization": "trailing whitespace only"
+  },
+  {
+    "file": "monthly-initial-37.log",
+    "rawSha256": "73f295fe5eb903ff8aa71cfafd11a115864e45abb79a60a1cf4fef504200828a",
+    "normalizedSha256": "4b3d583242214e97b617eda7ddd5390db0b630723addf1d6bf30196d6ac41217",
+    "normalization": "trailing whitespace only"
+  }
+]
