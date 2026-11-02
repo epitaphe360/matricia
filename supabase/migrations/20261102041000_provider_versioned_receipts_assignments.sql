@@ -1,3 +1,4 @@
+begin;
 -- Corrective deliveries retain each prior receipt. A technician's operational
 -- scope is an explicit mission assignment, never every mission of their employer.
 alter table public.acceptance_checklists add column delivery_version integer not null default 0 check(delivery_version>=0);
@@ -154,3 +155,5 @@ alter policy delivery_proof_storage_insert on storage.objects with check(
  where d.id=(case when coalesce((storage.foldername(name))[2],'')~*'^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'then(storage.foldername(name))[2]::uuid end)
  and m.status in('ACTIVE','DELIVERY_SUBMITTED')and private.has_org_role(m.provider_organization_id,array['PROVIDER_OWNER','PROVIDER_MANAGER','PROVIDER_TECHNICIAN'],auth.uid())and private.provider_mission_access_v1(m.id,auth.uid()))
 );
+
+commit;

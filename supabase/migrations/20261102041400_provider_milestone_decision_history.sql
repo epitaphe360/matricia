@@ -1,3 +1,4 @@
+begin;
 -- Parties need the actual rejection reason, not an inaccessible audit row or a
 -- reassuring generic status. Project only the relevant immutable audit events.
 create table public.mission_milestone_decisions_v1(
@@ -31,3 +32,5 @@ do $patch$declare src text;needle text;begin
  src:=replace(src,needle,'if exists(select 1 from jsonb_array_elements(p_decisions)j where (j->>''status''=''NONCOMPLIANT''and length(btrim(coalesce(j->>''comment'','''')))not between 3 and 1000)or length(coalesce(j->>''comment'',''''))>1000)then raise exception''ACCEPTANCE_REJECTION_REASON_REQUIRED''using errcode=''22023'';end if;'||needle);
  execute src;
 end$patch$;
+
+commit;

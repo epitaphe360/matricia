@@ -1,3 +1,4 @@
+begin;
 -- Search the frozen title before pagination; RLS still decides every row.
 create function public.search_provider_missions_v1(p_organization_id uuid,p_search text,p_page integer default 1)returns setof public.missions language plpgsql stable security invoker set search_path=pg_catalog,public,private as $$
 begin
@@ -19,3 +20,5 @@ begin
 end$$;
 revoke all on function public.get_provider_mission_counts_v1(uuid)from public,anon,authenticated,service_role;
 grant execute on function public.get_provider_mission_counts_v1(uuid)to authenticated;
+
+commit;
