@@ -439,6 +439,31 @@ select set_config('request.jwt.claim.sub','f347ee00-0000-4000-8000-000000000001'
 select is(public.admit_provider_payable_v1((select(v->>'payable_event_id')::uuid from monthly347 where k='payable-1'),'TEST ONLY independent admission with CLEAN proof')->>'outcome','PROVIDER_PAYABLE_ADMITTED','outside Finance may review while membership in an unrelated audit organization remains allowed');
 reset role;
 set constraints all immediate;
+-- A first compliant finding can be overturned on a real admissible appeal.
+-- The consequences must depend on the transition, never on decision_number=1.
+reset role;
+insert into public.dispute_cases(id,mission_id,contract_id,contract_version_id,client_organization_id,provider_organization_id,obligation_key,description,urgency,status,policy_snapshot,response_due_at,appeal_due_at,opened_by)
+select 'f356e000-0000-4000-8000-000000000003',mission_id,contract_id,contract_version_id,client_organization_id,provider_organization_id,'SIGNED_REPORT','TEST ONLY native decision inversion on appeal','STANDARD','MEDIATION_REVIEW',policy_snapshot,clock_timestamp()-interval'3 days',clock_timestamp()-interval'1 day',opened_by from public.dispute_cases where id='f347e000-0000-4000-8000-000000000001';
+insert into public.dispute_evidence(id,dispute_case_id,submitted_by_user_id,submitted_by_organization_id,evidence_type,statement,evidence_hash,visibility)values('f356e100-0000-4000-8000-000000000003','f356e000-0000-4000-8000-000000000003','fd100000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000001','MESSAGE','TEST ONLY native appeal evidence',repeat('b',64),'BOTH_PARTIES');
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000004',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
+select public.decide_mission_dispute('f356e000-0000-4000-8000-000000000003','COMPLIANT','TEST ONLY first human compliant decision',array['f356e100-0000-4000-8000-000000000003'::uuid],jsonb_build_object('version','TEST356','content_hash',repeat('b',64)),'test356-first-compliant');
+reset role;
+select is((select count(*)from public.dispute_financial_consequences where dispute_case_id='f356e000-0000-4000-8000-000000000003'),0::bigint,'compliant initial decision creates no punitive monetary consequences');
+select ok((select status<>'CANCELLED'from public.missions where id=(select(v->>'mission_id')::uuid from accept338 where k='mission')),'initial compliant decision does not retire the source mission');
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000001',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
+select public.appeal_mission_dispute('f356e000-0000-4000-8000-000000000003','TEST ONLY Client admissible appeal of initial compliant finding','[]','test356-native-appeal');
+reset role;
+select is((select status from public.dispute_cases where id='f356e000-0000-4000-8000-000000000003'),'APPEALED','native appeal actually makes the contradictory decision admissible');
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000004',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
+insert into monthly347 values('appeal-economic-inversion',public.decide_mission_dispute('f356e000-0000-4000-8000-000000000003','NON_COMPLIANT_CONFIRMED','TEST ONLY independent appeal confirms contractual default',array['f356e100-0000-4000-8000-000000000003'::uuid],'{}','test356-appeal-noncompliant'));
+select is(public.decide_mission_dispute('f356e000-0000-4000-8000-000000000003','NON_COMPLIANT_CONFIRMED','TEST ONLY independent appeal confirms contractual default',array['f356e100-0000-4000-8000-000000000003'::uuid],'{}','test356-appeal-noncompliant'),(select v from monthly347 where k='appeal-economic-inversion'),'appeal inversion replays its actual immutable result after CLOSED');
+reset role;
+select is((select sum(amount_minor)from public.dispute_financial_consequences where dispute_case_id='f356e000-0000-4000-8000-000000000003'),1400::numeric,'appeal inversion uses the two approved signed700 monetary rules');
+select is((select status from public.missions where id=(select(v->>'mission_id')::uuid from accept338 where k='mission')),'CANCELLED','appeal inversion retires the source mission');
+select is((select count(*)from public.mission_reassignments where dispute_case_id='f356e000-0000-4000-8000-000000000003'),1::bigint,'appeal inversion creates one R1 even with a prior compliant decision');
+select is((select count(*)from public.provider_performance_events where dispute_case_id='f356e000-0000-4000-8000-000000000003'and event_type='NON_COMPLIANCE_CONFIRMED'),1::bigint,'appeal retry creates only one noncompliance performance record');
+select is((select count(*)from public.audit_events where action='dispute.decided'and resource_id='f356e000-0000-4000-8000-000000000003'),2::bigint,'initial and appeal decisions each have one audit; retry adds none');
+
 -- TEST ONLY regression F12 on an actually signed contract without an economic clause.
 reset role;
 insert into public.dispute_cases(id,mission_id,contract_id,contract_version_id,client_organization_id,provider_organization_id,obligation_key,description,urgency,status,policy_snapshot,response_due_at,appeal_due_at,opened_by)
