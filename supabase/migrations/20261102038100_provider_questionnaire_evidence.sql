@@ -1,3 +1,4 @@
+begin;
 -- Reuse clean private evidence from the same organization in questionnaire answers.
 -- Recursion and all existing Client evidence checks remain intact.
 do $migration$
@@ -19,3 +20,5 @@ end$$;
 revoke all on function public.list_provider_questionnaire_documents_v1(uuid)from public,anon,authenticated,service_role;
 grant execute on function public.list_provider_questionnaire_documents_v1(uuid)to authenticated;
 notify pgrst,'reload schema';
+
+commit;

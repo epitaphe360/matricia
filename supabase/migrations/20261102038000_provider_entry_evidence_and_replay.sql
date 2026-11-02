@@ -1,3 +1,4 @@
+begin;
 -- Keep eligibility based on current evidence, never superseded immutable history.
 -- Preserve all role, quarantine, identity, financial and human-decision guards.
 do $migration$
@@ -78,3 +79,5 @@ end$$;
 revoke all on function public.list_provider_entry_documents_v1(uuid,integer,text,text[])from public,anon,authenticated,service_role;
 grant execute on function public.list_provider_entry_documents_v1(uuid,integer,text,text[])to authenticated;
 notify pgrst,'reload schema';
+
+commit;

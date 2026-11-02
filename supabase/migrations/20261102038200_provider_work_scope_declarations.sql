@@ -1,3 +1,4 @@
+begin;
 -- Provider facts are declarations for human qualification, never approved rules.
 create table public.provider_work_scope_versions(
  id uuid primary key default extensions.gen_random_uuid(),provider_organization_id uuid not null references public.provider_profiles(provider_organization_id),version_number integer not null check(version_number>0),
@@ -30,3 +31,5 @@ end$$;
 revoke all on function public.declare_provider_work_scope_v1(uuid,integer,text,integer,text,uuid)from public,anon,authenticated,service_role;
 grant execute on function public.declare_provider_work_scope_v1(uuid,integer,text,integer,text,uuid)to authenticated;
 notify pgrst,'reload schema';
+
+commit;

@@ -1,3 +1,4 @@
+begin;
 -- A current family version must remain explicitly applicable to every service
 -- whose historical mandatory obligation it satisfies. A B-only renewal cannot
 -- silently certify A, and superseded SUBMITTED rows are still ignored.
@@ -19,3 +20,5 @@ create policy provider_work_scope_read on public.provider_work_scope_versions fo
  auth.jwt()->>'aal'='aal2'and private.has_platform_role(array['SUPER_ADMIN','MATRICIA_ADMIN','COMPLIANCE_MANAGER'],auth.uid())
  ));
 notify pgrst,'reload schema';
+
+commit;
