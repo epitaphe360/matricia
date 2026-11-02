@@ -1,3 +1,4 @@
+import { classifyAuthReadFailure } from "@/modules/shared/lib/auth/read-failure";
 import { readAllPages, readRelatedPages } from "@/modules/shared/lib/data/read-pages";
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
@@ -10,7 +11,7 @@ export async function createServerDisputesRepository(requestedOrganizationId?: s
   const organizationId = z.string().uuid().safeParse(requestedOrganizationId).success ? requestedOrganizationId : null;
   const organizationColumn = party === "provider" ? "provider_organization_id" : "client_organization_id";
   return createDisputesRepository({
-    async userId() { const { data } = await c.auth.getUser(); return data.user?.id ?? null; },
+    async userId() { const { data, error } = await c.auth.getUser(); if(classifyAuthReadFailure(error)==="UNAVAILABLE")return{error:"UNAVAILABLE" as const};return data.user?.id ?? null; },
     async memberships(id) { return readAllPages((from,to)=>c.from("organization_memberships").select("id,organization_id").eq("user_id", id).eq("status", "ACTIVE").order("id").range(from,to)); },
     async orgRoles(ids) { return readRelatedPages(ids,(batch,from,to)=>c.from("organization_member_roles").select("membership_id,role_code,revoked_at").in("membership_id",batch).order("membership_id").order("role_code").order("library_id",{nullsFirst:true}).order("franchise_id",{nullsFirst:true}).range(from,to)); },
     async missions() { let q = c.from("missions").select("id,status").in("status", ["ACTIVE", "DELIVERY_SUBMITTED", "ACCEPTANCE_IN_PROGRESS"]); if (organizationId) q = q.eq(organizationColumn, organizationId); return readAllPages((from,to)=>q.order("created_at", { ascending: false }).order("id").range(from,to)); },

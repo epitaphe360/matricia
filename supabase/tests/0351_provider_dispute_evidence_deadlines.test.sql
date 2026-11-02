@@ -150,6 +150,8 @@ values('fd150000-0000-4000-8000-000000000001','fd140000-0000-4000-8000-000000000
 insert into public.rfq_providers(id,rfq_id,provider_organization_id,matching_candidate_id,status,responded_at)
 values('fd190000-0000-4000-8000-000000000001','fd150000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000002','fd171000-0000-4000-8000-000000000001','ACCEPTED',clock_timestamp());
 create temporary table accept338(k text primary key,v jsonb);grant select,insert on accept338 to authenticated;
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000002',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
+reset role;
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000004',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal2"}',true);
 insert into accept338 values('policy',public.create_contract_policy_version_v1(jsonb_build_object('kind','TEMPLATE','code','TEST_ACCEPT338','version',1,'library_id','fd300000-0000-4000-8000-000000000001','service_id','fd300000-0000-4000-8000-000000000007','country_code','MA','title_fr','Clauses de recette uniquement','title_ar','بنود اختبار فقط','clauses',jsonb_build_object('fr','Texte synthétique de test uniquement, sans valeur de signature légale.','ar','نص اصطناعي للاختبار فقط دون توقيع قانوني.','dispute_policy',jsonb_build_object('version','TEST-338','response_hours',48,'urgent_response_hours',8,'correction_business_days',3,'review_business_days',5,'appeal_hours',72)),'valid_from',(current_date-1)::text,'approval_reference','TEST-ONLY-ACCEPTANCE338'),'accept338-template'));
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000005',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000005","role":"authenticated","aal":"aal2"}',true);
@@ -281,25 +283,80 @@ select ok(not has_function_privilege('service_role','public.appeal_mission_dispu
 select set_config('test.dispute351_case',(select v->>'dispute_case_id'from accept338 where k='dispute'),true);
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000002',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);
 set local role authenticated;
+-- Two explicit time zones make a genuine civil-date boundary at any UTC hour.
+set local timezone='Etc/GMT+12';
+-- A real reviewed source with a real date boundary, not a mocked eligibility helper.
+insert into accept338 values('expiring-upload',public.begin_provider_document_upload('fd110000-0000-4000-8000-000000000002','application/pdf',20));
+insert into storage.objects(bucket_id,name,metadata)select'provider-qualification',v->>'storage_object_path','{"mimetype":"application/pdf","size":20}'::jsonb from accept338 where k='expiring-upload';
+insert into accept338 values('expiring-source',public.record_provider_document_version('fd110000-0000-4000-8000-000000000002','REFERENCE','DISPUTE_REFERENCE_351',jsonb_build_object('issued_on',(current_date-1)::text,'expires_on',current_date::text,'storage_object_path',(select v->>'storage_object_path'from accept338 where k='expiring-upload'),'content_hash',repeat('e',64),'metadata',jsonb_build_object('declared_mime_type','application/pdf','declared_size_bytes',20)),array[]::uuid[],'Synthetic date-boundary evidence','dispute351-expiring-source'));
+reset role;
+grant select,insert on accept338 to service_role;
+select set_config('request.jwt.claims','{"role":"service_role"}',true);set local role service_role;
+create temporary table dispute351_scan as select * from public.claim_provider_document_scan_jobs('fd351000-0000-4000-8000-000000000021',1,300);
+select public.complete_provider_document_scan_job(proof_id,lease_token,worker_id,row_version,'CLEAN','SYNTHETIC_TEST','1',repeat('e',64),'dispute351-expiring-scan')from dispute351_scan;
+reset role;
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000004',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
+insert into accept338 values('expiring-review',public.review_provider_document((select(v->>'document_version_id')::uuid from accept338 where k='expiring-source'),'VERIFIED','Independent synthetic evidence review','TEST-351','dispute351-expiring-review'));
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000002',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);
+insert into accept338 values('native-thread',public.open_rfq_message_thread('fd150000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000002','Éléments de recette contradictoire','dispute351-thread'));
+insert into accept338 values('native-message',public.send_internal_message((select(v->>'thread_id')::uuid from accept338 where k='native-thread'),'fd110000-0000-4000-8000-000000000002','Message métier عربي conservé pour le dossier.','[]','dispute351-send'));
+insert into accept338 values('native-delivery',public.submit_delivery((select id from public.deliverables where mission_id=(select(v->>'mission_id')::uuid from accept338 where k='mission')order by id limit 1),'Preuve de livraison de recette uniquement','[]','[{"type":"URL","url":"https://example.invalid/provider-proof","evidence_hash":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}]','dispute351-delivery'));
 insert into accept338 values('evidence-provider',public.get_dispute_evidence_context_v1(current_setting('test.dispute351_case')::uuid,'provider'));
 select is((select v->>'organizationId'from accept338 where k='evidence-provider'),'fd110000-0000-4000-8000-000000000002','native Provider context is scoped to its actual organisation');
+select ok((select jsonb_array_length(v->'documents')>=3 and jsonb_array_length(v->'messages')=1 and jsonb_array_length(v->'deliveries')=1 from accept338 where k='evidence-provider'),'context offers reviewed scanned originals, native message and versioned delivery');
+create function pg_temp.evidence351()returns jsonb language sql as $$select jsonb_build_array(jsonb_build_object('type','MESSAGE','statement','Texte libre عربي inchangé','hash','forged','visibility','BOTH_PARTIES'),jsonb_build_object('type','DOCUMENT','visibility','BOTH_PARTIES','hash','forged','storage_path','other/tenant.pdf','metadata',jsonb_build_object('source_document_id',(select v#>>'{documents,0,id}'from accept338 where k='evidence-provider'))),jsonb_build_object('type','MESSAGE','visibility','BOTH_PARTIES','metadata',jsonb_build_object('source_message_id',(select v#>>'{messages,0,id}'from accept338 where k='evidence-provider'))),jsonb_build_object('type','DELIVERY_PROOF','visibility','BOTH_PARTIES','metadata',jsonb_build_object('source_delivery_proof_id',(select v#>>'{deliveries,0,id}'from accept338 where k='evidence-provider'))))$$;
 select throws_ok($$select public.respond_to_mission_dispute(current_setting('test.dispute351_case')::uuid,'CONTEST','Je conteste avec un document étranger.','[{"type":"DOCUMENT","visibility":"BOTH_PARTIES","metadata":{"source_document_id":"fd411000-0000-0000-0000-000000000001"}}]','dispute351-foreign')$$,'42501','DISPUTE_DOCUMENT_NOT_REUSABLE','Client private document cannot be attached by Provider');
 select throws_ok($$select public.respond_to_mission_dispute(current_setting('test.dispute351_case')::uuid,'CONTEST','Cette pièce est un message inventé.','[{"type":"MESSAGE","visibility":"BOTH_PARTIES","metadata":{"source_message_id":"fd411000-0000-0000-0000-000000000099"}}]','dispute351-message')$$,'42501','DISPUTE_MESSAGE_NOT_REUSABLE','unknown or foreign message is rejected');
 select throws_ok($$select public.respond_to_mission_dispute(current_setting('test.dispute351_case')::uuid,'CONTEST','La visibilité ne nous appartient pas.','[{"type":"MESSAGE","statement":"Test","visibility":"CLIENT_ONLY"}]','dispute351-visibility')$$,'22023','INVALID_EVIDENCE_VISIBILITY','Provider cannot impersonate Client-only evidence');
 select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal1"}',true);
 select throws_ok($$select public.get_dispute_evidence_context_v1(current_setting('test.dispute351_case')::uuid,'provider')$$,'42501','DISPUTE_EVIDENCE_DENIED','AAL1 cannot load sensitive evidence sources');
 select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);
-insert into accept338 values('provider-response',public.respond_to_mission_dispute(current_setting('test.dispute351_case')::uuid,'ACKNOWLEDGE_AND_CORRECT','Je reconnais le point et apporte une correction.','[{"type":"MESSAGE","statement":"Texte libre عربي inchangé","hash":"forged","visibility":"BOTH_PARTIES"}]','dispute351-response'));
-insert into accept338 values('provider-response-replay',public.respond_to_mission_dispute(current_setting('test.dispute351_case')::uuid,'ACKNOWLEDGE_AND_CORRECT','Je reconnais le point et apporte une correction.','[{"type":"MESSAGE","statement":"Texte libre عربي inchangé","hash":"forged","visibility":"BOTH_PARTIES"}]','dispute351-response'));
+insert into accept338 values('provider-response',public.respond_to_mission_dispute(current_setting('test.dispute351_case')::uuid,'ACKNOWLEDGE_AND_CORRECT','Je reconnais le point et apporte une correction.',pg_temp.evidence351(),'dispute351-response'));
+insert into accept338 values('provider-response-replay',public.respond_to_mission_dispute(current_setting('test.dispute351_case')::uuid,'ACKNOWLEDGE_AND_CORRECT','Je reconnais le point et apporte une correction.',pg_temp.evidence351(),'dispute351-response'));
 select is((select v from accept338 where k='provider-response'),(select v from accept338 where k='provider-response-replay'),'lost-response retry returns same native receipt');
 reset role;
 select is((select count(*)::integer from public.dispute_responses where dispute_case_id=current_setting('test.dispute351_case')::uuid),1,'retry creates no duplicate contradictory response');
 select is((select evidence_hash from public.dispute_evidence where statement='Texte libre عربي inchangé'),encode(extensions.digest(convert_to('Texte libre عربي inchangé','UTF8'),'sha256'),'hex'),'authoritative hash comes from actual statement, not browser hash');
+select is((select evidence_hash from public.dispute_evidence where metadata->>'source_provider_document_id' is not null),repeat('e',64),'Provider document hash is resolved from the trusted scanned original');
+select is((select evidence_hash from public.dispute_evidence where metadata->>'source_message_id'is not null),encode(extensions.digest(convert_to('Message métier عربي conservé pour le dossier.','UTF8'),'sha256'),'hex'),'native message hash is resolved from its actual immutable text');
+select is((select metadata->>'source_delivery_version_id'from public.dispute_evidence where evidence_type='DELIVERY_PROOF'),(select v->>'delivery_version_id'from accept338 where k='native-delivery'),'delivery evidence retains the exact submitted version');
+select set_config('test.dispute351_shared_document',(select id::text from public.dispute_evidence where metadata->>'source_provider_document_id'is not null),true);
+set local role authenticated;
+select is(public.authorize_client_dispute_attachment_v1(current_setting('test.dispute351_shared_document')::uuid)->>'bucket','provider-qualification','native Provider can obtain a scoped private download authorization');
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000001',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);
+select is(public.authorize_client_dispute_attachment_v1(current_setting('test.dispute351_shared_document')::uuid)->>'sha256',repeat('e',64),'Client party can read Provider evidence explicitly shared with both parties');
+reset role;
 select is((select deadline_calendar_snapshot->>'version'from public.dispute_cases where id=current_setting('test.dispute351_case')::uuid),'STANDARD_WEEKDAYS_UTC_V1','actual used calendar is recorded explicitly');
 select ok((select correction_due_at<review_due_at from public.dispute_cases where id=current_setting('test.dispute351_case')::uuid),'acknowledgement records its configured correction deadline separately');
 select is((select count(*)::integer from public.audit_events where action='dispute.responded'),1,'one real response audit');
 select is((select count(*)::integer from public.event_outbox where event_type='DisputeResponseSubmittedV1'),1,'one durable response event');
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000003',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
 select throws_ok($$select public.get_dispute_evidence_context_v1(current_setting('test.dispute351_case')::uuid,'provider')$$,'42501','DISPUTE_EVIDENCE_DENIED','foreign organisation cannot list evidence sources');
+reset role;
+-- A new civil date makes the immutable source expired. Existing receipts
+-- remain replayable without creating evidence again; new attachments fail.
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000002',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
+set local timezone='Pacific/Kiritimati';
+select ok((select expires_on<current_date from public.provider_document_versions where id=(select(v->>'document_version_id')::uuid from accept338 where k='expiring-review')),'source genuinely expires on the next civil date');
+select is(public.respond_to_mission_dispute(current_setting('test.dispute351_case')::uuid,'ACKNOWLEDGE_AND_CORRECT','Je reconnais le point et apporte une correction.',pg_temp.evidence351(),'dispute351-response'),(select v from accept338 where k='provider-response'),'same actor and request recover receipt after source expiration');
+select throws_ok($$select public.respond_to_mission_dispute(current_setting('test.dispute351_case')::uuid,'ACKNOWLEDGE_AND_CORRECT','Je reconnais le point et apporte une correction.',pg_temp.evidence351(),'dispute351-new-expired-source')$$,'42501','DISPUTE_DOCUMENT_NOT_REUSABLE','a new operation cannot attach the now expired source');
+set local timezone='Etc/GMT+12';
+reset role;
+-- The same human can legally administer two organisations; the selected party
+-- must still determine authorship and evidence visibility, not membership order.
+insert into public.organization_memberships(id,organization_id,user_id,status)values('fd351000-0000-4000-8000-000000000024','fd110000-0000-4000-8000-000000000001','fd100000-0000-4000-8000-000000000002','ACTIVE');
+insert into public.organization_member_roles(membership_id,role_code)values('fd351000-0000-4000-8000-000000000024','CLIENT_OWNER');
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000004',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
+insert into accept338 values('human-decision',public.decide_mission_dispute(current_setting('test.dispute351_case')::uuid,'MINOR_CORRECTION','Correction mineure décidée humainement pour la recette.',array[current_setting('test.dispute351_shared_document')::uuid],jsonb_build_object('version','TEST-351','content_hash',repeat('3',64)),'dispute351-human-decision'));
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000002',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);
+create function pg_temp.appeal351()returns jsonb language sql as $$select public.appeal_mission_dispute(current_setting('test.dispute351_case')::uuid,'Je demande une seconde revue indépendante du dossier.',jsonb_set(pg_temp.evidence351(),'{0,metadata}',jsonb_build_object('source_organization_id','fd110000-0000-4000-8000-000000000002')),'dispute351-composite-appeal')$$;
+insert into accept338 values('composite-appeal',pg_temp.appeal351()),('composite-appeal-replay',pg_temp.appeal351());
+select is((select v from accept338 where k='composite-appeal'),(select v from accept338 where k='composite-appeal-replay'),'composite actor appeal replays its original receipt');
+reset role;
+select is((select count(*)::integer from public.dispute_evidence where metadata->>'source_provider_document_id'is not null and submitted_by_organization_id='fd110000-0000-4000-8000-000000000002'),2,'both response and appeal Provider documents retain Provider authorship');
+select ok(not exists(select 1 from public.dispute_evidence where metadata->>'source_provider_document_id'is not null and submitted_by_organization_id<>'fd110000-0000-4000-8000-000000000002'),'membership order never attributes Provider evidence to Client');
+select set_config('test.dispute351_appeal_document',(select id::text from public.dispute_evidence where metadata->>'source_provider_document_id'is not null order by created_at desc limit 1),true);
+set local role authenticated;
+select is(public.authorize_client_dispute_attachment_v1(current_setting('test.dispute351_appeal_document')::uuid)->>'bucket','provider-qualification','Provider appeal original remains downloadable with composite membership');
 reset role;
 select *from finish();rollback;

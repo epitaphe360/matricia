@@ -81,6 +81,8 @@ end$$;
 do $$declare def text; needle text:='if d.status<>''DECIDED''or clock_timestamp()>d.appeal_due_at or length'; guard text:='select id into dec from public.dispute_decisions';begin
  def:=pg_get_functiondef('public.appeal_mission_dispute(uuid,text,jsonb,text,uuid)'::regprocedure);
  if strpos(def,needle)=0 or strpos(def,guard)=0 then raise exception 'DISPUTE_APPEAL_RETRY_DEFINITION_CHANGED';end if;
+ if strpos(def,'org:=case when private.is_active_org_member(d.client_organization_id,a)then d.client_organization_id else d.provider_organization_id end;')=0 then raise exception 'DISPUTE_APPEAL_PARTY_DEFINITION_CHANGED';end if;
+ def:=replace(def,'org:=case when private.is_active_org_member(d.client_organization_id,a)then d.client_organization_id else d.provider_organization_id end;',$party$org:=private.dispute_evidence_party_v1(d.id,nullif(p_evidence#>>'{0,metadata,source_organization_id}','')::uuid);$party$);
  def:=replace(def,needle,'if length');
  def:=replace(def,guard,'select * into d from public.dispute_cases where id=d.id for update;if d.status<>''DECIDED''or d.appeal_due_at is null or clock_timestamp()>d.appeal_due_at then raise exception ''INVALID_DISPUTE_APPEAL''using errcode=''22023'';end if;'||guard);
  execute def;
@@ -92,19 +94,31 @@ alter function public.appeal_mission_dispute(uuid,text,jsonb,text,uuid)rename to
 revoke all on function public.respond_to_mission_dispute_legacy_0441(uuid,text,text,jsonb,text,uuid),public.appeal_mission_dispute_legacy_0441(uuid,text,jsonb,text,uuid)from public,anon,authenticated,service_role;
 create function public.respond_to_mission_dispute(p_dispute_case_id uuid,p_response_type text,p_statement text,p_evidence jsonb,p_idempotency_key text,p_correlation_id uuid default extensions.gen_random_uuid())returns jsonb
 language plpgsql security definer set search_path=pg_catalog,public,private as $$
-declare org uuid;canonical jsonb;
+declare org uuid;client_org uuid;canonical jsonb;request_hash text;cached jsonb;result jsonb;scope text;
 begin
- select provider_organization_id into org from public.dispute_cases where id=p_dispute_case_id;
+ select provider_organization_id,client_organization_id into org,client_org from public.dispute_cases where id=p_dispute_case_id;
+ perform private.dispute_evidence_party_v1(p_dispute_case_id,org);
+ scope:='dispute.respond.refs.'||p_dispute_case_id::text||'.'||auth.uid()::text;
+ request_hash:=private.canonical_request_hash(jsonb_build_object('type',p_response_type,'statement',p_statement,'evidence',p_evidence));
+ cached:=private.begin_contract_command(client_org,scope,p_idempotency_key,request_hash,auth.uid());
+ if cached is not null then return cached;end if;
  canonical:=private.canonical_party_dispute_evidence_v1(p_dispute_case_id,org,p_evidence);
- return public.respond_to_mission_dispute_legacy_0441(p_dispute_case_id,p_response_type,p_statement,canonical,p_idempotency_key,p_correlation_id);
+ result:=public.respond_to_mission_dispute_legacy_0441(p_dispute_case_id,p_response_type,p_statement,canonical,p_idempotency_key,p_correlation_id);
+ perform private.finish_contract_command(client_org,scope,p_idempotency_key,result);return result;
 end$$;
 create function public.appeal_mission_dispute(p_dispute_case_id uuid,p_grounds text,p_evidence jsonb,p_idempotency_key text,p_correlation_id uuid default extensions.gen_random_uuid())returns jsonb
 language plpgsql security definer set search_path=pg_catalog,public,private as $$
-declare org uuid;canonical jsonb;
+declare org uuid;client_org uuid;canonical jsonb;request_hash text;cached jsonb;result jsonb;scope text;
 begin
  org:=private.dispute_evidence_party_v1(p_dispute_case_id,nullif(p_evidence#>>'{0,metadata,source_organization_id}','')::uuid);
+ select client_organization_id into client_org from public.dispute_cases where id=p_dispute_case_id;
+ scope:='dispute.appeal.refs.'||p_dispute_case_id::text||'.'||auth.uid()::text;
+ request_hash:=private.canonical_request_hash(jsonb_build_object('grounds',p_grounds,'evidence',p_evidence));
+ cached:=private.begin_contract_command(client_org,scope,p_idempotency_key,request_hash,auth.uid());
+ if cached is not null then return cached;end if;
  canonical:=private.canonical_party_dispute_evidence_v1(p_dispute_case_id,org,p_evidence);
- return public.appeal_mission_dispute_legacy_0441(p_dispute_case_id,p_grounds,canonical,p_idempotency_key,p_correlation_id);
+ result:=public.appeal_mission_dispute_legacy_0441(p_dispute_case_id,p_grounds,canonical,p_idempotency_key,p_correlation_id);
+ perform private.finish_contract_command(client_org,scope,p_idempotency_key,result);return result;
 end$$;
 revoke all on function private.dispute_evidence_party_v1(uuid,uuid),private.canonical_party_dispute_evidence_v1(uuid,uuid,jsonb),public.get_dispute_evidence_context_v1(uuid,text),public.respond_to_mission_dispute(uuid,text,text,jsonb,text,uuid),public.appeal_mission_dispute(uuid,text,jsonb,text,uuid)from public,anon,authenticated,service_role;
 grant execute on function public.get_dispute_evidence_context_v1(uuid,text),public.respond_to_mission_dispute(uuid,text,text,jsonb,text,uuid),public.appeal_mission_dispute(uuid,text,jsonb,text,uuid)to authenticated;
