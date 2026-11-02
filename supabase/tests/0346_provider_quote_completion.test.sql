@@ -1,7 +1,4 @@
 begin;
--- Fixture civil dates follow the same Moroccan business calendar as the RPCs.
--- In particular, UTC and Casablanca differ around local midnight.
-set local timezone='Africa/Casablanca';
 set local search_path=public,extensions;
 select no_plan();
 grant usage on schema extensions to authenticated;
@@ -228,7 +225,7 @@ insert into public.tax_categories(code,name_fr,name_ar,description_fr,descriptio
 insert into public.tax_rule_versions(id,jurisdiction_code,category_code,version,rate_basis_points,effective_from,status,professional_validation_status,rule_type,priority,conditions,legal_reference,rounding_strategy,approved_by,approved_at,validation_reference,content_hash,change_reason)values('f3390000-0000-4000-8000-000000000001','MA','ACCEPT339_SERVICE',1,2000,current_date-1,'ACTIVE','VALIDATED','VAT',100,'{}','TEST ONLY, not a legal tax opinion','HALF_AWAY_FROM_ZERO_TO_MINOR_UNIT','fd100000-0000-4000-8000-000000000004',clock_timestamp(),'TEST-0339-TAX',repeat('9',64),'Synthetic rule for exact quote regression');
 create temporary table accept339(k text primary key,v jsonb);grant select,insert on accept339 to authenticated;
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000004',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal2"}',true);
-insert into accept339 values('tax',public.propose_service_tax_category_mapping_v1('fd300000-0000-4000-8000-000000000009',repeat('7',64),private.service_tax_mapping_scope_hash_v1('DEVELOPMENT','fd300000-0000-4000-8000-000000000009','MA','MAD'),'MA','MAD','ACCEPT339_SERVICE',current_date,null,true,'{}','TEST ONLY mapping for exact quote sources',extensions.gen_random_uuid()));
+insert into accept339 values('tax',public.propose_service_tax_category_mapping_v1('fd300000-0000-4000-8000-000000000009',repeat('7',64),private.service_tax_mapping_scope_hash_v1('DEVELOPMENT','fd300000-0000-4000-8000-000000000009','MA','MAD'),'MA','MAD','ACCEPT339_SERVICE',(clock_timestamp()at time zone'Africa/Casablanca')::date,null,true,'{}','TEST ONLY mapping for exact quote sources',extensions.gen_random_uuid()));
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000005',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000005","role":"authenticated","aal":"aal2"}',true);
 select public.decide_service_tax_category_mapping_v1((select(v->>'proposal_id')::uuid from accept339 where k='tax'),(select v->>'content_hash'from accept339 where k='tax'),true,'TEST-0339-MAPPING','TEST ONLY independent classification decision');
 

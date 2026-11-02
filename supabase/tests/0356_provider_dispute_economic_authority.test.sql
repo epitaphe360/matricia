@@ -1,7 +1,4 @@
 begin;
--- Fixture civil dates follow the same Moroccan business calendar as the RPCs.
--- In particular, UTC and Casablanca differ around local midnight.
-set local timezone='Africa/Casablanca';
 set local search_path=public,extensions;
 select no_plan();
 -- TEST ONLY canonical contract fixture shared with Provider delivery; no guards are disabled.
@@ -381,10 +378,10 @@ select ok((select sum(case direction when'DEBIT'then amount_minor else-amount_mi
 -- cannot use an adjustment to erase its own Provider debt.
 insert into public.platform_user_roles(user_id,role_code)values('fd100000-0000-4000-8000-000000000002','FINANCE_MANAGER');
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000002',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
-select throws_ok($$select public.issue_provider_credit_note(id,'AUTO',current_date,100,999999,'Attempt to erase own Provider debt','test347-self-credit')from public.provider_invoices where provider_organization_id='fd110000-0000-4000-8000-000000000002'$$,'42501','PROVIDER_CREDIT_NOTE_DENIED','ProviderOwner plus Finance cannot issue its own credit');
+select throws_ok($$select public.issue_provider_credit_note(id,'AUTO',(clock_timestamp()at time zone'Africa/Casablanca')::date,100,999999,'Attempt to erase own Provider debt','test347-self-credit')from public.provider_invoices where provider_organization_id='fd110000-0000-4000-8000-000000000002'$$,'42501','PROVIDER_CREDIT_NOTE_DENIED','ProviderOwner plus Finance cannot issue its own credit');
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000005',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000005","role":"authenticated","aal":"aal2"}',true);
-insert into monthly347 select'canonical-credit',public.issue_provider_credit_note(id,'AUTO',current_date,100,999999,'Independent canonical fiscal credit','test347-independent-credit')from public.provider_invoices where provider_organization_id='fd110000-0000-4000-8000-000000000002';
-select is((select public.issue_provider_credit_note(id,'AUTO',current_date,100,123456,'Independent canonical fiscal credit','test347-independent-credit')from public.provider_invoices where provider_organization_id='fd110000-0000-4000-8000-000000000002'),(select v from monthly347 where k='canonical-credit'),'retained advisory tax argument never overrides the canonical fiscal receipt');
+insert into monthly347 select'canonical-credit',public.issue_provider_credit_note(id,'AUTO',(clock_timestamp()at time zone'Africa/Casablanca')::date,100,999999,'Independent canonical fiscal credit','test347-independent-credit')from public.provider_invoices where provider_organization_id='fd110000-0000-4000-8000-000000000002';
+select is((select public.issue_provider_credit_note(id,'AUTO',(clock_timestamp()at time zone'Africa/Casablanca')::date,100,123456,'Independent canonical fiscal credit','test347-independent-credit')from public.provider_invoices where provider_organization_id='fd110000-0000-4000-8000-000000000002'),(select v from monthly347 where k='canonical-credit'),'retained advisory tax argument never overrides the canonical fiscal receipt');
 reset role;
 select is((select tax_minor from public.provider_credit_notes where id=(select(v->>'credit_note_id')::uuid from monthly347 where k='canonical-credit')),20::bigint,'credit VAT is computed from the original approved invoice, never the posted override');
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000004',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
