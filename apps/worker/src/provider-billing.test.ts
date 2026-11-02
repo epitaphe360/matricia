@@ -1,0 +1,6 @@
+import{describe,it,expect,vi}from"vitest";
+import{createProviderBillingScheduler}from"./provider-billing";
+describe("provider billing runtime",()=>{
+ it("runs only the authorized durable schedulers and propagates real errors",async()=>{const rpc=vi.fn().mockResolvedValueOnce({data:{outcome:"PROVIDER_BILLING_SCHEDULER_COMPLETED"},error:null}).mockResolvedValueOnce({data:{processed:3},error:null});await createProviderBillingScheduler({rpc}as never)();expect(rpc.mock.calls.map(c=>c[0])).toEqual(["run_provider_billing_scheduler_v1","run_provider_billing_reminders_v1"]);rpc.mockResolvedValueOnce({data:null,error:{code:"08006"}});await expect(createProviderBillingScheduler({rpc}as never)()).rejects.toThrow("PROVIDER_BILLING_SCHEDULER_FAILED");});
+ it("never overlaps cycles while a database page is running",async()=>{let finish:(v:unknown)=>void=()=>{};const rpc=vi.fn().mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve})).mockResolvedValue({data:{processed:0},error:null}),run=createProviderBillingScheduler({rpc}as never);const first=run();await run();expect(rpc).toHaveBeenCalledTimes(1);finish({data:{outcome:"PROVIDER_BILLING_SCHEDULER_COMPLETED"},error:null});await first;expect(rpc).toHaveBeenCalledTimes(2);});
+});

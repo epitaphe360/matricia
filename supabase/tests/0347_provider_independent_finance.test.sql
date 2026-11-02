@@ -1,0 +1,97 @@
+begin;
+set local search_path=public,extensions;
+select no_plan();
+grant usage on schema extensions to authenticated,service_role;
+-- Synthetic, rollback-scoped accounting fixtures. Product commands below run under
+-- SET ROLE authenticated/service_role, never under the privileged fixture owner.
+update private.admin_execution_environment_v1 set environment='DEVELOPMENT',configuration_reference='TEST-0347-local-scanner',configured_at=clock_timestamp()where singleton;
+insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
+select ('f3470000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','provider-finance-'||n||'@example.invalid','',now(),'{}','{}',now(),now()from generate_series(1,4)n;
+insert into public.platform_user_roles(user_id,role_code)values('f3470000-0000-4000-8000-000000000002','FINANCE_MANAGER'),('f3470000-0000-4000-8000-000000000003','FINANCE_MANAGER');
+insert into public.organizations(id,legal_name,display_name,status,created_by)values('f3471000-0000-4000-8000-000000000001','TEST ONLY Provider Finance','TEST ONLY Provider Finance','ACTIVE','f3470000-0000-4000-8000-000000000001');
+insert into public.organization_memberships(id,organization_id,user_id,status,activated_at)values('f3472000-0000-4000-8000-000000000001','f3471000-0000-4000-8000-000000000001','f3470000-0000-4000-8000-000000000001','ACTIVE',now());
+insert into public.organization_member_roles(membership_id,role_code)values('f3472000-0000-4000-8000-000000000001','PROVIDER_OWNER');
+insert into public.provider_profiles(provider_organization_id,activity_summary,team_size,years_experience,created_by)values('f3471000-0000-4000-8000-000000000001','TEST ONLY financial review fixture',1,1,'f3470000-0000-4000-8000-000000000001');
+insert into public.financial_accounts(id,organization_id,code,name,account_type,currency)values
+('f3473000-0000-4000-8000-000000000001','f3471000-0000-4000-8000-000000000001','TEST347_CASH','Test cash','ASSET','MAD'),
+('f3473000-0000-4000-8000-000000000002','f3471000-0000-4000-8000-000000000001','TEST347_AR','Test receivable','ASSET','MAD'),
+('f3473000-0000-4000-8000-000000000003','f3471000-0000-4000-8000-000000000001','TEST347_REVENUE','Test revenue','REVENUE','MAD'),
+('f3473000-0000-4000-8000-000000000004','f3471000-0000-4000-8000-000000000001','TEST347_TAX','Test tax','LIABILITY','MAD');
+create temporary table observed347(key text primary key,value jsonb);grant select,insert,update on observed347 to authenticated,service_role;
+select set_config('request.jwt.claims','{"sub":"f3470000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);
+set local role authenticated;
+insert into observed347 values('upload',public.begin_provider_payment_proof_upload('f3471000-0000-4000-8000-000000000001','TEST-ONLY.pdf','application/pdf',20,repeat('d',64),'TEST-0347-upload'));
+reset role;
+insert into storage.objects(bucket_id,name,metadata)select 'provider-qualification',value->>'storage_object_path','{"mimetype":"application/pdf","size":20}'from observed347 where key='upload';
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select public.record_provider_payment_proof_scan_result((value->>'upload_id')::uuid,'CLEAN','SQL_TEST_SCANNER','test-only',repeat('d',64),'TEST-0347-scan')from observed347 where key='upload';
+reset role;
+select set_config('request.jwt.claims','{"sub":"f3470000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);
+set local role authenticated;
+insert into observed347 values('declaration',public.record_provider_payment('f3471000-0000-4000-8000-000000000001','TEST-0347-PAYMENT',current_date,'BANK_TRANSFER','MAD',125050,repeat('d',64),'f3473000-0000-4000-8000-000000000001','f3473000-0000-4000-8000-000000000002','TEST-0347-payment'));
+select is((select value->>'outcome'from observed347 where key='declaration'),'PROVIDER_FINANCIAL_DECLARATION_SUBMITTED','native Provider creates a declaration, never cash');
+select is((select count(*)from public.provider_payments where provider_organization_id='f3471000-0000-4000-8000-000000000001'),0::bigint,'a CLEAN file does not settle debt');
+select throws_ok($$select public.review_provider_financial_declaration_v1((value->>'declaration_id')::uuid,true,'TEST ONLY attempted self approval')from observed347 where key='declaration'$$,'42501','INDEPENDENT_FINANCE_REVIEW_REQUIRED','Provider cannot approve its own declaration');
+select throws_ok($$select public.reconcile_provider_payment('f3474000-0000-4000-8000-000000000001','[]','TEST-0347-allocation')$$,'42501','INDEPENDENT_FINANCE_REVIEW_REQUIRED','Provider cannot allocate its own declared payment');
+reset role;
+select set_config('request.jwt.claims','{"sub":"f3470000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal1"}',true);
+set local role authenticated;
+select throws_ok($$select public.review_provider_financial_declaration_v1((value->>'declaration_id')::uuid,true,'TEST ONLY Finance without MFA')from observed347 where key='declaration'$$,'42501','INDEPENDENT_FINANCE_REVIEW_REQUIRED','Finance without MFA cannot validate cash');
+reset role;
+select set_config('request.jwt.claims','{"sub":"f3470000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);
+set local role authenticated;
+insert into observed347 select 'approved',public.review_provider_financial_declaration_v1((value->>'declaration_id')::uuid,true,'TEST ONLY independently checked bank receipt')from observed347 where key='declaration';
+select is((select value->>'outcome'from observed347 where key='approved'),'PROVIDER_PAYMENT_APPROVED','independent native Finance confirms cash');
+select is((select public.review_provider_financial_declaration_v1((value->>'declaration_id')::uuid,true,'TEST ONLY same approval replay')from observed347 where key='declaration'),(select value from observed347 where key='approved'),'review replay is idempotent');
+select is((select count(*)from public.provider_payments where provider_organization_id='f3471000-0000-4000-8000-000000000001'),1::bigint,'one immutable confirmed payment');
+set constraints all immediate;
+set constraints all deferred;
+insert into observed347 values('policy',to_jsonb(public.propose_provider_closing_policy_v1('f3471000-0000-4000-8000-000000000001','MAD','f3473000-0000-4000-8000-000000000002','f3473000-0000-4000-8000-000000000003','f3473000-0000-4000-8000-000000000004',7,3,current_date,'TEST-0347 approved operational rule')));
+select throws_ok($$select public.decide_provider_closing_policy_v1((value#>>'{}')::uuid,true,'TEST ONLY self approval forbidden')from observed347 where key='policy'$$,'42501','INDEPENDENT_FINANCE_REVIEW_REQUIRED','policy author cannot publish its own execution settings');
+reset role;
+select set_config('request.jwt.claims','{"sub":"f3470000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal2"}',true);
+set local role authenticated;
+select is((public.decide_provider_closing_policy_v1((select(value#>>'{}')::uuid from observed347 where key='policy'),true,'TEST ONLY independent closing rule review')->>'outcome'),'PROVIDER_CLOSING_POLICY_REVIEWED','independent Finance approves closing configuration');
+select throws_ok($$select public.run_provider_billing_scheduler_v1(10)$$,'42501',null,'user JWT cannot run the service scheduler');
+reset role;
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(public.run_provider_billing_scheduler_v1(10)->>'outcome','PROVIDER_BILLING_SCHEDULER_COMPLETED','service scheduler generates the contradictory period');
+select is(public.run_provider_billing_scheduler_v1(10)->>'outcome','PROVIDER_BILLING_SCHEDULER_COMPLETED','scheduler replay is safe');
+reset role;
+select is((select count(*)from public.provider_billing_periods_v1 where provider_organization_id='f3471000-0000-4000-8000-000000000001'),1::bigint,'period generation is unique per tenant/currency/month');
+select is((select count(*)from public.provider_statements where provider_organization_id='f3471000-0000-4000-8000-000000000001'),0::bigint,'no invented statement or invoice from an empty pre-statement');
+-- An immutable historical invoice fixture exercises plan dates without rewriting source objects.
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+insert into public.provider_statements(id,provider_organization_id,statement_number,period_start,period_end,currency,subtotal_minor,tax_minor,total_minor,document_hash,correlation_id,created_by)values('f3475000-0000-4000-8000-000000000001','f3471000-0000-4000-8000-000000000001','TEST347-ST',current_date-30,current_date-10,'MAD',100000,0,100000,repeat('f',64),extensions.gen_random_uuid(),'f3470000-0000-4000-8000-000000000001');
+insert into public.financial_journals(id,organization_id,journal_type,currency,idempotency_scope,idempotency_key,correlation_id,effective_at,description,created_by)values('f3476000-0000-4000-8000-000000000001','f3471000-0000-4000-8000-000000000001','PROVIDER_COMMISSION_INVOICE','MAD','TEST347','TEST347-JOURNAL',extensions.gen_random_uuid(),current_date-9,'TEST ONLY immutable invoice fixture','f3470000-0000-4000-8000-000000000001');
+insert into public.financial_entries(organization_id,journal_id,account_id,direction,amount_minor,currency)values('f3471000-0000-4000-8000-000000000001','f3476000-0000-4000-8000-000000000001','f3473000-0000-4000-8000-000000000002','DEBIT',100000,'MAD'),('f3471000-0000-4000-8000-000000000001','f3476000-0000-4000-8000-000000000001','f3473000-0000-4000-8000-000000000003','CREDIT',100000,'MAD');
+insert into public.provider_invoices(id,provider_organization_id,statement_id,invoice_number,currency,subtotal_minor,tax_minor,total_minor,issued_on,due_on,tax_rule_snapshot,document_hash,journal_id,correlation_id,created_by)values('f3477000-0000-4000-8000-000000000001','f3471000-0000-4000-8000-000000000001','f3475000-0000-4000-8000-000000000001','TEST347-INV','MAD',100000,0,100000,current_date-9,current_date-2,'[]',repeat('f',64),'f3476000-0000-4000-8000-000000000001',extensions.gen_random_uuid(),'f3470000-0000-4000-8000-000000000001');
+select set_config('request.jwt.claims','{"sub":"f3470000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);
+set local role authenticated;
+select is((select payment_status from public.provider_invoice_balances where id='f3477000-0000-4000-8000-000000000001'),'OVERDUE','native Provider reads its real security-invoker invoice projection');
+insert into observed347 values('plan',public.request_provider_payment_plan('f3477000-0000-4000-8000-000000000001',jsonb_build_array(jsonb_build_object('due_on',current_date+10,'amount_minor','50000'),jsonb_build_object('due_on',current_date+20,'amount_minor','50000')),'TEST ONLY requested two installment plan','TEST347-PLAN'));
+reset role;
+select set_config('request.jwt.claims','{"sub":"f3470000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);
+set local role authenticated;
+select public.decide_provider_payment_plan((value->>'plan_id')::uuid,'APPROVED','TEST ONLY independently reviewed plan','TEST347-PLAN-APPROVE')from observed347 where key='plan';
+insert into observed347 select 'allocation',public.reconcile_provider_payment((value->>'payment_id')::uuid,'[{"invoice_id":"f3477000-0000-4000-8000-000000000001","amount_minor":"50000"}]','TEST347-ALLOCATE')from observed347 where key='approved';
+select is((select public.reconcile_provider_payment((value->>'payment_id')::uuid,'[{"invoice_id":"f3477000-0000-4000-8000-000000000001","amount_minor":"50000"}]','TEST347-ALLOCATE')from observed347 where key='approved'),(select value from observed347 where key='allocation'),'allocation replay returns the same immutable result');
+select is((select due_on from public.provider_invoices where id='f3477000-0000-4000-8000-000000000001'),current_date-2,'partial payment never postpones original due date');
+set constraints all immediate;
+reset role;
+select is(private.provider_invoice_overdue_minor_v1('f3477000-0000-4000-8000-000000000001',current_date+15),0::bigint,'paid first installment is not overdue');
+select is(private.provider_invoice_overdue_minor_v1('f3477000-0000-4000-8000-000000000001',current_date+25),50000::bigint,'unpaid final installment becomes overdue despite approved plan');
+select is((select count(*)from public.provider_billing_due_tasks_v1 where invoice_id='f3477000-0000-4000-8000-000000000001'),4::bigint,'invoice produces durable J4 J6 J7 and overdue tasks');
+select set_config('request.jwt.claims','{"sub":"f3470000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal2"}',true);
+set local role authenticated;
+select is((select count(*)from public.provider_invoice_balances),0::bigint,'foreign native actor reads no invoice projection');
+select throws_ok($$select public.get_provider_invoice_overdue_v1('f3477000-0000-4000-8000-000000000001')$$,'42501','PROVIDER_INVOICE_READ_DENIED','read wrapper cannot expose a known foreign invoice');
+select is((select count(*)from public.provider_financial_declarations_v1),0::bigint,'unrelated actor cannot read financial declarations');
+select throws_ok($$select public.get_provider_finance_admin_context_v1('f3471000-0000-4000-8000-000000000001')$$,'42501','INDEPENDENT_FINANCE_REVIEW_REQUIRED','unrelated actor cannot read Finance context');
+reset role;
+select ok(not has_function_privilege('authenticated','public.record_provider_payable_event_pre_archive_v1(uuid,text,date,character,bigint,text,text,text,uuid)','EXECUTE'),'runtime cannot bypass independent review through the old accrual implementation');
+select ok(not has_function_privilege('authenticated','public.reconcile_provider_payment_pre_review_v1(uuid,jsonb,text,uuid)','EXECUTE'),'runtime cannot bypass allocation authority');
+select*from finish();
+rollback;

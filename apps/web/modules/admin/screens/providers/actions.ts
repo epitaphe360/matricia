@@ -58,11 +58,16 @@ export async function recordAdminPayment(previous: AdminProviderActionState, dat
     }
     return {status:"idle"};
   }
-  const currency = text(data, "currency").toUpperCase(), amountMinor = parseMoneyToMinor(text(data, "amount"), currency), proof = await paymentProof(data.get("proofFile"));
+  const client=await getSupabaseServerClient(),{data:auth}=await client.auth.getUser();if(!auth.user)return{status:"error",reason:"UNAUTHENTICATED"};
+  let currency=previous.status==="pending_scan"?previous.payment.currency:"";
+  if(previous.status!=="pending_scan"){
+   const invoiceId=z.string().uuid().safeParse(text(data,"invoiceId"));if(!invoiceId.success)return{status:"error",reason:"VALIDATION"};
+   const invoice=await client.from("provider_invoices").select("currency,provider_organization_id").eq("id",invoiceId.data).maybeSingle(),parsedInvoice=z.object({currency:z.string().regex(/^[A-Z]{3}$/u),provider_organization_id:z.string().uuid()}).safeParse(invoice.data);if(invoice.error)return failure(invoice.error);if(!parsedInvoice.success||parsedInvoice.data.provider_organization_id!==text(data,"organizationId"))return{status:"error",reason:"FORBIDDEN"};currency=parsedInvoice.data.currency;
+  }
+  const amountMinor=parseMoneyToMinor(text(data,"amount"),currency),proof=await paymentProof(data.get("proofFile"));
   const parsed = paymentInput.safeParse(previous.status === "pending_scan" ? previous.payment : { organizationId: text(data, "organizationId"), paymentReference: text(data, "paymentReference"), paidOn: text(data, "paidOn"), paymentMethod: text(data, "paymentMethod"), currency, amountMinor, proofHash: proof?.hash, cashAccountId: text(data, "cashAccountId"), receivableAccountId: text(data, "receivableAccountId"), idempotencyKey: text(data, "idempotencyKey") });
   if (!parsed.success) return { status: "error", reason: "VALIDATION" };
-  const value = parsed.data, client = await getSupabaseServerClient(), { data: auth } = await client.auth.getUser();
-  if (!auth.user) return { status: "error", reason: "UNAUTHENTICATED" };
+  const value = parsed.data;
   if (previous.status !== "pending_scan") {
   if (!proof) return { status: "error", reason: "VALIDATION" };
   const reservationResult = await client.rpc("begin_provider_payment_proof_upload", { p_provider_organization_id: value.organizationId, p_original_file_name: proof.fileName, p_declared_mime_type: proof.mimeType, p_declared_size_bytes: proof.size, p_declared_sha256: proof.hash, p_idempotency_key: `${value.idempotencyKey}:proof` });
@@ -81,7 +86,7 @@ export async function recordAdminPayment(previous: AdminProviderActionState, dat
   const finalized=await client.rpc("finalize_my_provider_billing_intent",{p_intent_id:intentId});if(finalized.error)return failure(finalized.error);
   const result=output.safeParse(finalized.data);if(!result.success)return{status:"error",reason:"FAILED"};
   if(result.data.outcome==="PROVIDER_BILLING_SCAN_PENDING")return{status:"pending_scan",payment:value,intentId};
-  return result.data.outcome==="PROVIDER_PAYMENT_RECORDED"?{status:"success",outcome:result.data.outcome}:{status:"error",reason:["PROVIDER_BILLING_PROOF_EXPIRED","PROVIDER_BILLING_PROOF_REJECTED"].includes(result.data.outcome)?"CONFLICT":"FAILED"};
+  return ["PROVIDER_PAYMENT_RECORDED","PROVIDER_FINANCIAL_DECLARATION_SUBMITTED"].includes(result.data.outcome)?{status:"success",outcome:result.data.outcome}:{status:"error",reason:["PROVIDER_BILLING_PROOF_EXPIRED","PROVIDER_BILLING_PROOF_REJECTED"].includes(result.data.outcome)?"CONFLICT":"FAILED"};
 }
 export async function reconcileAdminPayment(_: AdminProviderActionState, data: FormData): Promise<AdminProviderActionState> {
   const client = await getSupabaseServerClient(), { data: auth } = await client.auth.getUser();
@@ -129,6 +134,6 @@ export async function advanceAdminCollectionCase(_: AdminProviderActionState, da
 export type AdminBillingIntentState={status:"idle"|"success"|"pending_scan"|"error"};
 export async function resumeAdminBillingIntent(_:AdminBillingIntentState,form:FormData):Promise<AdminBillingIntentState>{
  const id=z.string().uuid().safeParse(text(form,"intentId"));if(!id.success)return{status:"error"};const client=await getSupabaseServerClient();const{data:auth}=await client.auth.getUser();if(!auth.user)return{status:"error"};
- const result=await client.rpc("finalize_my_provider_billing_intent",{p_intent_id:id.data});if(result.error)return{status:"error"};const parsed=output.safeParse(result.data);if(!parsed.success)return{status:"error"};return parsed.data.outcome==="PROVIDER_BILLING_SCAN_PENDING"?{status:"pending_scan"}:["PROVIDER_PAYMENT_RECORDED","PROVIDER_PAYABLE_RECORDED"].includes(parsed.data.outcome)?{status:"success"}:{status:"error"};
+ const result=await client.rpc("finalize_my_provider_billing_intent",{p_intent_id:id.data});if(result.error)return{status:"error"};const parsed=output.safeParse(result.data);if(!parsed.success)return{status:"error"};return parsed.data.outcome==="PROVIDER_BILLING_SCAN_PENDING"?{status:"pending_scan"}:["PROVIDER_PAYMENT_RECORDED","PROVIDER_PAYABLE_RECORDED","PROVIDER_FINANCIAL_DECLARATION_SUBMITTED"].includes(parsed.data.outcome)?{status:"success"}:{status:"error"};
 }
 export async function cancelAdminBillingIntent(_:AdminBillingIntentState,form:FormData):Promise<AdminBillingIntentState>{const id=z.string().uuid().safeParse(text(form,"intentId"));if(!id.success)return{status:"error"};const client=await getSupabaseServerClient();const{data:auth}=await client.auth.getUser();if(!auth.user)return{status:"error"};const result=await client.rpc("cancel_my_provider_billing_intent",{p_intent_id:id.data});return result.error?{status:"error"}:{status:"success"};}

@@ -21,8 +21,11 @@ export async function recordPayable(previous:BillingActionState,form:FormData):P
  const {client,user}=await authenticated();if(!user)return{status:"error",reason:"UNAUTHENTICATED"};
  if(previous.status==="pending_scan")return finalizeBillingIntent(client,previous.intentId);
  if(!locale(form))return{status:"error",reason:"VALIDATION"};
- const organization=z.string().uuid().safeParse(t(form,"organizationId")),currency=t(form,"currency").toUpperCase();
- const parsed=payableForm.safeParse({missionId:t(form,"missionId"),eventType:t(form,"eventType"),occurredOn:t(form,"occurredOn"),currency,grossAmountMinor:parseMoneyToMinor(t(form,"grossAmount"),currency),clientReceiptReference:t(form,"clientReceiptReference"),idempotencyKey:t(form,"idempotencyKey")});
+ const organization=z.string().uuid().safeParse(t(form,"organizationId"));
+ const mission=await client.from("missions").select("contract_version_id").eq("id",t(form,"missionId")).eq("provider_organization_id",t(form,"organizationId")).maybeSingle();
+ const missionValue=z.object({contract_version_id:z.string().uuid()}).safeParse(mission.data);if(mission.error||!missionValue.success)return{status:"error",reason:"FORBIDDEN"};
+ const contract=await client.from("contract_versions").select("currency").eq("id",missionValue.data.contract_version_id).maybeSingle(),contractValue=z.object({currency:z.string().regex(/^[A-Z]{3}$/u)}).safeParse(contract.data);if(contract.error||!contractValue.success)return{status:"error",reason:"FORBIDDEN"};const currency=contractValue.data.currency;
+ const parsed=payableForm.safeParse({missionId:t(form,"missionId"),paymentMethod:t(form,"paymentMethod"),eventType:t(form,"eventType"),occurredOn:t(form,"occurredOn"),currency,grossAmountMinor:parseMoneyToMinor(t(form,"grossAmount"),currency),clientReceiptReference:t(form,"clientReceiptReference"),idempotencyKey:t(form,"idempotencyKey")});
  if(!organization.success||!parsed.success)return{status:"error",reason:"VALIDATION"};
  const uploaded=await uploadPaymentProof(client,organization.data,parsed.data.idempotencyKey,form.get("proofFile"),"PAYABLE");if(uploaded.status==="error")return uploaded;
  return persistBillingIntent(client,organization.data,"PAYABLE",{...parsed.data,proofHash:uploaded.proofHash},parsed.data.idempotencyKey);
@@ -34,7 +37,8 @@ export async function recordPayment(previous:BillingActionState,form:FormData):P
  const {client,user}=await authenticated();if(!user)return{status:"error",reason:"UNAUTHENTICATED"};
  if(previous.status==="pending_scan")return finalizeBillingIntent(client,previous.intentId);
  if(!locale(form))return{status:"error",reason:"VALIDATION"};
- const currency=t(form,"currency").toUpperCase();
+ const invoiceId=z.string().uuid().safeParse(t(form,"invoiceId"));if(!invoiceId.success)return{status:"error",reason:"VALIDATION"};
+ const invoice=await client.from("provider_invoices").select("currency").eq("id",invoiceId.data).eq("provider_organization_id",t(form,"organizationId")).maybeSingle(),invoiceValue=z.object({currency:z.string().regex(/^[A-Z]{3}$/u)}).safeParse(invoice.data);if(invoice.error||!invoiceValue.success)return{status:"error",reason:"FORBIDDEN"};const currency=invoiceValue.data.currency;
  const parsed=paymentForm.safeParse({organizationId:t(form,"organizationId"),paymentReference:t(form,"paymentReference"),paidOn:t(form,"paidOn"),paymentMethod:t(form,"paymentMethod"),currency,amountMinor:parseMoneyToMinor(t(form,"amount"),currency),cashAccountId:t(form,"cashAccountId"),receivableAccountId:t(form,"receivableAccountId"),idempotencyKey:t(form,"idempotencyKey")});
  if(!parsed.success)return{status:"error",reason:"VALIDATION"};
  const uploaded=await uploadPaymentProof(client,parsed.data.organizationId,parsed.data.idempotencyKey,form.get("proofFile"));if(uploaded.status==="error")return uploaded;
@@ -54,7 +58,9 @@ export async function reconcilePayment(_:BillingActionState,form:FormData):Promi
 }
 export async function requestPaymentPlan(_:BillingActionState,form:FormData):Promise<BillingActionState>{
   if(!locale(form))return{status:"error",reason:"VALIDATION"};
-  const currency=t(form,"currency").toUpperCase()||"MAD";
+  const {client,user}=await authenticated();if(!user)return{status:"error",reason:"UNAUTHENTICATED"};
+  const invoiceId=z.string().uuid().safeParse(t(form,"invoiceId"));if(!invoiceId.success)return{status:"error",reason:"VALIDATION"};
+  const invoice=await client.from("provider_invoices").select("currency").eq("id",invoiceId.data).maybeSingle();const currencyValue=z.object({currency:z.string().regex(/^[A-Z]{3}$/u)}).safeParse(invoice.data);if(invoice.error||!currencyValue.success)return{status:"error",reason:"FORBIDDEN"};const currency=currencyValue.data.currency;
   const first=parseMoneyToMinor(t(form,"amount1"),currency),second=parseMoneyToMinor(t(form,"amount2"),currency);
   const parsed=paymentPlanRequestInput.safeParse({invoiceId:t(form,"invoiceId"),reason:t(form,"reason"),dueOn1:t(form,"dueOn1"),dueOn2:t(form,"dueOn2"),amountMinor1:first,amountMinor2:second,idempotencyKey:t(form,"idempotencyKey")});
   if(!parsed.success)return{status:"error",reason:"VALIDATION"};

@@ -1,3 +1,4 @@
+import{createProviderBillingScheduler}from"./provider-billing";
 import { createScannerHttpHandler } from "./scanner-http";
 import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
@@ -38,6 +39,7 @@ async function start(): Promise<void> {
   }));
   const antivirusHealth = createClamAvTcpHealthCheck(readClamAvTcpConfig(process.env));
   const runFranchiseFollowups = createFranchiseFollowupScheduler(serviceClient, workerId);
+  const runProviderBilling=createProviderBillingScheduler(serviceClient);
 
   let antivirusAvailable = false;
   const dispatcher = createWorkerDispatcher({
@@ -97,6 +99,8 @@ async function start(): Promise<void> {
   timer.unref();
   const followupTimer = setInterval(() => void runFranchiseFollowups().catch(() => log("error", { requestId: randomUUID(), correlationId: randomUUID(), event: "franchise.followup.scheduler", outcome: "failure", actorId: workerId, errorCode: "FRANCHISE_FOLLOWUP_CYCLE_FAILED" })), 30_000);
   followupTimer.unref();
+  const runBilling=()=>void runProviderBilling().catch(()=>log("error",{requestId:randomUUID(),correlationId:randomUUID(),event:"provider.billing.scheduler",outcome:"failure",errorCode:"PROVIDER_BILLING_CYCLE_FAILED"}));
+  runBilling();const billingTimer=setInterval(runBilling,30_000);billingTimer.unref();
 }
 
 void start().catch(() => {
