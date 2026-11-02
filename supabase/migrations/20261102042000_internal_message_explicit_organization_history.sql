@@ -1,3 +1,4 @@
+begin;
 -- Keep the canonical history/cursor/attachment contract, but bind its presentation
 -- to one explicitly authorized organization when a member acts for several.
 create function public.get_internal_message_thread_page_for_organization_v1(
@@ -23,3 +24,4 @@ end$$;
 revoke all on function public.get_internal_message_thread_page_for_organization_v1(uuid,uuid,timestamptz,uuid,integer) from public,anon,authenticated,service_role;
 grant execute on function public.get_internal_message_thread_page_for_organization_v1(uuid,uuid,timestamptz,uuid,integer) to authenticated;
 notify pgrst,'reload schema';
+commit;

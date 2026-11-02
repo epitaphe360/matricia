@@ -1,3 +1,4 @@
+begin;
 -- Continue the same private object thread after selection; never reopen an RFQ.
 -- A contract must bind the exact selected quote, client and provider. A
 -- Technician participates only through the authoritative mission assignment.
@@ -76,3 +77,4 @@ revoke all on function private.contract_message_technician_scope_v1(uuid,uuid,uu
 revoke all on function public.list_internal_message_open_options_v1(uuid,integer)from public,anon,authenticated,service_role;
 grant execute on function public.list_internal_message_open_options_v1(uuid,integer)to authenticated;
 notify pgrst,'reload schema';
+commit;
