@@ -46,7 +46,7 @@ export function ClientApprovalsPanel({
                 <div><dt className="text-muted-foreground">{messages.requestedAt}</dt><dd><time dateTime={item.requestedAt}>{new Intl.DateTimeFormat(locale === "ar" ? "ar-MA" : "fr-MA", { dateStyle: "medium" }).format(new Date(item.requestedAt))}</time></dd></div>
               </dl>
               {item.path ? <Link className="my-2 inline-flex min-h-11 items-center underline" href={`/${locale}${item.path.replace("#", `?organizationId=${organizationId ?? ""}#`)}${item.path.includes("#") ? "" : `?organizationId=${organizationId ?? ""}`}`}>{messages.resume}</Link> : null}
-              {item.completed ? <p>{messages.commandCompleted}</p> : item.canResume ? <ApprovalResumeForm item={item} locale={locale} messages={messages}/> : null}
+              {item.completed ? <p>{messages.commandCompleted}</p> : item.canResume ? <ApprovalResumeForm organizationId={organizationId} item={item} locale={locale} messages={messages}/> : null}
               {item.status === "PENDING" ? <ApprovalDecisionForm item={item} locale={locale} messages={messages} idempotencyKey={randomUUID()} /> : null}
             </li>
           ))}

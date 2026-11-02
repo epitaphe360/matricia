@@ -1,5 +1,6 @@
 "use client";
 import {useActionState,useId} from "react";
+import { workspaceSecurityHref } from "@/modules/shared/lib/auth/security-href";
 import Link from "next/link";
 import {manageBenefitRefund} from "./actions";
 import type {RefundRow,RefundState} from "./model";
@@ -23,7 +24,7 @@ export function BenefitRefundCard({row,locale,requestKey,finance=false}:{row:Ref
   {row.request?.source_stale&&row.status==="CONSUMED"?<p>{ar?"تغيرت المصادر المحاسبية. يلزم طلب جديد قبل الموافقة.":"Les sources comptables ont changé. Une nouvelle demande est nécessaire avant approbation."}</p>:null}
   {row.refunded?<p role="status">{ar?"الأرصدة المعادة: ":"Crédits restitués : "}{row.refunded.quantity} · {date(row.refunded.created_at)}</p>:null}
   {!row.policy_ready&&row.status==="CONSUMED"?<p>{ar?"يلزم اعتماد سياسة الاسترجاع لهذه الميزة قبل تقديم الطلب.":"Une politique de retour approuvée est nécessaire pour cet avantage avant de déposer une demande."}</p>:null}
-  {row.requires_mfa&&row.status==="CONSUMED"?<Link href={`/${locale}/securite/compte`}>{ar?"تفعيل التحقق بخطوتين":"Activer l’authentification multifacteur"}</Link>:null}
+  {row.requires_mfa&&row.status==="CONSUMED"?<Link href={workspaceSecurityHref(locale,`/${locale}/${finance?"administration":"client"}/avantages/remboursements`,row.organization_id,finance?"administration":"client")}>{ar?"تفعيل التحقق بخطوتين":"Activer l’authentification multifacteur"}</Link>:null}
   {(row.can_request&&!finance)||canDecide?<form action={action}className="grid gap-3">
    {Object.entries({locale,redemptionId:row.id,organizationId:row.organization_id,rowVersion:row.row_version,idempotencyKey:requestKey,...(canDecide&&row.request?{requestId:row.request.id,contentHash:row.request.content_hash}:{intent:"request"})}).map(([name,value])=><input key={name}type="hidden"name={name}value={value}/>)}
    <label htmlFor={`${id}-reason`}>{canDecide?(ar?"سبب القرار المالي":"Motif de la décision Finance"):(ar?"سبب طلب استرجاع الأرصدة":"Motif de la demande de retour en crédits")}</label>
