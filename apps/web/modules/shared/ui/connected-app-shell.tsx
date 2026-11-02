@@ -3,7 +3,7 @@ import "@/modules/provider/ui/provider-experience.css";
 import "@/modules/franchise/ui/franchise-experience.css";
 import "@/modules/admin/ui/admin-experience.css";
 import "@/modules/shared/shell/admin-experience.css";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { cookies } from "next/headers";
 import type { ReactNode } from "react";
 import { resolveConnectedSpace } from "@/modules/shared/lib/account-security/connected-space";
@@ -24,6 +24,7 @@ export async function ConnectedAppShell({
   currentPath,
   nextPath,
   workspace,
+  allowContextFailure = false,
   title,
   lead,
   kicker,
@@ -38,6 +39,7 @@ export async function ConnectedAppShell({
   currentPath?: string;
   nextPath?: string;
   workspace?: string;
+  allowContextFailure?: boolean;
   title: string;
   lead?: string;
   kicker?: string;
@@ -47,14 +49,25 @@ export async function ConnectedAppShell({
   franchiseActive: FranchiseNavKey;
   children: ReactNode;
 }): Promise<ReactNode> {
-  const space = await resolveConnectedSpace({ locale, organizationId });
   const returnPath = safeReturnPath(currentPath, locale) ?? `/${locale}/tableau-de-bord`;
-  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: returnPath }));
   const next = safeReturnPath(nextPath, locale);
   const preferred = workspace ?? (next?.startsWith(`/${locale}/administration/`) ? "administration" : next?.startsWith(`/${locale}/franchise/`) ? "franchise" : next?.startsWith(`/${locale}/sous-traitant/`) ? "provider" : (await cookies()).get("matricia.workspace")?.value);
-  const navigation = await readWorkspaceNavigation(locale, space.selectedOrganizationId, preferred);
-  if (navigation.status === "error") return <main dir={locale === "ar" ? "rtl" : "ltr"} className="mx-auto max-w-3xl p-6"><WorkspaceFailure locale={locale} reason={navigation.reason} returnPath={returnPath}/></main>;
+  const navigation = await readWorkspaceNavigation(locale, organizationId, preferred);
+  if (navigation.status === "error" && navigation.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: returnPath }));
+  if (navigation.status === "error") return <main dir={locale === "ar" ? "rtl" : "ltr"} className="mx-auto max-w-3xl p-6"><WorkspaceFailure locale={locale} reason={navigation.reason} returnPath={returnPath}/>{allowContextFailure && navigation.reason !== "FORBIDDEN" ? children : null}</main>;
   const kind = navigation.navigation.landing;
+  const option = navigation.navigation.options.find(item => item.kind === kind);
+  const authorizedOrganizationId = option ? new URL(option.href, "https://matricia.invalid").searchParams.get("organizationId") ?? undefined : organizationId;
+  // A role preference may select another membership; resolve that exact membership, never the first unrelated organization.
+  let space;
+  try {
+    space = await resolveConnectedSpace({ locale, organizationId: kind === "administration" ? undefined : authorizedOrganizationId });
+  } catch (error) {
+    unstable_rethrow(error);
+    if (!allowContextFailure || !(error instanceof Error) || error.message !== "WORKSPACE_CONTEXT_UNAVAILABLE") throw error;
+    space = { status: "success" as const, selectedOrganizationId: null, selectedQuery: "", organizationName: null, userEmail: navigation.userEmail ?? null, directoryUnavailable: true };
+  }
+  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: returnPath }));
   const alternateHref = translateLocalPath(returnPath, locale, locale === "fr" ? "ar" : "fr");
   const shared = {
     locale,
@@ -67,7 +80,7 @@ export async function ConnectedAppShell({
     actions,
     alternateHref,
     languagePath: returnPath,
-    children,
+    children: <>{space.directoryUnavailable ? <WorkspaceFailure locale={locale} reason="QUERY_FAILED" returnPath={returnPath} /> : null}{children}</>,
   };
   if (kind === "administration") return <AdminAppShell {...shared} active="home" />;
   if (kind === "provider") {

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { safeReturnPath } from "@/modules/shared/lib/auth/return-path";
-import { notFound, redirect } from "next/navigation";
+import { notFound, redirect, unstable_rethrow } from "next/navigation";
 import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { WorkspaceFailure } from "@/modules/shared/ui/workspace-failure";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
@@ -12,6 +12,8 @@ import { SecurityBoard } from "@/modules/client/screens/spaces/security-board";
 import { listMySessions } from "@/app/[locale]/securite/sessions/actions";
 import { listOrganizationRoles } from "@/app/[locale]/organisation/roles/actions";
 import { getRoleMessages } from "@/app/[locale]/organisation/roles/messages";
+import { cookies } from "next/headers";
+import { readWorkspaceNavigation } from "@/modules/shared/lib/auth/workspace-navigation-server";
 import { resolveConnectedSpace } from "@/modules/shared/lib/account-security/connected-space";
 
 function dateLabel(value: string | null, locale: "fr" | "ar") {
@@ -38,11 +40,19 @@ export default async function AccountSecurityPage({
   if (query.organizationId) contextQuery.set("organizationId", query.organizationId);
   if (query.workspace) contextQuery.set("workspace", query.workspace);
   const selfPath = `/${locale}/securite/compte${contextQuery.size ? `?${contextQuery}` : ""}`;
+  const preferred = query.workspace ?? (nextPath?.startsWith(`/${locale}/administration/`) ? "administration" : (await cookies()).get("matricia.workspace")?.value);
+  const navigation = await readWorkspaceNavigation(locale, query.organizationId, preferred);
+  const selectedOption = navigation.status === "ok" ? navigation.navigation.options.find(option => option.kind === navigation.navigation.landing) : undefined;
+  const effectiveOrganizationId = selectedOption ? new URL(selectedOption.href, "https://matricia.invalid").searchParams.get("organizationId") ?? undefined : query.organizationId;
   const [result, sessions, roles, space] = await Promise.all([
     getAccountSecurity(),
     listMySessions(),
     listOrganizationRoles(),
-    resolveConnectedSpace({ locale, organizationId: query.organizationId }),
+    resolveConnectedSpace({ locale, organizationId: navigation.status === "ok" && navigation.navigation.landing === "administration" ? undefined : effectiveOrganizationId }).catch(error => {
+      unstable_rethrow(error);
+      if (!(error instanceof Error) || error.message !== "WORKSPACE_CONTEXT_UNAVAILABLE") throw error;
+      return { status: "success" as const, selectedOrganizationId: null, selectedQuery: "", organizationName: null, userEmail: null, directoryUnavailable: true };
+    }),
   ]);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: selfPath }));
   if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: selfPath }));
@@ -53,6 +63,7 @@ export default async function AccountSecurityPage({
     <ConnectedAppShell
       locale={locale}
       organizationId={query.organizationId}
+      allowContextFailure
       currentPath={selfPath}
       nextPath={nextPath}
       workspace={query.workspace}
@@ -62,6 +73,7 @@ export default async function AccountSecurityPage({
       providerActive="company"
       franchiseActive="governance"
     >
+      {space.directoryUnavailable ? <WorkspaceFailure locale={locale} reason="QUERY_FAILED" returnPath={selfPath} /> : null}
       <Link className="min-h-11 underline" href={`/${locale}/connexion/consentements`}>{locale==="fr"?"Mes textes versionnés et consentements":"نسخ النصوص وموافقاتي"}</Link>
       {result.status === "error" ? (
 <WorkspaceFailure locale={locale} reason={result.reason === "UNAUTHENTICATED" ? "UNAUTHENTICATED" : "QUERY_FAILED"} returnPath={selfPath} />

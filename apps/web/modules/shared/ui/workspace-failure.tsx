@@ -41,7 +41,7 @@ export function WorkspaceFailure({ locale, reason, returnPath, supportReference 
   const path = safeReturnPath(returnPath, locale) ?? `/${locale}/tableau-de-bord`;
   const technical = ["QUERY_FAILED", "UNAVAILABLE", "INVALID_RESPONSE"].includes(reason);
   const reference = /^[A-Za-z0-9][A-Za-z0-9_.-]{5,79}$/.test(supportReference ?? "") ? supportReference! : randomUUID();
-  if (technical) console.error(JSON.stringify({ event: "workspace.read.failed", reference, category: reason, route: new URL(path, "https://matricia.invalid").pathname.split("/").slice(0, 4).map(segment => /^[a-z-]+$/.test(segment) ? segment : "resource").join("/") }));
+  if (technical || reason === "CONFIGURATION") console.error(JSON.stringify({ event: "workspace.read.failed", reference, category: reason, route: new URL(path, "https://matricia.invalid").pathname.split("/").slice(0, 4).map(segment => /^[a-z-]+$/.test(segment) ? segment : "resource").join("/") }));
   const title = m[reason][0];
   const description = m[reason][1];
   return <section role="alert" className="rounded-xl border border-amber-300 bg-amber-50 p-5 text-amber-950" data-workspace-failure={reason}>

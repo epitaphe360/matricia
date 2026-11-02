@@ -19,7 +19,7 @@ export function ServiceTaxConsole({locale}:{locale:Locale}){
   if(message.includes("RULE_REQUIRED")||message.includes("RULE_VALIDATION_REQUIRED"))return tr("Une règle fiscale datée et validée doit être configurée dans le moteur fiscal avant publication.","يجب إعداد قاعدة ضريبية مؤرخة ومعتمدة قبل النشر.");
   if(message.includes("SUPERSESSION_REVIEW_REQUIRED"))return tr("Examinez et sélectionnez toutes les associations publiées qui recouvrent la période.","راجع وحدد كل الارتباطات المنشورة المتداخلة مع الفترة.");
   if(message.includes("AAL2_REQUIRED"))return tr("Accès réservé à la finance ou au super administrateur avec authentification renforcée.","الدخول للمالية أو المدير الأعلى مع تحقق معزز.");
-  return message;
+  return tr("La lecture ou l’enregistrement n’a pas pu aboutir. Actualisez cette page pour vérifier votre session et vos habilitations, ou contactez l’assistance.","تعذرت القراءة أو عملية الحفظ. حدّثوا الصفحة للتحقق من جلستكم وصلاحياتكم أو تواصلوا مع الدعم.");
  },[tr]);
  const load=useCallback(async(signal?:AbortSignal)=>{
   if(!source)return;
@@ -41,7 +41,7 @@ export function ServiceTaxConsole({locale}:{locale:Locale}){
  return <section className="grid gap-4" aria-label={tr("Classification fiscale des services","التصنيف الضريبي للخدمات")} dir={locale==="ar"?"rtl":"ltr"}>
   <h2 className="text-lg font-semibold">{tr("Association fiscale des services publiés","الربط الضريبي للخدمات المنشورة")}</h2>
   <p>{tr("Chaque association vise une version précise du catalogue, un pays, une devise et une période. Elle ne remplace pas la validation des taux par la finance.","كل ارتباط يخص نسخة محددة من الكتالوج وبلدا وعملة وفترة. ولا يحل محل اعتماد النسب من المالية.")}</p>
-  {error?<p role="alert">{error}</p>:null}{notice?<p role="status">{notice}</p>:null}
+  {error?<div role="alert" className="grid gap-2 rounded border p-3"><p>{error}</p><div className="flex flex-wrap gap-3"><a href={`/${locale}/administration/classification-fiscale`} className="min-h-11 underline">{tr("Actualiser et vérifier mon accès","تحديث والتحقق من الوصول")}</a><a href={`/${locale}/contact`} className="min-h-11 underline">{tr("Contacter l’assistance","الاتصال بالدعم")}</a></div></div>:null}{notice?<p role="status">{notice}</p>:null}
   <label>{tr("Rechercher un service publié","البحث عن خدمة منشورة")}<input className="block min-h-11 rounded border p-2" value={search} maxLength={200} onChange={e=>{setSearch(e.target.value);setSourcePage(1);}}/></label>
   <label>{tr("Version du service","نسخة الخدمة")}<select className="block min-h-11 rounded border p-2" value={source} onChange={e=>{setSource(e.target.value);setPage(1);setSupersedes([]);pending.current=null;}}><option value="">{tr("Choisir une version publiée","اختر نسخة منشورة")}</option>{sources?.items.map(s=><option key={s.id} value={s.id}>{locale==="ar"?s.name_ar:s.name_fr} · v{s.version} · {s.code}</option>)}</select></label>
   <nav className="flex gap-3" aria-label={tr("Pages des services","صفحات الخدمات")}><button type="button" disabled={sourcePage===1} onClick={()=>setSourcePage(p=>p-1)}>{tr("Précédente","السابق")}</button><span>{sourcePage}</span><button type="button" disabled={!sources?.has_next} onClick={()=>setSourcePage(p=>p+1)}>{tr("Suivante","التالي")}</button></nav>

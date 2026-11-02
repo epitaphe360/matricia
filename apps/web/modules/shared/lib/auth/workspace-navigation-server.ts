@@ -33,6 +33,9 @@ export async function readWorkspaceNavigation(locale: Locale, organizationId?: s
     const allowed = availableWorkspaces(memberRoles.map(row => row.role_code), platform.matched_role_codes);
     const selectedMember = organizationId ? members.find(row => row.organization_id === organizationId) : undefined;
     if (organizationId && !selectedMember && !allowed.includes("administration")) return { status: "error", signedIn: true, reason: "FORBIDDEN" };
+    const preferredKind = allowed.find(kind => kind === preferred);
+    const organizationKinds = selectedMember ? availableWorkspaces(memberRoles.filter(row => row.membership_id === selectedMember.id).map(row => row.role_code), []) : [];
+    if (organizationId && preferredKind && preferredKind !== "administration" && !organizationKinds.includes(preferredKind)) return { status: "error", signedIn: true, reason: "FORBIDDEN" };
     const options = allowed.map(kind => {
       const member = members.find(row => (!organizationId || row.organization_id === organizationId) && availableWorkspaces(memberRoles.filter(role => role.membership_id === row.id).map(role => role.role_code), []).includes(kind))
         ?? members.find(row => availableWorkspaces(memberRoles.filter(role => role.membership_id === row.id).map(role => role.role_code), []).includes(kind));
@@ -41,8 +44,6 @@ export async function readWorkspaceNavigation(locale: Locale, organizationId?: s
       if (selectedId) query.set("organizationId", selectedId);
       return { kind, href: workspaceLandingPath(locale, kind, `?${query}`) };
     });
-    const preferredKind = allowed.find(kind => kind === preferred);
-    const organizationKinds = selectedMember ? availableWorkspaces(memberRoles.filter(row => row.membership_id === selectedMember.id).map(row => row.role_code), []) : [];
     const landing: WorkspaceLanding = preferredKind ?? organizationKinds[0] ?? allowed[0] ?? "client";
     return { status: "ok", userEmail: auth.user.email ?? null, requirementSatisfied: platform.requirement_satisfied, navigation: { signedIn: true, landing, options } };
   } catch (error) {

@@ -50,6 +50,7 @@ export default async function SessionsPage({ params, searchParams }: { params: P
     <ConnectedAppShell
       locale={locale}
       organizationId={query.organizationId}
+      allowContextFailure
       currentPath={selfPath}
       nextPath={nextPath}
       workspace={query.workspace}

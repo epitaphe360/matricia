@@ -23,6 +23,9 @@ describe("server verified workspace choices", () => {
     expect(mocks.membershipEq).toHaveBeenCalledWith("status", "ACTIVE");
     expect(result).toMatchObject({ status: "ok", navigation: { landing: "provider", options: [{ kind: "client", href: "/fr/tableau-de-bord?workspace=client&organizationId=org-client" }, { kind: "provider", href: "/fr/tableau-de-bord?workspace=provider&organizationId=org-provider" }] } });
   });
+  it("rejects an explicit Client organization paired with a Provider role from another organization", async () => {
+    expect(await readWorkspaceNavigation("fr", "org-client", "provider")).toEqual({ status: "error", signedIn: true, reason: "FORBIDDEN" });
+  });
   it("does not create an Admin choice from a forged preference", async () => {
     const result = await readWorkspaceNavigation("ar", undefined, "administration");
     expect(result).toMatchObject({ status: "ok", navigation: { landing: "client" } });
