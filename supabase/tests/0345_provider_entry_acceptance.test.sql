@@ -72,6 +72,16 @@ select throws_ok($$select public.declare_provider_work_scope_v1('d0610000-0000-0
 insert into entry_observed values('capacity',public.declare_provider_capacity('d0610000-0000-0000-0000-000000000001',null,'AVAILABLE',7,9,'Synthetic global capacity','entry-capacity-0345'));
 select is(public.explain_provider_service_eligibility('d0610000-0000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000003')->>'capacity_available_units','7','global capacity units match authoritative fallback');
 select is(public.explain_provider_service_eligibility('d0610000-0000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000003')->>'capacity_lead_time_days','9','global lead time matches authoritative fallback');
+reset role;
+insert into public.provider_capacity_versions(provider_organization_id,service_id,version_number,capacity_status,available_units,lead_time_days,effective_from,effective_until,reason,declared_by)values
+('d0610000-0000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000003',1,'FULL',0,2,now()+interval'2 days',null,'Synthetic future capacity','d0600000-0000-0000-0000-000000000001'),
+('d0610000-0000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000003',2,'PAUSED',null,1,now()-interval'2 days',now()-interval'1 day','Synthetic expired capacity','d0600000-0000-0000-0000-000000000001');
+set local role authenticated;
+select is(public.explain_provider_service_eligibility('d0610000-0000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000003')->>'capacity_available_units','7','future and expired service declarations cannot override effective global capacity');
+insert into entry_observed values('service-capacity',public.declare_provider_capacity('d0610000-0000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000003','LIMITED',2,4,'Synthetic effective service capacity','entry-service-capacity-0345'));
+select is(public.explain_provider_service_eligibility('d0610000-0000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000003')->>'capacity_available_units','2','effective service-specific declaration overrides global units');
+select is(public.explain_provider_service_eligibility('d0610000-0000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000003')->>'capacity_lead_time_days','4','effective service-specific lead time matches status');
+
 insert into entry_observed values('start',public.start_questionnaire_session('d0610000-0000-0000-0000-000000000001','d0660000-0000-0000-0000-000000000001','fr-MA',null,'entry-start-0345'));
 insert into entry_observed values('save',public.autosave_questionnaire_answers((select(v->>'session_id')::uuid from entry_observed where k='start'),1,'[{"question_version_id":"d0690000-0000-0000-0000-000000000001","value":false,"expected_answer_row_version":0}]','entry-save-0345'));
 insert into entry_observed values('submit',public.submit_questionnaire_session((select(v->>'session_id')::uuid from entry_observed where k='start'),2,'entry-submit-0345'));

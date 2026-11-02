@@ -24,7 +24,7 @@ Base préservée : `7e01276`. Autorité : AGENTS.md et Gold Master V4 FINAL §§
 - 17 fichiers / 97 tests ciblés réussis (qualification, moteur et UI questionnaires Client, pages de lecture et boards).
 - Après les derniers ajouts : 3 fichiers / 22 tests réussis, incluant les liens Provider FR/AR et la lecture seule. Ces nombres se recouvrent et ne doivent pas être additionnés.
 - `git diff --check` réussi.
-- Typecheck complet et lint lancés ; résultats en attente lors du premier commit demandé pour intégration. Root coordonne le replay SQL canonique ; aucun Docker supplémentaire lancé par ce lot.
+- Lint ciblé terminé : code 0, aucun avertissement. Typecheck complet en attente lors du premier commit demandé pour intégration. Root coordonne le replay SQL canonique ; aucun Docker supplémentaire lancé par ce lot.
 
 ## Prérequis réels
 
