@@ -40,7 +40,8 @@
     "release:checks": "node scripts/release/run-checks.mjs",
     "test:performance:api": "node scripts/performance/api-latency.mjs",
     "test:performance:catalog": "node scripts/performance/catalog-performance-evidence.mjs",
-    "server-actions:validate": "node scripts/release/server-action-exports.mjs"
+    "server-actions:validate": "node scripts/release/server-action-exports.mjs",
+    "test:e2e:admin-organizations": "node --experimental-strip-types tests/e2e/helpers/final-admin-acceptance.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",

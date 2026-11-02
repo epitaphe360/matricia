@@ -32,7 +32,7 @@ jobs:
       - run: node --experimental-strip-types scripts/validate-boundaries.ts
       - run: pnpm lint
       - run: pnpm typecheck
-      - run: pnpm test
+      - run: pnpm -r --workspace-concurrency=1 test --maxWorkers=2
       - run: pnpm test:integration
       - run: pnpm test:tooling
       - run: pnpm no-placeholders

@@ -1,3 +1,12 @@
+## 2026-11-02 — Candidat unifié : lectures Admin et contexte d’organisation
+
+- Branche dédiée `codex/final-corrections-20261102`, base réelle `1ebf3ea` de `codex/bootstrap-foundation` ; cette base contient déjà consolidation et design via PR #8. Modifications existantes préservées ; aucune fusion distante ni production effectuée par cette mission.
+- États refus/absence/panne distingués, Auth503 centralisé, signaux Next préservés, MFA exigée ; périmètre organisation exact et choix explicite avant édition multi-organisations. Largeur mobile des grilles/tableaux et menus d’action corrigée.
+- Types/lint/build PASS ; 2 150 tests web, 102 worker et 137 bibliothèques PASS, un Storage opt-in ignoré. 18 tests publics et 4 parcours Organisations réels FR/AR à 360/1 280 px PASS, vraies sessions GoTrue/TOTP AAL2, recherche/menu/fiche propres vérifiés ; Admin RPC valide, compte ordinaire refusé42501.
+- Clone neuf : 417 migrations, 225 contrats sans référence aux contournements PASS / 4 926 assertions ; 608 tables sous RLS et pgTAP fermé aux rôles API. 56 exclusions maintenues ; suite globale non certifiée. Nettoyage clone et 14 acteurs/sept organisations propres vérifié, serveur arrêté.
+- M01 vérifié sur le candidat local actuel ; M02 incomplet et M03–M30 non fournis, aucune clôture inventée. La recette temporelle de crédits après expiration réelle reste ouverte.
+- Gate livraison REFUSÉ (74 conditions, 5/76 VERIFIED). PR préparée, création API refusée (`Forbidden`, domaine api.github.com non autorisé). Bilan : `docs/release/FINAL_CANDIDATE_2026-11-02.md` ; preuve : `docs/evidence/final-candidate-20261102.json`. Candidat de revue, pas un visa client définitif.
+
 ## 2026-11-01 — Recette commerciale FR/AR et nouvelles protections vérifiées
 
 - Le candidat reste **en intégration et non approuvé pour livraison externe**. Les nouveaux lots financiers, la configuration réelle des Boxes et leurs automatismes, puis le rejeu global et la restauration coordonnée doivent encore être figés et vérifiés ensemble. La traçabilité reste 5/76 VERIFIED.

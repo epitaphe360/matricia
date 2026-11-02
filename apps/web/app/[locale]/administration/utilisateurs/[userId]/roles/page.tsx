@@ -9,7 +9,7 @@ import { resolveAdminSpace } from "@/modules/admin/data/spaces/context";
 import { actorCopy } from "@/modules/admin/data/spaces/actors-copy";
 import { loadAdminActorUser } from "@/modules/admin/data/spaces/actors-repository";
 import { EditUserRolesForm } from "@/modules/admin/screens/spaces/actor-forms";
-import { AdminActorLoadError } from "@/modules/admin/screens/spaces/actor-load-error";
+import { AdminActorLoadError, AdminActorOrganizationPicker } from "@/modules/admin/screens/spaces/actor-load-error";
 import { AdminAppShell, AdminCrumb } from "@/modules/admin/ui/admin-app-shell";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 
@@ -29,6 +29,16 @@ export default async function AdminUserRolesPage({
     if (result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/utilisateurs/${userId}/roles${space.selectedQuery}` }));
     if (result.reason === "NOT_FOUND") notFound();
     return <AdminActorLoadError locale={locale} userId={userId} roles reason={result.reason} space={space} />;
+  }
+  if (query.organizationId === undefined) {
+    const organizations = new Map<string, string>();
+    for (const membership of result.rows) {
+      if (membership.organizationId) organizations.set(membership.organizationId, membership.organizationName ?? membership.organizationId);
+    }
+    if (organizations.size > 1) {
+      return <AdminActorOrganizationPicker locale={locale} userId={userId} space={space}
+        organizations={[...organizations].map(([id, name]) => ({ id, name }))} />;
+    }
   }
   const row = query.organizationId === undefined
     ? result.rows[0]

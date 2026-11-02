@@ -1,6 +1,6 @@
 import {createRequire} from 'node:module';
-import {randomUUID,randomBytes} from 'node:crypto';
-import {mkdir,writeFile} from 'node:fs/promises';
+import {randomUUID,randomBytes,createHash} from 'node:crypto';
+import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {resolve,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {loadSafeConfiguration,resolveExpectedDatabaseUrl} from '../../../scripts/p05-e2e/environment.mjs';
@@ -16,7 +16,7 @@ const id=randomUUID(),directory=resolve(root,'work/final-admin-acceptance',id);a
 const admin=createClient(config.supabaseUrl,config.serviceRoleKey,{auth:{persistSession:false,autoRefreshToken:false}});
 const {supervisionSchema}=await import(new URL('../../../apps/web/modules/admin/data/supervision/types.ts',import.meta.url));
 const db=postgres(resolveExpectedDatabaseUrl(config),{ssl:false,max:1,onnotice:()=>{}});
-const users=[],organizations=[];const proof={scope:'LOCAL_SYNTHETIC_NATIVE_AUTH_AND_ORGANIZATION_ACCEPTANCE',runId:id,roleBootstrap:'TEST_ONLY_NOT_GOVERNED_ROLE_ASSIGNMENT_PROOF',rpc:[],browser:[],cleanup:{verified:false},status:'RUNNING'};
+const users=[],organizations=[];const provenance={harnessSha256:createHash('sha256').update(await readFile(fileURLToPath(import.meta.url))).digest('hex'),buildId:process.argv.includes('--probe')?null:(await readFile(resolve(root,'apps/web/.next/BUILD_ID'),'utf8')).trim()};const proof={scope:'LOCAL_SYNTHETIC_NATIVE_AUTH_AND_ORGANIZATION_ACCEPTANCE',runId:id,roleBootstrap:'TEST_ONLY_NOT_GOVERNED_ROLE_ASSIGNMENT_PROOF',provenance,rpc:[],browser:[],cleanup:{verified:false},status:'RUNNING'};
 let browser;
 let stage="setup";let activePage;
 function check(value,code){if(!value)throw new Error(code)}
@@ -40,7 +40,7 @@ try{
   for(const locale of['fr','ar'])for(const width of[360,1280]){
    const context=await browser.newContext({viewport:{width,height:900},serviceWorkers:'block'});await context.addCookies([...bag.values()].map(c=>({name:c.name,value:c.value,url:config.baseUrl,httpOnly:false,secure:false,sameSite:'Lax'})));const page=await context.newPage();await context.route('**/*',async route=>{const h=route.request().headers();if(h['next-router-prefetch']!==undefined||/prefetch/.test(h.purpose??''))return route.abort();await route.continue()});
    activePage=page;stage=`open-${locale}-${width}`;const response=await page.goto(`${config.baseUrl}/${locale}/administration/entreprises`,{waitUntil:'networkidle',timeout:30000});check(response?.status()===200,'ADMIN_ORGANIZATIONS_HTTP_FAILED');check(!page.url().includes('/connexion'),'ADMIN_NATIVE_BROWSER_AUTH_FAILED');const search=page.locator('input[name="q"]').first();check(await search.count()===1,'ADMIN_SEARCH_INPUT_MISSING');stage=`search-${locale}-${width}`;await search.fill(displayName);await search.press('Enter');await page.waitForURL(url=>url.searchParams.get('q')===displayName);await page.waitForLoadState('networkidle');check(await page.locator('html').getAttribute('dir')===(locale==='ar'?'rtl':'ltr'),'ADMIN_DIRECTION_FAILED');
-   stage=`select-${locale}-${width}`;const link=page.locator(`a[href*="/administration/entreprises/${organizations[0]}"]`).first();check(await link.count()>0,'OWN_ORGANIZATION_SEARCH_RESULT_MISSING');await link.locator('xpath=ancestor::tr').locator('summary').click();await link.click();await page.waitForURL(`**/administration/entreprises/${organizations[0]}**`);check(await page.getByRole('heading',{level:1}).count()>0,'OWN_ORGANIZATION_SELECTION_FAILED');proof.browser.push({locale,width,realSearchAndSelection:true});await context.close();
+   stage=`select-${locale}-${width}`;const table=page.locator('.client-table-wrap').first();check((await table.boundingBox()).width<=width,'ADMIN_TABLE_VIEWPORT_NOT_BOUNDED');check(await table.getAttribute('tabindex')==='0','ADMIN_TABLE_NOT_KEYBOARD_REACHABLE');const link=page.locator(`a[href*="/administration/entreprises/${organizations[0]}"]`).first();check(await link.count()>0,'OWN_ORGANIZATION_SEARCH_RESULT_MISSING');await link.locator('xpath=ancestor::tr').locator('summary').click();await link.click();await page.waitForURL(`**/administration/entreprises/${organizations[0]}**`);await page.getByRole('heading',{level:1}).filter({hasText:displayName}).waitFor({state:'visible',timeout:15000});proof.browser.push({locale,width,realSearchAndSelection:true,ownOrganizationHeadingVerified:true});await context.close();
   }
  }
  proof.status='PASSED';

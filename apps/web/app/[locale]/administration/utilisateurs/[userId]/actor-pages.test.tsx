@@ -84,6 +84,28 @@ describe.each(["fr", "ar"] as const)("admin actor pages in %s", (locale) => {
     expect(mocks.rpc).toHaveBeenCalledWith("get_admin_role_editor_context_v1", { p_membership_id: membershipId });
   });
 
+  it("requires an explicit organization choice for multiple memberships before reading or rendering any editor", async () => {
+    mocks.load.mockResolvedValue({ status: "success", rows: [row(organizationB), row(organizationA), row(organizationA)], fiche: null, organizations: [] });
+    const html = renderToStaticMarkup(await RolesPage({ params: Promise.resolve({ locale, userId }), searchParams: Promise.resolve({}) }));
+    expect(html).toContain(locale === "ar" ? "اختر مؤسسة" : "Choisir une organisation");
+    expect(html).toContain(locale === "ar" ? 'dir="rtl"' : 'dir="ltr"');
+    for (const organizationId of [organizationA, organizationB]) {
+      const href = `/${locale}/administration/utilisateurs/${userId}/roles?organizationId=${organizationId}`;
+      expect(html.match(new RegExp(`href="${href.replaceAll("?", "\\?")}"`, "g"))).toHaveLength(1);
+    }
+    expect(html).not.toContain("<form");
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(mocks.notFound).not.toHaveBeenCalled();
+  });
+
+  it("continues with a single unambiguous organization when no selection is provided", async () => {
+    const html = renderToStaticMarkup(await RolesPage({ params: Promise.resolve({ locale, userId }), searchParams: Promise.resolve({}) }));
+    expect(html).toContain(`data-organization-target="${organizationA}"`);
+    expect(html).not.toContain("actor-organization-choice");
+    expect(mocks.rpc).toHaveBeenCalledWith("get_admin_role_editor_context_v1", { p_membership_id: membershipId });
+    expect(mocks.rpc).toHaveBeenCalledWith("get_admin_account_access_v1", { p_user_id: userId });
+  });
+
   it.each([UserPage, RolesPage])("reserves notFound for a successful empty lookup", async (page) => {
     mocks.load.mockResolvedValue({ status: "success", rows: [], fiche: null, organizations: [] });
     await expect(render(page, locale)).rejects.toThrow("ACTOR_NOT_FOUND");

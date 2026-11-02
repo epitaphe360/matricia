@@ -437,6 +437,8 @@
 
 .admin-org-layout {
   display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.9rem;
 }
 
@@ -1243,4 +1245,21 @@
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+}
+
+/* Keep menus in the scrollable table flow, including the final row on mobile. */
+.admin-workspace .client-table-wrap .admin-row-menu[open] > div {
+  position: static;
+}
+
+.admin-filters > label {
+  flex: 1 1 8rem;
+  min-width: min(8rem, 100%);
+  max-width: 100%;
+}
+
+@media (max-width: 959px) {
+  .admin-workspace .client-side-nav { flex-wrap: wrap; align-items: flex-start; }
+  .admin-workspace .admin-side-group { flex: 1 1 100%; min-width: 0; }
+  .admin-workspace .admin-side-sub { display: flex; flex-wrap: wrap; padding-inline: 0; }
 }
