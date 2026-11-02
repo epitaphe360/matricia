@@ -1,0 +1,77 @@
+{
+  "scope": "LOCAL_CLIENT_TECHNICAL_VALIDATION_NOT_COMMERCIAL_RELEASE",
+  "sourceCommit": "5c69a86b092e867c6a56fad9b3d479bd4334baf1",
+  "appTree": "c7092168ac05d4765220892029cf5f7eaf6c8e4b",
+  "node": "v24.19.0",
+  "sql": {
+    "migrations": 457,
+    "files": 33,
+    "assertions": 873,
+    "passed": true,
+    "externalDatabaseCertified": false
+  },
+  "logs": [
+    {
+      "name": "workspace-types",
+      "localPath": "/tmp/client-final-types.log",
+      "sha256": "00e2f4e8fd9cf44c009f3e99b2c57cf90efefdf93801f6caab3806bdd1f14fb1"
+    },
+    {
+      "name": "workspace-lint",
+      "localPath": "/tmp/client-final-lint.log",
+      "sha256": "12d7715d7037000ecc00eeeb3c1efe71ad1c7a2e64a00086f21804bf161b9ab8"
+    },
+    {
+      "name": "workspace-build",
+      "localPath": "/tmp/client-final-build-frozen.log",
+      "sha256": "20ad791f85cd9312987c5fc432b3f53ffc1175d8fce2c180055c6ce932b4b180"
+    },
+    {
+      "name": "web-excluding-pdf",
+      "localPath": "/tmp/client-integrated-web-final.log",
+      "sha256": "44e6115b945fc5d74d3044f8785a76d8477eaa323bcc6e29ff3a365b86e6f31d"
+    },
+    {
+      "name": "pdf-and-regression-batch",
+      "localPath": "/tmp/client-integration-regressions-final.log",
+      "sha256": "73b46dfb868c7258c79b0f49a208faeff805dadec33d41e056016e269057f74a"
+    },
+    {
+      "name": "new-context-and-financial-regressions",
+      "localPath": "/tmp/client-context-links-final.log",
+      "sha256": "6d93d0f1b7e5421c151844c767df52c012cec71e1909dfe4636ee596840204de"
+    },
+    {
+      "name": "calendar-label-regressions",
+      "localPath": "/tmp/client-calendar-label-final.log",
+      "sha256": "1915abb4b6b53a8a6fe4e68f1563029033ecd0f393d955d51dff40e67f924cf4"
+    },
+    {
+      "name": "packages",
+      "localPath": "/tmp/client-integrated-packages.log",
+      "sha256": "24fbfe667f4dddf9a73d63770e9d0a559af728f7c116f2011693284ff386721a"
+    },
+    {
+      "name": "worker",
+      "localPath": "/tmp/client-integrated-worker.log",
+      "sha256": "54ab3a410a968d0b36903171dec8d84d0eee9947b6bdaf7c051cd47e96fc2f76"
+    },
+    {
+      "name": "integration",
+      "localPath": "/tmp/client-integrated-integration.log",
+      "sha256": "a99407288cbd31d87e9f854f37827a3744d45d1f55c82ace78caf0fc29e9c777"
+    },
+    {
+      "name": "tooling",
+      "localPath": "/tmp/client-integrated-tooling.log",
+      "sha256": "149712bb8bf38d903a87d7f1fd4f9b79654106d6f7a913d33815af8c01a28073"
+    },
+    {
+      "name": "phase00",
+      "localPath": "/tmp/client-final-phase00.log",
+      "sha256": "ca212a8d754a9aabfe703acafd8bc5bcb2f643de017f8a7605a54079565ad26b"
+    }
+  ],
+  "productionDeployed": false,
+  "commercialReleaseCertified": false
+}
