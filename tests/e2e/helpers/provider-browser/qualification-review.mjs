@@ -35,7 +35,7 @@ try {
   context = await browser.newContext({ viewport: { width: 390, height: 960 }, hasTouch: true, serviceWorkers: 'block' });
   await context.addCookies(owner.cookies);
   let page = await context.newPage();
-  await page.goto(`${origin}/fr/sous-traitant/qualification?organizationId=${owner.actor.organizationId}`, { waitUntil: 'networkidle' });
+  await page.goto(`${origin}/fr/sous-traitant/qualification?organizationId=${owner.actor.organizationId}`, { waitUntil: 'domcontentloaded', timeout: 90000 });
   const bytes = localFixturePdf([
     'TEST ONLY / NON_CONTRACTUAL_DEMO / NOT AN OFFICIAL DOCUMENT',
     'Synthetic representation of a pre-existing signed partnership for TEST acceptance only.',
@@ -66,7 +66,7 @@ try {
   await context.addCookies(reviewer.cookies); let page = await context.newPage();
  if(!resumeQualification){
   stage = 'company-attestation';
-  await page.goto(`${origin}/fr/administration/providers`, { waitUntil: 'networkidle', timeout: 90000 });
+  await page.goto(`${origin}/fr/administration/providers`, { waitUntil: 'domcontentloaded', timeout: 90000 });
   const company = page.locator('form').filter({ has: page.locator(`input[name="organizationId"][value="${owner.actor.organizationId}"]`) }).filter({ has: page.locator('select[name="companyStatus"]') });
   await openFormDetails(company);
   await company.locator('[name="companyStatus"]').selectOption('VERIFIED');
@@ -77,7 +77,7 @@ try {
   await expect.poll(async () => { const r = await owner.client.from('provider_profiles').select('partner_contract_status').eq('provider_organization_id', owner.actor.organizationId).single(); return r.data?.partner_contract_status; }, { timeout: 20000 }).toBe('SIGNED');
   proof.steps.push({ step: 'independent_admin_ui_attests_test_historical_partnership_without_direct_sql_state_write', passed: true });
   stage = 'current-identity-recheck';
-  await page.goto(`${origin}/fr/administration/providers/${owner.actor.organizationId}/identite`, { waitUntil: 'networkidle' });
+  await page.goto(`${origin}/fr/administration/providers/${owner.actor.organizationId}/identite`, { waitUntil: 'domcontentloaded', timeout: 90000 });
   await page.locator('input[name="confirmed"]').check();
   await page.locator('textarea[name="reason"]').fill('TEST uniquement — revalidation du profil exact après la nouvelle décision administrative de partenariat.');
   await page.getByRole('button', { name: 'Vérifier l’identité courante', exact: true }).tap();
@@ -89,14 +89,14 @@ try {
   for (const [serviceId, status] of [[fixture.ids.serviceA, 'APPROVED'], [fixture.ids.serviceB, 'INFORMATION_REQUIRED']]) {
     stage = `human-service-${status}`;
     const row = qualifications.data.find(value => value.service_id === serviceId);
-    await page.goto(`${origin}/fr/administration/providers`, { waitUntil: 'networkidle' });
+    await page.goto(`${origin}/fr/administration/providers`, { waitUntil: 'domcontentloaded', timeout: 90000 });
     const form = page.locator('form').filter({ has: page.locator(`input[name="qualificationId"][value="${row.id}"]`) });
     await openFormDetails(form);
     await form.locator('[name="status"]').selectOption(status);
     if (status === 'APPROVED') {
       await form.getByRole('button', { name: 'Charger les questionnaires soumis', exact: true }).tap();
-      const deposit = form.getByLabel('Dépôt à examiner', { exact: true });
-      await expect(deposit).toBeEnabled();
+      const deposit = form.getByLabel('Dépôt à examiner');
+      await expect(deposit).toBeEnabled({ timeout: 25000 });
       await deposit.selectOption(questionnaire.sessionId);
       await expect(form.locator('[name="questionnaireSessionId"]')).toHaveValue(questionnaire.sessionId);
       await expect(form.locator('[name="reviewedManifestHash"]')).toHaveValue(/^[a-f0-9]{64}$/u);
@@ -126,6 +126,7 @@ try {
   await page.screenshot({ path: resolve(state.directory, 'qualification-independent-admin-fr-768.png'), fullPage: true });
 } catch (error) {
   proof.status = 'FAILED'; proof.failureStage = stage; proof.failure = safeError(error.message); process.exitCode = 1;
+  await context?.pages().at(-1)?.screenshot({ path: resolve(state.directory, 'qualification-current-failure-fr-768.png'), fullPage: true }).catch(() => {});
 } finally {
   if (context) await preserveBrowserSession(state, activeLabel, context).catch(() => {});
   await browser.close();

@@ -1,12 +1,12 @@
 # Independent Provider browser acceptance
 
-Status: **partially executed on e929; business completion blocked on a reproduced qualification reviewer defect**. Initial harness base was integration commit
+Status: **partially executed on e929 and candidate 8941517; native qualification now passed, business continuation in progress**. Initial harness base was integration commit
 `b0be5966c67923cdeb36e049e280ad0f08e3573b`. Immutable first-candidate receipts are in
 `docs/provider-completion/evidence/browser/candidate-one/`: 18 native entry steps,
 40 FR/AR responsive pages, 64 axe scans with zero violations but unresolved contrast
 incompletes, 8 menu cases and 20 real-role security checks. These are partial
 receipts, not full Provider acceptance. Quotes, contracts, delivery, finance and
-messaging remain unexecuted until their native prerequisites pass. The
+messaging await their own native continuation receipts. The
 orchestrator must signal each new candidate before schema upgrade or rebuild.
 
 Run from `/workspace/provider-browser` with Node 24, installed workspace
@@ -86,7 +86,7 @@ registry, official legal identity or production antivirus is certified.
 
 ## Remaining fixture prerequisites and business acceptance
 
-`seed-catalogue.mjs` extracts only the reviewed published catalogue/questionnaire blocks from0338/0345 and maps all IDs to the native TEST cohort. Authentication, Provider profile/qualification, ledgers and guard changes are rejected from that extraction. This is historical TEST reference data, with source/SQL hashes; its governance is not claimed as a native publication. `questionnaire-browser.mjs` then requests two services and declares capacity/region/modes/radius through the real UI, starts the Provider questionnaire, tests conditional requirements and server refusal, offline/reconnect, RTL/free text, exact draft resume and final read-only submission. These two scripts have passed on e929; their receipts do not certify independent human qualification, which remains blocked by the documented reviewer RLS defect.
+`seed-catalogue.mjs` extracts only the reviewed published catalogue/questionnaire blocks from0338/0345 and maps all IDs to the native TEST cohort. Authentication, Provider profile/qualification, ledgers and guard changes are rejected from that extraction. This is historical TEST reference data, with source/SQL hashes; its governance is not claimed as a native publication. `questionnaire-browser.mjs` then requests two services and declares capacity/region/modes/radius through the real UI, starts the Provider questionnaire, tests conditional requirements and server refusal, offline/reconnect, RTL/free text, exact draft resume and final read-only submission. These two scripts have passed on e929; their receipts do not certify independent human qualification. That reviewer RLS defect was reproduced on e929 and its purpose-bound projection plus actual UI approval passed on candidate 8941517.
 
 The seven acceptance groups and every required assertion are enumerated in
 `plan.mjs`. Entry success alone does not certify questionnaire, quote, contract,
@@ -173,3 +173,19 @@ exact newly republished version rather than silently retaining the first version
 These continuation scripts are prepared; only their own successful native receipts
 can establish that they executed. Never rerun them over a failed native checkpoint
 without investigating the stored state and the exact failed operation.
+
+Candidate `8941517a6beacfac1fd0b785035ce9ec15d877dc` has a complete production-mode
+webpack build including TypeScript. Its real AAL2 reviewer explicitly selected
+the original submitted questionnaire, reviewed its two frozen questions and
+answers, approved service A and requested further information for service B.
+Owner self-approval remains denied. The general `questionnaire_sessions` SELECT
+still returns no other actor's rows; only the purpose-bound reviewer projection
+is available. See `candidate-two/qualification-reviewed.json` and the captures.
+
+`matrix.mjs --current-business-state --candidate=<sha>` requires successful
+current-candidate receipts for quotes, revisions, contract/mission, delivery and
+messaging, and rereads the real canonical dossier IDs under Owner RLS. This mode
+adds their detail pages, all Provider lists and planning at every FR/AR width. It
+explicitly excludes a closed invoice detail if no real financial closure can yet
+exist because of the mandatory dispute period. It never sets `FIXTURE_READY` or
+certifies that missing invoice flow.
