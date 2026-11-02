@@ -53,6 +53,15 @@ function answerLabel(locale: Locale, id: QuestionId, answer: Answer | undefined)
   return labels[choice] ?? copy.answerUnavailable;
 }
 
+function observationLabel(locale: Locale, priority: PriorityKey, answers: Stored["answers"]): string {
+  const copy = getPublicJourneyCopy(locale).diagnostic;
+  if (priority === "verify") return copy.priorities.verify[1];
+  const questions = { organization: "priority_tracking", sales: "sales_tracking", security: "backup_restore" } as const;
+  const id = questions[priority];
+  const value = answers[id] === undefined ? copy.answerNotProvided : answerLabel(locale, id, answers[id]);
+  return `${copy.questionLabels[id]} : ${value}`;
+}
+
 function PageChrome({ locale, children, footer = true }: { locale: Locale; children: ReactNode; footer?: boolean }) {
   const copy = getPublicJourneyCopy(locale).diagnostic;
   return (
@@ -327,7 +336,7 @@ export function ResultView({
                       <h2 className={`${styles.priorityTitle} ${styles.priorityTitleDesktop}`}>{item[0]}</h2>
                       <div className={styles.priorityMeta}>
                         <p className={styles.priorityRow}><Sparkles className={styles.priorityRowIcon} size={15} aria-hidden="true" /><span><strong>{copy.typeLabel} :</strong> {copy.typeLabels[key]}</span></p>
-                        <div className={`${styles.priorityBlock} ${styles.priorityBlockMint}`}><CheckCircle2 size={16} aria-hidden="true" /><div><strong>{copy.constat}</strong><p>{item[1]}</p></div></div>
+                        <div className={`${styles.priorityBlock} ${styles.priorityBlockMint}`}><CheckCircle2 size={16} aria-hidden="true" /><div><strong>{copy.constat}</strong><p>{observationLabel(locale, key, answers)}</p></div></div>
                         <div className={`${styles.priorityBlock} ${styles.priorityBlockViolet}`}><Lightbulb size={16} aria-hidden="true" /><div><strong>{copy.whyItMatters}</strong><p>{item[2]}</p></div></div>
                         <div className={`${styles.priorityBlock} ${styles.priorityBlockCoral}`}><Target size={16} aria-hidden="true" /><div><strong>{copy.recommendedAction}</strong><p>{item[3]}</p></div></div>
                       </div>
@@ -442,7 +451,7 @@ export function DetailView({
               <Lightbulb size={22} color="#d97706" aria-hidden="true" />
               <div>
                 <h2>{copy.detailWhyTitle}</h2>
-                <p><strong>{copy.constat} : </strong>{item[1]}</p>
+                <p><strong>{copy.constat} : </strong>{observationLabel(locale, priority, answers)}</p>
                 <p>{item[2]}</p>
                 <p><strong>{copy.recommendedAction} : </strong>{item[3]}</p>
               </div>

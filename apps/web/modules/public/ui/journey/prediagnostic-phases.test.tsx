@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { getPublicJourneyCopy } from "@/modules/public/data/journey/copy";
 import { diagnosticQuestionIds } from "@/modules/public/data/journey/diagnostic-contract";
-import { DetailView, HonestStatesView, RecapView, RecoveryStatesView } from "./prediagnostic-phases";
+import { DetailView, HonestStatesView, RecapView, RecoveryStatesView, ResultView } from "./prediagnostic-phases";
 
 describe("états publics du prédiagnostic", () => {
   it("n’affiche qu’un constat réel quand aucune priorité n’est détectée", () => {
@@ -84,5 +84,25 @@ describe.each(["fr", "ar"] as const)("diagnostic answer trace in %s", (locale) =
       expect(html).toContain(renderToStaticMarkup(<>{step.owner}</>));
       expect(html).toContain(renderToStaticMarkup(<>{step.done}</>));
     }
+  });
+
+  it.each(["unknown", undefined])("reports a %s sales answer as declared instead of asserting non-centralized customer data", (sales_tracking) => {
+    const source = { ...answers, goals: ["grow_sales"], sales_tracking };
+    const copy = getPublicJourneyCopy(locale).diagnostic;
+    const detail = renderToStaticMarkup(<DetailView locale={locale} priority="sales" answers={source} onBack={() => undefined} />);
+    const result = renderToStaticMarkup(<ResultView locale={locale} answers={source} storageAvailable onEdit={() => undefined} onDetail={() => undefined} onSave={() => undefined} onErase={() => undefined} />);
+    const declaration = `${copy.questionLabels.sales_tracking} : ${sales_tracking === "unknown" ? copy.unknown : copy.answerNotProvided}`;
+    expect(detail).toContain(declaration);
+    expect(result).toContain(declaration);
+    expect(detail + result).not.toContain(locale === "fr" ? "informations clients ne sont pas centralisées" : "معلومات الزبائن غير ممركزة");
+  });
+
+  it.each(["no", "old"])("describes the declared %s restoration test without inferring missing infrastructure", (backup_restore) => {
+    const source = { ...answers, goals: ["secure_activity"], backup_restore };
+    const html = renderToStaticMarkup(<DetailView locale={locale} priority="security" answers={source} onBack={() => undefined} />);
+    const copy = getPublicJourneyCopy(locale).diagnostic;
+    const value = copy.questions[5]![2][backup_restore === "no" ? 2 : 1];
+    expect(html).toContain(`${copy.questionLabels.backup_restore} : ${value}`);
+    expect(html).not.toContain(locale === "fr" ? "outils essentiels ne sont pas toujours doublés" : "أدوات أساسية ليست دائماً مزدوجة");
   });
 });
