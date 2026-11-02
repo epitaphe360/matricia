@@ -39,10 +39,11 @@ create or replace function private.execute_approved_client_referral_reward_v1()r
 language plpgsql security definer set search_path=pg_catalog as $$
 declare e public.reward_source_events%rowtype;payload jsonb;h text;
 begin
- if new.decision<>'APPROVED'then return new;end if;
  select *into e from public.reward_source_events where id=new.source_event_id and organization_id=new.organization_id
  and source_reference_type='REFERRAL_CONVERSION'and audience_type in('REFERRED_CLIENT','CLIENT_ORGANIZATION');
  if e.id is null then return new;end if;
+ perform private.assert_client_referral_reward_staff_v1(false);
+ if new.decision<>'APPROVED'then return new;end if;
  h:=private.canonical_request_hash(jsonb_build_object('approval_id',new.id,'organization_id',new.organization_id,'source_event_id',e.id,'rule_version_id',new.rule_version_id,'decided_by',new.decided_by,'evidence_hash',e.evidence_hash));
  insert into public.client_referral_reward_execution_requests_v1(approval_id,organization_id,source_event_id,rule_version_id,requested_by,requested_at,source_hash)
  values(new.id,new.organization_id,e.id,new.rule_version_id,new.decided_by,new.decided_at,h);
@@ -67,7 +68,7 @@ language plpgsql volatile security definer set search_path=pg_catalog,private as
 declare q public.client_referral_reward_execution_requests_v1%rowtype;a public.reward_award_approvals%rowtype;
  e public.reward_source_events%rowtype;r public.reward_rule_versions%rowtype;c public.referral_conversions%rowtype;
  g public.reward_grants%rowtype;completed public.client_referral_reward_execution_facts_v1%rowtype;
- wallet_id uuid;result jsonb;anti_abuse text;actor uuid:=auth.uid();reconciled boolean:=false;
+ selected_wallet_id uuid;result jsonb;anti_abuse text;actor uuid:=auth.uid();reconciled boolean:=false;
 begin
  perform private.assert_client_referral_reward_staff_v1(true);
  if p_approval_id is null or p_correlation_id is null or length(coalesce(p_idempotency_key,''))not between 8 and 160 then raise exception'INVALID_REFERRAL_REWARD_EXECUTION'using errcode='22023';end if;
@@ -92,13 +93,13 @@ begin
   if c.id is null or not((e.audience_type='CLIENT_ORGANIZATION'and c.source_organization_id=q.organization_id)or(e.audience_type='REFERRED_CLIENT'and c.target_organization_id=q.organization_id))then raise exception'ACTIVE_REFERRAL_REWARD_SOURCE_REQUIRED'using errcode='23514';end if;
   if r.id is null or r.trigger_event<>e.event_type or r.audience_type<>e.audience_type or not(e.eligibility_snapshot@>r.eligibility_rule)then raise exception'ACTIVE_APPROVED_REFERRAL_REWARD_RULE_REQUIRED'using errcode='55000';end if;
   perform public.ensure_client_credit_wallet(q.organization_id,'referral-execution-wallet:'||q.organization_id::text,p_correlation_id);
-  select w.id into wallet_id from public.credit_wallets w where w.organization_id=q.organization_id and w.wallet_type='CLIENT'for update;
-  if wallet_id is null then raise exception'CLIENT_REWARD_WALLET_REQUIRED'using errcode='55000';end if;
+  select w.id into selected_wallet_id from public.credit_wallets w where w.organization_id=q.organization_id and w.wallet_type='CLIENT'for update;
+  if selected_wallet_id is null then raise exception'CLIENT_REWARD_WALLET_REQUIRED'using errcode='55000';end if;
   perform pg_advisory_xact_lock(hashtextextended('reward-award:'||r.rule_code,0));
   perform private.assert_client_referral_reward_staff_v1(true);
   anti_abuse:=private.canonical_request_hash(jsonb_build_object('source',e.source_reference_type,'id',e.source_reference_id,'recipient',q.organization_id));
-  perform public.award_reward(q.organization_id,wallet_id,q.rule_version_id,e.source_reference_type,e.source_reference_id,anti_abuse,jsonb_build_object('source_event_id',e.id),q.approval_id::text,'referral-execution-award:'||q.approval_id::text,p_correlation_id);
-  select granted.*into g from public.reward_grants granted where granted.organization_id=q.organization_id and granted.rule_version_id=q.rule_version_id and granted.wallet_id=execute_client_referral_reward_v1.wallet_id
+  perform public.award_reward(q.organization_id,selected_wallet_id,q.rule_version_id,e.source_reference_type,e.source_reference_id,anti_abuse,jsonb_build_object('source_event_id',e.id),q.approval_id::text,'referral-execution-award:'||q.approval_id::text,p_correlation_id);
+  select granted.*into g from public.reward_grants granted where granted.organization_id=q.organization_id and granted.rule_version_id=q.rule_version_id and granted.wallet_id=selected_wallet_id
   and granted.approval_reference=q.approval_id::text and granted.trigger_reference_type=e.source_reference_type and granted.trigger_reference_id=e.source_reference_id;
   if g.id is null then raise exception'REFERRAL_REWARD_GRANT_NOT_CONFIRMED'using errcode='23514';end if;
  end if;
