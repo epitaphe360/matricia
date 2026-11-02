@@ -122,6 +122,8 @@ select set_config('request.jwt.claim.sub','',true);select set_config('request.jw
 select throws_ok($$select public.register_subscription_payment_intent_v2((select(v->>'preparation_id')::uuid from u331 where k='preparation'),'SANDBOX','SYNTHETIC-UPGRADE-ORDER-0332',24690,'EUR')$$,'23514','PAYMENT_PREPARATION_BINDING_MISMATCH','full target amount cannot replace accepted differential');
 insert into u331 values('intent',public.register_subscription_payment_intent_v2((select(v->>'preparation_id')::uuid from u331 where k='preparation'),'SANDBOX','SYNTHETIC-UPGRADE-ORDER-0332',(select(v->>'amount_minor')::bigint from u331 where k='quote'),'EUR'));
 select set_config('request.jwt.claim.sub','a2450000-0000-4000-8000-000000000001',true);select set_config('request.jwt.claims','{"sub":"a2450000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);
+select public.withdraw_subscription_upgrade_policy_v1((select(v->>'policy_id')::uuid from u331 where k='policy'),'TEST ONLY stop new offers, preserve accepted checkout');
+select throws_ok($$select public.create_client_subscription_upgrade_quote_v1('b2450000-0000-4000-8000-000000000001',(select(v->>'policy_id')::uuid from u331 where k='policy'),'upgrade332-withdrawn-new')$$,'55000','APPROVED_UPGRADE_POLICY_REQUIRED','withdrawal forbids a fresh quote');
 select lives_ok($$select public.prepare_subscription_payment_capture_v2((select(v->>'payment_intent_id')::uuid from u331 where k='intent'),'SANDBOX')$$,'native capture is bound to accepted differential');
 select set_config('request.jwt.claim.sub','',true);select set_config('request.jwt.claims','{"role":"service_role"}',true);
 insert into u331 values('time',jsonb_build_object('paid_at',clock_timestamp()));

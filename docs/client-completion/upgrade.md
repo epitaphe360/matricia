@@ -23,8 +23,8 @@ Le devis fige la période d’origine, la date de calcul, les prix source/cible,
 
 La politique implémentée `NEXT_FULL_CYCLE_ONLY` conserve les crédits déjà acquis et tous les mois futurs d’une année prépayée. Le complément ne délivre aucune nouvelle dotation complète en crédits ni aucune Box complète de la version cible. Les nouveaux crédits/Box démarrent au prochain renouvellement intégral ; les droits Box originaux sont conservés par le résolveur de lignée, intégré au domaine Box dans le lot suivant. Le worker automatique et les termes de dotation manuelle appliquent la même restriction. Ces effets sont expliqués avant consentement en FR/AR.
 
-- `0332_remaining_period_subscription_upgrade.test.sql` : **25 assertions réussies**, calcul exact et arrondis, non-publication par défaut, validation indépendante, préparation différentielle, refus de montant différent, capture, fin conservée, financement composé, droits cible, source Box d’origine, crédits existants et rejeu.
-- `0334_annual_remaining_period_subscription_upgrade.test.sql` : **26 assertions réussies**, même paiement différentiel annuel et conservation des onze futurs mois de crédits déjà payés.
+- `0332_remaining_period_subscription_upgrade.test.sql` : **26 assertions réussies**, calcul exact et arrondis, non-publication par défaut, validation indépendante, préparation différentielle, refus de montant différent, capture, fin conservée, financement composé, droits cible, source Box d’origine, crédits existants et rejeu. Le retrait d’une règle interdit les nouveaux devis mais conserve le contrat de la commande déjà acceptée, encore soumise aux contrôles de source et de sécurité.
+- `0334_annual_remaining_period_subscription_upgrade.test.sql` : **27 assertions réussies**, même paiement différentiel annuel et conservation des onze futurs mois de crédits déjà payés.
 - `0331` reste requis après `31100` pour prouver que le mode intégral conserve son propre financement et ses dotations.
 
 ## Conditions de clôture externe
