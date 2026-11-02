@@ -60,7 +60,7 @@ export async function loadConsultationSharedDocuments(invitationId: string): Pro
   return sharedDocumentsFromRows(result.data);
 }
 
-export async function loadProviderQuotes(requestedOrganizationId?: string, options: { page?: number; invitationId?: string; quoteId?: string; query?:string; mode?:"quotes"|"consultations"; tab?:string } = {}): Promise<{ status: "success"; dashboard: ProviderQuoteDashboard } | Failure> {
+export async function loadProviderQuotes(requestedOrganizationId?: string, options: { page?: number; invitationId?: string; quoteId?: string; rfqId?:string; query?:string; mode?:"quotes"|"consultations"; tab?:string } = {}): Promise<{ status: "success"; dashboard: ProviderQuoteDashboard } | Failure> {
   const client = await getSupabaseServerClient();
   const { data: auth, error: authError } = await client.auth.getUser();
   const authFailure = classifyAuthReadFailure(authError);
@@ -84,7 +84,17 @@ export async function loadProviderQuotes(requestedOrganizationId?: string, optio
   const canManage = selected.organization_member_roles.some((role) => ["PROVIDER_OWNER", "PROVIDER_MANAGER", "PROVIDER_SALES"].includes(role.role_code));
   const page = Number.isSafeInteger(options.page) && options.page! > 0 ? options.page! : 1;
   const pageSize = 25;
+  if([options.invitationId,options.quoteId,options.rfqId].filter(Boolean).length>1)return{status:"error",reason:"INVALID_RESPONSE"};
   let requestedInvitationId = options.invitationId;
+  if(options.rfqId) {
+    if(!id.safeParse(options.rfqId).success)return{status:"error",reason:"INVALID_RESPONSE"};
+    const direct=await client.from("rfq_providers").select("id").eq("rfq_id",options.rfqId).eq("provider_organization_id",organizationId).maybeSingle();
+    if(direct.error)return{status:"error",reason:"QUERY_FAILED"};
+    if(direct.data===null)return{status:"success",dashboard:{organizations:availableOrganizations,organizationId,organizationName:selected.organizations.display_name,canManage,taxRules:[],invitations:[],pagination:{page:1,pageSize,total:0}}};
+    const parsed=z.object({id}).safeParse(direct.data);
+    if(!parsed.success)return{status:"error",reason:"INVALID_RESPONSE"};
+    requestedInvitationId=parsed.data.id;
+  }
   if (options.quoteId) {
     if (!id.safeParse(options.quoteId).success) return { status: "error", reason: "INVALID_RESPONSE" };
     const direct = await client.from("quotes").select("rfq_provider_id").eq("id", options.quoteId).eq("provider_organization_id", organizationId).maybeSingle();
