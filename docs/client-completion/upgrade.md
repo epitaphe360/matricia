@@ -8,9 +8,9 @@ Les capacités transactionnelles de préparation restent privées à PostgreSQL.
 
 ## Vérifications réalisées
 
-- Migrations `20261102031000` et `20261102031100` appliquées dans la seule base jetable `client_upgrade_verify_20261102`, copie locale du candidat isolé. Aucune migration sur le Supabase partagé/distant.
+- Migrations `20261102031000`, `20261102031100` et `20261102031120` appliquées dans la seule base jetable `client_upgrade_verify_20261102`, copie locale du candidat isolé. Aucune migration sur le Supabase partagé/distant.
 - `0331_governed_immediate_subscription_upgrade.test.sql` : **29 assertions réussies**. Le scénario crée un paiement source canonique, publie une règle par deux acteurs, refuse AAL1, l’auto-approbation, l’absence de consentement et un hash divergent ; prépare un intent SANDBOX, exécute la capture SQL de test, applique le paiement vérifié, puis vérifie le rejeu et les droits. Les deux allocations de crédits réellement payées (10 +20) sont produites par le worker natif sans doublon.
-- Tests unitaires ciblés (API, devis de changement, formatage monétaire) : **20 réussis**. Cas JPY/KWD, négatif et montant supérieur à `2^53`, refus avant PSP et cible prise dans la réponse serveur.
+- Tests unitaires ciblés (API, devis de changement, formatage monétaire) : **21 réussis**. Cas JPY/KWD, négatif et montant supérieur à `2^53`, refus avant PSP et cible prise dans la réponse serveur.
 - Lint ciblé exécuté ; le build/typecheck consolidé appartient à l’intégrateur.
 
 Cette preuve SQL utilise des identités synthétiques, des rôles/sessions SQL de laboratoire, le port de paiement DEV/SANDBOX et une transaction annulée. Elle ne certifie ni un webhook reçu sur un PSP externe, ni la délivrabilité, ni une recette navigateur de paiement réel.
@@ -23,9 +23,13 @@ Le devis fige la période d’origine, la date de calcul, les prix source/cible,
 
 La politique implémentée `NEXT_FULL_CYCLE_ONLY` conserve les crédits déjà acquis et tous les mois futurs d’une année prépayée. Le complément ne délivre aucune nouvelle dotation complète en crédits ni aucune Box complète de la version cible. Les nouveaux crédits/Box démarrent au prochain renouvellement intégral ; les droits Box originaux sont conservés par le résolveur de lignée, intégré au domaine Box dans le lot suivant. Le worker automatique et les termes de dotation manuelle appliquent la même restriction. Ces effets sont expliqués avant consentement en FR/AR.
 
-- `0332_remaining_period_subscription_upgrade.test.sql` : **26 assertions réussies**, calcul exact et arrondis, non-publication par défaut, validation indépendante, préparation différentielle, refus de montant différent, capture, fin conservée, financement composé, droits cible, source Box d’origine, crédits existants et rejeu. Le retrait d’une règle interdit les nouveaux devis mais conserve le contrat de la commande déjà acceptée, encore soumise aux contrôles de source et de sécurité.
+- `0332_remaining_period_subscription_upgrade.test.sql` : **29 assertions réussies**, calcul exact et arrondis, non-publication par défaut, validation indépendante, préparation différentielle, refus de montant différent, capture, fin conservée, financement composé, droits cible, source Box d’origine, crédits existants et rejeu. Le retrait d’une règle interdit les nouveaux devis mais conserve le contrat de la commande déjà acceptée, encore soumise aux contrôles de source et de sécurité.
 - `0334_annual_remaining_period_subscription_upgrade.test.sql` : **27 assertions réussies**, même paiement différentiel annuel et conservation des onze futurs mois de crédits déjà payés.
 - `0331` reste requis après `31100` pour prouver que le mode intégral conserve son propre financement et ses dotations.
+
+Les transitions de proposition, décision indépendante, retrait, devis et acceptation disposent chacune d’un événement Outbox durable corrélé à leur source immuable. Un rejeu ne génère pas une nouvelle acceptation. Les événements observent ces faits déjà validés ; ils n’effectuent aucun versement ni changement de droits.
+
+`0335_subscription_upgrade_nonpayable_option.test.sql` : **6 assertions réussies**. Une différence positive trop faible, arrondie à zéro, est distinguée d’une panne et d’une règle non approuvée (`NO_PAYABLE_UPGRADE`). Le devis direct reste refusé, sans nouveau droit ni faux succès.
 
 ## Conditions de clôture externe
 
