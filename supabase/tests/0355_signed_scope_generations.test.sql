@@ -445,16 +445,59 @@ select throws_ok($$select public.get_provider_delivery_command_receipt_v1(curren
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000006',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000006","role":"authenticated","aal":"aal2"}',true);
 select throws_ok($$select public.submit_delivery(current_setting('test.provider348_deliverable')::uuid,'First test report','[]','[]','provider348-required-proof')$$,'22023','DELIVERY_PROOF_REQUIRED','mandatory proof is still enforced');
 reset role;
--- This separate test deliverable has optional evidence, not an AV bypass.
-update public.deliverables set proof_required=false where id=current_setting('test.provider348_deliverable')::uuid;
+-- SQL-only Storage metadata fixture, not a physical upload or external AV
+-- certification. The exact TEST content is 20 bytes: %PDF-TEST-SCOPE-0355.
+-- Delivery has no begin-upload RPC: the application allocates an upload UUID,
+-- then Storage RLS admits actor/deliverable/upload/file and submit_delivery binds
+-- it. Both helpers are invoker functions, with the actor/scanner roles explicit.
+create function pg_temp.upload_scope355(p_deliverable uuid,p_upload uuid,p_name text)returns jsonb language plpgsql as $$
+declare payload bytea:=decode('255044462d544553542d53434f50452d30333535','hex');path text;hash text;
+begin
+ if octet_length(payload)<>20 then raise exception'TEST_SCOPE_CONTENT_SIZE_MISMATCH';end if;
+ path:=auth.uid()::text||'/'||p_deliverable::text||'/'||p_upload::text||'/'||p_name;
+ hash:=encode(pg_catalog.sha256(payload),'hex');
+ insert into storage.objects(bucket_id,name,owner_id,metadata)values('delivery-proofs',path,auth.uid()::text,jsonb_build_object('mimetype','application/pdf','size',octet_length(payload)));
+ return jsonb_build_array(jsonb_build_object('type','DOCUMENT','storage_path',path,'url',null,'evidence_hash',hash,'metadata',jsonb_build_object('original_file_name',p_name,'mime_type','application/pdf','size_bytes',octet_length(payload),'upload_binding_version',1)));
+end$$;
+create function pg_temp.scan_scope355(p_path text,p_key text)returns jsonb language plpgsql as $$
+declare claim record;result jsonb;matched integer:=0;hash text:=encode(pg_catalog.sha256(decode('255044462d544553542d53434f50452d30333535','hex')),'hex');
+begin
+ -- The native worker takes a batch lease. Only this test delivery is completed;
+ -- the separate lost-response PENDING proof deliberately stays quarantined.
+ for claim in select c.*from public.claim_delivery_proof_scan_jobs('fd355000-0000-4000-8000-000000000020',100,300)c where c.storage_path=p_path loop
+  matched:=matched+1;
+  result:=public.complete_delivery_proof_scan_job(claim.proof_id,claim.lease_token,claim.worker_id,claim.row_version,'CLEAN','SQL_TEST_SCANNER','TEST_METADATA_ONLY_20_BYTES',hash,p_key);
+ end loop;
+ if matched<>1 then raise exception'TEST_SCOPE_NATIVE_SCAN_LEASE_MISSING';end if;
+ return result;
+end$$;
 set local role authenticated;
-insert into accept338 values('delivery348-v1',public.submit_delivery(current_setting('test.provider348_deliverable')::uuid,'First optional-evidence test report','[]','[]','provider348-delivery-v1'));
+insert into accept338 values('scope355-v1-proofs',pg_temp.upload_scope355(current_setting('test.provider348_deliverable')::uuid,'fd355000-0000-4000-8000-000000000031','test-scope-original-v1.pdf'));
+select set_config('test.scope355_scan_path',(select v#>>'{0,storage_path}'from accept338 where k='scope355-v1-proofs'),true);
+insert into accept338 values('delivery348-v1',public.submit_delivery(current_setting('test.provider348_deliverable')::uuid,'First evidence-bound test report','[]',(select v from accept338 where k='scope355-v1-proofs'),'provider348-delivery-v1'));
 select is((select count(*)::integer from public.acceptance_checklists where deliverable_id=current_setting('test.provider348_deliverable')::uuid and delivery_version=1 and status='PENDING'),1,'first delivery receives its own pending criterion');
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000001',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);
+select throws_ok($$select public.accept_delivery_version_v1(current_setting('test.provider348_deliverable')::uuid,1,'[{"criterion_key":"VERIFY","status":"NONCOMPLIANT","comment":"Test pending evidence cannot be decided"}]','scope355-pending-original-v1')$$,'55000','CLEAN_DELIVERY_PROOF_SCAN_REQUIRED','Client cannot decide original V1 while its mandatory proof is quarantined');
+reset role;
+select set_config('request.jwt.claim.sub','',true);select set_config('request.jwt.claims','{"role":"service_role"}',true);set local role service_role;
+select pg_temp.scan_scope355(current_setting('test.scope355_scan_path'),'scope355-original-v1-scan');
+reset role;
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000001',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
+select ok(exists(select 1 from public.delivery_proofs where storage_path=current_setting('test.scope355_scan_path')and scan_status='CLEAN'and current_scan_result_id is not null),'native TEST scan is bound to this delivery proof before a Client decision');
+select ok((select proof_required from public.deliverables where id=current_setting('test.provider348_deliverable')::uuid),'original signed obligation keeps its mandatory proof requirement');
 select throws_ok($$select public.accept_delivery_version_v1(current_setting('test.provider348_deliverable')::uuid,1,'[{"criterion_key":"VERIFY","status":"NONCOMPLIANT"}]','provider348-missing-rejection-reason')$$,'22023','ACCEPTANCE_REJECTION_REASON_REQUIRED','criterion rejection needs an actionable reason');
 select lives_ok($$select public.accept_delivery_version_v1(current_setting('test.provider348_deliverable')::uuid,1,'[{"criterion_key":"VERIFY","status":"NONCOMPLIANT","comment":"Test missing result"}]','provider348-reject-v1')$$,'Client rejects V1 against its own criterion');
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000006',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000006","role":"authenticated","aal":"aal2"}',true);
-insert into accept338 values('delivery348-v2',public.submit_delivery(current_setting('test.provider348_deliverable')::uuid,'Second corrected optional-evidence test report','[]','[]','provider348-delivery-v2'));
+insert into accept338 values('scope355-v2-proofs',pg_temp.upload_scope355(current_setting('test.provider348_deliverable')::uuid,'fd355000-0000-4000-8000-000000000032','test-scope-original-v2.pdf'));
+select set_config('test.scope355_scan_path',(select v#>>'{0,storage_path}'from accept338 where k='scope355-v2-proofs'),true);
+insert into accept338 values('delivery348-v2',public.submit_delivery(current_setting('test.provider348_deliverable')::uuid,'Second corrected evidence-bound test report','[]',(select v from accept338 where k='scope355-v2-proofs'),'provider348-delivery-v2'));
+reset role;
+select set_config('request.jwt.claim.sub','',true);select set_config('request.jwt.claims','{"role":"service_role"}',true);set local role service_role;
+select pg_temp.scan_scope355(current_setting('test.scope355_scan_path'),'scope355-original-v2-scan');
+reset role;
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000006',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000006","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
+select ok(exists(select 1 from public.delivery_proofs where storage_path=current_setting('test.scope355_scan_path')and scan_status='CLEAN'and current_scan_result_id is not null),'native TEST scan is bound to this delivery proof before a Client decision');
+
 select is((select count(*)::integer from public.acceptance_checklists where deliverable_id=current_setting('test.provider348_deliverable')::uuid and delivery_version=2 and status='PENDING'),1,'V2 receives fresh pending receipt without overwriting V1');
 select is((select comment from public.acceptance_checklists where deliverable_id=current_setting('test.provider348_deliverable')::uuid and delivery_version=1),'Test missing result','Provider reads original rejection comments');
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000001',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);
@@ -567,10 +610,17 @@ reset role;
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000002',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
 insert into accept338 select'scope355-remove',public.create_contract_amendment(c.id,'Test legacy untyped final withdrawal','{"description":"Remove final signed report without fictitious delivery"}',0,0,'[{"operation":"REMOVE","item_key":"SIGNED_REPORT"}]',v.commission_rule_snapshot,'scope355-remove-legacy')from public.contracts c join public.contract_versions v on v.contract_id=c.id and v.version=c.current_version where c.id='fd210000-0000-4000-8000-000000000001';
 reset role;
--- Optional evidence is a declared TEST fixture, never a fabricated clean scan.
-update public.deliverables set proof_required=false where id=current_setting('test.scope355_replacement')::uuid;
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000006',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000006","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
-select lives_ok($$select public.submit_delivery(current_setting('test.scope355_replacement')::uuid,'Actual replacement test delivery with optional evidence','[]','[]','scope355-replacement-delivery')$$,'assigned Provider submits actual new generation');
+insert into accept338 values('scope355-replacement-proofs',pg_temp.upload_scope355(current_setting('test.scope355_replacement')::uuid,'fd355000-0000-4000-8000-000000000033','test-scope-replacement.pdf'));
+select set_config('test.scope355_scan_path',(select v#>>'{0,storage_path}'from accept338 where k='scope355-replacement-proofs'),true);
+select lives_ok($$select public.submit_delivery(current_setting('test.scope355_replacement')::uuid,'Actual replacement test delivery with bound mandatory proof','[]',(select v from accept338 where k='scope355-replacement-proofs'),'scope355-replacement-delivery')$$,'assigned Provider submits actual new generation with its mandatory proof');
+reset role;
+select set_config('request.jwt.claim.sub','',true);select set_config('request.jwt.claims','{"role":"service_role"}',true);set local role service_role;
+select pg_temp.scan_scope355(current_setting('test.scope355_scan_path'),'scope355-replacement-scan');
+reset role;
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000006',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000006","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
+select ok(exists(select 1 from public.delivery_proofs where storage_path=current_setting('test.scope355_scan_path')and scan_status='CLEAN'and current_scan_result_id is not null),'native TEST scan is bound to this delivery proof before a Client decision');
+select ok((select proof_required from public.deliverables where id=current_setting('test.scope355_replacement')::uuid),'replacement signed generation keeps its mandatory proof requirement');
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000001',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);
 select lives_ok($$select public.accept_delivery_version_v1(current_setting('test.scope355_replacement')::uuid,1,'[{"criterion_key":"REPLACED_REVIEW","status":"COMPLIANT","comment":"New signed replacement test result verified"}]','scope355-replacement-accept')$$,'Client independently accepts new signed replacement criterion');
 select is((select status from public.missions where id=current_setting('test.provider348_mission')::uuid),'COMPLETED','retired pending obligation no longer blocks genuine effective acceptance');
@@ -620,23 +670,36 @@ reset role;
 select is((select count(*)from public.provider_payable_events),(select payables from scope354_before),'reopening and withdrawal preserve all payable events');
 select is((select count(*)from public.credit_ledger_entries),(select ledger_entries from scope354_before),'reopening and withdrawal preserve all ledger entries');
 
+-- Prepare the real ADD proposal while the current contract is still active.
+-- Its existing signed work is completed next; only then is this draft signed.
+-- Creating a new proposal after completion is intentionally forbidden.
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000002',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
+insert into accept338 select'scope355-add-calendar',public.propose_provider_contract_amendment_v1(c.id,v.id,v.content_hash,'Test signed addition awaiting scheduling','{"description":"Actual signed additional work pending its own dated execution"}',0,0,'[{"operation":"ADD","item_type":"DELIVERABLE","item_key":"LAST_PHASE","label_fr":"Phase à planifier","label_ar":"مرحلة تحتاج إلى جدولة","sort_order":2,"details":{"acceptance_criteria":[{"key":"LAST_REVIEW","label_fr":"Vérifier la phase ajoutée","label_ar":"التحقق من المرحلة المضافة"}]}}]','scope355-add-calendar')from public.contracts c join public.contract_versions v on v.contract_id=c.id and v.version=c.current_version where c.id='fd210000-0000-4000-8000-000000000001';
+reset role;
+
 -- Complete the actual next generation before signing a further ADD. This
 -- reproduces a completed mission with new signed scope pending preparation,
 -- without inventing a status transition or positive acceptance.
 reset role;
 select set_config('test.scope355_next_deliverable',(select id::text from public.deliverables where mission_id=current_setting('test.provider348_mission')::uuid and contractual_key='NEXT_PHASE'),true);
-update public.deliverables set proof_required=false where id=current_setting('test.scope355_next_deliverable')::uuid;
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000006',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000006","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
-select lives_ok($$select public.submit_delivery(current_setting('test.scope355_next_deliverable')::uuid,'Actual test next phase delivered before further signed scope','[]','[]','scope355-next-complete-delivery')$$,'assigned Provider delivers the actual next signed generation');
+insert into accept338 values('scope355-next-proofs',pg_temp.upload_scope355(current_setting('test.scope355_next_deliverable')::uuid,'fd355000-0000-4000-8000-000000000034','test-scope-next-phase.pdf'));
+select set_config('test.scope355_scan_path',(select v#>>'{0,storage_path}'from accept338 where k='scope355-next-proofs'),true);
+select lives_ok($$select public.submit_delivery(current_setting('test.scope355_next_deliverable')::uuid,'Actual test next phase delivered before further signed scope','[]',(select v from accept338 where k='scope355-next-proofs'),'scope355-next-complete-delivery')$$,'assigned Provider delivers the actual next signed generation with mandatory proof');
+reset role;
+select set_config('request.jwt.claim.sub','',true);select set_config('request.jwt.claims','{"role":"service_role"}',true);set local role service_role;
+select pg_temp.scan_scope355(current_setting('test.scope355_scan_path'),'scope355-next-phase-scan');
+reset role;
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000006',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000006","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
+select ok(exists(select 1 from public.delivery_proofs where storage_path=current_setting('test.scope355_scan_path')and scan_status='CLEAN'and current_scan_result_id is not null),'native TEST scan is bound to this delivery proof before a Client decision');
+select ok((select proof_required from public.deliverables where id=current_setting('test.scope355_next_deliverable')::uuid),'next signed generation keeps its mandatory proof requirement');
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000001',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);
 select lives_ok($$select public.accept_delivery_version_v1(current_setting('test.scope355_next_deliverable')::uuid,1,'[{"criterion_key":"NEXT_REVIEW","status":"COMPLIANT","comment":"Actual next signed phase independently verified in TEST"}]','scope355-next-complete-accept')$$,'Client independently accepts the actual next signed generation');
 select is((select status from public.missions where id=current_setting('test.provider348_mission')::uuid),'COMPLETED','all effective signed deliveries accepted genuinely complete the mission');
 select is((select signed_scope_pending from public.get_mission_signed_scope_states_v1(array[current_setting('test.provider348_mission')::uuid])),false,'completed mission before a new signed act has no pending scope');
 reset role;
--- An ADD-only signed amendment does not retire existing work, but its missing
--- operational schedule must still be reported as partial by the native RPC.
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000002',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
-insert into accept338 select'scope355-add-calendar',public.propose_provider_contract_amendment_v1(c.id,v.id,v.content_hash,'Test signed addition awaiting scheduling','{"description":"Actual signed additional work pending its own dated execution"}',0,0,'[{"operation":"ADD","item_type":"DELIVERABLE","item_key":"LAST_PHASE","label_fr":"Phase à planifier","label_ar":"مرحلة تحتاج إلى جدولة","sort_order":2,"details":{"acceptance_criteria":[{"key":"LAST_REVIEW","label_fr":"Vérifier la phase ajoutée","label_ar":"التحقق من المرحلة المضافة"}]}}]','scope355-add-calendar')from public.contracts c join public.contract_versions v on v.contract_id=c.id and v.version=c.current_version where c.id='fd210000-0000-4000-8000-000000000001';
+select throws_ok($$select public.propose_provider_contract_amendment_v1(c.id,v.id,v.content_hash,'Test cannot create an amendment after completed contract','{"description":"Forbidden fresh proposal after genuine completion"}',0,0,'[{"operation":"ADD","item_type":"DELIVERABLE","item_key":"CLOSED_ADDITION","label_fr":"Ajout interdit après clôture","label_ar":"إضافة ممنوعة بعد الإغلاق","sort_order":3,"details":{"acceptance_criteria":[{"key":"CLOSED_REVIEW","label_fr":"Vérification de test","label_ar":"تحقق اختباري"}]}}]','scope355-forbidden-completed')from public.contracts c join public.contract_versions v on v.contract_id=c.id and v.version=c.current_version where c.id='fd210000-0000-4000-8000-000000000001'$$,'42501','AMENDMENT_CREATE_DENIED','completed contract still refuses a new proposal instead of weakening its business guard');
 reset role;
 select pg_temp.sign_scope355((select(v->>'amendment_id')::uuid from accept338 where k='scope355-add-calendar'),'scope355-add-calendar');
 select ok(not(select scope_reconciliation_required from public.missions where id=current_setting('test.provider348_mission')::uuid),'ADD-only signature does not falsely retire or freeze the previous obligations');
