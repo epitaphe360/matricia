@@ -1,3 +1,4 @@
+import{classifyAuthReadFailure}from"@/modules/shared/lib/auth/read-failure";
 import{readAllPages,readRelatedPages}from"@/modules/shared/lib/data/read-pages";
 import { selectProviderMembership } from "@/modules/provider/data/spaces/organization-context";
 import { z } from "zod";
@@ -20,11 +21,12 @@ const installmentSchema = z.object({ plan_id: id, sequence: z.number().int().pos
 
 type BillingLoadResult =
   | { status: "success"; dashboard: BillingDashboard }
-  | { status: "error"; reason: "UNAUTHENTICATED" | "NO_BILLING_ORGANIZATION" | "QUERY_FAILED" | "INVALID_RESPONSE" };
+  | { status: "error"; reason: "UNAUTHENTICATED" | "NO_BILLING_ORGANIZATION" | "FORBIDDEN" | "QUERY_FAILED" | "INVALID_RESPONSE" };
 
 export async function loadProviderBilling(requestedOrganizationId?: string, requestedInvoiceId?: string, requestedPage=1): Promise<BillingLoadResult> {
   const client = await getSupabaseServerClient();
-  const { data: auth } = await client.auth.getUser();
+  const { data: auth, error:authError } = await client.auth.getUser();
+  if(classifyAuthReadFailure(authError)==="UNAVAILABLE")return{status:"error",reason:"QUERY_FAILED"};
   if (!auth.user) return { status: "error", reason: "UNAUTHENTICATED" };
 
   let membershipQuery = client.from("organization_memberships")
@@ -34,8 +36,10 @@ export async function loadProviderBilling(requestedOrganizationId?: string, requ
   if(requestedOrganizationId&&id.safeParse(requestedOrganizationId).success)membershipQuery=membershipQuery.eq("organization_id",requestedOrganizationId);
   const membershipResult=await membershipQuery.limit(100);
   if (membershipResult.error) return { status: "error", reason: "QUERY_FAILED" };
-  const parsedMembership = membership.safeParse(selectProviderMembership(z.array(membership).safeParse(membershipResult.data).data ?? [], requestedOrganizationId));
-  if (!parsedMembership.success) return { status: "error", reason: membershipResult.data ? "INVALID_RESPONSE" : "NO_BILLING_ORGANIZATION" };
+  const membershipRows=z.array(membership).safeParse(membershipResult.data);
+  if(!membershipRows.success)return{status:"error",reason:"INVALID_RESPONSE"};
+  const parsedMembership = membership.safeParse(selectProviderMembership(membershipRows.data,requestedOrganizationId));
+  if(!parsedMembership.success)return{status:"error",reason:requestedOrganizationId?"FORBIDDEN":"NO_BILLING_ORGANIZATION"};
 
   const organizationId = parsedMembership.data.organization_id;
   const countResult=await client.from("provider_invoice_balances").select("id",{count:"exact",head:true}).eq("provider_organization_id",organizationId).gt("outstanding_minor",0);if(countResult.error||typeof countResult.count!=="number")return{status:"error",reason:"QUERY_FAILED"};
@@ -73,6 +77,12 @@ export async function loadProviderBilling(requestedOrganizationId?: string, requ
   const allocations = z.array(allocationSchema).safeParse(allocationsResult.data);
   if (!allocations.success) return { status: "error", reason: "INVALID_RESPONSE" };
 
+  // Resolve every referenced invoice, independently of the visible invoice page.
+  const referenceIds=[...new Set([...credits.data.map(x=>x.invoice_id),...plans.data.map(x=>x.invoice_id),...allocations.data.map(x=>x.invoice_id)])];
+  const referenceResult=await readRelatedPages(referenceIds,(batch,from,to)=>client.from("provider_invoices").select("id,invoice_number,currency").eq("provider_organization_id",organizationId).in("id",batch).order("id").range(from,to));
+  if(referenceResult.error)return{status:"error",reason:"QUERY_FAILED"};
+  const referenceInvoices=z.array(z.object({id,invoice_number:z.string().min(1),currency:z.string().regex(/^[A-Z]{3}$/u)})).safeParse(referenceResult.data);
+  if(!referenceInvoices.success||referenceIds.some(key=>!referenceInvoices.data.some(row=>row.id===key)))return{status:"error",reason:"INVALID_RESPONSE"};
   const pendingResult=await client.rpc("list_my_provider_billing_intents",{p_provider_organization_id:organizationId});
   const pending=z.array(z.object({id,kind:z.enum(["PAYMENT","PAYABLE"]),status:z.enum(["PENDING","EXPIRED","REJECTED"]),reference:z.string(),amount_minor:money,currency:z.string(),scan_status:z.enum(["PENDING","CLEAN","INFECTED","ERROR"]),expired:z.boolean(),created_at:z.string()})).safeParse(pendingResult.data);
   if(pendingResult.error||!pending.success)return {status:"error",reason:"QUERY_FAILED"};
@@ -84,7 +94,7 @@ export async function loadProviderBilling(requestedOrganizationId?: string, requ
   const allocatedByPayment = new Map<string, bigint>();
   for (const item of allocations.data) allocatedByPayment.set(item.payment_id, (allocatedByPayment.get(item.payment_id) ?? BigInt(0)) + BigInt(item.amount_minor));
   if (payments.data.some((item) => (allocatedByPayment.get(item.id) ?? BigInt(0)) > BigInt(item.amount_minor))) return { status: "error", reason: "INVALID_RESPONSE" };
-  const invoiceById = new Map(displayedInvoices.map((item) => [item.id, item]));
+  const invoiceById = new Map([...displayedInvoices,...referenceInvoices.data].map((item) => [item.id, item]));
   const paymentById = new Map(payments.data.map((item) => [item.id, item]));
   const planStatus = new Map<string, { version: number; status: string }>();
   for (const row of planDecisions.data) {
@@ -105,8 +115,8 @@ export async function loadProviderBilling(requestedOrganizationId?: string, requ
     allocations: allocations.data.map((item) => ({
       id: item.id, batchId: item.reconciliation_batch_id, paymentId: item.payment_id,
       paymentReference: paymentById.get(item.payment_id)?.payment_reference ?? item.payment_id.slice(0, 8),
-      invoiceId: item.invoice_id, invoiceNumber: invoiceById.get(item.invoice_id)?.invoice_number ?? item.invoice_id.slice(0, 8),
-      currency: paymentById.get(item.payment_id)?.currency ?? invoiceById.get(item.invoice_id)?.currency ?? "MAD",
+      invoiceId: item.invoice_id, invoiceNumber: invoiceById.get(item.invoice_id)!.invoice_number,
+      currency: paymentById.get(item.payment_id)!.currency,
       amountMinor: item.amount_minor, createdAt: item.created_at,
     })),
     accounts: accounts.data,
@@ -115,7 +125,7 @@ export async function loadProviderBilling(requestedOrganizationId?: string, requ
       id: item.id,
       number: item.credit_number,
       invoiceId: item.invoice_id,
-      invoiceNumber: invoiceById.get(item.invoice_id)?.invoice_number ?? item.invoice_id.slice(0, 8),
+      invoiceNumber: invoiceById.get(item.invoice_id)!.invoice_number,
       currency: item.currency,
       totalMinor: item.total_minor,
       issuedOn: item.issued_on,
@@ -123,7 +133,8 @@ export async function loadProviderBilling(requestedOrganizationId?: string, requ
     paymentPlans: plans.data.map((item) => ({
       id: item.id,
       invoiceId: item.invoice_id,
-      invoiceNumber: invoiceById.get(item.invoice_id)?.invoice_number ?? item.invoice_id.slice(0, 8),
+      invoiceNumber: invoiceById.get(item.invoice_id)!.invoice_number,
+      currency:invoiceById.get(item.invoice_id)!.currency,
       status: planStatus.get(item.id)?.status ?? "REQUESTED",
       reason: item.reason,
       installments: installments.data.filter((row) => row.plan_id === item.id).map((row) => ({ sequence: row.sequence, dueOn: row.due_on, amountMinor: row.amount_minor })),

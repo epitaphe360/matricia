@@ -137,7 +137,7 @@ function ScheduleTables({ locale, query, dashboard, m, planKey }: { locale: Loca
               <tr key={plan.id}>
                 <td dir="ltr">{plan.invoiceNumber}</td>
                 <td>{workflowStatusLabel(plan.status,locale)}</td>
-                <td>{plan.installments.map((item) => `${item.dueOn} · ${formatMinor(item.amountMinor, dashboard.invoices.find((invoice) => invoice.id === plan.invoiceId)?.currency ?? "MAD", locale)}`).join(" · ")}</td>
+                <td>{plan.installments.map((item) => `${item.dueOn} · ${(plan.currency?formatMinor(item.amountMinor,plan.currency,locale):(locale==="ar"?"المبلغ غير متاح: عملة الفاتورة غير محملة":"Montant indisponible : devise de la facture non chargée"))}`).join(" · ")}</td>
               </tr>
             ))}
           </tbody>

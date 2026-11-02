@@ -31,3 +31,5 @@ describe("provider billing actions",()=>{
  it("never calls RPC for invalid dates",async()=>{const form=base();form.set("statementNumber","REL");form.set("periodStart","2026-02-01");form.set("periodEnd","2026-01-01");form.set("currency","MAD");await expect(issueStatement(idle,form)).resolves.toEqual({status:"error",reason:"VALIDATION"});expect(mocks.rpc).not.toHaveBeenCalled()});
  it("blocks RPC without session",async()=>{mocks.getUser.mockResolvedValueOnce({data:{user:null}});const form=base();form.set("statementNumber","REL");form.set("periodStart","2026-01-01");form.set("periodEnd","2026-01-31");form.set("currency","MAD");await expect(issueStatement(idle,form)).resolves.toEqual({status:"error",reason:"UNAUTHENTICATED"})});
 });
+
+it("does not report sign-out or call mutation on Auth503",async()=>{mocks.getUser.mockResolvedValue({data:{user:null},error:{status:503,name:"AuthApiError"}});expect(await recordPayment(idle,base())).toEqual({status:"error",reason:"FAILED"});expect(mocks.rpc).not.toHaveBeenCalled();});
