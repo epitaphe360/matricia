@@ -12,17 +12,19 @@ const version = z.object({
 const item = z.object({ quote_version_id:uuid,line_number:z.number().int().positive(),item_kind:z.enum(["ONE_TIME","RECURRING"]),label_fr:z.string(),label_ar:z.string().nullable(),quantity:z.string().regex(/^\d+(?:\.\d+)?$/u),unit_code:z.string(),unit_price_minor:z.string().regex(/^\d+$/u),tax_rule_version_id:uuid,recurrence_interval:z.enum(["MONTH","QUARTER","YEAR"]).nullable() });
 export type QuotePrefill = { paymentTerms?:string;maintenanceTerms?:string; currency?:string;solution:string;deliverables:string;inclusions:string;exclusions:string;prerequisites:string;warranty:string;correctionTerms:string;proposedStartDate:string;durationDays:string;validUntil:string;changeReason:string;lines:{label:string;quantity:string;unitCode:string;unitPrice:string;taxRuleVersionId:string;itemKind:"ONE_TIME"|"RECURRING";recurrenceInterval:""|"MONTH"|"QUARTER"|"YEAR"}[] };
 
-export async function loadQuotePrefills(organizationId:string, currentVersions:{ invitationId:string;versionId:string }[], locale:"fr"|"ar"):Promise<Record<string,QuotePrefill>> {
-  if (!uuid.safeParse(organizationId).success || currentVersions.length === 0) return {};
+export async function loadQuotePrefills(organizationId:string, currentVersions:{ invitationId:string;versionId:string }[], locale:"fr"|"ar"):Promise<Record<string,QuotePrefill> | null> {
+  if (!uuid.safeParse(organizationId).success) return null;
+  if (currentVersions.length === 0) return {};
+  if (currentVersions.length > 100 || currentVersions.some(entry=>!uuid.safeParse(entry.versionId).success || !uuid.safeParse(entry.invitationId).success)) return null;
   const ids = currentVersions.map((entry)=>entry.versionId).filter((id)=>uuid.safeParse(id).success).slice(0,100);
   const client = await getSupabaseServerClient();
   const [versionsResult,itemsResult]=await Promise.all([
     client.from("quote_versions").select("sla,id,solution_fr,solution_ar,deliverables,inclusions,exclusions,prerequisites,warranty_fr,warranty_ar,correction_terms_fr,correction_terms_ar,proposed_start_date,duration_days,valid_until,change_reason,currency").eq("provider_organization_id",organizationId).in("id",ids).limit(100),
     client.from("quote_items").select("quote_version_id,line_number,item_kind,label_fr,label_ar,quantity::text,unit_code,unit_price_minor::text,tax_rule_version_id,recurrence_interval").in("quote_version_id",ids).order("line_number").limit(5000),
   ]);
-  if (versionsResult.error || itemsResult.error) return {};
+  if (versionsResult.error || itemsResult.error) return null;
   const versions=z.array(version).max(100).safeParse(versionsResult.data),items=z.array(item).max(5000).safeParse(itemsResult.data);
-  if (!versions.success || !items.success) return {};
+  if (!versions.success || !items.success || new Set(versions.data.map(row=>row.id)).size !== new Set(ids).size || ids.some(id=>!items.data.some(item=>item.quote_version_id===id))) return null;
   const invitationByVersion=new Map(currentVersions.map((entry)=>[entry.versionId,entry.invitationId]));
   return Object.fromEntries(versions.data.flatMap((current)=>{
     const invitationId=invitationByVersion.get(current.id);if(!invitationId)return [];
