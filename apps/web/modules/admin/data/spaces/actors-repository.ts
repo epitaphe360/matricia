@@ -79,35 +79,37 @@ export function demoActorUsers(): ActorUserRow[] {
 }
 
 export async function loadAdminClientDirectory(locale: Locale) {
-  const [supervision, clients] = await Promise.all([loadAdminSupervisionDashboard(100), loadAdminClients(locale)]);
-  let organizations = supervision.status === "success"
-    ? supervision.value.organizations.filter((org) => (org.role_codes ?? []).includes("CLIENT"))
-    : [];
-  let cases = clients.status === "success" ? clients.dashboard.cases : [];
-  let diagnostics = supervision.status === "success" ? supervision.value.diagnostics : [];
-  let reason = clients.status === "error" ? clients.reason : supervision.status === "error" ? supervision.reason : null;
-  if (canApplyAdminDemo()) {
-    if (organizations.length === 0) organizations = demoClientOrganizations(locale);
-    if (cases.length === 0) cases = demoClientCases();
-    if (diagnostics.length === 0) diagnostics = demoDiagnostics();
-    if (reason === "FORBIDDEN") reason = null;
+  try {
+    const [supervision, clients] = await Promise.all([loadAdminSupervisionDashboard(100), loadAdminClients(locale)]);
+    let organizations = supervision.status === "success"
+      ? supervision.value.organizations.filter((org) => (org.role_codes ?? []).includes("CLIENT"))
+      : [];
+    let cases = clients.status === "success" ? clients.dashboard.cases : [];
+    let diagnostics = supervision.status === "success" ? supervision.value.diagnostics : [];
+    const reason = clients.status === "error" ? clients.reason : supervision.status === "error" ? supervision.reason : null;
+    if (!reason && canApplyAdminDemo()) {
+      if (organizations.length === 0) organizations = demoClientOrganizations(locale);
+      if (cases.length === 0) cases = demoClientCases();
+      if (diagnostics.length === 0) diagnostics = demoDiagnostics();
+    }
+    return {
+      organizations,
+      cases,
+      diagnostics,
+      dashboard: clients.status === "success" ? clients.dashboard : null,
+      reason,
+      keys: clients.status === "success"
+        ? Object.fromEntries(clients.dashboard.cases.flatMap((item) => [
+          [`case:${item.id}`, crypto.randomUUID()],
+          ...item.documents.map((document) => [`document:${document.id}`, crypto.randomUUID()] as const),
+          ...item.questions.map((question) => [`response:${question.id}`, crypto.randomUUID()] as const),
+        ]))
+        : {} as Record<string, string>,
+    };
+  } catch {
+    return { organizations: [], cases: [], diagnostics: [], dashboard: null, reason: "UNAVAILABLE" as const, keys: {} as Record<string, string> };
   }
-  return {
-    organizations,
-    cases,
-    diagnostics,
-    dashboard: clients.status === "success" ? clients.dashboard : null,
-    reason,
-    keys: clients.status === "success"
-      ? Object.fromEntries(clients.dashboard.cases.flatMap((item) => [
-        [`case:${item.id}`, crypto.randomUUID()],
-        ...item.documents.map((document) => [`document:${document.id}`, crypto.randomUUID()] as const),
-        ...item.questions.map((question) => [`response:${question.id}`, crypto.randomUUID()] as const),
-      ]))
-      : {} as Record<string, string>,
-  };
 }
-
 
 async function loadActorRows(userId?: string,consistent = false): Promise<{ users: ActorUserRow[]; reason?: ActorDirectory["reason"] }> {
   const client = await getSupabaseServerClient();

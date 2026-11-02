@@ -13,6 +13,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ loca
   const search = new URL(request.url).searchParams;
   const query = search.toString();
   const snapshot = await loadAdminSpaceSnapshot(locale, space, query ? `?${query}` : "",true);
+  if (snapshot.reason === "UNAUTHENTICATED") return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
   if (snapshot.reason === "FORBIDDEN") return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   const spec = spaceSpec(space);
   const header = dataColumns(spec.columns(locale));
