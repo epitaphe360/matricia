@@ -145,8 +145,10 @@ insert into public.matching_runs(id,request_id,request_version_id,policy_version
 values('fd170000-0000-4000-8000-000000000001','fd140000-0000-4000-8000-000000000001','fd160000-0000-4000-8000-000000000001','MATCH-V1','COMPLETED',1,'fd100000-0000-4000-8000-000000000001',clock_timestamp());
 insert into public.matching_candidates(id,matching_run_id,provider_organization_id,eligible,score_basis_points,score_explanation,rotation_component)
 values('fd171000-0000-4000-8000-000000000001','fd170000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000002',true,9000,'{}',50);
-insert into public.rfqs(id,request_id,request_version_id,matching_run_id,status,deadline,invited_count,opened_by)
-values('fd150000-0000-4000-8000-000000000001','fd140000-0000-4000-8000-000000000001','fd160000-0000-4000-8000-000000000001','fd170000-0000-4000-8000-000000000001','OPEN',clock_timestamp()+interval'1 day',1,'fd100000-0000-4000-8000-000000000001');
+-- Historical selected RFQ fixture: selection itself is tested elsewhere.
+-- Keep the real CLOSED/closed_at constraint so messaging cannot reopen it.
+insert into public.rfqs(id,request_id,request_version_id,matching_run_id,status,deadline,invited_count,opened_by,closed_at)
+values('fd150000-0000-4000-8000-000000000001','fd140000-0000-4000-8000-000000000001','fd160000-0000-4000-8000-000000000001','fd170000-0000-4000-8000-000000000001','CLOSED',clock_timestamp()+interval'1 day',1,'fd100000-0000-4000-8000-000000000001',clock_timestamp());
 insert into public.rfq_providers(id,rfq_id,provider_organization_id,matching_candidate_id,status,responded_at)
 values('fd190000-0000-4000-8000-000000000001','fd150000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000002','fd171000-0000-4000-8000-000000000001','ACCEPTED',clock_timestamp());
 create temporary table accept338(k text primary key,v jsonb);grant select,insert on accept338 to authenticated;
@@ -268,10 +270,11 @@ select is((select count(*)::integer from public.audit_events where action='dispu
 select is((select count(*)::integer from public.event_outbox where event_type='DisputeWarningIssuedV1'),1,'one warning outbox event exists');
 
 
--- First conversation after native contract selection; no RFQ state is reopened.
+-- First conversation for a historically selected quote and the governed DEV-mock
+-- contract sealed above; selection itself is not executed by this fixture.
 -- This extends the canonical0338 fixture, retaining all its active constraints.
 select is((select count(*)::integer from public.internal_message_threads),0,'precondition: selected contract has no pre-existing conversation');
-select is((select status from public.rfqs where id='fd150000-0000-4000-8000-000000000001'),'CLOSED','precondition: native selection closed the RFQ');
+select is((select status from public.rfqs where id='fd150000-0000-4000-8000-000000000001'),'CLOSED','precondition: historical selected RFQ is closed');
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000002',true);
 select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);
 set local role authenticated;
@@ -333,6 +336,16 @@ select set_config('request.jwt.claim.sub','fa352000-0000-4000-8000-000000000003'
 set local role authenticated;
 select is(public.get_internal_message_thread_page_for_organization_v1(current_setting('test.provider352_thread')::uuid,'fd110000-0000-4000-8000-000000000001')->'thread'->>'can_send','false','Client Viewer keeps read access without gaining Provider message execution');
 select throws_ok($$select public.send_internal_message(current_setting('test.provider352_thread')::uuid,'fd110000-0000-4000-8000-000000000001','Essai Viewer côté Client.','[]','provider352-clientviewer')$$,'42501','MESSAGE_THREAD_SCOPE_DENIED','Client Viewer cannot send through the shared private conversation command');
+reset role;
+-- An organisation may carry both business profiles. Client-only membership
+-- does not silently become permission to inspect Provider commercial messages.
+insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)values('fa352000-0000-4000-8000-000000000004','00000000-0000-0000-0000-000000000000','authenticated','authenticated','provider352-other-profile@example.invalid','',now(),'{}','{}',now(),now());
+insert into public.organization_memberships(id,organization_id,user_id,status)values('fb352000-0000-4000-8000-000000000004','fd110000-0000-4000-8000-000000000002','fa352000-0000-4000-8000-000000000004','ACTIVE');
+insert into public.organization_member_roles(membership_id,role_code)values('fb352000-0000-4000-8000-000000000004','CLIENT_VIEWER');
+select set_config('request.jwt.claim.sub','fa352000-0000-4000-8000-000000000004',true);select set_config('request.jwt.claims','{"sub":"fa352000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal2"}',true);
+set local role authenticated;
+select throws_ok($$select public.get_internal_message_thread_page_for_organization_v1(current_setting('test.provider352_thread')::uuid,'fd110000-0000-4000-8000-000000000002')$$,'42501','MESSAGE_THREAD_SCOPE_DENIED','Client-only role in a shared organisation is not a Provider read entitlement');
+select is((public.search_internal_message_inbox('','fd110000-0000-4000-8000-000000000002')->>'total')::integer,0,'the other business profile cannot discover Provider conversation metadata');
 reset role;
 select ok(not has_function_privilege('service_role','public.list_internal_message_open_options_v1(uuid,integer)','EXECUTE'),'service role cannot bypass option actor authorization');
 select ok(not has_function_privilege('anon','public.list_internal_message_open_options_v1(uuid,integer)','EXECUTE'),'anonymous option access is closed');

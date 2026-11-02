@@ -102,3 +102,22 @@ Viewer Client et capacités des lecteurs historiques/paginés. **Ce scénario at
 encore son créneau SQL isolé à ce point de sauvegarde.** Les migrations42020 et
 42030, les tests et les interfaces sont prêts à l'intégration ; la preuve de
 l'auteur root pour la seule continuité42010 ne couvre pas ces derniers ajouts.
+
+## Résultat SQL de la reprise
+
+Le créneau isolé a maintenant exécuté **68/68 assertions SQL réussies** avec les
+migrations41000/41500 et42000 à42040 : [reçu et journaux](evidence/context/README.md).
+Le schéma retrouve exactement son empreinte initiale après `ROLLBACK`, aucun
+`COMMIT` envoyé. Le premier essai a révélé que le setup0338 ne ferme pas sa RFQ :
+il installe directement sa sélection historique. Le setup0352 précise donc
+explicitement `CLOSED`/`closed_at` dès insertion, sous les mêmes contraintes,
+au lieu de prétendre avoir exécuté une sélection native.
+
+Un second vrai défaut de lecture a été reproduit : un membre Client-only de
+l'organisation partagée Provider était considéré comme « non Technician », donc
+pouvait lire et découvrir les conversations Provider sans aucun rôle Provider.
+La migration42040 exige désormais un rôle Provider effectivement attribué ou
+l'affectation Technician autoritative. Le vrai Viewer Provider garde sa lecture,
+sans envoi. Les deux assertions négatives échouent avant42040 et passent ensuite ;
+leurs preuves avant/après sont conservées. Les prérequis globaux et la recette
+navigateur restent ceux de l'intégration, sans certification distante ajoutée.
