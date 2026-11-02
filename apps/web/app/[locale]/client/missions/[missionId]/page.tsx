@@ -4,6 +4,7 @@ import { z } from "zod";
 import { notFound, redirect } from "next/navigation";
 import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { WorkspaceFailure } from "@/modules/shared/ui/workspace-failure";
 import { resolveClientSpace } from "@/modules/client/data/spaces/context";
 import { spaceCopy } from "@/modules/client/data/spaces/copy";
 import { loadClientAmendments } from "@/modules/shared/lib/contracts-missions/amendments";
@@ -27,20 +28,33 @@ export default async function ClientMissionFollowPage({
   const [{ locale, missionId }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale) || !z.string().uuid().safeParse(missionId).success) notFound();
   const space = await resolveClientSpace({ locale, organizationId: query.organizationId });
-  if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/client/missions/${missionId}` }));
+  if (space.status === "unauthenticated") {
+    const queryString = query.organizationId ? `?${new URLSearchParams({ organizationId: query.organizationId })}` : "";
+    redirect(connexionHref(locale, { next: `/${locale}/client/missions/${missionId}${queryString}` }));
+  }
   const messages = getMissionMessages(locale);
   const c = spaceCopy(locale);
   const [result, amendments] = await Promise.all([loadContractMissions(locale, space.selectedOrganizationId), loadClientAmendments(space.selectedOrganizationId)]);
+  const followPath = `/${locale}/client/missions/${missionId}${space.selectedQuery}`;
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: followPath }));
   const dashboard = result.status === "success"
     ? { ...result.dashboard, missions: result.dashboard.missions.filter((item) => item.id === missionId) }
     : null;
   const mission = dashboard?.missions[0] ?? null;
   if (result.status === "success" && !mission) notFound();
-  const followPath = `/${locale}/client/missions/${missionId}${space.selectedQuery}`;
 
   return (
     <ClientAppShell languagePath={followPath} locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} organizationName={space.organizationName} active="missions" theme="follow" title={c.followTitle} lead={c.followLead} kicker={c.kicker} actions={<SpaceActions href={`/${locale}/besoin${space.selectedQuery}`} label={locale === "ar" ? "وصف حاجتي" : "Décrire mon besoin"} />}>
-      {result.status === "error" ? (
+      {result.status === "error" && result.reason === "FORBIDDEN_ORGANIZATION" ? <>
+        <WorkspaceFailure locale={locale} reason="FORBIDDEN" returnPath={followPath} />
+        <Link href={`/${locale}/organisation/roles`} className="client-ghost-link">{locale === "ar" ? "طلب صلاحية مناسبة" : "Demander une habilitation"}</Link>
+      </> : result.status === "error" && result.reason === "ORGANIZATION_SELECTION_REQUIRED" ? <>
+        <WorkspaceFailure locale={locale} reason="NO_ORGANIZATION" returnPath={followPath} />
+        <Link href={`/${locale}/tableau-de-bord`} className="client-ghost-link">{locale === "ar" ? "اختيار مؤسسة مصرح بها" : "Choisir une organisation autorisée"}</Link>
+      </> : result.status === "error" && result.reason === "NO_CLIENT_ORGANIZATION" ? <>
+        <WorkspaceFailure locale={locale} reason="NO_ORGANIZATION" returnPath={followPath} />
+        <Link href={`/${locale}/organisation/rattachements`} className="client-ghost-link">{locale === "ar" ? "طلب الانضمام إلى مؤسسة" : "Demander un rattachement à une organisation"}</Link>
+      </> : result.status === "error" ? (
         <Alert>
           <AlertTitle>{locale === "ar" ? "متابعة المهمة غير متاحة" : "Suivi de mission indisponible"}</AlertTitle>
           <AlertDescription>
