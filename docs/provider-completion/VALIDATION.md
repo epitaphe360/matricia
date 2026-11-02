@@ -1,6 +1,6 @@
 # Vérification du parcours Sous-traitant
 
-Source Client préservée : `7e01276818e8af11cf18f616615721f1662951fe`. Branche dédiée : `codex/provider-completion-20261102`. Produit final gelé au commit `71ca7cc95e45187c428a07dc84e0035176463f55`, arbre `apps/web` `bfd378411cabfe9a30c3cc9b93e10866480d7a03`. Les commits suivants portent tests, preuves et documentation ; ils ne constituent pas une nouvelle version de l'interface.
+Source Client préservée : `7e01276818e8af11cf18f616615721f1662951fe`. Branche dédiée : `codex/provider-completion-20261102`. Produit final gelé au commit `5dab966bb58c2c8e5eba8904a2447e8091d5dd58`, arbre `apps/web` `da1a53949f998a772ec9d01b4ea41bcdd3018db4`. Les commits suivants portent tests, preuves et documentation ; ils ne constituent pas une nouvelle version de l'interface.
 
 ## Contrôles exécutés
 
@@ -10,7 +10,7 @@ Toutes les commandes pnpm utilisent Node24 et pnpm10.17.1 via `PATH=/workspace/.
 |---|---|---|
 | `pnpm --filter @matricia/web typecheck` sur le produit gelé | PASS, contrôles TypeScript actifs | [log](evidence/integration/web-final-typecheck.log) |
 | `pnpm --filter @matricia/web lint` au checkpoint intégré, puis ESLint des fichiers modifiés après ce contrôle | PASS, aucun avertissement ; derniers changements Auth/notifications vérifiés | [lint complet](evidence/integration/web-lint.log), [dernier lot](evidence/integration/web-final-scoped-lint.log) |
-| `pnpm --filter @matricia/web exec vitest run --maxWorkers=2 --exclude '**/*pdf.test.*' --exclude '**/draft-pdf.test.*' --exclude 'modules/client/screens/boxes/member/actions.test.ts'` | **2 959 PASS**,1skip opt-in ; source gelée | [log final](evidence/integration/web-final-2959.log) |
+| `pnpm --filter @matricia/web exec vitest run --maxWorkers=2 --exclude '**/*pdf.test.*' --exclude '**/draft-pdf.test.*' --exclude 'modules/client/screens/boxes/member/actions.test.ts'` | **2 971 PASS**,1skip opt-in ; source gelée | [log final](evidence/integration/web-release-2971.log) |
 | Vitest isolé `--maxWorkers=1` : les4 fichiers PDF et `client/screens/boxes/member/actions.test.ts` | **30 PASS** :25PDF +5MFA, exclus du groupe précédent | [log](evidence/integration/pdf-and-mfa-30.log) |
 | `pnpm --filter @matricia/worker exec vitest run --maxWorkers=1` | **104 PASS** | [log](evidence/integration/worker-tests.log) |
 | `pnpm --filter @matricia/worker build` | PASS | [log](evidence/integration/worker-build.log) |
@@ -33,7 +33,7 @@ La pile de test Provider est distincte du source canonique et de l'ancienne pile
 - `e929f99` : entrée/identité/questionnaire/capacité avec vrais fichiers ;40pages FR/AR aux largeurs375/390/768/1440,8menus et20frontières de rôles/AAL1. Le blocage de revue est reproduit sans être classé réussi.
 - `8941517` : revue du dépôt original corrigée, devis7étapes, révision3, contrat/mission5, livraison refusV1→correctionV2→acceptation/révocation6, messages privés4 ; [preuves et42 empreintes vérifiées](evidence/browser/candidate-two/manifest.json). Signature SIMPLE DEV-mock gouvernée, non juridique ; scanner connu TEST uniquement.
 - `5e06b32` : F13, vraie date marocaine refusée comme future avant40960 puis acceptée après correction, avec la même intention et le même PDF. Confirmation Client et revue Finance indépendantes ; données fiscales et comptes référentiels explicitement TEST, sans journal ni solde injecté. Le vrai lendemain reste refusé. La clôture du mois courant attend son cutoff et sa fenêtre contradictoire : aucune facture historique artificielle n'est utilisée pour simuler le passage du temps.
-- `71ca7cc` : build et matrice finale en cours d'archivage par le vérificateur. Aucun succès n'est revendiqué ici avant dépôt des reçus correspondants.
+- `5dab966` : build complet réussi ; reprise du retour Provider après double rôle réussie sans nouveau grant ; mesures de contraste8scans/56cibles conformes sur les54cibles mesurées. Matrice finale et index de captures en cours d’archivage, sans succès inventé avant dépôt de leurs reçus.
 
 Les scans axe initiaux n'ont aucune violation automatique, mais des contrôles color-contrast restent incomplets à cause des gradients ; ils ne constituent pas une certification WCAG complète. Les mesures visuelles complémentaires et leurs limites doivent garder une attribution explicite.
 

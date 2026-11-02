@@ -100,7 +100,8 @@ describe("quatre espaces connectés — documentation et nav", () => {
       const nav = buildProviderNav(locale, "?organizationId=test");
       expect(nav.find(item => item.key === "contracts")?.href).toBe(`/${locale}/sous-traitant/contrats?organizationId=test`);
       expect(nav.find(item => item.key === "questionnaires")?.href).toBe(`/${locale}/sous-traitant/questionnaires?organizationId=test`);
-      expect(nav.every(item => item.href.endsWith("?organizationId=test"))).toBe(true);
+      for (const item of nav) expect(new URL(item.href, "https://matricia.invalid").searchParams.get("organizationId")).toBe("test");
+      expect(new URL(nav.find(item => item.key === "home")!.href, "https://matricia.invalid").searchParams.get("workspace")).toBe("provider");
     }
     expect(buildProviderNav("ar", "").find((item) => item.key === "marketing")).toMatchObject({ label: "التسويق", href: "/ar/sous-traitant/marketing" });
     expect(buildProviderNav("fr", "").some((item) => item.key === "settings")).toBe(true);

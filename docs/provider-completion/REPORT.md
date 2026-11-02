@@ -2,7 +2,7 @@
 
 Source explicite : Client `7e01276818e8af11cf18f616615721f1662951fe`, conservé dans `codex/provider-completion-20261102`. Aucun déploiement ni fusion en production. Le présent rapport distingue implémentation, tests locaux et recette hébergée ; il ne certifie pas une livraison commerciale complète.
 
-Candidat de recette navigateur : `8941517a6beacfac1fd0b785035ce9ec15d877dc`, arbre `apps/web` `e709d635bfc02c3297ec356689b24364243a67ea`. Les correctifs de tests ou de documentation postérieurs ne changent pas à eux seuls le produit exécuté par cette recette.
+Produit final : `5dab966bb58c2c8e5eba8904a2447e8091d5dd58`, arbre `apps/web` `da1a53949f998a772ec9d01b4ea41bcdd3018db4`. Les versions8941517 et5e06b32 restent les candidats exacts des recettes intermédiaires, avec provenance conservée. Les commits de tests/preuves/documentation suivants ne constituent pas une autre interface.
 
 ## Périmètre et preuves
 
@@ -47,18 +47,32 @@ Les identifiants E/D ci-dessous appartiennent à l'analyse approfondie du parcou
 | D18 | Équipe et erreurs de lecture bornées au tenant | DAL paginé/RLS, sans faux zéro ni membre étranger |
 | D19 | États métier FR/AR et RTL | Copies partagées, NOT_REQUESTED contextualisé et options approuvées traduites ; texte libre conservé |
 
-## Vérifications et réserves actuelles
+## Résultats consolidés et contre-corrections finales
 
-- Toutes les preuves SQL citées sont liées aux fichiers et hashes de leur reçu. Les reçus transactionnels indiquent `commitSent:false`, empreintes identiques et rollback. Ce ne sont pas des replays neufs de tout le dépôt.
-- Le build complet local du candidat précédent `e929f99` a réussi avec TypeScript actif. Le candidat8941517 a ensuite réussi son build complet avec TypeScript actif ; ses preuves sont dans evidence/browser/candidate-two/. La migration corrective38410 de la file Admin impose un dernier contrôle consolidé.
-- Recette réelle déjà exécutée au checkpoint précédent : quinze identités GoTrue OTP/TOTP AAL2, dossiers TEST distincts, identité/pièces/questionnaire/capacité ; 40 pages FR/AR aux largeurs375/390/768/1440 et8 menus sans débordement, erreur JS ou sens RTL incorrect.
-- Axe :64 scans sans violation automatique, mais64 résultats `color-contrast` incomplets. Cela ne vaut pas contrôle manuel complet ni certification WCAG.
-- Les tests globaux initiaux :2939 réussis,8 échecs et1 skip opt-in. Les8 échecs correspondent à quatre délais PDF et quatre attentes lues pendant l’intégration (navigation, pagination, multi-select). Les groupes PDF/options16 et navigation/pages15 ont ensuite réussi séparément, sans relâcher de délai ; la confirmation globale finale hors PDF passe2922 tests avec1skip opt-in, les25 PDF passent séparément (groupe30 avec5 contrôles MFA recouvrants). Types, lint, worker104 et son build passent.
-- Les régressions et contre-revues sont détaillées dans [revue indépendante](independent-review.md), [Finance](FINANCE.md), [autorité économique](DISPUTE_ECONOMICS.md), [moteur signé](SIGNED-SCOPE.md), [Devis](QUOTES.md), [Entrée](entry.md), [communication](CONTEXT-COMMUNICATION.md).
+- **507 migrations,56 fichiers SQL,2 067 assertions PASS**, sur une base neuve isolée, puis nettoyage PASS.649 tables publiques avec RLS,0sansRLS, pgTAP inaccessible aux rôles API. Le reçu énumère les56 tests et tous les hashes ; ce n'est pas une exécution de tous les tests SQL historiques ni une nouvelle certification concurrente.
+- Produit5dab : **2 971 tests Web PASS**, plus **30 PDF/MFA isolés PASS** exclus du groupe précédent ;1skip opt-in. Types et lint passent ; worker104 et build passent. Les échecs d'étape sont conservés et leurs reprises expliquées dans [VALIDATION](VALIDATION.md).
+- Recettes natives :15 acteurs GoTrue OTP/TOTP AAL2 ; identité/documents/questionnaire/capacité, revue du dépôt original, devis et révision publiés, contrat DEV-mock et mission, livraison V1refusée→V2acceptée et révocation du technicien, messagerie après contrat avec vrai fichier et contrôle des octets. Source8941517 explicitement conservée dans les reçus.
+- Finance5e06 : même intention/PDF/date marocaine initialement refusée, puis déclaration effective, confirmation Client et revue Finance indépendantes. Le vrai lendemain est refusé, sans doublon ni journal anticipé. Pré-relevé réel en attente : la facture du mois courant, son paiement et l'allocation finale ne sont **pas certifiés dans le navigateur avant le cutoff et la fenêtre contradictoire**. Les commandes historiques de clôture/règlement ont leurs tests natifs SQL distincts.
+- Double rôle : demande gouvernée Client, refus d'auto-approbation, approbation indépendante, même utilisateur/organisation/adhésion sans duplication. Le retour Provider est corrigé par un indice de navigation explicite, toujours soumis aux autorisations serveur. Les tableaux et formulaires GET conservent l'organisation et le mode, y compris lors du changement de langue.
+- Contraste réellement mesuré : le petit libellé arabe d'espace passait à4,1842:1 sur son fond beige. Token existant corrigé ;8scans/56cibles après correction :48bornes complètes conformes,6glyphes opaques conformes,2nonmesurés/clippés ;0sous le seuil parmi les mesures. BrandAR atteint12,5138:1. Les incomplets axe liés aux gradients ne deviennent pas artificiellement des contrôles terminés ; aucune certification WCAG globale n'est revendiquée.
+- La matrice finale5dab et son index de captures sont en cours d'archivage. Les40 pages et8menus du checkpoint précédent restent une preuve antérieure, pas la certification du dernier candidat.
+
+| Constat indépendant final | Cause corrigée | Fichiers / preuve |
+|---|---|---|
+| R09, revue de qualification bloquée | projection privée limitée au dépôt/service, consultation auditée avant décision |38400, composants `qualification-questionnaire-review*`,0357=40 |
+| R11, faux vide Admin Prestataires | jointure organizations incompatible avec le réviseur indépendant |38410 invoker + noms bornés,0358=19 et preuve UI à consigner |
+| L09, périmètre signé en attente masqué par l'ancien statut | lecture autorisée `signedScopePending`, notice et priorité séparées, statut historique conservé |41970, DAL Client/Provider, Workbench/FollowBoard ;0355=204 et tests UI |
+| F13, jour marocain refusé comme futur | deux gardes financières utilisaient le jour UTC |40960,0359=27, véritable reprise de la même intention et refus du lendemain |
+| Notifications Provider indisponibles |2callers oubliaient l'organisation sélectionnée |paramètres, nested-screens,10nouveaux tests SSR FR/AR |
+| Incident Auth transformé en déconnexion |lecture Client missions ignorait Auth.error |DAL partagé,503→incident et401→connexion, tests avant toute requête métier |
+| Double rôle renvoyant vers Client |liens de dashboard sans contexte explicite |helper partagé, navigation/brand/langues/GET/ModeClient ;23tests+alignement5 |
+| Contraste AR insuffisant |petit libellé sur dégradé reprenait une teinte trop claire |1couleur `provider-brand-space`, mesures pixels avant/après |
+
+Les27/28/40/85/204 assertions et les groupes de composants se recouvrent ; seuls les compteurs du rejeu global et de ses groupes exclus sont additionnables. Détails : [revue indépendante](independent-review.md), [Livraison](DELIVERY-INDEPENDENT-REVIEW.md), [Finance](FINANCE.md), [autorité économique](DISPUTE_ECONOMICS.md), [moteur signé](SIGNED-SCOPE.md), [Devis](QUOTES.md), [Entrée](entry.md), [communication](CONTEXT-COMMUNICATION.md).
 
 ## Conditions externes de clôture
 
 1. Fournisseur et niveaux de signature approuvés (DR-001), accords/clauses économiques et mandat de collecte s'il s'applique. Le DEV-mock SIMPLE n'est pas une signature juridique de production.
 2. Éditeur légal et coordonnées complètes, CNDP/politiques applicables, conditions commerciales, tarification et traductions approuvées manquantes. Aucun contenu n'est inventé.
 3. Recette hébergée autorisée : Supabase/Vercel/worker, email, scanner réel et paiements sandbox, puis sauvegarde/restauration et exploitation. Les tests locaux ne prouvent pas ces connexions distantes.
-4. Création de PR : branche poussable, mais l'accès GitHub GraphQL avait été refusé. Aucun lien de PR créée n'est revendiqué sans retour réel du service.
+4. Création de PR : branche poussée, mais l'accès GitHub GraphQL avait été refusé. Aucun lien de PR créée n'est revendiqué sans retour réel du service.
