@@ -66,7 +66,7 @@ export type ProviderMissionDashboard = {
 
 export const providerMissionRows = {
   membership: z.object({ organization_id: uuid, organizations: z.object({ display_name: z.string().min(1) }),organization_member_roles:z.array(z.object({role_code:z.string(),revoked_at:z.string().nullable()})).optional() }),
-  mission: z.object({ id: uuid, contract_id: uuid, status: z.string(), started_at: z.string().nullable(), completed_at: z.string().nullable() }),
+  mission: z.object({ id: uuid, contract_id: uuid, contract_version_id:uuid, status: z.string(), started_at: z.string().nullable(), completed_at: z.string().nullable() }),
   milestone: z.object({ id: uuid, mission_id: uuid, milestone_key: z.string(), title_fr: z.string(), title_ar: z.string(), status: z.string(), due_at: z.string().nullable(), row_version: z.number().int().positive() }),
   deliverable: z.object({ id: uuid, mission_id: uuid, deliverable_key: z.string(), label_fr: z.string(), label_ar: z.string(), proof_required: z.boolean(), status: z.string(), current_version: safeVersion }),
   version: z.object({ id: uuid, deliverable_id: uuid, version: safeVersion, description: z.string(), submitted_at: z.string(), content_hash: z.string().regex(/^[0-9a-f]{64}$/), links:z.array(z.string()).default([]) }),
@@ -74,7 +74,7 @@ export const providerMissionRows = {
   checklist: z.object({ id:uuid, mission_id:uuid, item_key:z.string(), label_fr:z.string(), label_ar:z.string(), instructions_fr:z.string().nullable(), instructions_ar:z.string().nullable(), proof_required:z.boolean(), allowed_proof_types:z.array(z.string()), status:z.string(), checklist_snapshot_id:uuid.nullable() }),
   checklistSnapshot: z.object({ id:uuid, mission_id:uuid, template_version:z.number().int().positive(), template_content_hash:z.string().regex(/^[0-9a-f]{64}$/) }),
   contract: z.object({ id: uuid, current_version: z.number().int().positive() }),
-  contractVersion: z.object({ contract_id: uuid, version: z.number().int().positive(), price_minor: exactMinor, currency: z.string().regex(/^[A-Z]{3}$/), content_hash: z.string().regex(/^[0-9a-f]{64}$/),request_snapshot:z.record(z.string(),z.unknown()).optional() }),
+  contractVersion: z.object({ id:uuid, contract_id: uuid, version: z.number().int().positive(), price_minor: exactMinor, currency: z.string().regex(/^[A-Z]{3}$/), content_hash: z.string().regex(/^[0-9a-f]{64}$/),request_snapshot:z.record(z.string(),z.unknown()).optional() }),
 };
 
 export function formatExactMinor(value:string,currency:string,locale:"fr"|"ar"){return formatSignedMinorLocalized(value,currency,locale);}
