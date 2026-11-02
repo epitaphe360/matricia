@@ -12,11 +12,12 @@ const {createClient}=webRequire('@supabase/supabase-js');const postgres=require(
 process.umask(0o077);
 const config=await loadSafeConfiguration(root);
 if(config.runtimeMode!=='isolated-local-docker'||!config.localDockerVerified)throw new Error('VERIFIED_LOCAL_TEST_ENVIRONMENT_REQUIRED');
+const adminOnly=process.argv.includes('--admin-only');
 const id=randomUUID(),directory=resolve(root,'work/audit30-native-acceptance',id);await mkdir(directory,{recursive:true});
 const admin=createClient(config.supabaseUrl,config.serviceRoleKey,{auth:{persistSession:false,autoRefreshToken:false}});
 const {supervisionSchema}=await import(new URL('../../../apps/web/modules/admin/data/supervision/types.ts',import.meta.url));
 const db=postgres(resolveExpectedDatabaseUrl(config),{ssl:false,max:1,onnotice:()=>{}});
-const users=[],organizations=[];const provenance={harnessSha256:createHash('sha256').update(await readFile(fileURLToPath(import.meta.url))).digest('hex'),buildId:process.argv.includes('--probe')?null:(await readFile(resolve(root,'apps/web/.next/BUILD_ID'),'utf8')).trim()};const proof={scope:'LOCAL_SYNTHETIC_NATIVE_AUTH_AND_ORGANIZATION_ACCEPTANCE',runId:id,roleBootstrap:'TEST_ONLY_NOT_GOVERNED_ROLE_ASSIGNMENT_PROOF',provenance,rpc:[],browser:[],cleanup:{verified:false},status:'RUNNING'};
+const users=[],organizations=[];const provenance={harnessSha256:createHash('sha256').update(await readFile(fileURLToPath(import.meta.url))).digest('hex'),buildId:process.argv.includes('--probe')?null:(await readFile(resolve(root,'apps/web/.next/BUILD_ID'),'utf8')).trim()};const proof={scope:'LOCAL_SYNTHETIC_NATIVE_AUTH_AND_ORGANIZATION_ACCEPTANCE',mode:adminOnly?'ADMIN_ONLY':'FOUR_ROLE_READINESS',runId:id,roleBootstrap:'TEST_ONLY_NOT_GOVERNED_ROLE_ASSIGNMENT_PROOF',provenance,rpc:[],browser:[],cleanup:{verified:false},status:'RUNNING'};
 let browser;
 let stage="setup";let activePage;
 function check(value,code){if(!value)throw new Error(code)}
@@ -50,12 +51,15 @@ try{
    const account=page.locator('.admin-workspace details.client-account');check(await account.count()===1,'ADMIN_ACCOUNT_MENU_MISSING');
    await account.locator('summary').focus();await page.keyboard.press('Enter');
    const signout=account.getByRole('button');await signout.waitFor({state:'visible'});
+   const menu=account.locator(':scope > div');const menuRect=await menu.boundingBox();check(menuRect&&menuRect.x>=0&&menuRect.x+menuRect.width<=width+1,'ACCOUNT_MENU_OUTSIDE_VIEWPORT');
+   await page.keyboard.press('Tab');check(await account.locator('a').first().evaluate(el=>el===document.activeElement),'ACCOUNT_MENU_TAB_ORDER_FAILED');
    check(await signout.evaluate(el=>{const r=el.getBoundingClientRect();const top=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return top!==null&&(el===top||el.contains(top));}),'ACCOUNT_MENU_COVERED');
    await page.screenshot({path:resolve(directory,`admin-menu-${locale}-${width}.png`),fullPage:true});
    await account.locator('summary').click();
    stage=`open-${locale}-${width}`;const response=await page.goto(`${config.baseUrl}/${locale}/administration/entreprises`,{waitUntil:'networkidle',timeout:30000});check(response?.status()===200,'ADMIN_ORGANIZATIONS_HTTP_FAILED');check(!page.url().includes('/connexion'),'ADMIN_NATIVE_BROWSER_AUTH_FAILED');const search=page.locator('input[name="q"]').first();check(await search.count()===1,'ADMIN_SEARCH_INPUT_MISSING');stage=`search-${locale}-${width}`;await search.fill(displayName);await search.press('Enter');await page.waitForURL(url=>url.searchParams.get('q')===displayName);await page.waitForLoadState('networkidle');check(await page.locator('html').getAttribute('dir')===(locale==='ar'?'rtl':'ltr'),'ADMIN_DIRECTION_FAILED');
-   stage=`select-${locale}-${width}`;const table=page.locator('.client-table-wrap').first();check((await table.boundingBox()).width<=width,'ADMIN_TABLE_VIEWPORT_NOT_BOUNDED');check(await table.getAttribute('tabindex')==='0','ADMIN_TABLE_NOT_KEYBOARD_REACHABLE');const link=page.locator(`a[href*="/administration/entreprises/${organizations[0]}"]`).first();check(await link.count()>0,'OWN_ORGANIZATION_SEARCH_RESULT_MISSING');await link.locator('xpath=ancestor::tr').locator('summary').click();await link.click();await page.waitForURL(`**/administration/entreprises/${organizations[0]}**`);await page.getByRole('heading',{level:1}).filter({hasText:displayName}).waitFor({state:'visible',timeout:15000});proof.browser.push({locale,width,realSearchAndSelection:true,ownOrganizationHeadingVerified:true});await context.close();
+   stage=`select-${locale}-${width}`;const table=page.locator('.client-table-wrap').first();check((await table.boundingBox()).width<=width,'ADMIN_TABLE_VIEWPORT_NOT_BOUNDED');check(await table.getAttribute('tabindex')==='0','ADMIN_TABLE_NOT_KEYBOARD_REACHABLE');const link=page.locator(`a[href*="/administration/entreprises/${organizations[0]}"]`).first();check(await link.count()>0,'OWN_ORGANIZATION_SEARCH_RESULT_MISSING');await link.locator('xpath=ancestor::tr').locator('summary').click();await link.click();await page.waitForURL(`**/administration/entreprises/${organizations[0]}**`);await page.getByRole('heading',{level:1}).filter({hasText:displayName}).waitFor({state:'visible',timeout:15000});await page.goto(`${config.baseUrl}/${locale}`,{waitUntil:'networkidle'});if(await page.getByRole('link',{name:/Mon espace|مساحتي/}).count()===0)await page.locator('.premium-menu-trigger').click();const home=page.getByRole('link',{name:/Mon espace|مساحتي/}).first();check((await home.getAttribute('href'))?.includes('/administration/'),'PUBLIC_ADMIN_WORKSPACE_LINK_MISSING');proof.browser.push({locale,width,realSearchAndSelection:true,ownOrganizationHeadingVerified:true,menuBoundsVerified:true,menuKeyboardTabVerified:true,publicAdminWorkspaceVerified:true});await context.close();
   }
+  if(!adminOnly){
   const clientBag=new Map();const clientSsr=createServerClient(config.supabaseUrl,config.publishableKey,{cookies:{getAll:()=>[...clientBag.values()],setAll:items=>items.forEach(item=>clientBag.set(item.name,item))}});
   const clientSession=await ordinary.client.auth.getSession();check(!(await clientSsr.auth.setSession(clientSession.data.session)).error,'CLIENT_SSR_SESSION_FAILED');
   proof.client=[];
@@ -105,6 +109,7 @@ try{
     }
     await context.close();
    }
+  }
   }
  }
  proof.status='PASSED';
