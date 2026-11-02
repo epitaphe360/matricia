@@ -35,7 +35,12 @@ export async function loadClientApprovals(organizationId: string | null, request
   const subjects=z.array(z.object({approval_request_id:z.string().uuid(),label_fr:z.string(),label_ar:z.string(),path:z.string().regex(/^\/client\//u).nullable()})).safeParse(subjectResponse.data);
   if(subjectResponse.error||!subjects.success||subjects.data.some(item=>!ids.includes(item.approval_request_id)))return{status:"unavailable"};
   const labels=new Map(subjects.data.map(item=>[item.approval_request_id,item]));
+  const commandResponse=ids.length?await client.rpc("list_my_client_approval_command_states_v1",{p_organization_id:organizationId,p_approval_ids:ids}):{data:[],error:null};
+  const commands=z.array(z.object({approval_request_id:z.string().uuid(),can_resume:z.boolean(),completed:z.boolean()})).safeParse(commandResponse.data);
+  if(commandResponse.error||!commands.success||commands.data.some(item=>!ids.includes(item.approval_request_id)))return{status:"unavailable"};
+  const states=new Map(commands.data.map(item=>[item.approval_request_id,item]));
   return { status: "success", page, hasNext: parsed.data.length > APPROVAL_PAGE_SIZE, items: parsed.data.slice(0, APPROVAL_PAGE_SIZE).map((item) => ({
+    canResume:states.get(item.id)?.can_resume,completed:states.get(item.id)?.completed,
     labelFr: labels.get(item.id)?.label_fr,labelAr: labels.get(item.id)?.label_ar,path: labels.get(item.id)?.path,
     id: item.id,
     status: item.status,

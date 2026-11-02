@@ -352,9 +352,7 @@ export function ClientDashboardHome({
                     })}
                   </svg>
                   <ul className="client-home-progress">
-                    <li><span data-tone="violet" /><span>{c.kpiRequests}</span><strong dir="ltr">{counts.openRequests}</strong></li>
-                    <li><span data-tone="peach" /><span>{c.kpiMissions}</span><strong dir="ltr">{counts.activeMissions}</strong></li>
-                    <li><span data-tone="mint" /><span>{c.kpiQuotes}</span><strong dir="ltr">{counts.quotesToReview}</strong></li>
+                    {progressRows.map((row,index)=><li key={row.label}><span data-tone={["violet","peach","mint"][index]}/><span>{row.label}</span><strong dir="ltr">{row.value}</strong></li>)}
                   </ul>
                 </div>
               )}

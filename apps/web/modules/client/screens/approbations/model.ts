@@ -7,7 +7,7 @@ export type ClientApprovalRequest = {
   amountMinor: string | null;
   currency: string | null;
   requestedAt: string;
-  labelFr?: string; labelAr?: string; path?: string | null;
+  labelFr?: string; labelAr?: string; path?: string | null; canResume?: boolean; completed?: boolean;
 };
 
 export type ClientApprovalPage =
