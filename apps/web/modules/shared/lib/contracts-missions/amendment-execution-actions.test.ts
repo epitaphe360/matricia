@@ -1,5 +1,6 @@
 import { beforeEach,describe,expect,it,vi } from "vitest";
-const mock=vi.hoisted(()=>({user:vi.fn(),aal:vi.fn(),rpc:vi.fn()}));
+const mock=vi.hoisted(()=>({user:vi.fn(),aal:vi.fn(),rpc:vi.fn(),revalidate:vi.fn()}));
+vi.mock("next/cache",()=>({revalidatePath:mock.revalidate}));
 vi.mock("@/modules/shared/lib/supabase/server",()=>({getSupabaseServerClient:async()=>({auth:{getUser:mock.user,mfa:{getAuthenticatorAssuranceLevel:mock.aal}},rpc:mock.rpc})}));
 import { executeMissionAmendment } from "./amendment-execution-actions";
 const id="e1000000-0000-4000-8000-000000000001",hash="a".repeat(64);
@@ -7,6 +8,8 @@ function form(){const f=new FormData();for(const[key,value]of Object.entries({lo
 beforeEach(()=>{vi.clearAllMocks();mock.user.mockResolvedValue({data:{user:{id}}});mock.aal.mockResolvedValue({data:{currentLevel:"aal2"},error:null});mock.rpc.mockResolvedValue({data:{outcome:"MISSION_AMENDMENT_EXECUTED",amendment_id:id,created_deliverables:1},error:null})});
 describe("Client execution of signed Provider additions",()=>{
  it("passes only the chosen dates and signed preparation hash, with exact Casablanca timezone",async()=>{const f=form();f.set("criterionKey","FORGED");expect(await executeMissionAmendment({status:"idle"},f)).toEqual({status:"success"});expect(mock.rpc).toHaveBeenCalledWith("execute_signed_mission_amendment_v1",{p_amendment_id:id,p_expected_preparation_hash:hash,p_assignments:[{deliverable_key:"ADDED_REPORT",due_at:"2026-11-03T14:30:00+01:00"}],p_schedule_confirmed:true,p_idempotency_key:id})});
+ it("executes a signed removal without an invented date and accepts its actual retirement receipt",async()=>{const f=form();f.delete("deliverableKey");f.delete("dueAt:ADDED_REPORT");mock.rpc.mockResolvedValue({data:{outcome:"MISSION_AMENDMENT_EXECUTED",amendment_id:id,created_deliverables:0,retired_deliverables:1},error:null});expect(await executeMissionAmendment({status:"idle"},f)).toEqual({status:"success"});expect(mock.rpc.mock.calls[0]?.[1]).toMatchObject({p_assignments:[],p_schedule_confirmed:true});expect(mock.revalidate).toHaveBeenCalledWith("/fr/sous-traitant/missions");expect(mock.revalidate).toHaveBeenCalledWith("/ar/client/contrats")});
+ it("does not call a zero-create zero-retirement receipt a successful execution",async()=>{mock.rpc.mockResolvedValue({data:{outcome:"MISSION_AMENDMENT_EXECUTED",amendment_id:id,created_deliverables:0,retired_deliverables:0},error:null});expect(await executeMissionAmendment({status:"idle"},form())).toEqual({status:"error",reason:"UNAVAILABLE"})});
  it("requires explicit schedule confirmation",async()=>{const f=form();f.delete("scheduleConfirmed");expect(await executeMissionAmendment({status:"idle"},f)).toEqual({status:"error",reason:"VALIDATION"});expect(mock.rpc).not.toHaveBeenCalled()});
  it("rejects an impossible civil date instead of normalizing it",async()=>{const f=form();f.set("dueAt:ADDED_REPORT","2026-02-31T14:30");expect(await executeMissionAmendment({status:"idle"},f)).toEqual({status:"error",reason:"VALIDATION"});expect(mock.rpc).not.toHaveBeenCalled()});
  it("requires the real second factor before mutation",async()=>{mock.aal.mockResolvedValue({data:{currentLevel:"aal1"},error:null});expect(await executeMissionAmendment({status:"idle"},form())).toEqual({status:"error",reason:"MFA"});expect(mock.rpc).not.toHaveBeenCalled()});
