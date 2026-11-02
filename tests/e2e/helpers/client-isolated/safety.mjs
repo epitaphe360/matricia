@@ -8,7 +8,7 @@ export function requireDevelopment() {
 }
 export function docker(args, options = {}) {
     const env = { ...process.env, DOCKER_HOST: 'unix:///var/run/docker.sock' };
-    for (const key of ['DOCKER_CONTEXT', 'DOCKER_TLS_VERIFY', 'DOCKER_CERT_PATH'])
+    for (const key of ['DOCKER_CONTEXT', 'DOCKER_TLS', 'DOCKER_TLS_VERIFY', 'DOCKER_CERT_PATH'])
         delete env[key];
     return execFileSync('docker', args, { encoding: 'utf8', timeout: 90000, maxBuffer: 128 * 1024 * 1024, ...options, env });
 }
@@ -45,4 +45,13 @@ export async function loadOwnState() {
         state[kind === 'db' ? 'dbHost' : `${kind}Host`] = networks[state.network].IPAddress;
     }
     return state;
+}
+
+export function validateCanonicalSourceTarget(value, { requireReady = true } = {}) {
+    validateSourceTarget(value);
+    if (value.purpose !== 'CANONICAL_ACL_SETUP_SOURCE_ONLY' || (requireReady && (value.status !== 'retained-setup-source' || !Number.isInteger(value.migrationCount) || value.migrationCount < 1))) throw new Error('CANONICAL_SETUP_SOURCE_REQUIRED');
+    return value;
+}
+export function requireFreshRestoreState(state) {
+    if (state?.status !== 'DATABASE_READY') throw new Error('FRESH_OWNED_TEST_TARGET_REQUIRED');
 }

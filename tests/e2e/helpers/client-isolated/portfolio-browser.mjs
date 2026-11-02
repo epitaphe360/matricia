@@ -18,7 +18,7 @@ const bag = new Map(), ssr = createServerClient(api, state.anonKey, { cookies: {
 if ((await ssr.auth.setSession(owner.session)).error) throw new Error('NATIVE_SSR_SESSION_REQUIRED');
 const directory = resolve(state.directory, 'portfolio-browser');
 await mkdir(directory, { recursive: true });
-const proof = { scope: 'NATIVE_CLIENT_PORTFOLIO_SERVER_ACTIONS', candidate: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), status: 'RUNNING', nativeOnboardingCertified: false, physicalScanningCertified: false, independentBudgetApprovalCertified: false, steps: [], pageErrors: [] };
+const proof = { scope: 'NATIVE_CLIENT_PORTFOLIO_SERVER_ACTIONS',appTree:execFileSync('git',['rev-parse','HEAD:apps/web'],{encoding:'utf8'}).trim(), candidate: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), status: 'RUNNING', nativeOnboardingCertified: false, physicalScanningCertified: false, independentBudgetApprovalCertified: false, steps: [], pageErrors: [] };
 const browser = await chromium.launch({ executablePath: '/usr/bin/chromium' });
 const context = await browser.newContext({ viewport: { width: 390, height: 960 }, hasTouch: true, serviceWorkers: 'block' });
 await context.addCookies([...bag.values()].map(cookie => ({ name: cookie.name, value: cookie.value, url: origin, httpOnly: false, secure: false, sameSite: 'Lax' })));

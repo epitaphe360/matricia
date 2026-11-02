@@ -1,17 +1,20 @@
 import { requireDevelopment, loadOwnState } from './safety.mjs';
 requireDevelopment();
+const actorLabel=process.argv.find(argument=>argument.startsWith('--actor='))?.slice(8)??'owner';
+if(!/^[a-z][a-z0-9-]{1,32}$/u.test(actorLabel))throw new Error('INVALID_TEST_ACTOR_LABEL');
 import { createRequire } from 'node:module';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import {execFileSync}from 'node:child_process';
 const require = createRequire(resolve('apps/web/package.json')), { createServerClient } = require('@supabase/ssr'), { chromium, expect } = createRequire(resolve('package.json'))('@playwright/test');
-const s = await loadOwnState(), owner = JSON.parse(await readFile(resolve(s.directory, 'actors.private.json'))).find(a => a.label === 'owner');
+const s = await loadOwnState(), owner = JSON.parse(await readFile(resolve(s.directory, 'actors.private.json'))).find(a => a.label === actorLabel);
 const fixture = JSON.parse(await readFile(resolve(s.directory, 'questionnaire-fixture-provenance.json')));
 const api = `http://127.0.0.1:${s.gatewayPort}`, origin = `http://127.0.0.1:${s.appPort}`, bag = new Map(), ssr = createServerClient(api, s.anonKey, { cookies: { getAll: () => [...bag.values()], setAll: items => items.forEach(item => bag.set(item.name, item)) } });
 if ((await ssr.auth.setSession(owner.session)).error)
     throw new Error('NATIVE_SSR_SESSION_FAILED');
 const dir = resolve(s.directory, 'questionnaire-browser');
 await mkdir(dir, { recursive: true });
-const proof = { scope: 'NATIVE_CLIENT_CONDITIONAL_QUESTIONNAIRE', status: 'RUNNING', nativeAuthAal2: true, historicalFixtureSetup: true, nativeOnboardingCertified: false, physicalScanningCertified: false, pageErrors: [], steps: [] };
+const proof = { scope: 'NATIVE_CLIENT_CONDITIONAL_QUESTIONNAIRE',appTree:execFileSync('git',['rev-parse','HEAD:apps/web'],{encoding:'utf8'}).trim(), candidate:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),sourceArchiveSha256:s.baselineArchiveSha256,additionalMigrations:s.additionalMigrations??[], status: 'RUNNING', nativeAuthAal2: true, historicalFixtureSetup: true, nativeOnboardingCertified: false, physicalScanningCertified: false, pageErrors: [], steps: [] };
 const browser = await chromium.launch({ executablePath: '/usr/bin/chromium' }), context = await browser.newContext({ viewport: { width: 375, height: 960 }, hasTouch: true, serviceWorkers: 'block' });
 await context.addCookies([...bag.values()].map(c => ({ name: c.name, value: c.value, url: origin, httpOnly: false, secure: false, sameSite: 'Lax' })));
 const page = await context.newPage();
