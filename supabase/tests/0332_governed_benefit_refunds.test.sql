@@ -264,12 +264,14 @@ reset role;
 select is((select count(*)from public.credit_ledger_entries where reference_id=pg_temp.refund_id()::text and entry_type='REFUND'),0::bigint,'outage cannot leave a credited ledger');
 select is((select count(*)from public.credit_economic_allocations_v1 where allocation_kind='REVERSAL'and funding_source_id=(select(v#>>'{}')::uuid from p332 where k='funding')),0::bigint,'outage cannot leave an economic reversal');
 select is((select status from public.benefit_redemptions where id=pg_temp.refund_id()),'CONSUMED','outage cannot falsely mark a consumed benefit refunded');
+select is((select count(*)from private.benefit_refund_write_capabilities_v1),0::bigint,'outage leaves no transient authority behind');
 drop trigger test0332_refund_outage on public.event_outbox;
 set local role authenticated;select pg_temp.actor332(3);
 insert into p332 values('refund-execute',public.decide_benefit_refund_v1((select(v->>'request_id')::uuid from p332 where k='refund-request'),(select v->>'content_hash'from p332 where k='refund-request'),true,'TEST independently verified exact refund and economic reversal','refund332-execute'));
 select is(public.decide_benefit_refund_v1((select(v->>'request_id')::uuid from p332 where k='refund-request'),(select v->>'content_hash'from p332 where k='refund-request'),true,'TEST independently verified exact refund and economic reversal','refund332-execute'),(select v from p332 where k='refund-execute'),'lost execution response replays exact credit and economic reversal once');
 select throws_ok($$select public.decide_benefit_refund_v1((select(v->>'request_id')::uuid from p332 where k='refund-request'),(select v->>'content_hash'from p332 where k='refund-request'),true,'TEST another key cannot double credit','refund332-double')$$,'40001','STALE_BENEFIT_REFUND_SOURCE','another key cannot refund an already refunded consumption');
 reset role;
+select is((select count(*)from private.benefit_refund_write_capabilities_v1),0::bigint,'completed refund removes its transient authority');
 select is((select status from public.benefit_redemptions where id=pg_temp.refund_id()),'REFUNDED','approved independent Finance command effects CONSUMED to REFUNDED');
 select is((select sum(quantity)from public.credit_ledger_entries where reference_id=pg_temp.refund_id()::text and entry_type='REFUND'),1::numeric,'exact consumed quantity is credited with explicit REFUND entry');
 select is((select count(*)from public.credit_lots where organization_id='b3320000-0000-4000-8000-000000000001'),1::bigint,'refund never synthesizes a new ADMIN_GRANT or loses payment origin');
@@ -310,6 +312,9 @@ select is(public.decide_benefit_refund_v1((select(v->>'request_id')::uuid from p
 reset role;
 select is((select status from public.benefit_redemptions where id=(select(v->>'redemption_id')::uuid from p332 where k='respent-reserve')),'CONSUMED','refusal preserves the genuine consumed state');
 select is((select count(*)from public.credit_lot_movements where redemption_id=(select(v->>'redemption_id')::uuid from p332 where k='respent-reserve')and movement_type='REFUND'),0::bigint,'refusal cannot restore credits or reverse P&L');
+select throws_ok($$insert into public.credit_ledger_entries(organization_id,wallet_id,entry_type,quantity,idempotency_scope,idempotency_key,correlation_id,reference_type,reference_id,created_by)select organization_id,wallet_id,'REFUND',reserved_credits,'benefit.refund.execute','refund332-forged-ledger',extensions.gen_random_uuid(),'BENEFIT_REDEMPTION',id::text,'a3320000-0000-4000-8000-000000000003'from public.benefit_redemptions where id=(select(v->>'redemption_id')::uuid from p332 where k='respent-reserve')$$,'42501','CANONICAL_BENEFIT_REFUND_WRITE_REQUIRED','even privileged accidental credit inserts require the exact governed transaction authority');
+select throws_ok($$insert into public.credit_lot_movements(organization_id,credit_lot_id,redemption_id,movement_type,quantity,idempotency_scope,idempotency_key,correlation_id,created_by)select organization_id,credit_lot_id,redemption_id,'REFUND',quantity,'benefit.refund.execute','refund332-forged-movement',extensions.gen_random_uuid(),'a3320000-0000-4000-8000-000000000003'from public.credit_lot_movements where redemption_id=(select(v->>'redemption_id')::uuid from p332 where k='respent-reserve')and movement_type='CONSUME'$$,'42501','CANONICAL_BENEFIT_REFUND_WRITE_REQUIRED','a lot return cannot be forged outside an independent approved command');
+
 -- A separate real governed gift provides a deliberately short-lived original
 -- lot. Its actual consumption is not restored after the approved expiry rule.
 select pg_temp.actor332(2);set local role authenticated;

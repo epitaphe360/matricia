@@ -30,6 +30,16 @@ create table public.benefit_refund_executions_v1(
  quantity bigint not null check(quantity>0),reversed_allocation_ids uuid[] not null,source_hash text not null,created_by uuid not null references auth.users(id),
  created_at timestamptz not null default clock_timestamp(),correlation_id uuid not null
 );
+-- Transient, private authority is scoped to this backend, transaction, actor,
+-- exact immutable request and command. It is never a credit or financial ledger.
+create table private.benefit_refund_write_capabilities_v1(
+ backend_pid integer not null,transaction_id bigint not null,redemption_id uuid not null references public.benefit_redemptions(id),
+ request_id uuid not null references public.benefit_refund_requests_v1(id),actor_id uuid not null references auth.users(id),
+ content_hash text not null,idempotency_key text not null,correlation_id uuid not null,
+ primary key(backend_pid,transaction_id,redemption_id)
+);
+alter table private.benefit_refund_write_capabilities_v1 enable row level security;
+revoke all on private.benefit_refund_write_capabilities_v1 from public,anon,authenticated,service_role;
 do $$declare t text;begin foreach t in array array['benefit_refund_policies_v1','benefit_refund_policy_decisions_v1','benefit_refund_requests_v1','benefit_refund_decisions_v1','benefit_refund_executions_v1']loop
  execute format('alter table public.%I enable row level security',t);
  execute format('revoke all on public.%I from public,anon,authenticated,service_role',t);
@@ -48,8 +58,40 @@ create policy benefit_refund_execution_read on public.benefit_refund_executions_
 create unique index credit_economic_one_reversal_v1 on public.credit_economic_allocations_v1(reverses_allocation_id)where reverses_allocation_id is not null;
 alter table public.credit_ledger_entries drop constraint credit_ledger_entries_entry_type_check;
 alter table public.credit_ledger_entries add constraint credit_ledger_entries_entry_type_check check(entry_type in('GRANT','RESERVE','RELEASE','CONSUME','EXPIRE','ADJUSTMENT','REFUND'));
+-- REFUND is new to this credit ABI. Preserve all existing entry directions;
+-- only the governed benefit return may carry a positive REFUND quantity.
+alter table public.credit_ledger_entries drop constraint credit_entry_sign_check;
+alter table public.credit_ledger_entries add constraint credit_entry_sign_check check(
+ (entry_type in('GRANT','RELEASE')and quantity>0)
+ or(entry_type in('RESERVE','CONSUME','EXPIRE')and quantity<0)
+ or(entry_type='ADJUSTMENT'and quantity<>0)
+ or(entry_type='REFUND'and quantity>0 and reference_type='BENEFIT_REDEMPTION'and idempotency_scope='benefit.refund.execute')
+);
 alter table public.credit_lot_movements drop constraint credit_lot_movements_movement_type_check;
 alter table public.credit_lot_movements add constraint credit_lot_movements_movement_type_check check(movement_type in('RESERVE','RELEASE','CONSUME','REFUND'));
+
+create function private.guard_benefit_refund_write_v1()returns trigger language plpgsql security definer set search_path=pg_catalog set timezone='UTC' as $$
+declare redemption uuid;cap private.benefit_refund_write_capabilities_v1%rowtype;r public.benefit_redemptions%rowtype;begin
+ if tg_table_name='credit_lot_movements'then
+  if new.movement_type<>'REFUND'then return new;end if;redemption:=new.redemption_id;
+ else
+  if new.entry_type<>'REFUND'then return new;end if;
+  if new.reference_type<>'BENEFIT_REDEMPTION'or new.reference_id!~'^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$'then raise exception'CANONICAL_BENEFIT_REFUND_WRITE_REQUIRED'using errcode='42501';end if;redemption:=new.reference_id::uuid;
+ end if;
+ select*into cap from private.benefit_refund_write_capabilities_v1 where backend_pid=pg_backend_pid()and transaction_id=txid_current()and redemption_id=redemption;
+ select*into r from public.benefit_redemptions where id=redemption;
+ if cap.redemption_id is null or cap.actor_id is distinct from auth.uid()or not coalesce(private.credit_revenue_finance_access_v1(auth.uid(),true),false)
+  or r.status<>'CONSUMED'or new.organization_id is distinct from r.organization_id or new.created_by is distinct from cap.actor_id
+  or new.idempotency_scope is distinct from'benefit.refund.execute'or new.idempotency_key is distinct from cap.idempotency_key or new.correlation_id is distinct from cap.correlation_id
+  or not exists(select 1 from public.benefit_refund_requests_v1 q where q.id=cap.request_id and q.redemption_id=r.id and q.organization_id=r.organization_id and q.created_by<>cap.actor_id and q.content_hash=cap.content_hash)
+ then raise exception'CANONICAL_BENEFIT_REFUND_WRITE_REQUIRED'using errcode='42501';end if;
+ if tg_table_name='credit_lot_movements'then
+  if not exists(select 1 from public.credit_lot_movements m where m.redemption_id=r.id and m.organization_id=r.organization_id and m.credit_lot_id=new.credit_lot_id and m.movement_type='CONSUME'and m.quantity=new.quantity)then raise exception'CANONICAL_BENEFIT_REFUND_WRITE_REQUIRED'using errcode='42501';end if;
+ elsif new.wallet_id is distinct from r.wallet_id or new.quantity is distinct from r.reserved_credits or new.execution_actor_type is distinct from'USER'then raise exception'CANONICAL_BENEFIT_REFUND_WRITE_REQUIRED'using errcode='42501';end if;
+ return new;
+end$$;
+create trigger benefit_refund_movement_source_guard_v1 before insert on public.credit_lot_movements for each row execute function private.guard_benefit_refund_write_v1();
+create trigger benefit_refund_ledger_source_guard_v1 before insert on public.credit_ledger_entries for each row execute function private.guard_benefit_refund_write_v1();
 
 create function private.benefit_refund_client_access_v1(p_org uuid,p_redemption uuid default null)returns boolean language sql stable security definer set search_path=pg_catalog set timezone='UTC' as $$
  select auth.uid()is not null and auth.jwt()->>'aal'='aal2'and(private.has_org_role(p_org,array['CLIENT_OWNER','CLIENT_ADMIN','CLIENT_ACCOUNTING'])or(private.has_org_role(p_org,array['CLIENT_BUYER'])and exists(select 1 from public.benefit_redemptions r join public.customer_box_redemption_allocations_v1 a on a.redemption_id=r.id and a.organization_id=r.organization_id where r.id=p_redemption and r.organization_id=p_org and r.created_by=auth.uid())))
@@ -156,6 +198,7 @@ declare q public.benefit_refund_requests_v1%rowtype;r public.benefit_redemptions
   if not exists(select 1 from public.benefit_refund_policy_decisions_v1 d where d.policy_id=p.id and d.approved and d.decided_by<>p.created_by and d.content_hash=p.content_hash)or p.effective_from>q.created_at or p.effective_until<=q.created_at then raise exception'APPROVED_BENEFIT_REFUND_POLICY_REQUIRED'using errcode='55000';end if;
   if not exists(select 1 from public.benefit_redemption_events e where e.redemption_id=r.id and e.to_status='CONSUMED'and e.occurred_at+make_interval(secs=>p.refund_window_seconds::double precision)>clock_timestamp())then raise exception'BENEFIT_REFUND_WINDOW_ELAPSED'using errcode='55000';end if;
   if(select coalesce(sum(quantity),0)from public.credit_lot_movements where redemption_id=r.id and organization_id=r.organization_id and movement_type='CONSUME')<>r.reserved_credits then raise exception'BENEFIT_REFUND_QUANTITY_MISMATCH'using errcode='23514';end if;
+  insert into private.benefit_refund_write_capabilities_v1(backend_pid,transaction_id,redemption_id,request_id,actor_id,content_hash,idempotency_key,correlation_id)values(pg_backend_pid(),txid_current(),r.id,q.id,auth.uid(),q.content_hash,p_idempotency_key,correlation);
   for x in select m.*,l.expires_at,l.wallet_id,private.credit_lot_funding_status_v1(l.id)funding_status,f.id fact_id,f.source_hash,f.source_snapshot from public.credit_lot_movements m join public.credit_lots l on l.id=m.credit_lot_id and l.organization_id=m.organization_id left join public.credit_economic_consumption_facts_v1 f on f.movement_id=m.id where m.redemption_id=r.id and m.organization_id=r.organization_id and m.movement_type='CONSUME'order by m.credit_lot_id loop
    if x.expires_at<=clock_timestamp()then raise exception'BENEFIT_REFUND_ORIGINAL_LOT_EXPIRED'using errcode='55000';end if;
    if x.wallet_id<>r.wallet_id or x.funding_status<>'ELIGIBLE'or x.fact_id is null or x.source_hash<>private.canonical_request_hash(x.source_snapshot)then raise exception'BENEFIT_REFUND_FUNDING_SOURCE_REQUIRED'using errcode='55000';end if;
@@ -170,6 +213,7 @@ declare q public.benefit_refund_requests_v1%rowtype;r public.benefit_redemptions
   insert into public.benefit_redemption_events(organization_id,redemption_id,from_status,to_status,reason_code,proof_hash,idempotency_key,correlation_id,actor_user_id)values(r.organization_id,r.id,'CONSUMED','REFUNDED','INDEPENDENT_FINANCE_APPROVED',q.content_hash,p_idempotency_key,correlation,auth.uid());
  end if;
  insert into public.benefit_refund_decisions_v1(request_id,approved,content_hash,reason,decided_by)values(q.id,p_approve,q.content_hash,btrim(p_reason),auth.uid());
+ delete from private.benefit_refund_write_capabilities_v1 where backend_pid=pg_backend_pid()and transaction_id=txid_current()and redemption_id=r.id;
  result:=jsonb_build_object('outcome',case when p_approve then'BENEFIT_REFUNDED'else'BENEFIT_REFUND_REJECTED'end,'request_id',q.id,'redemption_id',r.id,'refund_entry_id',entry,'quantity',case when p_approve then r.reserved_credits::text else'0'end,'reversed_allocation_ids',reversals);
  perform private.record_benefit_refund_event_v1(r.organization_id,q.id,case when p_approve then'BenefitRefundedV1'else'BenefitRefundRejectedV1'end,result,p_idempotency_key,correlation);
  perform private.finish_credit_command(r.organization_id,'benefit.refund.decide',p_idempotency_key,result);return result;
@@ -219,7 +263,7 @@ do $$declare d text;needle text;replacement text;begin
  d:=replace(d,needle,'if exists(select 1 from public.credit_lot_movements where credit_lot_id=l.id and movement_type=''REFUND'')then amount:=private.credit_economic_refund_aware_amount_v1(fact.id,c.id);else '||needle||'end if;');execute d;
 end$$;
 create function private.guard_benefit_refund_transition_v1()returns trigger language plpgsql security definer set search_path=pg_catalog set timezone='UTC' as $$begin
- if new.status='REFUNDED'and old.status is distinct from new.status and(old.status<>'CONSUMED'or not exists(select 1 from public.benefit_refund_executions_v1 e join public.benefit_refund_requests_v1 q on q.id=e.request_id where e.redemption_id=new.id and e.organization_id=new.organization_id and e.quantity=new.reserved_credits and e.created_by=auth.uid()and q.created_by<>auth.uid()))then raise exception'CANONICAL_BENEFIT_REFUND_REQUIRED'using errcode='55000';end if;return new;
+ if new.status='REFUNDED'and old.status is distinct from new.status and(old.status<>'CONSUMED'or not exists(select 1 from private.benefit_refund_write_capabilities_v1 cap where cap.backend_pid=pg_backend_pid()and cap.transaction_id=txid_current()and cap.redemption_id=new.id and cap.actor_id=auth.uid())or not exists(select 1 from public.benefit_refund_executions_v1 e join public.benefit_refund_requests_v1 q on q.id=e.request_id where e.redemption_id=new.id and e.organization_id=new.organization_id and e.quantity=new.reserved_credits and e.created_by=auth.uid()and q.created_by<>auth.uid()))then raise exception'CANONICAL_BENEFIT_REFUND_REQUIRED'using errcode='55000';end if;return new;
 end$$;
 create trigger benefit_refund_transition_guard_v1 before update of status on public.benefit_redemptions for each row execute function private.guard_benefit_refund_transition_v1();
 
@@ -247,7 +291,7 @@ declare result jsonb;total bigint;finance boolean:=coalesce(private.credit_reven
 end$$;
 
 do $$declare f regprocedure;begin foreach f in array array[
- 'private.benefit_refund_client_access_v1(uuid,uuid)'::regprocedure,'private.benefit_refund_policy_v1(uuid)'::regprocedure,
+ 'private.guard_benefit_refund_write_v1()'::regprocedure,'private.benefit_refund_client_access_v1(uuid,uuid)'::regprocedure,'private.benefit_refund_policy_v1(uuid)'::regprocedure,
  'private.record_benefit_refund_event_v1(uuid,uuid,text,jsonb,text,uuid)'::regprocedure,'private.benefit_refund_source_v1(uuid)'::regprocedure,
  'private.reverse_benefit_economic_allocation_v1(uuid,uuid,uuid)'::regprocedure,'private.credit_economic_refund_aware_amount_v1(uuid,uuid)'::regprocedure,'private.guard_benefit_refund_transition_v1()'::regprocedure,
  'public.propose_benefit_refund_policy_v1(uuid,bigint,text,timestamptz,timestamptz,text)'::regprocedure,'public.decide_benefit_refund_policy_v1(uuid,text,boolean,text)'::regprocedure,
