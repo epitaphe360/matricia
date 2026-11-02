@@ -1,6 +1,8 @@
 begin;
 set local search_path=public,extensions;
 select no_plan();
+-- pgTAP usage is transaction-local and rolled back; API framework execution stays revoked.
+grant usage on schema extensions to authenticated,service_role;
 -- Transaction-local synthetic fixtures. No scan, trigger, FK or RLS is disabled.
 select ok(has_function_privilege('authenticated','public.get_internal_message_thread_page_for_organization_v1(uuid,uuid,timestamptz,uuid,integer)','EXECUTE'),'authenticated may reach scoped history guard');
 select ok(not has_function_privilege('anon','public.get_internal_message_thread_page_for_organization_v1(uuid,uuid,timestamptz,uuid,integer)','EXECUTE'),'anonymous scoped history denied');

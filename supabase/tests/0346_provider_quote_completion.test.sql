@@ -1,4 +1,7 @@
 begin;
+-- Fixture civil dates follow the same Moroccan business calendar as the RPCs.
+-- In particular, UTC and Casablanca differ around local midnight.
+set local timezone='Africa/Casablanca';
 set local search_path=public,extensions;
 select no_plan();
 grant usage on schema extensions to authenticated;
