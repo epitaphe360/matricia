@@ -60,7 +60,9 @@ async function commandLog(file, command) {
 }
 try {
   const space = await statfs(root, { bigint: true });
-  if (space.bavail * space.bsize < 4n * 1024n ** 3n) throw new Error('LOCAL_REPLAY_NEEDS_4_GIB_FREE');
+  // VFS creates temporary writable layers for database, Auth and Storage.
+  // A 4-GiB reserve was exhausted during Storage bootstrap before app SQL.
+  if (space.bavail * space.bsize < 8n * 1024n ** 3n) throw new Error('LOCAL_REPLAY_NEEDS_8_GIB_FREE');
   for (const image of Object.values(images)) docker(['image', 'inspect', image, '--format', '{{.Id}}']);
   const migrations = await snapshot('supabase/migrations');
   const requestedTests = args.filter(arg => arg.startsWith('--test=')).map(arg => arg.slice(7));
