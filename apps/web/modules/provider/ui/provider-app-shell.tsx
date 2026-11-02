@@ -1,5 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import { safeReturnPath } from "@/modules/shared/lib/auth/return-path";
+import { translateLocalPath } from "@/modules/shared/lib/auth/workspace-navigation";
 import { Bell, Search, Sprout } from "lucide-react";
 import type { ReactNode } from "react";
 import { providerCopy } from "@/modules/provider/data/spaces/copy";
@@ -34,6 +36,7 @@ const routeByActive: Record<ProviderNavKey, string> = {
 export function ProviderAppShell({
   locale,
   selectedQuery,
+  languagePath,
   organizations=[],
   selectedOrganizationId,
   userEmail,
@@ -46,6 +49,7 @@ export function ProviderAppShell({
 }: {
   locale: Locale;
   selectedQuery: string;
+  languagePath?: string;
   organizations?:readonly {id:string;name:string}[];
   selectedOrganizationId: string | null;
   userEmail: string | null;
@@ -60,10 +64,11 @@ export function ProviderAppShell({
   const nav = buildProviderNav(locale, selectedQuery);
   const alternate = locale === "fr" ? "ar" : "fr";
   const route = routeByActive[active];
-  const homeHref = active === "home"
+  const currentPath = safeReturnPath(languagePath, locale);
+  const homeHref = currentPath ?? (active === "home"
     ? `/${locale}/tableau-de-bord${selectedQuery}`
-    : `/${locale}/${route}${selectedQuery}`;
-  const altHref = active === "home"
+    : `/${locale}/${route}${selectedQuery}`);
+  const altHref = currentPath ? translateLocalPath(currentPath, locale, alternate) : active === "home"
     ? `/${alternate}/tableau-de-bord${selectedQuery}`
     : `/${alternate}/${route}${selectedQuery}`;
 
@@ -121,11 +126,12 @@ export function ProviderAppShell({
             <Bell className="size-4" />
           </Link>
           <nav className="client-lang-switch" aria-label={locale === "ar" ? "اللغة" : "Langue"}>
-            <Link href={`/fr/${route === "tableau-de-bord" ? "tableau-de-bord" : route}${selectedQuery}`} aria-current={locale === "fr" ? "page" : undefined}>FR</Link>
-            <Link href={`/ar/${route === "tableau-de-bord" ? "tableau-de-bord" : route}${selectedQuery}`} aria-current={locale === "ar" ? "page" : undefined}>AR</Link>
+            <Link href={currentPath ? (locale === "fr" ? currentPath : altHref) : `/fr/${route}${selectedQuery}`} aria-current={locale === "fr" ? "page" : undefined}>FR</Link>
+            <Link href={currentPath ? (locale === "ar" ? currentPath : altHref) : `/ar/${route}${selectedQuery}`} aria-current={locale === "ar" ? "page" : undefined}>AR</Link>
           </nav>
           <span className="client-space-chip">{c.space}</span>
           <WorkspaceAccountMenu
+            workspace="provider"
             locale={locale}
             userEmail={userEmail}
             returnTo={homeHref}

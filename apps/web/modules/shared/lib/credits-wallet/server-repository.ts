@@ -1,3 +1,4 @@
+import { classifyAuthReadFailure } from "@/modules/shared/lib/auth/read-failure";
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 import { createCreditsRepository } from "./repository";
@@ -18,8 +19,10 @@ export async function createServerCreditsRepository(requestedOrganizationId?: st
       ? { data: null, error: result.error ?? { code: "INVALID_RESPONSE" } }
       : { data: { benefits: data.benefits, boxes: data.boxes }, error: null };
   }
-  return createCreditsRepository({
-    async user() { const { data } = await c.auth.getUser(); return data.user?.id ?? null; },
+  let identity: ReturnType<typeof c.auth.getUser> | undefined;
+  const readIdentity = () => identity ??= c.auth.getUser();
+  const repository = createCreditsRepository({
+    async user() { const { data } = await readIdentity(); return data.user?.id ?? null; },
     async memberships(id) { return c.from("organization_memberships").select("id,organization_id").eq("user_id", id).eq("status", "ACTIVE").limit(100); },
     async roles(ids) { return ids.length ? c.from("organization_member_roles").select("membership_id,role_code,revoked_at").in("membership_id", ids).limit(300) : { data: [], error: null }; },
     async organizations(ids) { const scoped = scope(ids); return scoped.length ? c.from("organizations").select("id,display_name").in("id", scoped).limit(1) : { data: [], error: null }; },
@@ -44,4 +47,17 @@ export async function createServerCreditsRepository(requestedOrganizationId?: st
     async acceptedProof(id) { return c.from("benefit_redemptions").select("id,status,delivery_proof_hash").eq("id", id).maybeSingle(); },
     async rpc(name, input) { return c.rpc(name, input); },
   });
+  return {
+    ...repository,
+    async load() {
+      const { data, error } = await readIdentity();
+      const failure = classifyAuthReadFailure(error);
+      if (failure) return { status: "error" as const, reason: failure };
+      if (!data.user) return { status: "error" as const, reason: "UNAUTHENTICATED" as const };
+      if (requestedOrganizationId !== undefined && !requested) return { status: "error" as const, reason: "INVALID_INPUT" as const };
+      const result = await repository.load();
+      if (result.status === "success" && requested && !result.value.organizations.some(item => item.id === requested)) return { status: "error" as const, reason: "FORBIDDEN" as const };
+      return result;
+    },
+  };
 }

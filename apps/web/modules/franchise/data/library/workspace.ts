@@ -162,12 +162,12 @@ async function loadFranchiseLibraryWorkspaceUnchecked(input: { locale: "fr" | "a
     .filter((role) => role.revoked_at === null && franchiseRoles.includes(role.role_code as (typeof franchiseRoles)[number]))
     .flatMap((role) => role.organization_member_franchise_assignments?.length?role.organization_member_franchise_assignments.filter((a)=>a.revoked_at===null).map((a)=>({organizationId:member.organization_id,franchiseId:a.franchise_id})):[{ organizationId: member.organization_id, franchiseId: role.franchise_id }]));
   const allowed = franchises.data.filter((item) => roles.some((role) => role.organizationId === item.operator_organization_id && (role.franchiseId === item.id || (role.franchiseId === null && franchises.data.filter((f)=>f.operator_organization_id===item.operator_organization_id).length===1))));
-  if (!allowed.length) return { status: "error", reason: "FORBIDDEN" };
+  if (!allowed.length) return { status: "error", reason: "NO_MANDATE" };
   const selected = allowed.find((item)=>(!input.organizationId||item.operator_organization_id===input.organizationId)&&(!input.franchiseId||item.id===input.franchiseId)&&(!input.libraryId||item.library_id===input.libraryId));
-  if (!selected) return { status: "error", reason: input.organizationId ? "FORBIDDEN" : "NO_MANDATE" };
+  if (!selected) return { status: "error", reason: input.organizationId || input.franchiseId || input.libraryId ? "FORBIDDEN" : "NO_MANDATE" };
   const libraryId = selected.library_id;
   const pageResponse=await client.rpc("franchise_catalog_page",catalogPageArguments(selected.id,input.catalog));
-  if(pageResponse.error)return{status:"error",reason:"QUERY_FAILED"};
+  if(pageResponse.error)return{status:"error",reason:pageResponse.error.code==="42501"?"FORBIDDEN":"QUERY_FAILED"};
   const pageParsed=catalogPageSchema.safeParse(pageResponse.data);if(!pageParsed.success)return{status:"error",reason:"INVALID_RESPONSE"};
   const serverPage=pageParsed.data;const groups=serverPage.groups;
   const ids=(kind:keyof typeof groups)=>scopedIds(groups[kind].ids);

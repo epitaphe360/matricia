@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { FranchiseAccessState, FranchiseOrganizationSelector } from "@/modules/franchise/ui/franchise-access-state";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { libraryCopy } from "@/modules/franchise/data/library/copy";
 import { FranchiseLibraryOverviewBoard } from "@/modules/franchise/screens/library/library-boards";
@@ -13,8 +13,9 @@ export default async function FranchiseLibraryPage({ params, searchParams }: { p
   const c = libraryCopy(locale);
   return (
     <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="library" title={c.libraryTitle} lead={c.libraryLead} kicker={c.scope} mandateName={result.status === "success" ? result.workspace.mandate.libraryName : null}>
+      <FranchiseOrganizationSelector locale={locale} organizations={space.organizations} selectedOrganizationId={space.selectedOrganizationId} returnPath={`/${locale}/franchise/bibliotheque`} />
       {result.status === "error" ? (
-        <Alert variant="destructive"><AlertTitle>{c.unavailable}</AlertTitle><AlertDescription>{result.reason === "NO_MANDATE" ? c.noMandate : c.scopeHelp}</AlertDescription></Alert>
+        <FranchiseAccessState locale={locale} reason={result.reason} returnPath={`/${locale}/franchise/bibliotheque${space.selectedQuery}`} />
       ) : (
         <FranchiseLibraryOverviewBoard locale={locale} query={space.selectedQuery} workspace={result.workspace} />
       )}

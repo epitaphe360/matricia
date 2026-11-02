@@ -244,7 +244,7 @@ export function OrganizationsBoard({
             </div>
           </div>
           {filtered.length === 0 ? null : (
-            <div className="client-table-wrap">
+            <div className="client-table-wrap" tabIndex={0} role="region" aria-label={c.allOrgs}>
               <table className="client-space-table">
                 <thead>
                   <tr>

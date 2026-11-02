@@ -1,3 +1,4 @@
+import { classifyAuthReadFailure } from "@/modules/shared/lib/auth/read-failure";
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 import type { AdminCommandCenter } from "./model";
@@ -45,7 +46,9 @@ export type AdminLoadResult = { status: "success"; dashboard: AdminCommandCenter
 
 export async function loadAdminCommandCenter(page=1,status="ALL"): Promise<AdminLoadResult> {
   const client = await getSupabaseServerClient();
-  const { data: auth } = await client.auth.getUser();
+  const { data: auth, error: authError } = await client.auth.getUser();
+  const authFailure = classifyAuthReadFailure(authError);
+  if (authFailure) return { status: "error", reason: authFailure === "UNAUTHENTICATED" ? "UNAUTHENTICATED" : "QUERY_FAILED" };
   if (!auth.user) return { status: "error", reason: "UNAUTHENTICATED" };
   const securityResult = await client.rpc("get_my_account_security_requirement");
   if (securityResult.error) return { status: "error", reason: "QUERY_FAILED" };

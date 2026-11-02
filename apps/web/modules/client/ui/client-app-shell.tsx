@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { safeReturnPath } from "@/modules/shared/lib/auth/return-path";
 import Link from "next/link";
+import { translateLocalPath } from "@/modules/shared/lib/auth/workspace-navigation";
 import { Bell, Search } from "lucide-react";
 import type { ReactNode } from "react";
 import { clientDashboardCopy } from "@/modules/client/data/home/copy";
@@ -62,7 +63,7 @@ export function ClientAppShell({
   const searchPath = searchAction ?? `/${locale}/client/recherche`;
   const accountLabel = organizationName?.trim() || space.space;
   const currentPath = safeReturnPath(languagePath,locale);
-  const langHref = currentPath ? `/${alternate}/${currentPath.slice(locale.length+2)}` : localeSwitchHref(locale, selectedQuery, active);
+  const langHref = currentPath ? translateLocalPath(currentPath, locale, alternate) : localeSwitchHref(locale, selectedQuery, active);
 
   return (
     <div dir={locale === "ar" ? "rtl" : "ltr"} className="client-workspace" data-theme={theme}>
@@ -105,9 +106,10 @@ export function ClientAppShell({
               {c.languagePair}
             </Link>
             <WorkspaceAccountMenu
+              workspace="client"
               locale={locale}
               userEmail={userEmail}
-              returnTo={`/${locale}/tableau-de-bord${selectedQuery}`}
+              returnTo={currentPath ?? `/${locale}/tableau-de-bord${selectedQuery}`}
               fallbackInitial="M"
               label={c.accountMenu}
               displayName={accountLabel}

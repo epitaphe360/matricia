@@ -599,6 +599,7 @@
 }
 
 .client-page {
+  min-width: 0;
   position: relative;
   z-index: 1;
   display: grid;
@@ -683,6 +684,8 @@ button.client-cta {
 }
 
 .client-card {
+  min-width: 0;
+  overflow-wrap: anywhere;
   border: 1px solid var(--client-line);
   border-radius: 24px;
   background: #fff;
@@ -1116,6 +1119,9 @@ button.client-cta {
 }
 
 .client-table-wrap {
+  min-width: 0;
+  max-width: 100%;
+  overscroll-behavior-inline: contain;
   overflow-x: auto;
 }
 

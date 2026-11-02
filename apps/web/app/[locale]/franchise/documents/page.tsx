@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { FranchiseAccessState, FranchiseOrganizationSelector } from "@/modules/franchise/ui/franchise-access-state";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { libraryCopy } from "@/modules/franchise/data/library/copy";
 import { franchiseCopy } from "@/modules/franchise/data/spaces/copy";
@@ -18,8 +18,9 @@ export default async function FranchiseDocumentsPage({ params, searchParams }: {
   const view = query.vue === "verifier" ? "verifier" : null;
   return (
     <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="documents" title={s.docsTitleRich} lead={s.docsLeadRich} kicker={c.scope} mandateName={mandateName}>
+      <FranchiseOrganizationSelector locale={locale} organizations={space.organizations} selectedOrganizationId={space.selectedOrganizationId} returnPath={`/${locale}/franchise/documents`} />
       {result.status === "error" ? (
-        <Alert variant="destructive"><AlertTitle>{c.unavailable}</AlertTitle><AlertDescription>{result.reason === "NO_MANDATE" ? c.noMandate : c.scopeHelp}</AlertDescription></Alert>
+        <FranchiseAccessState locale={locale} reason={result.reason} returnPath={`/${locale}/franchise/documents${space.selectedQuery}`} />
       ) : (
         <DocumentsBoard locale={locale} query={space.selectedQuery} mandateName={mandateName} board={board} search={query.q} page={query.page} view={view} />
       )}

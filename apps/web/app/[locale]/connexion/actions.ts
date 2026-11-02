@@ -2,6 +2,8 @@
 import { ensureCurrentConsentDocuments } from "@/modules/shared/lib/auth/consent/current-documents";
 
 import { safeReturnPath } from "@/modules/shared/lib/auth/return-path";
+import { authorizedReturnPath } from "@/modules/shared/lib/auth/workspace-navigation";
+import { readWorkspaceNavigation } from "@/modules/shared/lib/auth/workspace-navigation-server";
 import { z } from "zod";
 import { cookies } from "next/headers";
 import { isCurrentLegalConsent, TERMS_VERSION, PRIVACY_VERSION } from "@/modules/shared/lib/auth/legal-consent";
@@ -72,11 +74,28 @@ export async function confirmRegistrationConsent(): Promise<boolean> {
 /** Resolve the next step from server-verified assurance and the role policy. */
 export async function postLoginDestination(localeInput: string, requestedNext?: string): Promise<string> {
   const locale = isLocale(localeInput) ? localeInput : "fr";
-  const target = safeReturnPath(requestedNext,locale) ?? `/${locale}/tableau-de-bord`;
+  const requested = safeReturnPath(requestedNext, locale);
+  let target = requested ?? `/${locale}/tableau-de-bord`;
   const client = await getSupabaseServerClient();
   if (!(await client.auth.getUser()).data.user) return `/${locale}/connexion?${new URLSearchParams({ next: target })}`;
+  const navigation = await readWorkspaceNavigation(locale);
+  if (navigation.status === "ok") {
+    const allowed = navigation.navigation.options.map(option => option.kind);
+    const authorized = authorizedReturnPath(requested, locale, allowed);
+    const fallback = navigation.navigation.options.find(option => option.kind === navigation.navigation.landing)?.href ?? `/${locale}/tableau-de-bord`;
+    target = authorized ?? fallback;
+    const targetUrl = new URL(target, "https://matricia.invalid");
+    const currentKind = navigation.navigation.options.find(option => option.kind === targetUrl.searchParams.get("workspace"))?.kind
+      ?? (targetUrl.pathname.startsWith(`/${locale}/administration/`) ? allowed.find(kind => kind === "administration") : targetUrl.pathname.startsWith(`/${locale}/franchise/`) ? allowed.find(kind => kind === "franchise") : targetUrl.pathname.startsWith(`/${locale}/sous-traitant/`) ? allowed.find(kind => kind === "provider") : navigation.navigation.landing);
+    if (currentKind) (await cookies()).set("matricia.workspace", currentKind, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 30 });
+    if (requested && !authorized) {
+      const url = new URL(target, "https://matricia.invalid");
+      url.searchParams.set("navigation", "role-fallback");
+      target = `${url.pathname}${url.search}`;
+    }
+  }
   const [assurance, policy] = await Promise.all([client.auth.mfa.getAuthenticatorAssuranceLevel(),client.rpc("get_my_account_security_requirement")]);
   const requirements = z.array(z.object({ mfa_required: z.boolean(), current_aal: z.enum(["aal1","aal2"]), requirement_satisfied: z.boolean() }).passthrough()).length(1).safeParse(policy.data);
-  const needsChallenge = assurance.error || policy.error || !requirements.success || (assurance.data?.currentLevel !== "aal2" && (assurance.data?.nextLevel === "aal2" || requirements.data[0]!.mfa_required));
+  const needsChallenge = navigation.status === "error" || !navigation.requirementSatisfied || assurance.error || policy.error || !requirements.success || !requirements.data[0]!.requirement_satisfied || (assurance.data?.currentLevel !== "aal2" && (assurance.data?.nextLevel === "aal2" || requirements.data[0]!.mfa_required));
   return needsChallenge ? `/${locale}/securite/compte?${new URLSearchParams({ next: target })}` : target;
 }

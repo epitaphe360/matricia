@@ -1,5 +1,48 @@
 begin;
 set local search_path=public,extensions;
+-- Synthetic checkout prerequisite, executed through the actual public commands.
+-- Two dedicated Finance actors keep content authorship and approval independent;
+-- both their fixture identities and the resulting audit/outbox roll back below.
+create function pg_temp.seed_approved_box_checkout(
+  p_organization_id uuid, p_plan_version_id uuid, p_rollover_months integer default 3
+) returns void language plpgsql as $$
+declare
+  author_id uuid := 'ff850000-0000-4000-8000-000000000001';
+  reviewer_id uuid := 'ff850000-0000-4000-8000-000000000002';
+  prior_sub text := current_setting('request.jwt.claim.sub', true);
+  prior_claims text := current_setting('request.jwt.claims', true);
+  plan public.subscription_plan_versions%rowtype;
+  benefit jsonb; box jsonb; rule jsonb; approval_context jsonb;
+  fixture_key text := 'checkout-fixture-' || p_plan_version_id::text;
+begin
+  select * into strict plan from public.subscription_plan_versions where id = p_plan_version_id;
+  insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
+  values(author_id,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','box-checkout-author@example.invalid','',now(),'{}','{}',now(),now()),
+        (reviewer_id,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','box-checkout-reviewer@example.invalid','',now(),'{}','{}',now(),now())
+  on conflict (id) do nothing;
+  insert into public.platform_user_roles(user_id,role_code) values(author_id,'FINANCE_MANAGER'),(reviewer_id,'FINANCE_MANAGER') on conflict do nothing;
+  perform set_config('request.jwt.claim.sub',author_id::text,true);
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',author_id,'role','authenticated','aal','aal2')::text,true);
+  benefit := public.create_benefit_version(p_organization_id,'CHECKOUT_FIXTURE_BENEFIT','CREDIT_SERVICE','MATRICIA_INTERNAL',
+    'Avantage synthétique de recette','ميزة اختبار اصطناعية','Prérequis de recette uniquement','شرط للاختبار فقط',
+    1,0,0,plan.currency,null,null,null,'{}','{}','TEST_ONLY_CHECKOUT',clock_timestamp()-interval '1 minute',fixture_key||'-benefit');
+  perform public.activate_benefit_version(p_organization_id,(benefit->>'benefit_version_id')::uuid,fixture_key||'-benefit-active');
+  box := public.create_box_version(p_organization_id,'CHECKOUT_FIXTURE_BOX','FIXED','Box synthétique de recette','صندوق اختبار اصطناعي',
+    plan.monthly_credit_grant,p_rollover_months,'{}',0,0,0,plan.currency,clock_timestamp()-interval '1 minute',
+    jsonb_build_array(jsonb_build_object('slot_code','CORE','slot_kind','MANDATORY','minimum_selections',1,'maximum_selections',1,
+      'allowed_benefit_version_ids',jsonb_build_array(benefit->>'benefit_version_id'))),fixture_key||'-box');
+  perform public.activate_box_version(p_organization_id,(box->>'box_version_id')::uuid,null,fixture_key||'-box-active');
+  rule := public.link_plan_box_rule(p_organization_id,p_plan_version_id,(box->>'box_version_id')::uuid,
+    '{"schema_version":1,"period_unit":"SUBSCRIPTION_CYCLE","budget_rule":"AT_MOST"}',clock_timestamp()-interval '1 minute',fixture_key||'-rule');
+  approval_context := public.get_box_configuration_approval_context_v1((rule->>'plan_box_rule_id')::uuid);
+  perform set_config('request.jwt.claim.sub',reviewer_id::text,true);
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',reviewer_id,'role','authenticated','aal','aal2')::text,true);
+  perform public.approve_box_configuration_v1((rule->>'plan_box_rule_id')::uuid,approval_context->>'source_hash',
+    'TEST ONLY independent approval of synthetic checkout terms',fixture_key||'-approve');
+  perform set_config('request.jwt.claim.sub',coalesce(prior_sub,''),true);
+  perform set_config('request.jwt.claims',coalesce(prior_claims,'{}'),true);
+end;
+$$;
 update private.admin_execution_environment_v1 set environment='DEVELOPMENT',configuration_reference='TEST_ONLY_IDENTITY205'where singleton;
 select no_plan();
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
@@ -16,18 +59,20 @@ insert into public.benefit_definitions(id,code,status,created_by)values('e205000
 insert into public.benefit_versions(id,benefit_id,version,status,benefit_type,fulfillment_mode,name_fr,name_ar,description_fr,description_ar,credit_cost,reference_value_minor,internal_cost_minor,currency,cancellation_rule_version,effective_from,content_hash,created_by)values('e2050000-0000-4000-8000-000000000002','e2050000-0000-4000-8000-000000000001',1,'ACTIVE','CONSULTATION','MATRICIA_INTERNAL','Conseil de recette','استشارة اختبار','Conseil de recette','استشارة اختبار',1,100,50,'MAD','v1',now()-interval'1 day',repeat('a',64),'a2050000-0000-4000-8000-000000000002');
 insert into public.trial_entitlement_versions(entitlement_code,version,status,enabled,configuration,effective_from,content_hash,created_by)values('IDENTITY_TEST_205',1,'ACTIVE',true,'{}',now()-interval'1 day',repeat('a',64),'a2050000-0000-4000-8000-000000000002');
 -- Verified source facts are supplied independently of the approval workflow (0194 tests that workflow).
-set local session_replication_role=replica;
 insert into public.client_compliance_cases(id,organization_id,status,current_profile_version,verified_at,activated_at,decided_by,created_by)values('f2050000-0000-4000-8000-000000000001','b2050000-0000-4000-8000-000000000001','VERIFIED',1,now()-interval'1 day',now()-interval'1 day','a2050000-0000-4000-8000-000000000002','a2050000-0000-4000-8000-000000000001');
 insert into public.client_profile_versions(id,compliance_case_id,organization_id,version,profile_data,organization_snapshot,source_organization_row_version,created_by,created_at)values('f2050000-0000-4000-8000-000000000002','f2050000-0000-4000-8000-000000000001','b2050000-0000-4000-8000-000000000001',1,'{"legal_form":"SARL","if_number":"20500001","rc_number":"RC-205","registered_city":"Casablanca","registered_address":{"line1":"Adresse de recette"}}','{"legal_name":"Identity buyer 205","country_code":"MA","identifiers":{"ICE":"205000000000001"}}',1,'a2050000-0000-4000-8000-000000000001',now()-interval'2 days');
 insert into public.client_trials(organization_id,compliance_case_id,verified_profile_version,status,trial_started_at,trial_ends_at,activated_by)values('b2050000-0000-4000-8000-000000000001','f2050000-0000-4000-8000-000000000001',1,'TRIAL_ACTIVE',now()-interval'1 day',now()+interval'29 days','a2050000-0000-4000-8000-000000000002');
 insert into public.client_identity_verification_history(compliance_case_id,organization_id,profile_version,verified_at,verified_by,source)values('f2050000-0000-4000-8000-000000000001','b2050000-0000-4000-8000-000000000001',1,now()-interval'1 day','a2050000-0000-4000-8000-000000000002','HISTORICAL_TRIAL');
 insert into public.client_compliance_documents(id,compliance_case_id,organization_id,document_type,version,policy_version_id,document_number,issuer,issued_on,original_file_name,file_extension,declared_mime_type,declared_size_bytes,declared_sha256,storage_object_path,status,uploaded_at,reviewed_by,reviewed_at,created_by,scan_status,current_scan_result_id,scanned_at,detected_mime_type,detected_size_bytes)
-select format('d2051000-0000-4000-8000-%s',lpad(i::text,12,'0'))::uuid,'f2050000-0000-4000-8000-000000000001','b2050000-0000-4000-8000-000000000001',kind,1,'d2051000-0000-4000-9000-000000000001','DOC-205-'||i,'Fixture officielle','2020-01-01','identity-205-'||i||'.pdf','pdf','application/pdf',100,repeat('a',64),repeat('b',32)||'/identity-205-'||i||'.pdf','VERIFIED',now(),'a2050000-0000-4000-8000-000000000002',now(),'a2050000-0000-4000-8000-000000000001','CLEAN',format('d2052000-0000-4000-8000-%s',lpad(i::text,12,'0'))::uuid,now(),'application/pdf',100 from(values(1,'REGISTRATION_DOCUMENT'),(2,'REPRESENTATIVE_AUTHORITY'),(3,'TAX_DOCUMENT'))x(i,kind);
+select format('d2051000-0000-4000-8000-%s',lpad(i::text,12,'0'))::uuid,'f2050000-0000-4000-8000-000000000001','b2050000-0000-4000-8000-000000000001',kind,1,(select id from public.client_document_policy_versions where document_type=kind and status='ACTIVE'),'DOC-205-'||i,'Fixture officielle','2020-01-01','identity-205-'||i||'.pdf','pdf','application/pdf',100,repeat('a',64),repeat('b',32)||'/identity-205-'||i||'.pdf','VERIFIED',now(),'a2050000-0000-4000-8000-000000000002',now(),'a2050000-0000-4000-8000-000000000001','PENDING',null,null,'application/pdf',100 from(values(1,'REGISTRATION_DOCUMENT'),(2,'REPRESENTATIVE_AUTHORITY'),(3,'TAX_DOCUMENT'))x(i,kind);
 insert into private.client_document_scan_results(id,document_id,organization_id,sequence,result,engine_code,engine_version,computed_sha256,detected_mime_type,detected_size_bytes,scanner_principal,correlation_id)
 select format('d2052000-0000-4000-8000-%s',lpad(i::text,12,'0'))::uuid,format('d2051000-0000-4000-8000-%s',lpad(i::text,12,'0'))::uuid,'b2050000-0000-4000-8000-000000000001',1,'CLEAN','TEST_SCANNER','test-v1',repeat('a',64),'application/pdf',100,'SUPABASE_SERVICE_ROLE','d2051000-0000-4000-9000-000000000002'from generate_series(1,3)i;
+update public.client_compliance_documents document
+set current_scan_result_id=scan.id,scan_status='CLEAN',scanned_at=clock_timestamp()
+from private.client_document_scan_results scan
+where scan.document_id=document.id and document.compliance_case_id='f2050000-0000-4000-8000-000000000001';
 insert into public.client_compliance_evidence(compliance_case_id,organization_id,evidence_type,object_path,file_sha256,review_status,reviewed_by,reviewed_at,created_by,validation_state,source_document_id)
 select compliance_case_id,organization_id,document_type,storage_object_path,declared_sha256,'VERIFIED','a2050000-0000-4000-8000-000000000002',now(),'a2050000-0000-4000-8000-000000000001','SCANNED_CLEAN',id from public.client_compliance_documents where compliance_case_id='f2050000-0000-4000-8000-000000000001';
-set local session_replication_role=origin;
 
 -- Explicit historical published plan/rollover Box; no customer Box assignment or
 -- real commercial approval is claimed by this setup. PSP callbacks below are a
@@ -38,6 +83,7 @@ insert into public.box_definitions(id,code,status,created_by)values('d2059000-00
 insert into public.box_versions(id,box_id,version,status,box_type,name_fr,name_ar,credit_budget,rollover_months,rules_snapshot,cost_low_minor,cost_expected_minor,cost_full_minor,currency,content_hash,effective_from,created_by,created_at)values('d2059000-0000-4000-8000-000000000004','d2059000-0000-4000-8000-000000000003',1,'ACTIVE','FIXED','TEST rollover205','ترحيل اختبار205',10,1,'{}',0,0,0,'MAD',repeat('b',64),now()-interval'1 year','a2050000-0000-4000-8000-000000000002',now()-interval'1 year');
 insert into public.plan_box_rules(plan_version_id,box_version_id,status,effective_from,rule_snapshot,created_at)values('d2059000-0000-4000-8000-000000000002','d2059000-0000-4000-8000-000000000004','ACTIVE',now()-interval'1 year','{}',now()-interval'1 year');
 insert into public.subscriptions(id,organization_id,status)values('d2059000-0000-4000-8000-000000000005','b2050000-0000-4000-8000-000000000001','TRIAL_EXPIRED');
+select pg_temp.seed_approved_box_checkout('b2050000-0000-4000-8000-000000000001','d2059000-0000-4000-8000-000000000002',1);
 create temporary table funding205(k text primary key,v jsonb);
 create function pg_temp.actor205(p_uid uuid)returns void language plpgsql as $$begin perform set_config('request.jwt.claim.sub',p_uid::text,true);perform set_config('request.jwt.claims',jsonb_build_object('sub',p_uid,'role','authenticated','aal','aal2')::text,true);end$$;
 select pg_temp.actor205('a2050000-0000-4000-8000-000000000002');

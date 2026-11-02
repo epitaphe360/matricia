@@ -63,30 +63,6 @@ select 'fd130000-0000-4000-8000-000000000002',service_version_id,1,
   '[{"key":"OTHER","label_fr":"Autre service","label_ar":"خدمة أخرى","instructions_fr":"Exécuter la checklist de l’autre service","instructions_ar":"تنفيذ قائمة تحقق الخدمة الأخرى","proof_required":false,"proof_types":[]}]'::jsonb,
   repeat('d',64),'fd100000-0000-4000-8000-000000000001','PUBLISHED',clock_timestamp(),'fd100000-0000-4000-8000-000000000001' from mf024_other_catalog;
 
-set local session_replication_role=replica;
-insert into public.service_requests(id,client_organization_id,library_id,service_id,status,created_by)
-select 'fd140000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000001',library_id,service_id,'CONTRACT_PENDING','fd100000-0000-4000-8000-000000000001' from mf024_catalog;
-insert into public.rfqs(id,request_id,request_version_id,matching_run_id,status,deadline,invited_count,opened_by)
-values('fd150000-0000-4000-8000-000000000001','fd140000-0000-4000-8000-000000000001','fd160000-0000-4000-8000-000000000001','fd170000-0000-4000-8000-000000000001','OPEN',clock_timestamp()+interval'1 day',1,'fd100000-0000-4000-8000-000000000001');
-insert into public.quotes(id,rfq_id,rfq_provider_id,provider_organization_id,status,current_version_id,selected_version_id,created_by)
-values('fd180000-0000-4000-8000-000000000001','fd150000-0000-4000-8000-000000000001','fd190000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000002','SELECTED','fd200000-0000-4000-8000-000000000001','fd200000-0000-4000-8000-000000000001','fd100000-0000-4000-8000-000000000001');
-insert into public.quote_versions(id,quote_id,rfq_id,provider_organization_id,version_number,lifecycle_status,change_reason,currency,solution_fr,deliverables,warranty_fr,correction_terms_fr,proposed_start_date,duration_days,valid_until,subtotal_minor,tax_minor,total_minor,recurring_subtotal_minor,calculation_basis,content_hash,created_by,submitted_at)
-values('fd200000-0000-4000-8000-000000000001','fd180000-0000-4000-8000-000000000001','fd150000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000002',1,'SUBMITTED','MF024 quote','MAD','Mission checklist','["Livrable"]','Garantie','Correction','2026-10-01',10,'2027-01-01',10000,2000,12000,0,'{}',repeat('b',64),'fd100000-0000-4000-8000-000000000001',clock_timestamp());
-insert into public.contracts(id,client_organization_id,provider_organization_id,status,current_version,created_by)
-values('fd210000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000002','DRAFT',1,'fd100000-0000-4000-8000-000000000001');
-insert into public.contract_versions(id,contract_id,version,selected_quote_version_id,request_snapshot,quote_snapshot,clauses,price_minor,currency,commission_rule_snapshot,content_hash,change_reason,created_by)
-select 'fd220000-0000-4000-8000-000000000001','fd210000-0000-4000-8000-000000000001',1,'fd200000-0000-4000-8000-000000000001',jsonb_build_object('service_version_id',service_version_id),jsonb_build_object('quote_version_id','fd200000-0000-4000-8000-000000000001'),'{}'::jsonb,12000,'MAD','{}'::jsonb,repeat('c',64),'MF024 contract','fd100000-0000-4000-8000-000000000001' from mf024_catalog;
-insert into public.contracts(id,client_organization_id,provider_organization_id,status,current_version,created_by)
-values('fd210000-0000-4000-8000-000000000002','fd110000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000002','DRAFT',1,'fd100000-0000-4000-8000-000000000001');
-insert into public.contract_versions(id,contract_id,version,selected_quote_version_id,request_snapshot,quote_snapshot,clauses,price_minor,currency,commission_rule_snapshot,content_hash,change_reason,created_by)
-select 'fd220000-0000-4000-8000-000000000002','fd210000-0000-4000-8000-000000000002',1,'fd200000-0000-4000-8000-000000000001',jsonb_build_object('service_version_id',service_version_id),jsonb_build_object('quote_version_id','fd200000-0000-4000-8000-000000000001'),'{}'::jsonb,12000,'MAD','{}'::jsonb,repeat('e',64),'Spoofed service contract','fd100000-0000-4000-8000-000000000001' from mf024_other_catalog;
-set local session_replication_role=origin;
-
--- A third independently sealed draft supports invalid-mapping attempts without
--- colliding with the already-created mission's one-mission-per-contract rule.
-insert into public.contracts(id,client_organization_id,provider_organization_id,status,current_version,created_by)values('fd210000-0000-4000-8000-000000000003','fd110000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000002','DRAFT',1,'fd100000-0000-4000-8000-000000000001');
-insert into public.contract_versions(id,contract_id,version,selected_quote_version_id,request_snapshot,quote_snapshot,clauses,price_minor,currency,commission_rule_snapshot,content_hash,change_reason,created_by)
-select 'fd220000-0000-4000-8000-000000000003','fd210000-0000-4000-8000-000000000003',1,selected_quote_version_id,request_snapshot,quote_snapshot,clauses,price_minor,currency,commission_rule_snapshot,repeat('f',64),'Milestone mapping source','fd100000-0000-4000-8000-000000000001'from public.contract_versions where id='fd220000-0000-4000-8000-000000000001';
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)values
 ('fd100000-0000-4000-8000-000000000004','00000000-0000-0000-0000-000000000000','authenticated','authenticated','mf024-reviewer-a@example.invalid','',now(),'{}','{}',now(),now()),
 ('fd100000-0000-4000-8000-000000000005','00000000-0000-0000-0000-000000000000','authenticated','authenticated','mf024-reviewer-b@example.invalid','',now(),'{}','{}',now(),now());
@@ -94,8 +70,11 @@ insert into public.platform_user_roles(user_id,role_code)values('fd100000-0000-4
 -- Current identity fixtures retain real checks; only upstream review records are seeded.
 update private.admin_execution_environment_v1 set environment='DEVELOPMENT',configuration_reference='transactional-identity-signature-fixture',configured_at=clock_timestamp()where singleton;
 insert into public.provider_profiles(provider_organization_id,company_status,overall_status,activity_summary,team_size,years_experience,partner_contract_status,created_by)values('fd110000-0000-4000-8000-000000000002','VERIFIED','ACTIVE','Provider identity test fixture',1,1,'SIGNED','fd100000-0000-4000-8000-000000000002');
-insert into public.provider_match_profiles(provider_organization_id)values('fd110000-0000-4000-8000-000000000002');
-insert into public.provider_company_decisions(provider_organization_id,decision_version,company_status,partner_contract_status,reason,rule_version,decided_by,correlation_id)values('fd110000-0000-4000-8000-000000000002',1,'VERIFIED','SIGNED','Synthetic company review','TEST-ANCHOR','fd100000-0000-4000-8000-000000000004',extensions.gen_random_uuid());
+insert into public.provider_match_profiles(provider_organization_id,region_codes)values('fd110000-0000-4000-8000-000000000002',array['CASABLANCA']);
+
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000004',true);
+select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal2"}',true);
+select public.decide_provider_company('fd110000-0000-4000-8000-000000000002','VERIFIED','SIGNED',null,'TEST independent synthetic company review','TEST-ANCHOR',1,'TEST-0104-company-review');
 insert into public.organization_identifiers(organization_id,identifier_type,normalized_value)values('fd110000-0000-4000-8000-000000000002','ICE','997104000000002'),('fd110000-0000-4000-8000-000000000002','IF','99710402'),('fd110000-0000-4000-8000-000000000002','RC','TEST-104-PROVIDER');
 do $$declare kind text;u jsonb;d jsonb;job uuid;context jsonb;actor uuid:='fd100000-0000-4000-8000-000000000004';org uuid:='fd110000-0000-4000-8000-000000000002';begin
  foreach kind in array array['LEGAL','FISCAL','INSURANCE']loop
@@ -112,7 +91,6 @@ do $$declare kind text;u jsonb;d jsonb;job uuid;context jsonb;actor uuid:='fd100
 end$$;
 insert into public.organization_identifiers(organization_id,identifier_type,normalized_value,verification_status)values('fd110000-0000-4000-8000-000000000001','ICE','997104000000001','VERIFIED'),('fd110000-0000-4000-8000-000000000001','IF','99710401','VERIFIED'),('fd110000-0000-4000-8000-000000000001','RC','TEST104','VERIFIED');
 -- Pre-existing verified profile and qualification setup. No eligibility stub.
-set local session_replication_role=replica;
 insert into public.client_compliance_cases(id,organization_id,status,current_profile_version,created_by,verified_at,activated_at)values('fd410000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000001','VERIFIED',1,'fd100000-0000-4000-8000-000000000001',now()-interval'1 day',now()-interval'1 day');
 insert into public.client_profile_versions(compliance_case_id,organization_id,version,profile_data,organization_snapshot,source_organization_row_version,created_by)values('fd410000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000001',1,'{"legal_form":"SARL","if_number":"99710401","rc_number":"TEST104","registered_city":"Casablanca","registered_address":{"line1":"TEST Client registered address","country_code":"MA"}}','{"legal_name":"MF024 Client","display_name":"MF024 Client","country_code":"MA","identifiers":{"ICE":"997104000000001","IF":"99710401","RC":"TEST104"}}',1,'fd100000-0000-4000-8000-000000000001');
 insert into public.client_identity_verification_history(compliance_case_id,organization_id,profile_version,verified_at,verified_by,source)values('fd410000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000001',1,now()-interval'1 day','fd100000-0000-4000-8000-000000000004','COMPLIANCE_DECISION');
@@ -142,7 +120,63 @@ insert into public.client_compliance_evidence(
 ('fd410000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000001','REPRESENTATIVE_AUTHORITY','compliance/client-a/authority.pdf',repeat('b',64),'VERIFIED','fd100000-0000-4000-8000-000000000004',clock_timestamp(),'fd100000-0000-4000-8000-000000000001','fd411000-0000-0000-0000-000000000002',current_date+365,'SCANNED_CLEAN');
 
 
-set local session_replication_role=origin;
+
+insert into public.service_requests(id,client_organization_id,library_id,service_id,status,created_by)
+select 'fd140000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000001',library_id,service_id,'CONTRACT_PENDING','fd100000-0000-4000-8000-000000000001' from mf024_catalog;
+-- The signed service is the exact published version frozen by the RFQ request.
+-- All upstream FKs and invitation/selected-quote guards stay enabled.
+insert into public.service_request_versions(id,request_id,client_organization_id,library_id,version_number,description,urgency,currency_code,required_quote_data,required_fields_complete,catalog_snapshot_hash,questionnaire_snapshot_hash,change_reason,content_hash,created_by)
+select 'fd160000-0000-4000-8000-000000000001','fd140000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000001',c.library_id,1,'Demande synthétique de checklist','NORMAL','MAD',jsonb_build_object('region_code','CASABLANCA','service_version_id',c.service_version_id),true,v.content_hash,repeat('1',64),'TEST immutable RFQ source',repeat('2',64),'fd100000-0000-4000-8000-000000000001'
+from mf024_catalog c join public.catalog_service_versions v on v.id=c.service_version_id;
+update public.service_requests set current_version_id='fd160000-0000-4000-8000-000000000001'where id='fd140000-0000-4000-8000-000000000001';
+
+
+
+-- Native service request, reviewed qualification and declared capacity make the
+-- invitation eligible from versioned evidence; match booleans are not authority.
+insert into public.catalog_releases(id,library_id,release_key,status,source_bundle_hash,created_by)values('fd510000-0000-4000-8000-000000000001','fd300000-0000-4000-8000-000000000001','TEST.0104.V1','DRAFT',repeat('e',64),'fd100000-0000-4000-8000-000000000004');
+insert into public.questionnaires(id,library_id,code,status,created_by)values('fd510000-0000-4000-8000-000000000002','fd300000-0000-4000-8000-000000000001','TEST_PROVIDER_0104','DRAFT','fd100000-0000-4000-8000-000000000004');
+insert into public.questionnaire_versions(id,questionnaire_id,library_id,catalog_release_id,version,status,title_fr,title_ar,description_fr,description_ar,audience,engine_version,policy_version,snapshot_hash,change_reason,created_by)values('fd510000-0000-4000-8000-000000000003','fd510000-0000-4000-8000-000000000002','fd300000-0000-4000-8000-000000000001','fd510000-0000-4000-8000-000000000001',1,'DRAFT','Questionnaire synthétique fournisseur','استبيان مقدم خدمة للاختبار','Source historique de recette','مصدر تاريخي للاختبار','PROVIDER','1.0.0','TEST-0104',repeat('f',64),'TEST source de qualification','fd100000-0000-4000-8000-000000000004');
+do $$declare requested jsonb;begin
+ perform set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000002',true);
+ perform set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);
+ requested:=public.request_provider_service('fd110000-0000-4000-8000-000000000002','fd300000-0000-4000-8000-000000000007','TEST-0104-service-request');
+ insert into public.questionnaire_sessions(id,organization_id,actor_user_id,library_id,catalog_release_id,questionnaire_version_id,audience,locale,status,submitted_at,answer_manifest,answer_manifest_hash)values('fd510000-0000-4000-8000-000000000004','fd110000-0000-4000-8000-000000000002','fd100000-0000-4000-8000-000000000002','fd300000-0000-4000-8000-000000000001','fd510000-0000-4000-8000-000000000001','fd510000-0000-4000-8000-000000000003','PROVIDER','fr-MA','SUBMITTED',clock_timestamp(),'{}',repeat('1',64));
+ perform set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000004',true);
+ perform set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal2"}',true);
+ perform public.decide_provider_qualification((requested->>'qualification_id')::uuid,'APPROVED','fd510000-0000-4000-8000-000000000004',8000,'[{"key":"IDENTITY","passed":true}]','[]','TEST independent synthetic qualification','TEST-0104',clock_timestamp()+interval'1 year',1,'TEST-0104-qualification');
+ perform set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000002',true);
+ perform set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);
+ perform public.declare_provider_capacity('fd110000-0000-4000-8000-000000000002','fd300000-0000-4000-8000-000000000007','AVAILABLE',5,2,'TEST provider capacity declaration','TEST-0104-capacity');
+end$$;
+insert into public.matching_runs(id,request_id,request_version_id,policy_version,status,target_panel_size,started_by,completed_at)
+values('fd170000-0000-4000-8000-000000000001','fd140000-0000-4000-8000-000000000001','fd160000-0000-4000-8000-000000000001','MATCH-V1','COMPLETED',1,'fd100000-0000-4000-8000-000000000001',clock_timestamp());
+insert into public.matching_candidates(id,matching_run_id,provider_organization_id,eligible,score_basis_points,score_explanation,rotation_component)
+values('fd171000-0000-4000-8000-000000000001','fd170000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000002',true,9000,'{}',50);
+insert into public.rfqs(id,request_id,request_version_id,matching_run_id,status,deadline,invited_count,opened_by)
+values('fd150000-0000-4000-8000-000000000001','fd140000-0000-4000-8000-000000000001','fd160000-0000-4000-8000-000000000001','fd170000-0000-4000-8000-000000000001','OPEN',clock_timestamp()+interval'1 day',1,'fd100000-0000-4000-8000-000000000001');
+insert into public.rfq_providers(id,rfq_id,provider_organization_id,matching_candidate_id,status,responded_at)
+values('fd190000-0000-4000-8000-000000000001','fd150000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000002','fd171000-0000-4000-8000-000000000001','ACCEPTED',clock_timestamp());
+-- Resolve the quote/version cycle in FK order, then select the exact version.
+insert into public.quotes(id,rfq_id,rfq_provider_id,provider_organization_id,status,created_by)
+values('fd180000-0000-4000-8000-000000000001','fd150000-0000-4000-8000-000000000001','fd190000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000002','DRAFT','fd100000-0000-4000-8000-000000000002');
+insert into public.quote_versions(id,quote_id,rfq_id,provider_organization_id,version_number,lifecycle_status,change_reason,currency,solution_fr,deliverables,warranty_fr,correction_terms_fr,proposed_start_date,duration_days,valid_until,subtotal_minor,tax_minor,total_minor,recurring_subtotal_minor,calculation_basis,content_hash,created_by,submitted_at)
+values('fd200000-0000-4000-8000-000000000001','fd180000-0000-4000-8000-000000000001','fd150000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000002',1,'SUBMITTED','MF024 quote','MAD','Mission checklist','["Livrable"]','Garantie','Correction','2026-10-01',10,'2027-01-01',10000,2000,12000,0,'{}',repeat('b',64),'fd100000-0000-4000-8000-000000000001',clock_timestamp());
+update public.quotes set status='SELECTED',current_version_id='fd200000-0000-4000-8000-000000000001',selected_version_id='fd200000-0000-4000-8000-000000000001'where id='fd180000-0000-4000-8000-000000000001';
+insert into public.contracts(id,client_organization_id,provider_organization_id,status,current_version,created_by)
+values('fd210000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000002','DRAFT',1,'fd100000-0000-4000-8000-000000000001');
+insert into public.contract_versions(id,contract_id,version,selected_quote_version_id,request_snapshot,quote_snapshot,clauses,price_minor,currency,commission_rule_snapshot,content_hash,change_reason,created_by)
+select 'fd220000-0000-4000-8000-000000000001','fd210000-0000-4000-8000-000000000001',1,'fd200000-0000-4000-8000-000000000001',jsonb_build_object('service_version_id',service_version_id),jsonb_build_object('quote_version_id','fd200000-0000-4000-8000-000000000001'),'{}'::jsonb,12000,'MAD','{}'::jsonb,repeat('c',64),'MF024 contract','fd100000-0000-4000-8000-000000000001' from mf024_catalog;
+insert into public.contracts(id,client_organization_id,provider_organization_id,status,current_version,created_by)
+values('fd210000-0000-4000-8000-000000000002','fd110000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000002','DRAFT',1,'fd100000-0000-4000-8000-000000000001');
+insert into public.contract_versions(id,contract_id,version,selected_quote_version_id,request_snapshot,quote_snapshot,clauses,price_minor,currency,commission_rule_snapshot,content_hash,change_reason,created_by)
+select 'fd220000-0000-4000-8000-000000000002','fd210000-0000-4000-8000-000000000002',1,'fd200000-0000-4000-8000-000000000001',jsonb_build_object('service_version_id',service_version_id),jsonb_build_object('quote_version_id','fd200000-0000-4000-8000-000000000001'),'{}'::jsonb,12000,'MAD','{}'::jsonb,repeat('e',64),'Spoofed service contract','fd100000-0000-4000-8000-000000000001' from mf024_other_catalog;
+
+-- A third independently sealed draft supports invalid-mapping attempts without
+-- colliding with the already-created mission's one-mission-per-contract rule.
+insert into public.contracts(id,client_organization_id,provider_organization_id,status,current_version,created_by)values('fd210000-0000-4000-8000-000000000003','fd110000-0000-4000-8000-000000000001','fd110000-0000-4000-8000-000000000002','DRAFT',1,'fd100000-0000-4000-8000-000000000001');
+insert into public.contract_versions(id,contract_id,version,selected_quote_version_id,request_snapshot,quote_snapshot,clauses,price_minor,currency,commission_rule_snapshot,content_hash,change_reason,created_by)
+select 'fd220000-0000-4000-8000-000000000003','fd210000-0000-4000-8000-000000000003',1,selected_quote_version_id,request_snapshot,quote_snapshot,clauses,price_minor,currency,commission_rule_snapshot,repeat('f',64),'Milestone mapping source','fd100000-0000-4000-8000-000000000001'from public.contract_versions where id='fd220000-0000-4000-8000-000000000001';
 -- Parties freeze the same canonical identities that the native signature command verifies.
 insert into public.contract_parties(contract_version_id,organization_id,party_role,legal_snapshot)
 select v.id,c.client_organization_id,'CLIENT',private.current_client_contract_party_v1(c.client_organization_id)from public.contract_versions v join public.contracts c on c.id=v.contract_id where c.id in('fd210000-0000-4000-8000-000000000001','fd210000-0000-4000-8000-000000000002','fd210000-0000-4000-8000-000000000003')
@@ -199,7 +233,7 @@ select ok((select value='2' from mf024_observed where key='items'),'every versio
 select ok((select value='true' from mf024_observed where key='exact'),'snapshot preserves exact bilingual content and hash');
 select ok((select value='1' from mf024_observed where key='audits'),'snapshot emits one audit event');
 select ok((select value='1' from mf024_observed where key='outbox'),'snapshot emits one Outbox event');
-select throws_ok($$select public.create_mission('fd210000-0000-4000-8000-000000000002','fd220000-0000-4000-8000-000000000002','[{"key":"M1","title_fr":"Livraison","title_ar":"التسليم","sort_order":1}]','[{"key":"D1","label_fr":"Rapport","label_ar":"تقرير"}]','[{"deliverable_key":"D1","criterion_key":"QUALITY"}]','mf024-spoofed-service','fd230000-0000-4000-8000-000000000002')$$,'22023','MISSION_CHECKLIST_TEMPLATE_REQUIRED','contract snapshot cannot spoof a checklist from another RFQ service');
+select throws_ok($$select public.create_mission('fd210000-0000-4000-8000-000000000002','fd220000-0000-4000-8000-000000000002','[{"key":"M1","title_fr":"Livraison","title_ar":"التسليم","sort_order":1}]','[{"key":"D1","label_fr":"Rapport","label_ar":"تقرير"}]','[{"deliverable_key":"D1","criterion_key":"QUALITY"}]','mf024-spoofed-service','fd230000-0000-4000-8000-000000000002')$$,'22023','CONTRACT_SERVICE_SOURCE_DIVERGENCE','signed contract snapshot cannot substitute another service for the immutable RFQ source');
 
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);

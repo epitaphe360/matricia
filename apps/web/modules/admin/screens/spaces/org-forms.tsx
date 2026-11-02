@@ -59,8 +59,9 @@ export function CreateOrganizationForm({ locale, query, resourceId, idempotencyK
             <Field id="create-legal" label={c.legal} required>
               <input id="create-legal" name="legalName" required minLength={2} />
             </Field>
-            <Field id="create-ice" label={c.iceLabel} required>
-              <input id="create-ice" name="ice" required minLength={15} maxLength={15} pattern="[0-9]{15}" dir="ltr" />
+            <Field id="create-ice" label={locale === "ar" ? "المعرّف الموحد للمقاولة (ICE)" : "ICE — Identifiant commun de l’entreprise"} required>
+              <input id="create-ice" name="ice" required minLength={15} maxLength={15} pattern="[0-9]{15}" inputMode="numeric" aria-describedby="create-ice-help" dir="ltr" />
+              <p id="create-ice-help">{locale === "ar" ? "أدخل 15 رقماً بالضبط دون مسافات، كما تظهر في الوثيقة الرسمية. هذا ليس رقم السجل التجاري (RC) ولا المعرّف الضريبي (IF)." : "Saisissez exactement 15 chiffres, sans espaces, tels qu’ils figurent sur le justificatif officiel. Il ne s’agit ni du RC ni de l’identifiant fiscal (IF)."}</p>
             </Field>
             <Field id="create-kind" label={c.ownerKind} required>
               <select id="create-kind" name="kind" required defaultValue="CLIENT">

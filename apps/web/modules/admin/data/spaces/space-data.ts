@@ -28,7 +28,8 @@ export type SpaceRow = {
 };
 
 export type SpaceSnapshot = {
-  reason: "OK" | "FORBIDDEN" | "MFA_REQUIRED" | "UNAVAILABLE" | "INVALID_RESPONSE" | null;
+  reason: "OK" | "UNAUTHENTICATED" | "FORBIDDEN" | "MFA_REQUIRED" | "UNAVAILABLE" | "INVALID_RESPONSE" | null;
+  detailsReason?: "UNAUTHENTICATED" | "FORBIDDEN" | "MFA_REQUIRED" | "UNAVAILABLE" | "INVALID_RESPONSE";
   rows: SpaceRow[];
   treat: SpaceRow[];
   supervision: AdminSupervisionDashboard | null;
@@ -38,12 +39,39 @@ export type SpaceSnapshot = {
 
 const specialSnapshotSpaces=new Set(["providers","qualification","capacite","franchises","territoires","gouvernance","litiges"]);
 const specialRowsSchema=z.object({rows:z.array(z.object({id:z.string().uuid(),title:z.string(),status:z.string(),organizationId:z.string().uuid(),cells:z.array(z.string()),extras:z.record(z.string(),z.string())})).max(20000),snapshotAt:z.string(),complete:z.literal(true)});
-export async function loadAdminSpaceSnapshot(locale:Locale,space:AdminSpaceId,query:string,consistent=false):Promise<SpaceSnapshot>{
- const snapshot=await loadBaseAdminSpaceSnapshot(locale,space,query,consistent);
- if(snapshot.reason||!specialSnapshotSpaces.has(space))return snapshot;
- const client=await getSupabaseServerClient();const response=await client.rpc("get_admin_special_space_snapshot_v1",{p_space:space,p_locale:locale});const parsed=specialRowsSchema.safeParse(response.data);
- if(response.error||!parsed.success)return{...snapshot,reason:response.error?.code==="42501"?"FORBIDDEN":"UNAVAILABLE",rows:[],treat:[]};
- snapshot.rows=parsed.data.rows.map(row=>({...row,href:spaceHref(locale,space,query,row.id),tone:statusTone(row.status),treat:/PENDING|SUBMITTED|UNDER_REVIEW|IN_REVIEW|EXPIRED|REJECTED|SUSPENDED/.test(row.status)}));snapshot.treat=snapshot.rows.filter(row=>row.treat);return snapshot;
+function unavailableSnapshot(reason: SpaceSnapshot["reason"]): SpaceSnapshot {
+  return { reason, rows: [], treat: [], supervision: null, providers: null, governance: null };
+}
+function readReason(reason: string): NonNullable<SpaceSnapshot["detailsReason"]> {
+  return ["UNAUTHENTICATED", "FORBIDDEN", "MFA_REQUIRED", "INVALID_RESPONSE"].includes(reason)
+    ? reason as NonNullable<SpaceSnapshot["detailsReason"]> : "UNAVAILABLE";
+}
+export async function loadAdminSpaceSnapshot(locale: Locale, space: AdminSpaceId, query: string, consistent = false): Promise<SpaceSnapshot> {
+  try {
+    if (!specialSnapshotSpaces.has(space)) return await loadBaseAdminSpaceSnapshot(locale, space, query, consistent);
+    // These actor/governance queues have their own authorized projection. A
+    // failure in an unrelated supervision reader must not replace their rows.
+    const client = await getSupabaseServerClient();
+    const response = await client.rpc("get_admin_special_space_snapshot_v1", { p_space: space, p_locale: locale });
+    if (response.error) return unavailableSnapshot(["PT401", "PGRST301", "PGRST302", "PGRST303"].includes(response.error.code) ? "UNAUTHENTICATED" : response.error.code === "42501" ? "FORBIDDEN" : "UNAVAILABLE");
+    const parsed = specialRowsSchema.safeParse(response.data);
+    if (!parsed.success) return unavailableSnapshot("INVALID_RESPONSE");
+    const snapshot = unavailableSnapshot(null);
+    snapshot.rows = parsed.data.rows.map(row => ({ ...row, href: spaceHref(locale, space, query, row.id), tone: statusTone(row.status), treat: /PENDING|SUBMITTED|UNDER_REVIEW|IN_REVIEW|EXPIRED|REJECTED|SUSPENDED/.test(row.status) }));
+    snapshot.treat = snapshot.rows.filter(row => row.treat);
+    try {
+      if (["providers", "qualification", "capacite"].includes(space)) {
+        const details = await loadAdminProviders();
+        if (details.status === "success") snapshot.providers = details.dashboard;
+        else snapshot.detailsReason = readReason(details.reason);
+      } else {
+        const details = await loadAdminGovernanceDashboard(locale);
+        if (details.status === "success") snapshot.governance = details.value;
+        else snapshot.detailsReason = readReason(details.reason);
+      }
+    } catch { snapshot.detailsReason = "UNAVAILABLE"; }
+    return snapshot;
+  } catch { return unavailableSnapshot("UNAVAILABLE"); }
 }
 
 function sliceId(id: string) {
@@ -66,9 +94,9 @@ async function loadBaseAdminSpaceSnapshot(locale: Locale, space: AdminSpaceId, q
     governance: governance && governance.status === "success" ? governance.value : null,
   };
 
-  if (supervision.status === "error" && supervision.reason === "FORBIDDEN") snapshot.reason = "FORBIDDEN";
+  if (supervision.status === "error") snapshot.reason = readReason(supervision.reason);
   if (supervision.status === "error" && (supervision.reason === "UNAVAILABLE" || supervision.reason === "INVALID_RESPONSE")) snapshot.reason = supervision.reason;
-  if (providers && providers.status === "error") snapshot.reason = providers.reason === "MFA_REQUIRED" ? "MFA_REQUIRED" : providers.reason === "FORBIDDEN" ? "FORBIDDEN" : "UNAVAILABLE";
+  if (providers && providers.status === "error") { if (space === "documents") snapshot.detailsReason = readReason(providers.reason); else snapshot.reason = readReason(providers.reason); }
   if (governance && governance.status === "error") snapshot.reason = governance.reason === "MFA_REQUIRED" ? "MFA_REQUIRED" : governance.reason === "FORBIDDEN" ? "FORBIDDEN" : governance.reason === "INVALID_RESPONSE" ? "INVALID_RESPONSE" : "UNAVAILABLE";
 
   const dash = snapshot.supervision;
@@ -315,7 +343,7 @@ async function loadBaseAdminSpaceSnapshot(locale: Locale, space: AdminSpaceId, q
 }
 
 function overlayDemo(locale: Locale, space: AdminSpaceId, query: string, snapshot: SpaceSnapshot) {
-  if (snapshot.reason === "MFA_REQUIRED" || snapshot.reason === "UNAVAILABLE" || snapshot.reason === "INVALID_RESPONSE" || snapshot.reason === "FORBIDDEN") {
+  if (snapshot.reason && snapshot.reason !== "OK") {
     return snapshot;
   }
   if (snapshot.rows.length > 0 || !canApplyAdminDemo()) return snapshot;

@@ -28,3 +28,5 @@ describe("authoritative command outcomes",()=>{
  it("preserves an authoritative business prerequisite for localized feedback",async()=>{const s=source();s.rpc=async()=>({data:null,error:{code:"55000",message:"BENEFIT_CAPACITY_UNAVAILABLE"}});expect(await createCreditsRepository(s).reserve(input)).toEqual({status:"error",reason:"UNAVAILABLE",commandCode:"BENEFIT_CAPACITY_UNAVAILABLE"});});
  it("does not forward arbitrary database strings to the browser",async()=>{const s=source();s.rpc=async()=>({data:null,error:{code:"500",message:"private backend detail"}});expect(await createCreditsRepository(s).reserve(input)).toEqual({status:"error",reason:"UNAVAILABLE"});});
 });
+
+it("does not replace a missing balance projection with a reassuring zero",async()=>{const s=source();s.balances=async()=>({data:[],error:null});expect(await createCreditsRepository(s).load()).toEqual({status:"error",reason:"UNAVAILABLE"});});

@@ -1,8 +1,8 @@
 begin;
 set local search_path=public,extensions;
 select no_plan();
--- Only unrelated upstream quote selection is abbreviated in the fixture.
--- All signature deployment, level and transition guards remain enabled.
+-- Synthetic historical catalogue and quote facts form a complete FK graph.
+-- Every invitation, selected-quote, identity and signature guard remains enabled.
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at) values
 ('f8800000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','p216-client@example.invalid','',now(),'{}','{}',now(),now()),
 ('f8800000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000000','authenticated','authenticated','p216-provider@example.invalid','',now(),'{}','{}',now(),now()),
@@ -18,22 +18,15 @@ insert into public.organization_memberships(id,organization_id,user_id,status) v
 insert into public.organization_member_roles(membership_id,role_code) values
 ('f8820000-0000-4000-8000-000000000001','CLIENT_OWNER'),('f8820000-0000-4000-8000-000000000002','PROVIDER_OWNER'),('f8820000-0000-4000-8000-000000000003','CLIENT_OWNER');
 insert into public.contracts(id,client_organization_id,provider_organization_id,status,current_version,created_by) values('f8830000-0000-4000-8000-000000000001','f8810000-0000-4000-8000-000000000001','f8810000-0000-4000-8000-000000000002','DRAFT',1,'f8800000-0000-4000-8000-000000000001');
--- This test exercises mission/proof behavior, not quote selection. Seed only the
--- immutable FK target while replication role bypasses its unrelated upstream graph.
-set local session_replication_role=replica;
-insert into public.quote_versions(id,quote_id,rfq_id,provider_organization_id,version_number,lifecycle_status,change_reason,currency,solution_fr,deliverables,warranty_fr,correction_terms_fr,proposed_start_date,duration_days,valid_until,subtotal_minor,tax_minor,total_minor,recurring_subtotal_minor,calculation_basis,content_hash,submitted_at,created_by)values('f8850000-0000-4000-8000-000000000001','f8851000-0000-4000-8000-000000000001','f8852000-0000-4000-8000-000000000001','f8810000-0000-4000-8000-000000000002',1,'SUBMITTED','Fixture mission P216','MAD','Solution fixture','["Livrable"]','Garantie fixture','Corrections fixture',current_date,1,clock_timestamp()+interval'1 day',10000,0,10000,0,'{}',repeat('f',64),clock_timestamp(),'f8800000-0000-4000-8000-000000000002');
-set local session_replication_role=origin;
-alter table public.contract_versions disable trigger contract_versions_bind_selected_quote;
-insert into public.contract_versions(id,contract_id,version,selected_quote_version_id,request_snapshot,quote_snapshot,clauses,price_minor,currency,commission_rule_snapshot,content_hash,change_reason,created_by) values('f8840000-0000-4000-8000-000000000001','f8830000-0000-4000-8000-000000000001',1,'f8850000-0000-4000-8000-000000000001','{}','{"quote_version_id":"f8850000-0000-4000-8000-000000000001"}','{}',10000,'MAD','{}',repeat('a',64),'Fixture comportementale','f8800000-0000-4000-8000-000000000001');
-alter table public.contract_versions enable trigger contract_versions_bind_selected_quote;
-
-
 -- Current identity fixtures retain real checks; only upstream review records are seeded.
 update private.admin_execution_environment_v1 set environment='DEVELOPMENT',configuration_reference='transactional-identity-signature-fixture',configured_at=clock_timestamp()where singleton;
 insert into public.platform_user_roles(user_id,role_code)values('f8800000-0000-4000-8000-000000000003','SUPER_ADMIN');
 insert into public.provider_profiles(provider_organization_id,company_status,overall_status,activity_summary,team_size,years_experience,partner_contract_status,created_by)values('f8810000-0000-4000-8000-000000000002','VERIFIED','ACTIVE','Provider identity test fixture',1,1,'SIGNED','f8800000-0000-4000-8000-000000000002');
-insert into public.provider_match_profiles(provider_organization_id)values('f8810000-0000-4000-8000-000000000002');
-insert into public.provider_company_decisions(provider_organization_id,decision_version,company_status,partner_contract_status,reason,rule_version,decided_by,correlation_id)values('f8810000-0000-4000-8000-000000000002',1,'VERIFIED','SIGNED','Synthetic company review','TEST-ANCHOR','f8800000-0000-4000-8000-000000000003',extensions.gen_random_uuid());
+insert into public.provider_match_profiles(provider_organization_id,region_codes)values('f8810000-0000-4000-8000-000000000002',array['CASABLANCA']);
+
+select set_config('request.jwt.claim.sub','f8800000-0000-4000-8000-000000000003',true);
+select set_config('request.jwt.claims','{"sub":"f8800000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal2"}',true);
+select public.decide_provider_company('f8810000-0000-4000-8000-000000000002','VERIFIED','SIGNED',null,'TEST independent synthetic company review','TEST-ANCHOR',1,'TEST-0218-company-review');
 insert into public.organization_identifiers(organization_id,identifier_type,normalized_value)values('f8810000-0000-4000-8000-000000000002','ICE','997218000000002'),('f8810000-0000-4000-8000-000000000002','IF','99721802'),('f8810000-0000-4000-8000-000000000002','RC','TEST-218-PROVIDER');
 do $$declare kind text;u jsonb;d jsonb;job uuid;context jsonb;actor uuid:='f8800000-0000-4000-8000-000000000003';org uuid:='f8810000-0000-4000-8000-000000000002';begin
  foreach kind in array array['LEGAL','FISCAL','INSURANCE']loop
@@ -50,7 +43,6 @@ do $$declare kind text;u jsonb;d jsonb;job uuid;context jsonb;actor uuid:='f8800
 end$$;
 insert into public.organization_identifiers(organization_id,identifier_type,normalized_value,verification_status)values('f8810000-0000-4000-8000-000000000001','ICE','997218000000001','VERIFIED'),('f8810000-0000-4000-8000-000000000001','IF','99721801','VERIFIED'),('f8810000-0000-4000-8000-000000000001','RC','TEST218','VERIFIED');
 -- Pre-existing verified profile and qualification setup. No eligibility stub.
-set local session_replication_role=replica;
 insert into public.client_compliance_cases(id,organization_id,status,current_profile_version,created_by,verified_at,activated_at)values('f8890000-0000-4000-8000-000000000001','f8810000-0000-4000-8000-000000000001','VERIFIED',1,'f8800000-0000-4000-8000-000000000001',now()-interval'1 day',now()-interval'1 day');
 insert into public.client_profile_versions(compliance_case_id,organization_id,version,profile_data,organization_snapshot,source_organization_row_version,created_by)values('f8890000-0000-4000-8000-000000000001','f8810000-0000-4000-8000-000000000001',1,'{"legal_form":"SARL","if_number":"99721801","rc_number":"TEST218","registered_city":"Casablanca","registered_address":{"line1":"TEST Client registered address","country_code":"MA"}}','{"legal_name":"P216 Client","display_name":"P216 Client","country_code":"MA","identifiers":{"ICE":"997218000000001","IF":"99721801","RC":"TEST218"}}',1,'f8800000-0000-4000-8000-000000000001');
 insert into public.client_identity_verification_history(compliance_case_id,organization_id,profile_version,verified_at,verified_by,source)values('f8890000-0000-4000-8000-000000000001','f8810000-0000-4000-8000-000000000001',1,now()-interval'1 day','f8800000-0000-4000-8000-000000000003','COMPLIANCE_DECISION');
@@ -80,7 +72,45 @@ insert into public.client_compliance_evidence(
 ('f8890000-0000-4000-8000-000000000001','f8810000-0000-4000-8000-000000000001','REPRESENTATIVE_AUTHORITY','compliance/client-a/authority.pdf',repeat('b',64),'VERIFIED','f8800000-0000-4000-8000-000000000003',clock_timestamp(),'f8800000-0000-4000-8000-000000000001','f8891000-0000-0000-0000-000000000002',current_date+365,'SCANNED_CLEAN');
 
 
-set local session_replication_role=origin;
+
+-- Historical inputs are synthetic; the real constraints resolve every source.
+insert into public.catalog_libraries(id,code,slug,steward_organization_id,status,created_by)values('f8853000-0000-4000-8000-000000000001','SIGNATURE_218','signature-218','f8810000-0000-4000-8000-000000000001','DRAFT','f8800000-0000-4000-8000-000000000001');
+insert into public.catalog_categories(id,library_id,code,slug,status,created_by)values('f8853000-0000-4000-8000-000000000002','f8853000-0000-4000-8000-000000000001','SIGNATURE_CAT_218','signature-cat-218','DRAFT','f8800000-0000-4000-8000-000000000001');
+insert into public.catalog_subcategories(id,library_id,category_id,code,slug,status,created_by)values('f8853000-0000-4000-8000-000000000003','f8853000-0000-4000-8000-000000000001','f8853000-0000-4000-8000-000000000002','SIGNATURE_SUB_218','signature-sub-218','DRAFT','f8800000-0000-4000-8000-000000000001');
+insert into public.catalog_services(id,library_id,primary_subcategory_id,code,slug,status,created_by)values('f8853000-0000-4000-8000-000000000004','f8853000-0000-4000-8000-000000000001','f8853000-0000-4000-8000-000000000003','SIGNATURE_SERVICE_218','signature-service-218','DRAFT','f8800000-0000-4000-8000-000000000001');
+insert into public.service_requests(id,client_organization_id,library_id,service_id,status,created_by)values('f8854000-0000-4000-8000-000000000001','f8810000-0000-4000-8000-000000000001','f8853000-0000-4000-8000-000000000001','f8853000-0000-4000-8000-000000000004','CONTRACT_PENDING','f8800000-0000-4000-8000-000000000001');
+insert into public.service_request_versions(id,request_id,client_organization_id,library_id,version_number,description,urgency,currency_code,required_quote_data,required_fields_complete,catalog_snapshot_hash,questionnaire_snapshot_hash,change_reason,content_hash,created_by)values('f8854000-0000-4000-8000-000000000002','f8854000-0000-4000-8000-000000000001','f8810000-0000-4000-8000-000000000001','f8853000-0000-4000-8000-000000000001',1,'Demande synthétique signature218','NORMAL','MAD','{"region_code":"CASABLANCA"}',true,repeat('1',64),repeat('2',64),'TEST immutable RFQ source',repeat('3',64),'f8800000-0000-4000-8000-000000000001');
+update public.service_requests set current_version_id='f8854000-0000-4000-8000-000000000002'where id='f8854000-0000-4000-8000-000000000001';
+
+
+
+-- Native service request, reviewed qualification and declared capacity make the
+-- invitation eligible from versioned evidence; match booleans are not authority.
+insert into public.catalog_releases(id,library_id,release_key,status,source_bundle_hash,created_by)values('f8857000-0000-4000-8000-000000000001','f8853000-0000-4000-8000-000000000001','TEST.0218.V1','DRAFT',repeat('e',64),'f8800000-0000-4000-8000-000000000003');
+insert into public.questionnaires(id,library_id,code,status,created_by)values('f8857000-0000-4000-8000-000000000002','f8853000-0000-4000-8000-000000000001','TEST_PROVIDER_0218','DRAFT','f8800000-0000-4000-8000-000000000003');
+insert into public.questionnaire_versions(id,questionnaire_id,library_id,catalog_release_id,version,status,title_fr,title_ar,description_fr,description_ar,audience,engine_version,policy_version,snapshot_hash,change_reason,created_by)values('f8857000-0000-4000-8000-000000000003','f8857000-0000-4000-8000-000000000002','f8853000-0000-4000-8000-000000000001','f8857000-0000-4000-8000-000000000001',1,'DRAFT','Questionnaire synthétique fournisseur','استبيان مقدم خدمة للاختبار','Source historique de recette','مصدر تاريخي للاختبار','PROVIDER','1.0.0','TEST-0218',repeat('f',64),'TEST source de qualification','f8800000-0000-4000-8000-000000000003');
+do $$declare requested jsonb;begin
+ perform set_config('request.jwt.claim.sub','f8800000-0000-4000-8000-000000000002',true);
+ perform set_config('request.jwt.claims','{"sub":"f8800000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);
+ requested:=public.request_provider_service('f8810000-0000-4000-8000-000000000002','f8853000-0000-4000-8000-000000000004','TEST-0218-service-request');
+ insert into public.questionnaire_sessions(id,organization_id,actor_user_id,library_id,catalog_release_id,questionnaire_version_id,audience,locale,status,submitted_at,answer_manifest,answer_manifest_hash)values('f8857000-0000-4000-8000-000000000004','f8810000-0000-4000-8000-000000000002','f8800000-0000-4000-8000-000000000002','f8853000-0000-4000-8000-000000000001','f8857000-0000-4000-8000-000000000001','f8857000-0000-4000-8000-000000000003','PROVIDER','fr-MA','SUBMITTED',clock_timestamp(),'{}',repeat('1',64));
+ perform set_config('request.jwt.claim.sub','f8800000-0000-4000-8000-000000000003',true);
+ perform set_config('request.jwt.claims','{"sub":"f8800000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal2"}',true);
+ perform public.decide_provider_qualification((requested->>'qualification_id')::uuid,'APPROVED','f8857000-0000-4000-8000-000000000004',8000,'[{"key":"IDENTITY","passed":true}]','[]','TEST independent synthetic qualification','TEST-0218',clock_timestamp()+interval'1 year',1,'TEST-0218-qualification');
+ perform set_config('request.jwt.claim.sub','f8800000-0000-4000-8000-000000000002',true);
+ perform set_config('request.jwt.claims','{"sub":"f8800000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);
+ perform public.declare_provider_capacity('f8810000-0000-4000-8000-000000000002','f8853000-0000-4000-8000-000000000004','AVAILABLE',5,2,'TEST provider capacity declaration','TEST-0218-capacity');
+end$$;
+insert into public.matching_runs(id,request_id,request_version_id,policy_version,status,target_panel_size,started_by,completed_at)values('f8855000-0000-4000-8000-000000000001','f8854000-0000-4000-8000-000000000001','f8854000-0000-4000-8000-000000000002','MATCH-V1','COMPLETED',1,'f8800000-0000-4000-8000-000000000001',clock_timestamp());
+insert into public.matching_candidates(id,matching_run_id,provider_organization_id,eligible,score_basis_points,score_explanation,rotation_component)values('f8855000-0000-4000-8000-000000000002','f8855000-0000-4000-8000-000000000001','f8810000-0000-4000-8000-000000000002',true,9000,'{}',50);
+insert into public.rfqs(id,request_id,request_version_id,matching_run_id,status,deadline,invited_count,opened_by)values('f8852000-0000-4000-8000-000000000001','f8854000-0000-4000-8000-000000000001','f8854000-0000-4000-8000-000000000002','f8855000-0000-4000-8000-000000000001','OPEN',clock_timestamp()+interval'1 day',1,'f8800000-0000-4000-8000-000000000001');
+insert into public.rfq_providers(id,rfq_id,provider_organization_id,matching_candidate_id,status,responded_at)values('f8856000-0000-4000-8000-000000000001','f8852000-0000-4000-8000-000000000001','f8810000-0000-4000-8000-000000000002','f8855000-0000-4000-8000-000000000002','ACCEPTED',clock_timestamp());
+insert into public.quotes(id,rfq_id,rfq_provider_id,provider_organization_id,status,created_by)values('f8851000-0000-4000-8000-000000000001','f8852000-0000-4000-8000-000000000001','f8856000-0000-4000-8000-000000000001','f8810000-0000-4000-8000-000000000002','DRAFT','f8800000-0000-4000-8000-000000000002');
+insert into public.quote_versions(id,quote_id,rfq_id,provider_organization_id,version_number,lifecycle_status,change_reason,currency,solution_fr,deliverables,warranty_fr,correction_terms_fr,proposed_start_date,duration_days,valid_until,subtotal_minor,tax_minor,total_minor,recurring_subtotal_minor,calculation_basis,content_hash,submitted_at,created_by)values('f8850000-0000-4000-8000-000000000001','f8851000-0000-4000-8000-000000000001','f8852000-0000-4000-8000-000000000001','f8810000-0000-4000-8000-000000000002',1,'SUBMITTED','Fixture mission P216','MAD','Solution fixture','["Livrable"]','Garantie fixture','Corrections fixture',current_date,1,clock_timestamp()+interval'1 day',10000,0,10000,0,'{}',repeat('f',64),clock_timestamp(),'f8800000-0000-4000-8000-000000000002');
+update public.quotes set status='SELECTED',current_version_id='f8850000-0000-4000-8000-000000000001',selected_version_id='f8850000-0000-4000-8000-000000000001'where id='f8851000-0000-4000-8000-000000000001';
+insert into public.contract_versions(id,contract_id,version,selected_quote_version_id,request_snapshot,quote_snapshot,clauses,price_minor,currency,commission_rule_snapshot,content_hash,change_reason,created_by) values('f8840000-0000-4000-8000-000000000001','f8830000-0000-4000-8000-000000000001',1,'f8850000-0000-4000-8000-000000000001','{}','{"quote_version_id":"f8850000-0000-4000-8000-000000000001"}','{}',10000,'MAD','{}',repeat('a',64),'Fixture comportementale','f8800000-0000-4000-8000-000000000001');
+
+
 select set_config('request.jwt.claim.sub','f8800000-0000-4000-8000-000000000001',true);
 select set_config('request.jwt.claims','{"sub":"f8800000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);
 insert into public.contract_parties(contract_version_id,organization_id,party_role,legal_snapshot)values('f8840000-0000-4000-8000-000000000001','f8810000-0000-4000-8000-000000000001','CLIENT',private.current_client_contract_party_v1('f8810000-0000-4000-8000-000000000001')),('f8840000-0000-4000-8000-000000000001','f8810000-0000-4000-8000-000000000002','PROVIDER',private.provider_current_identity_snapshot_v1('f8810000-0000-4000-8000-000000000002')||jsonb_build_object('verified_identity_hash',private.canonical_request_hash(private.provider_current_identity_snapshot_v1('f8810000-0000-4000-8000-000000000002'))));
@@ -124,15 +154,52 @@ update public.client_compliance_cases set status='VERIFIED',verified_at=now()-in
 update public.organization_identifiers set verification_status='PENDING'where organization_id='f8810000-0000-4000-8000-000000000002'and identifier_type='ICE';
 select throws_ok($$select public.run_mock_signature_provider(pg_temp.env('contract'),'SENT',null,'p218-current-provider-denied')$$,'55000','SIGNATURE_CURRENT_PROVIDER_IDENTITY_REQUIRED','provider identity becoming unverified after draft blocks the actual send');
 update public.organization_identifiers set verification_status='VERIFIED'where organization_id='f8810000-0000-4000-8000-000000000002'and identifier_type='ICE';
--- Normalized DEMO payment context fixture, not a claim of captured funds or a real invoice.
-insert into public.subscription_plans(id,code,status,created_by)values('f8894000-0000-4000-8000-000000000001','PREMIUM','ACTIVE','f8800000-0000-4000-8000-000000000001');
-insert into public.subscription_plan_versions(id,plan_id,version,status,currency,monthly_price_minor,annual_price_minor,monthly_credit_grant,core_allocation_basis_points,benefit_pool_allocation_basis_points,limits_snapshot,valid_from,content_hash,created_by)values('f8894000-0000-4000-8000-000000000002','f8894000-0000-4000-8000-000000000001',1,'ACTIVE','MAD',10000,120000,1,5000,5000,'{}',current_date-1,repeat('c',64),'f8800000-0000-4000-8000-000000000001');
-insert into public.subscription_payment_intents(id,organization_id,plan_version_id,billing_interval,gateway,provider_intent_id,amount_minor,currency,idempotency_key,request_hash,correlation_id,created_by)values('f8894000-0000-4000-8000-000000000003','f8810000-0000-4000-8000-000000000001','f8894000-0000-4000-8000-000000000002','MONTHLY','DEMO','signature218-context',10000,'MAD','signature218-context',repeat('c',64),'f8894000-0000-4000-8000-000000000004','f8800000-0000-4000-8000-000000000001');
-insert into public.subscription_payment_events(payment_intent_id,organization_id,gateway,provider_event_id,provider_intent_id,event_type,amount_minor,currency,paid_at,payment_reference,payload_hash,signature_fingerprint,activation_result,correlation_id)values('f8894000-0000-4000-8000-000000000003','f8810000-0000-4000-8000-000000000001','DEMO','signature218-context-event','signature218-context','PAYMENT_SUCCEEDED',10000,'MAD',clock_timestamp(),'signature218-context-reference',repeat('c',64),repeat('d',64),'{}','f8894000-0000-4000-8000-000000000004');
-insert into public.subscription_financial_holds(payment_event_id,organization_id,active,reason_code)select id,organization_id,true,'REFUND_REQUESTED'from public.subscription_payment_events where provider_event_id='signature218-context-event';
+-- Transaction-only SANDBOX receipt: native checkout, independent approved
+-- cash/suspense mapping and verified-service SQL callback. No real PSP signature,
+-- commercial cost, fiscal approval or external captured funds are asserted.
+insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)values('f8800000-0000-4000-8000-000000000004','00000000-0000-0000-0000-000000000000','authenticated','authenticated','p218-finance-reviewer@example.invalid','',now(),'{}','{}',now(),now());
+insert into public.platform_user_roles(user_id,role_code)values('f8800000-0000-4000-8000-000000000004','FINANCE_MANAGER');
+insert into public.subscription_plans(id,code,status,created_by)values('f8894000-0000-4000-8000-000000000001','PREMIUM','ACTIVE','f8800000-0000-4000-8000-000000000003');
+insert into public.subscription_plan_versions(id,plan_id,version,status,currency,monthly_price_minor,annual_price_minor,monthly_credit_grant,core_allocation_basis_points,benefit_pool_allocation_basis_points,limits_snapshot,valid_from,content_hash,created_by)values('f8894000-0000-4000-8000-000000000002','f8894000-0000-4000-8000-000000000001',1,'ACTIVE','MAD',10000,120000,1,5000,5000,'{}',current_date-1,repeat('c',64),'f8800000-0000-4000-8000-000000000003');
+insert into public.subscriptions(id,organization_id,status)values('f8894000-0000-4000-8000-000000000005','f8810000-0000-4000-8000-000000000001','TRIAL_EXPIRED');
+select pg_temp.as_user('f8800000-0000-4000-8000-000000000003');
+insert into p218 values('posting',public.create_credit_revenue_policy_v1('POSTING','SUBSCRIPTION','f8894000-0000-4000-8000-000000000002',null,'MAD','DEVELOPMENT',1,current_date-1,null,jsonb_build_object('cash_account_code','TEST218_CASH_MAD','cash_name_fr','TEST cash','cash_name_ar','خزينة اختبار','suspense_account_code','TEST218_PENDING_MAD','suspense_name_fr','TEST pending','suspense_name_ar','قيد اختبار'),'TEST synthetic cash posting only','TEST-218-posting'));
+select pg_temp.as_user('f8800000-0000-4000-8000-000000000004');
+select public.decide_credit_revenue_policy_v1((select(v->>'request_id')::uuid from p218 where k='posting'),true,(select v->>'request_hash'from p218 where k='posting'),'TEST independent synthetic posting approval');
+-- Checkout freezes the native independently approved TEST Box before any PSP authority.
+create function pg_temp.approve_checkout_box_fixture(
+ p_audit_org uuid,p_plan_version uuid,p_maker uuid,p_reviewer uuid,p_code text,
+ p_currency text,p_credit_budget bigint,p_rollover_months integer
+)returns jsonb language plpgsql as $$
+declare benefit jsonb;box jsonb;rule jsonb;context jsonb;approval jsonb;begin
+ if p_maker=p_reviewer then raise exception'TEST_REQUIRES_INDEPENDENT_FINANCE';end if;
+ perform set_config('request.jwt.claim.sub',p_maker::text,true);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',p_maker,'role','authenticated','aal','aal2')::text,true);
+ benefit:=public.create_benefit_version(p_audit_org,p_code||'_BENEFIT','CREDIT_SERVICE','MATRICIA_INTERNAL','Avantage synthétique de recette','ميزة اصطناعية للاختبار','Données exclusivement synthétiques de recette','بيانات اختبار اصطناعية فقط',p_credit_budget,0,0,p_currency,null,null,null,'{}','{}','TEST_CANCELLATION_V1',clock_timestamp()-interval'1 minute',p_code||'-benefit');
+ perform public.activate_benefit_version(p_audit_org,(benefit->>'benefit_version_id')::uuid,p_code||'-activate-benefit');
+ box:=public.create_box_version(p_audit_org,p_code,'FIXED','Box synthétique de recette','صندوق اصطناعي للاختبار',p_credit_budget,p_rollover_months,'{}',0,0,0,p_currency,clock_timestamp()-interval'1 minute',jsonb_build_array(jsonb_build_object('slot_code','CORE','slot_kind','MANDATORY','minimum_selections',1,'maximum_selections',1,'allowed_benefit_version_ids',jsonb_build_array(benefit->>'benefit_version_id'))),p_code||'-create');
+ perform public.activate_box_version(p_audit_org,(box->>'box_version_id')::uuid,null,p_code||'-activate');
+ rule:=public.link_plan_box_rule(p_audit_org,p_plan_version,(box->>'box_version_id')::uuid,'{"schema_version":1,"period_unit":"SUBSCRIPTION_CYCLE","budget_rule":"EXACT"}',clock_timestamp()-interval'1 minute',p_code||'-link');
+ context:=public.get_box_configuration_approval_context_v1((rule->>'plan_box_rule_id')::uuid);
+ perform set_config('request.jwt.claim.sub',p_reviewer::text,true);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',p_reviewer,'role','authenticated','aal','aal2')::text,true);
+ approval:=public.approve_box_configuration_v1((rule->>'plan_box_rule_id')::uuid,context->>'source_hash','Approbation indépendante exclusivement synthétique de recette',p_code||'-approve');
+ perform set_config('request.jwt.claim.sub',p_maker::text,true);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',p_maker,'role','authenticated','aal','aal2')::text,true);
+ return jsonb_build_object('box',box,'rule',rule,'approval',approval);
+end$$;
+insert into p218 values('checkout-box',pg_temp.approve_checkout_box_fixture('f8810000-0000-4000-8000-000000000001','f8894000-0000-4000-8000-000000000002','f8800000-0000-4000-8000-000000000003','f8800000-0000-4000-8000-000000000004','TEST_SIGNATURE_HOLD218','MAD',1,1));
+select pg_temp.as_user('f8800000-0000-4000-8000-000000000001');
+insert into p218 values('payment-prepared',public.prepare_subscription_payment_intent_v2('f8810000-0000-4000-8000-000000000001','f8894000-0000-4000-8000-000000000002','MONTHLY','PAYPAL','SANDBOX','TEST-218-prepare'));
+select pg_temp.as_service();
+insert into p218 values('payment-registered',public.register_subscription_payment_intent_v2((select(v->>'preparation_id')::uuid from p218 where k='payment-prepared'),'SANDBOX','SYNTHETIC-218-ORDER',10000,'MAD'));
+insert into p218 values('payment-paid',public.process_verified_subscription_payment_v2('PAYPAL','SANDBOX','SYNTHETIC-218-CAPTURE-EVENT','SYNTHETIC-218-ORDER','PAYMENT_SUCCEEDED',10000,'MAD',clock_timestamp(),'SYNTHETIC-218-CAPTURE',repeat('c',64),repeat('d',64)));
+select ok(exists(select 1 from public.credit_economic_funding_sources_v1 f join public.financial_journals j on j.id=f.financial_journal_id where f.organization_id='f8810000-0000-4000-8000-000000000001'and f.gross_minor=10000 and j.status='POSTED'),'signature financial context has a native captured receipt and posted cash journal');
+insert into p218 values('payment-dispute',public.process_verified_subscription_adjustment_v2('SANDBOX','SYNTHETIC-218-DISPUTE-OPEN','SYNTHETIC-218-CAPTURE','SYNTHETIC-218-DISPUTE','DISPUTE_OPENED',10000,'MAD',clock_timestamp(),repeat('e',64),repeat('f',64)));
 select throws_ok($$select public.run_mock_signature_provider(pg_temp.env('contract'),'SENT',null,'p218-held-client-denied')$$,'55000','CLIENT_FINANCIAL_HOLD_ACTIVE','financial hold after draft blocks send before any native signature event');
 select is((select count(*)from public.signature_provider_events where envelope_id=pg_temp.env('contract')),0::bigint,'blocked current identities or money never produce a fictional native send');
-update public.subscription_financial_holds set active=false where organization_id='f8810000-0000-4000-8000-000000000001';
+insert into p218 values('payment-dispute-won',public.process_verified_subscription_adjustment_v2('SANDBOX','SYNTHETIC-218-DISPUTE-WON','SYNTHETIC-218-CAPTURE','SYNTHETIC-218-DISPUTE','DISPUTE_WON',10000,'MAD',clock_timestamp()+interval'1 second',repeat('a',64),repeat('b',64)));
+select ok(private.subscription_financially_clear('f8810000-0000-4000-8000-000000000001'),'native dispute resolution releases the hold before signature send');
 select is(public.run_mock_signature_provider(pg_temp.env('contract'),'SENT',null,'p218-contract-sent')->>'outcome','SIGNATURE_ENVELOPE_SENT','configured development mock uses actual sent transition');
 select is(public.run_mock_signature_provider(pg_temp.env('contract'),'SIGNER_SIGNED',(select(v->>'id')::uuid from p218 where k='contract-client'),'p218-client-signed')->>'outcome','SIGNATURE_ENVELOPE_PARTIALLY_SIGNED','first native signature does not activate contract');
 select is((select status from public.contracts where id='f8830000-0000-4000-8000-000000000001'),'PENDING_SIGNATURE','contract remains pending after only one party');

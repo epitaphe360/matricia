@@ -57,7 +57,7 @@ insert into media_test values('asset',public.reserve_social_media_asset_v1('c216
 select is((select v->>'storage_path'from media_test where k='asset'),'ca216000-0000-4000-8000-000000000001/c2160000-0000-4000-8000-000000000090/'||repeat('a',64),'source path binds tenant, exact job and SHA256');
 select throws_ok($$select public.reserve_social_media_asset_v1('c2160000-0000-4000-8000-000000000090',repeat('b',64),'image/jpeg',100,true)$$,'22000','MEDIA_ASSET_IMMUTABLE','approved bytes cannot change for a frozen job');
 select ok(not has_function_privilege('authenticated','public.complete_social_media_asset_v1(uuid,text)','EXECUTE'),'operator cannot assert file verification');
-select set_config('request.jwt.claims','{"role":"service_role"}',true);
+select set_config('request.jwt.claim.sub','',true);select set_config('request.jwt.claims','{"role":"service_role"}',true);
 select public.complete_social_media_asset_v1((select(v->>'asset_id')::uuid from media_test where k='asset'),repeat('a',64));
 -- SQL tests use fixture metadata only; actual Storage bytes/hash validation is covered by HTTP/runner tests.
 update public.social_publication_jobs set status='CLAIMED',attempt_count=1,lease_token='f2160000-0000-4000-8000-000000000001',claimed_by='meta-sql-test',claimed_at=clock_timestamp(),lease_expires_at=clock_timestamp()+interval'5 minutes'where id in('c2160000-0000-4000-8000-000000000090','c2160000-0000-4000-8000-000000000091');
@@ -84,7 +84,7 @@ select is((select count(*)from public.social_media_investigations where executio
 select is((select state from public.social_media_executions where id=(select(v->>'id')::uuid from media_test where k='execution')),'UNKNOWN','investigation neither confirms publication nor permits resending');
 -- A distinct second execution exercises the successful native-proof path and crash at publish.
 insert into media_test values('asset2',public.reserve_social_media_asset_v1('c2160000-0000-4000-8000-000000000091',repeat('d',64),'video/mp4',100,true));
-select set_config('request.jwt.claims','{"role":"service_role"}',true);
+select set_config('request.jwt.claim.sub','',true);select set_config('request.jwt.claims','{"role":"service_role"}',true);
 select public.complete_social_media_asset_v1((select(v->>'asset_id')::uuid from media_test where k='asset2'),repeat('d',64));
 update media_test set v=jsonb_build_object('id',public.begin_social_media_execution_v1('c2160000-0000-4000-8000-000000000091','f2160000-0000-4000-8000-000000000001'))where k='execution';
 select pg_temp.media_next();select pg_temp.media_advance('FREEZING',jsonb_build_object('asset_sha256',repeat('d',64)));select pg_temp.media_advance('READY',jsonb_build_object('asset_sha256',repeat('d',64),'public_asset_url','https://test.supabase.co/storage/v1/object/public/marketing-media-public/'||(select v->>'storage_path'from media_test where k='asset2'),'caption','Approved https://example.invalid/?mref='||(select v->>'id'from media_test where k='execution'),'delivery_sha256',repeat('e',64)));
