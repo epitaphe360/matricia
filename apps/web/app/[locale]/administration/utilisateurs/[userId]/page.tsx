@@ -5,6 +5,7 @@ import { resolveAdminSpace } from "@/modules/admin/data/spaces/context";
 import { actorCopy } from "@/modules/admin/data/spaces/actors-copy";
 import { loadAdminActorUser } from "@/modules/admin/data/spaces/actors-repository";
 import { UserFicheBoard } from "@/modules/admin/screens/spaces/actor-boards";
+import { AdminActorLoadError } from "@/modules/admin/screens/spaces/actor-load-error";
 import { AdminAppShell, AdminCrumb } from "@/modules/admin/ui/admin-app-shell";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 
@@ -20,6 +21,11 @@ export default async function AdminUserFichePage({
   const space = await resolveAdminSpace({ locale, organizationId: query.organizationId });
   if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/administration/utilisateurs/${userId}` }));
   const result = await loadAdminActorUser(userId,query.organizationId);
+  if (result.status === "error") {
+    if (result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/utilisateurs/${userId}${space.selectedQuery}` }));
+    if (result.reason === "NOT_FOUND") notFound();
+    return <AdminActorLoadError locale={locale} userId={userId} reason={result.reason} space={space} />;
+  }
   if (result.rows.length === 0) notFound();
   const a = actorCopy(locale);
   const alternate = locale === "ar" ? "fr" : "ar";

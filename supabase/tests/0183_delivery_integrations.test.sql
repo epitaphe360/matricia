@@ -1,6 +1,49 @@
 begin;
 update private.admin_execution_environment_v1 set environment='DEVELOPMENT',configuration_reference='transactional-payment-fixture-0183',configured_at=clock_timestamp()where singleton;
 set local search_path=public,extensions;
+-- Synthetic checkout prerequisite, executed through the actual public commands.
+-- Two dedicated Finance actors keep content authorship and approval independent;
+-- both their fixture identities and the resulting audit/outbox roll back below.
+create function pg_temp.seed_approved_box_checkout(
+  p_organization_id uuid, p_plan_version_id uuid, p_rollover_months integer default 3
+) returns void language plpgsql as $$
+declare
+  author_id uuid := 'ff850000-0000-4000-8000-000000000001';
+  reviewer_id uuid := 'ff850000-0000-4000-8000-000000000002';
+  prior_sub text := current_setting('request.jwt.claim.sub', true);
+  prior_claims text := current_setting('request.jwt.claims', true);
+  plan public.subscription_plan_versions%rowtype;
+  benefit jsonb; box jsonb; rule jsonb; approval_context jsonb;
+  fixture_key text := 'checkout-fixture-' || p_plan_version_id::text;
+begin
+  select * into strict plan from public.subscription_plan_versions where id = p_plan_version_id;
+  insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
+  values(author_id,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','box-checkout-author@example.invalid','',now(),'{}','{}',now(),now()),
+        (reviewer_id,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','box-checkout-reviewer@example.invalid','',now(),'{}','{}',now(),now())
+  on conflict (id) do nothing;
+  insert into public.platform_user_roles(user_id,role_code) values(author_id,'FINANCE_MANAGER'),(reviewer_id,'FINANCE_MANAGER') on conflict do nothing;
+  perform set_config('request.jwt.claim.sub',author_id::text,true);
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',author_id,'role','authenticated','aal','aal2')::text,true);
+  benefit := public.create_benefit_version(p_organization_id,'CHECKOUT_FIXTURE_BENEFIT','CREDIT_SERVICE','MATRICIA_INTERNAL',
+    'Avantage synthétique de recette','ميزة اختبار اصطناعية','Prérequis de recette uniquement','شرط للاختبار فقط',
+    1,0,0,plan.currency,null,null,null,'{}','{}','TEST_ONLY_CHECKOUT',clock_timestamp()-interval '1 minute',fixture_key||'-benefit');
+  perform public.activate_benefit_version(p_organization_id,(benefit->>'benefit_version_id')::uuid,fixture_key||'-benefit-active');
+  box := public.create_box_version(p_organization_id,'CHECKOUT_FIXTURE_BOX','FIXED','Box synthétique de recette','صندوق اختبار اصطناعي',
+    plan.monthly_credit_grant,p_rollover_months,'{}',0,0,0,plan.currency,clock_timestamp()-interval '1 minute',
+    jsonb_build_array(jsonb_build_object('slot_code','CORE','slot_kind','MANDATORY','minimum_selections',1,'maximum_selections',1,
+      'allowed_benefit_version_ids',jsonb_build_array(benefit->>'benefit_version_id'))),fixture_key||'-box');
+  perform public.activate_box_version(p_organization_id,(box->>'box_version_id')::uuid,null,fixture_key||'-box-active');
+  rule := public.link_plan_box_rule(p_organization_id,p_plan_version_id,(box->>'box_version_id')::uuid,
+    '{"schema_version":1,"period_unit":"SUBSCRIPTION_CYCLE","budget_rule":"AT_MOST"}',clock_timestamp()-interval '1 minute',fixture_key||'-rule');
+  approval_context := public.get_box_configuration_approval_context_v1((rule->>'plan_box_rule_id')::uuid);
+  perform set_config('request.jwt.claim.sub',reviewer_id::text,true);
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',reviewer_id,'role','authenticated','aal','aal2')::text,true);
+  perform public.approve_box_configuration_v1((rule->>'plan_box_rule_id')::uuid,approval_context->>'source_hash',
+    'TEST ONLY independent approval of synthetic checkout terms',fixture_key||'-approve');
+  perform set_config('request.jwt.claim.sub',coalesce(prior_sub,''),true);
+  perform set_config('request.jwt.claims',coalesce(prior_claims,'{}'),true);
+end;
+$$;
 select plan(27);
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)values
 ('a1830000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','owner-183@example.invalid','',now(),'{}','{}',now(),now()),
@@ -31,6 +74,7 @@ create function pg_temp.approve_posting183(target_environment text)returns void 
 end$$;
 select pg_temp.approve_posting183('DEVELOPMENT');
 
+select pg_temp.seed_approved_box_checkout('b1830000-0000-4000-8000-000000000001','d1830000-0000-4000-8000-000000000002',3);
 create temporary table p183_results(kind text primary key,value jsonb);
 select set_config('request.jwt.claim.sub','a1830000-0000-4000-8000-000000000001',true);
 select set_config('request.jwt.claims','{"sub":"a1830000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);
@@ -43,7 +87,7 @@ select is((select count(*)from public.audit_events where action='subscription.pa
 select is((select count(*)from public.event_outbox where event_type='SubscriptionPaymentIntentPreparedV1'and organization_id='b1830000-0000-4000-8000-000000000001'),1::bigint,'preparation emits one durable event');
 select ok(not has_table_privilege('authenticated','public.subscription_payment_preparations','INSERT')and not has_table_privilege('service_role','public.subscription_payment_preparations','UPDATE'),'payment preparation has no direct write grants');
 select throws_ok($$select public.record_operational_heartbeat_v1('P183_WORKER',true,60)$$,'42501','FORBIDDEN','only service can attest heartbeat');
-select set_config('request.jwt.claims','{"role":"service_role"}',true);
+select set_config('request.jwt.claim.sub','',true);select set_config('request.jwt.claims','{"role":"service_role"}',true);
 select is(public.operational_health_v1(array['P183_WORKER'])->>'dependencies_ok','false','missing required heartbeat is unhealthy');
 select public.record_operational_heartbeat_v1('P183_WORKER',true,60);
 select is(public.operational_health_v1(array['P183_WORKER'])->>'dependencies_ok','true','fresh healthy heartbeat is healthy');
@@ -66,7 +110,7 @@ select is((select count(*)from public.audit_events where action='outbox.replay.a
 select ok((select dead_lettered_at is null and attempt_count=0 and published_at is null from public.event_outbox where idempotency_key='p183-dlq'),'replay schedules work without pretending effect occurred');
 select ok(not has_function_privilege('authenticated','public.record_resend_receipt_v1(text,text,text,text,timestamptz)','EXECUTE'),'receipt ingester is not client callable');
 select ok(not has_table_privilege('service_role','public.notification_provider_receipts','INSERT'),'service cannot forge receipts outside verification RPC');
-select set_config('request.jwt.claims','{"role":"service_role"}',true);
+select set_config('request.jwt.claim.sub','',true);select set_config('request.jwt.claims','{"role":"service_role"}',true);
 select throws_ok($$select public.record_resend_receipt_v1('evt-183','email-183',null,repeat('a',64),now())$$,'22023','INVALID_EMAIL_RECEIPT','null receipt status rejected');
 select throws_ok($$select public.record_resend_receipt_v1('evt-183','email-183','DELIVERED',repeat('a',64),null)$$,'22023','INVALID_EMAIL_RECEIPT','null receipt date rejected');
 select throws_ok($$select public.record_resend_receipt_v1('evt-183','email-183','DELIVERED',repeat('a',64),now())$$,'P0002','EMAIL_DELIVERY_NOT_FOUND','unknown provider message cannot mark delivery');

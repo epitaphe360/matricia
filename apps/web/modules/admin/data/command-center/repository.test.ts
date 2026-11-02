@@ -28,6 +28,11 @@ function thenable(result: { data: unknown; error: unknown }) {
 }
 
 describe("loadAdminCommandCenter", () => {
+  it("keeps Auth503 as a technical read failure", async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: null }, error: { status: 503 } });
+    expect(await loadAdminCommandCenter()).toEqual({ status: "error", reason: "QUERY_FAILED" });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
   beforeEach(() => {
     mocks.selects.length = 0;
     mocks.getUser.mockReset().mockResolvedValue({ data: { user: { id: userId } } });

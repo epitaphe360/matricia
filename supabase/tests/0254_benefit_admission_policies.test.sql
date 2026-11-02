@@ -1,5 +1,48 @@
 begin;
 set local search_path=public,extensions;
+-- Synthetic checkout prerequisite, executed through the actual public commands.
+-- Two dedicated Finance actors keep content authorship and approval independent;
+-- both their fixture identities and the resulting audit/outbox roll back below.
+create function pg_temp.seed_approved_box_checkout(
+  p_organization_id uuid, p_plan_version_id uuid, p_rollover_months integer default 3
+) returns void language plpgsql as $$
+declare
+  author_id uuid := 'ff850000-0000-4000-8000-000000000001';
+  reviewer_id uuid := 'ff850000-0000-4000-8000-000000000002';
+  prior_sub text := current_setting('request.jwt.claim.sub', true);
+  prior_claims text := current_setting('request.jwt.claims', true);
+  plan public.subscription_plan_versions%rowtype;
+  benefit jsonb; box jsonb; rule jsonb; approval_context jsonb;
+  fixture_key text := 'checkout-fixture-' || p_plan_version_id::text;
+begin
+  select * into strict plan from public.subscription_plan_versions where id = p_plan_version_id;
+  insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
+  values(author_id,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','box-checkout-author@example.invalid','',now(),'{}','{}',now(),now()),
+        (reviewer_id,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','box-checkout-reviewer@example.invalid','',now(),'{}','{}',now(),now())
+  on conflict (id) do nothing;
+  insert into public.platform_user_roles(user_id,role_code) values(author_id,'FINANCE_MANAGER'),(reviewer_id,'FINANCE_MANAGER') on conflict do nothing;
+  perform set_config('request.jwt.claim.sub',author_id::text,true);
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',author_id,'role','authenticated','aal','aal2')::text,true);
+  benefit := public.create_benefit_version(p_organization_id,'CHECKOUT_FIXTURE_BENEFIT','CREDIT_SERVICE','MATRICIA_INTERNAL',
+    'Avantage synthétique de recette','ميزة اختبار اصطناعية','Prérequis de recette uniquement','شرط للاختبار فقط',
+    1,0,0,plan.currency,null,null,null,'{}','{}','TEST_ONLY_CHECKOUT',clock_timestamp()-interval '1 minute',fixture_key||'-benefit');
+  perform public.activate_benefit_version(p_organization_id,(benefit->>'benefit_version_id')::uuid,fixture_key||'-benefit-active');
+  box := public.create_box_version(p_organization_id,'CHECKOUT_FIXTURE_BOX','FIXED','Box synthétique de recette','صندوق اختبار اصطناعي',
+    plan.monthly_credit_grant,p_rollover_months,'{}',0,0,0,plan.currency,clock_timestamp()-interval '1 minute',
+    jsonb_build_array(jsonb_build_object('slot_code','CORE','slot_kind','MANDATORY','minimum_selections',1,'maximum_selections',1,
+      'allowed_benefit_version_ids',jsonb_build_array(benefit->>'benefit_version_id'))),fixture_key||'-box');
+  perform public.activate_box_version(p_organization_id,(box->>'box_version_id')::uuid,null,fixture_key||'-box-active');
+  rule := public.link_plan_box_rule(p_organization_id,p_plan_version_id,(box->>'box_version_id')::uuid,
+    '{"schema_version":1,"period_unit":"SUBSCRIPTION_CYCLE","budget_rule":"AT_MOST"}',clock_timestamp()-interval '1 minute',fixture_key||'-rule');
+  approval_context := public.get_box_configuration_approval_context_v1((rule->>'plan_box_rule_id')::uuid);
+  perform set_config('request.jwt.claim.sub',reviewer_id::text,true);
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',reviewer_id,'role','authenticated','aal','aal2')::text,true);
+  perform public.approve_box_configuration_v1((rule->>'plan_box_rule_id')::uuid,approval_context->>'source_hash',
+    'TEST ONLY independent approval of synthetic checkout terms',fixture_key||'-approve');
+  perform set_config('request.jwt.claim.sub',coalesce(prior_sub,''),true);
+  perform set_config('request.jwt.claims',coalesce(prior_claims,'{}'),true);
+end;
+$$;
 grant usage on schema extensions to authenticated,service_role;
 select no_plan();
 -- Synthetic financial approvals only. Nothing is seeded into a real deployment.
@@ -90,6 +133,7 @@ insert into public.subscription_plans(id,code,status,created_by)values('d2549000
 insert into public.subscription_plan_versions(id,plan_id,version,status,currency,monthly_price_minor,annual_price_minor,monthly_credit_grant,core_allocation_basis_points,benefit_pool_allocation_basis_points,limits_snapshot,valid_from,content_hash,created_by)
 values('d2549000-0000-4000-8000-000000000002','d2549000-0000-4000-8000-000000000001',1,'ACTIVE','MAD',100,1000,10,5000,5000,'{}',current_date-1,repeat('b',64),'a2540000-0000-4000-8000-000000000001');
 insert into public.subscriptions(id,organization_id,status)values('d2549000-0000-4000-8000-000000000003','b2540000-0000-4000-8000-000000000001','TRIAL_EXPIRED');
+select pg_temp.seed_approved_box_checkout('b2540000-0000-4000-8000-000000000001','d2549000-0000-4000-8000-000000000002',3);
 select pg_temp.actor254(1);set local role authenticated;
 insert into manual254 values('posting-proposal',public.create_credit_revenue_policy_v1('POSTING','SUBSCRIPTION','d2549000-0000-4000-8000-000000000002',null,'MAD','DEVELOPMENT',1,current_date-1,null,jsonb_build_object('cash_account_code','TEST254_CASH_MAD','cash_name_fr','TEST cash','cash_name_ar','خزينة اختبار','suspense_account_code','TEST254_PENDING_MAD','suspense_name_fr','TEST pending','suspense_name_ar','قيد اختبار'),'TEST ONLY posting for synthetic native admission recipe','TEST-254-posting'));
 select pg_temp.actor254(2);

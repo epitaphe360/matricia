@@ -6,11 +6,13 @@ import type { Locale } from "@/modules/shared/lib/i18n/locale";
 export async function resolveAdminSpace(input: { locale: Locale; organizationId?: string }) {
   const access = await loadMyPlatformAccess();
   if (access.status === "error" && access.reason === "UNAUTHENTICATED") return { status: "unauthenticated" as const };
+  if (access.status === "error") throw new Error("ADMIN_ACCESS_UNAVAILABLE");
   // The administration shell is never served to a non-administrator: send them
   // back to the dashboard, which routes each account to its own space.
-  if (access.status !== "ok" || !PLATFORM_ADMIN_ROLES.some((role) => access.roles.has(role))) {
+  if (!PLATFORM_ADMIN_ROLES.some((role) => access.roles.has(role))) {
     redirect(`/${input.locale}/tableau-de-bord`);
   }
+  if (!access.requirementSatisfied) redirect(`/${input.locale}/securite/compte`);
   const selectedOrganizationId = input.organizationId ?? null;
   const selectedQuery = selectedOrganizationId ? `?organizationId=${encodeURIComponent(selectedOrganizationId)}` : "";
   return {

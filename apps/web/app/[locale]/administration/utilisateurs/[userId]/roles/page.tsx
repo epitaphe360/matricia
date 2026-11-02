@@ -9,6 +9,7 @@ import { resolveAdminSpace } from "@/modules/admin/data/spaces/context";
 import { actorCopy } from "@/modules/admin/data/spaces/actors-copy";
 import { loadAdminActorUser } from "@/modules/admin/data/spaces/actors-repository";
 import { EditUserRolesForm } from "@/modules/admin/screens/spaces/actor-forms";
+import { AdminActorLoadError } from "@/modules/admin/screens/spaces/actor-load-error";
 import { AdminAppShell, AdminCrumb } from "@/modules/admin/ui/admin-app-shell";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 
@@ -24,7 +25,14 @@ export default async function AdminUserRolesPage({
   const space = await resolveAdminSpace({ locale, organizationId: query.organizationId });
   if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/administration/utilisateurs/${userId}/roles` }));
   const result = await loadAdminActorUser(userId,query.organizationId);
-  const row = result.rows.find((item)=>item.organizationId===query.organizationId) ?? result.rows[0];
+  if (result.status === "error") {
+    if (result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/administration/utilisateurs/${userId}/roles${space.selectedQuery}` }));
+    if (result.reason === "NOT_FOUND") notFound();
+    return <AdminActorLoadError locale={locale} userId={userId} roles reason={result.reason} space={space} />;
+  }
+  const row = query.organizationId === undefined
+    ? result.rows[0]
+    : result.rows.find((item) => item.organizationId === query.organizationId);
   if (!row) notFound();
   const client=await getSupabaseServerClient();
   const contextResult=row.membershipId?await client.rpc("get_admin_role_editor_context_v1",{p_membership_id:row.membershipId}):{data:null,error:null};

@@ -1,6 +1,49 @@
 begin;
 update private.admin_execution_environment_v1 set environment='DEVELOPMENT',configuration_reference='transactional-payment-fixture-0184',configured_at=clock_timestamp()where singleton;
 set local search_path=public,extensions;
+-- Synthetic checkout prerequisite, executed through the actual public commands.
+-- Two dedicated Finance actors keep content authorship and approval independent;
+-- both their fixture identities and the resulting audit/outbox roll back below.
+create function pg_temp.seed_approved_box_checkout(
+  p_organization_id uuid, p_plan_version_id uuid, p_rollover_months integer default 3
+) returns void language plpgsql as $$
+declare
+  author_id uuid := 'ff850000-0000-4000-8000-000000000001';
+  reviewer_id uuid := 'ff850000-0000-4000-8000-000000000002';
+  prior_sub text := current_setting('request.jwt.claim.sub', true);
+  prior_claims text := current_setting('request.jwt.claims', true);
+  plan public.subscription_plan_versions%rowtype;
+  benefit jsonb; box jsonb; rule jsonb; approval_context jsonb;
+  fixture_key text := 'checkout-fixture-' || p_plan_version_id::text;
+begin
+  select * into strict plan from public.subscription_plan_versions where id = p_plan_version_id;
+  insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
+  values(author_id,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','box-checkout-author@example.invalid','',now(),'{}','{}',now(),now()),
+        (reviewer_id,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','box-checkout-reviewer@example.invalid','',now(),'{}','{}',now(),now())
+  on conflict (id) do nothing;
+  insert into public.platform_user_roles(user_id,role_code) values(author_id,'FINANCE_MANAGER'),(reviewer_id,'FINANCE_MANAGER') on conflict do nothing;
+  perform set_config('request.jwt.claim.sub',author_id::text,true);
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',author_id,'role','authenticated','aal','aal2')::text,true);
+  benefit := public.create_benefit_version(p_organization_id,'CHECKOUT_FIXTURE_BENEFIT','CREDIT_SERVICE','MATRICIA_INTERNAL',
+    'Avantage synthétique de recette','ميزة اختبار اصطناعية','Prérequis de recette uniquement','شرط للاختبار فقط',
+    1,0,0,plan.currency,null,null,null,'{}','{}','TEST_ONLY_CHECKOUT',clock_timestamp()-interval '1 minute',fixture_key||'-benefit');
+  perform public.activate_benefit_version(p_organization_id,(benefit->>'benefit_version_id')::uuid,fixture_key||'-benefit-active');
+  box := public.create_box_version(p_organization_id,'CHECKOUT_FIXTURE_BOX','FIXED','Box synthétique de recette','صندوق اختبار اصطناعي',
+    plan.monthly_credit_grant,p_rollover_months,'{}',0,0,0,plan.currency,clock_timestamp()-interval '1 minute',
+    jsonb_build_array(jsonb_build_object('slot_code','CORE','slot_kind','MANDATORY','minimum_selections',1,'maximum_selections',1,
+      'allowed_benefit_version_ids',jsonb_build_array(benefit->>'benefit_version_id'))),fixture_key||'-box');
+  perform public.activate_box_version(p_organization_id,(box->>'box_version_id')::uuid,null,fixture_key||'-box-active');
+  rule := public.link_plan_box_rule(p_organization_id,p_plan_version_id,(box->>'box_version_id')::uuid,
+    '{"schema_version":1,"period_unit":"SUBSCRIPTION_CYCLE","budget_rule":"AT_MOST"}',clock_timestamp()-interval '1 minute',fixture_key||'-rule');
+  approval_context := public.get_box_configuration_approval_context_v1((rule->>'plan_box_rule_id')::uuid);
+  perform set_config('request.jwt.claim.sub',reviewer_id::text,true);
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',reviewer_id,'role','authenticated','aal','aal2')::text,true);
+  perform public.approve_box_configuration_v1((rule->>'plan_box_rule_id')::uuid,approval_context->>'source_hash',
+    'TEST ONLY independent approval of synthetic checkout terms',fixture_key||'-approve');
+  perform set_config('request.jwt.claim.sub',coalesce(prior_sub,''),true);
+  perform set_config('request.jwt.claims',coalesce(prior_claims,'{}'),true);
+end;
+$$;
 select no_plan();
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)values
 ('a1840000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','owner-184@example.invalid','',now(),'{}','{}',now(),now()),
@@ -29,13 +72,14 @@ create function pg_temp.approve_posting184(target_environment text)returns void 
  perform public.decide_credit_revenue_policy_v1((proposal->>'request_id')::uuid,true,proposal->>'request_hash','Approbation indépendante uniquement pour recette SQL 0184');
 end$$;
 select pg_temp.approve_posting184('DEVELOPMENT');
+select pg_temp.seed_approved_box_checkout('b1840000-0000-4000-8000-000000000001','d1840000-0000-4000-8000-000000000002',3);
 create temporary table p184(kind text primary key,value jsonb);
 select set_config('request.jwt.claim.sub','a1840000-0000-4000-8000-000000000001',true);
 select set_config('request.jwt.claims','{"sub":"a1840000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);
 insert into p184 values('preparation',public.prepare_subscription_payment_intent_v2('b1840000-0000-4000-8000-000000000001','d1840000-0000-4000-8000-000000000002','MONTHLY','PAYPAL','SANDBOX','f1840000-0000-4000-8000-000000000001'));
-select set_config('request.jwt.claims','{"role":"service_role"}',true);
+select set_config('request.jwt.claim.sub','',true);select set_config('request.jwt.claims','{"role":"service_role"}',true);
 insert into p184 values('intent',public.register_subscription_payment_intent_v2((select(value->>'preparation_id')::uuid from p184 where kind='preparation'),'SANDBOX','ORDER-18400001',12345,'EUR'));
-select set_config('request.jwt.claims','{"role":"service_role"}',true);
+select set_config('request.jwt.claim.sub','',true);select set_config('request.jwt.claims','{"role":"service_role"}',true);
 insert into p184 values('paid',public.process_verified_subscription_payment_v2('PAYPAL','SANDBOX','EVENT-18400001','ORDER-18400001','PAYMENT_SUCCEEDED',12345,'EUR',clock_timestamp(),'CAPTURE-18400001',repeat('b',64),repeat('c',64)));
 insert into p184 select'payment_id',jsonb_build_object('id',id)from public.subscription_payment_events where provider_event_id='EVENT-18400001';
 select set_config('request.jwt.claims','{"sub":"a1840000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);
@@ -46,7 +90,7 @@ select throws_ok($$select public.request_subscription_refund_v1((select(value->>
 select set_config('request.jwt.claim.sub','a1840000-0000-4000-8000-000000000002',true);
 select set_config('request.jwt.claims','{"sub":"a1840000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);
 select is(public.decide_subscription_refund_v1((select(value->>'id')::uuid from p184 where kind='request'),true)->>'outcome','REFUND_AUTHORIZED','distinct finance approver authorizes a durable refund');
-select set_config('request.jwt.claims','{"role":"service_role"}',true);
+select set_config('request.jwt.claim.sub','',true);select set_config('request.jwt.claims','{"role":"service_role"}',true);
 select is(public.prepare_subscription_refund_send_v1((select(value->>'id')::uuid from p184 where kind='request'))->>'capture_id','CAPTURE-18400001','provider command binds only the stored capture');
 select throws_ok($$select public.prepare_subscription_refund_send_v1((select(value->>'id')::uuid from p184 where kind='request'))$$,'55000','REFUND_RECONCILIATION_REQUIRED','ambiguous repeated send is blocked before a second provider call');
 select is(public.record_subscription_refund_send_v1((select(value->>'id')::uuid from p184 where kind='request'),'REFUND-18400001')->>'outcome','REFUND_AWAITING_WEBHOOK','provider acceptance waits for verified refund webhook');
@@ -64,7 +108,7 @@ insert into p184 values('rest',jsonb_build_object('id',public.request_subscripti
 select set_config('request.jwt.claim.sub','a1840000-0000-4000-8000-000000000002',true);
 select set_config('request.jwt.claims','{"sub":"a1840000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);
 select public.decide_subscription_refund_v1((select(value->>'id')::uuid from p184 where kind='rest'),true);
-select set_config('request.jwt.claims','{"role":"service_role"}',true);
+select set_config('request.jwt.claim.sub','',true);select set_config('request.jwt.claims','{"role":"service_role"}',true);
 select public.prepare_subscription_refund_send_v1((select(value->>'id')::uuid from p184 where kind='rest'));
 select is(public.record_subscription_refund_send_v1((select(value->>'id')::uuid from p184 where kind='rest'),null)->>'outcome','REFUND_RECONCILIATION_REQUIRED','timeout records uncertainty instead of success or resend');
 select public.process_verified_subscription_adjustment_v1('REFUND-EVENT-184003','CAPTURE-18400001','REFUND-18400003','REFUND_SUCCEEDED',8345,'EUR',clock_timestamp(),repeat('3',64),repeat('4',64),(select(value->>'id')::uuid from p184 where kind='rest'));
@@ -78,9 +122,9 @@ select throws_ok($$select public.process_verified_subscription_adjustment_v1('UN
 insert into public.subscriptions(id,organization_id,status)values('e1840000-0000-4000-8000-000000000002','b1840000-0000-4000-8000-000000000002','TRIAL_EXPIRED');
 select set_config('request.jwt.claims','{"sub":"a1840000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);
 insert into p184 values('second-preparation',public.prepare_subscription_payment_intent_v2('b1840000-0000-4000-8000-000000000002','d1840000-0000-4000-8000-000000000002','MONTHLY','PAYPAL','SANDBOX','f1840000-0000-4000-8000-000000000005'));
-select set_config('request.jwt.claims','{"role":"service_role"}',true);
+select set_config('request.jwt.claim.sub','',true);select set_config('request.jwt.claims','{"role":"service_role"}',true);
 select public.register_subscription_payment_intent_v2((select(value->>'preparation_id')::uuid from p184 where kind='second-preparation'),'SANDBOX','ORDER-18400002',12345,'EUR');
-select set_config('request.jwt.claims','{"role":"service_role"}',true);
+select set_config('request.jwt.claim.sub','',true);select set_config('request.jwt.claims','{"role":"service_role"}',true);
 select public.process_verified_subscription_payment_v2('PAYPAL','SANDBOX','EVENT-18400002','ORDER-18400002','PAYMENT_SUCCEEDED',12345,'EUR',clock_timestamp(),'CAPTURE-18400002',repeat('7',64),repeat('8',64));
 select public.process_verified_subscription_adjustment_v1('DISPUTE-WON-184001','CAPTURE-18400002','DISPUTE-18400001','DISPUTE_WON',1000,'EUR',clock_timestamp()-interval'10 seconds',repeat('9',64),repeat('a',64));
 select public.process_verified_subscription_adjustment_v1('DISPUTE-OPEN-184001','CAPTURE-18400002','DISPUTE-18400001','DISPUTE_OPENED',1000,'EUR',clock_timestamp()-interval'20 seconds',repeat('b',64),repeat('c',64));
@@ -92,7 +136,7 @@ insert into p184 values('won-refund',jsonb_build_object('id',public.request_subs
 select set_config('request.jwt.claim.sub','a1840000-0000-4000-8000-000000000001',true);
 select set_config('request.jwt.claims','{"sub":"a1840000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);
 select public.decide_subscription_refund_v1((select(value->>'id')::uuid from p184 where kind='won-refund'),true);
-select set_config('request.jwt.claims','{"role":"service_role"}',true);
+select set_config('request.jwt.claim.sub','',true);select set_config('request.jwt.claims','{"role":"service_role"}',true);
 select is(public.prepare_subscription_refund_send_v1((select(value->>'id')::uuid from p184 where kind='won-refund'))->>'outcome','REFUND_SEND_AUTHORIZED','OPEN then WON dispute permits a later authorized refund');
 select public.process_verified_subscription_adjustment_v1('DISPUTE-OPEN-184002','CAPTURE-18400002','DISPUTE-18400002','DISPUTE_OPENED',2000,'EUR',clock_timestamp()-interval'5 seconds',repeat('d',64),repeat('e',64));
 select is((select status from public.subscriptions where organization_id='b1840000-0000-4000-8000-000000000002'),'SUSPENDED','open dispute freezes paid entitlements');
