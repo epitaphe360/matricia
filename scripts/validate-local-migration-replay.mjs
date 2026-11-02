@@ -8,8 +8,8 @@ import { prepareSqlTest } from './db-test-support.mjs';
 // This tool never connects to the configured application database. Its only
 // target is a newly created, labelled Docker container without a network.
 const args = process.argv.slice(2);
-if (process.env.APP_ENV !== 'development' || args.some(arg => arg !== '--with-sql')) {
-  throw new Error('LOCAL_REPLAY_REQUIRES_DEVELOPMENT_AND_OPTIONAL_WITH_SQL');
+if (process.env.APP_ENV !== 'development' || args.some(arg => arg !== '--with-sql' && !/^--test=[a-zA-Z0-9_-]+\.test\.sql$/.test(arg))) {
+  throw new Error('LOCAL_REPLAY_REQUIRES_DEVELOPMENT_AND_SAFE_SQL_ARGUMENTS');
 }
 process.umask(0o077);
 const root = resolve(import.meta.dirname, '..');
@@ -63,7 +63,12 @@ try {
   if (space.bavail * space.bsize < 4n * 1024n ** 3n) throw new Error('LOCAL_REPLAY_NEEDS_4_GIB_FREE');
   for (const image of Object.values(images)) docker(['image', 'inspect', image, '--format', '{{.Id}}']);
   const migrations = await snapshot('supabase/migrations');
-  const tests = args.includes('--with-sql') ? await snapshot('supabase/tests') : [];
+  const requestedTests = args.filter(arg => arg.startsWith('--test=')).map(arg => arg.slice(7));
+  if (requestedTests.length && args.includes('--with-sql')) throw new Error('LOCAL_REPLAY_AMBIGUOUS_SQL_SCOPE');
+  const availableTests = args.includes('--with-sql') || requestedTests.length ? await snapshot('supabase/tests') : [];
+  const tests = requestedTests.length ? availableTests.filter(test => requestedTests.includes(test.file)) : availableTests;
+  if (requestedTests.some(name => !tests.some(test => test.file === name))) throw new Error('LOCAL_REPLAY_REQUESTED_TEST_MISSING');
+  if (requestedTests.length && tests.some(test => /\b(?:session_replication_role|disable\s+trigger|enable\s+trigger)\b/i.test(test.bytes.toString('utf8')))) throw new Error('LOCAL_REPLAY_FIXTURE_GUARD_BYPASS_REFUSED');
   const secret = randomBytes(32).toString('hex');
   bootstrapSecret = secret;
   const environmentFile = resolve(directory, 'bootstrap.env');

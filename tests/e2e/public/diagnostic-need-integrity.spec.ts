@@ -10,7 +10,7 @@ async function expectNoHorizontalOverflow(page: Page) {
 }
 
 for (const locale of ["fr", "ar"] as const) {
-  test(`M12/M13/M14/M23/M24: diagnostic réel et besoin conservé ${locale}, sans soumission`, async ({ page, baseURL }) => {
+  test(`M12/M13/M14/M23/M24: diagnostic réel et besoin conservé ${locale}, sans soumission`, async ({ page, baseURL }, testInfo) => {
     expect(new URL(baseURL!).hostname, "Cette recette est réservée au serveur local isolé").toMatch(/^(localhost|127\.0\.0\.1|\[::1\])$/u);
     const copy = getPublicJourneyCopy(locale);
     const mutations: string[] = [];
@@ -100,6 +100,7 @@ for (const locale of ["fr", "ar"] as const) {
     await expect(page.getByText("Trois mois", { exact: true })).toBeVisible();
     await expect(page.getByText("Accès uniquement en journée", { exact: true })).toBeVisible();
     await expectNoHorizontalOverflow(page);
+    await page.screenshot({path:testInfo.outputPath("need-recap-verified.png"),fullPage:true});
     await page.getByRole("button", { name: copy.need.back, exact: true }).click();
     await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "4");
     await page.getByRole("button", { name: copy.need.back, exact: true }).click();
