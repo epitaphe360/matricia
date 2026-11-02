@@ -1,3 +1,4 @@
+begin;
 -- Search/filter before pagination; a technical failure is never an empty page.
 create function public.list_provider_quote_invitation_page_v1(p_organization_id uuid,p_page integer default 1,p_query text default'',p_mode text default'consultations',p_tab text default'all')returns jsonb
 language plpgsql stable security definer set search_path=pg_catalog,public,private as $$
@@ -18,3 +19,4 @@ end$$;
 revoke all on function public.list_provider_quote_invitation_page_v1(uuid,integer,text,text,text)from public,anon,authenticated,service_role;
 grant execute on function public.list_provider_quote_invitation_page_v1(uuid,integer,text,text,text)to authenticated;
 notify pgrst,'reload schema';
+commit;

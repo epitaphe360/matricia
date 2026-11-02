@@ -1,3 +1,4 @@
+begin;
 -- A working revision must not erase the previously published offer or expose
 -- the new draft to the Client. Selection still checks the current published CAS.
 alter table public.quotes add column last_published_version_id uuid;
@@ -55,3 +56,4 @@ do $$declare definition text;marker text;begin
 $patch$||marker);
 end$$;
 notify pgrst,'reload schema';
+commit;

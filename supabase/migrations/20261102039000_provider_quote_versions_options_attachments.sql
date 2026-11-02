@@ -1,3 +1,4 @@
+begin;
 -- MAT-FUNC-014/020/027. Keep revisions immutable, scoped and restartable.
 -- A clean scan is a technical prerequisite, never a legal verification.
 create table public.quote_attachments (
@@ -106,3 +107,4 @@ end$$;
 revoke all on function public.authorize_quote_attachment_download_v1(uuid)from public,anon,authenticated,service_role;
 grant execute on function public.authorize_quote_attachment_download_v1(uuid)to authenticated;
 notify pgrst,'reload schema';
+commit;
