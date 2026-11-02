@@ -93,7 +93,22 @@ try {
     const form = page.locator('form').filter({ has: page.locator(`input[name="qualificationId"][value="${row.id}"]`) });
     await openFormDetails(form);
     await form.locator('[name="status"]').selectOption(status);
-    if (status === 'APPROVED') { await form.locator('[name="scorePercent"]').fill('80'); await form.locator('[name="evidenceConfirmed"]').check(); }
+    if (status === 'APPROVED') {
+      await form.getByRole('button', { name: 'Charger les questionnaires soumis', exact: true }).tap();
+      const deposit = form.getByLabel('Dépôt à examiner', { exact: true });
+      await expect(deposit).toBeEnabled();
+      await deposit.selectOption(questionnaire.sessionId);
+      await expect(form.locator('[name="questionnaireSessionId"]')).toHaveValue(questionnaire.sessionId);
+      await expect(form.locator('[name="reviewedManifestHash"]')).toHaveValue(/^[a-f0-9]{64}$/u);
+      const answers = form.getByRole('region', { name: 'Questions et réponses déposées', exact: true });
+      await expect(answers).toBeVisible();
+      await expect(answers).toContainText('Score du moteur figé');
+      if (await answers.locator('li').count() < 1) throw Error('ACTUAL_FROZEN_PROVIDER_ANSWERS_REQUIRED_BEFORE_HUMAN_REVIEW');
+      await form.locator('[name="scorePercent"]').fill('80');
+      await form.locator('[name="evidenceConfirmed"]').check();
+      proof.reviewedQuestionnaire = { sessionId: questionnaire.sessionId, explicitSelection: true, frozenQuestionsDisplayed: true, manifestHash: await form.locator('[name="reviewedManifestHash"]').inputValue(), engineScoreDisplayed: true, humanScorePercent: '80' };
+      await page.screenshot({ path: resolve(state.directory, 'qualification-evidence-explicit-fr-768.png'), fullPage: true });
+    }
     else await form.locator('[name="blockingConditions"]').fill('TEST uniquement — pièce complémentaire propre au service B à fournir.');
     await form.locator('[name="rationale"]').fill(`TEST uniquement — revue indépendante du questionnaire Provider et des pièces actuelles : ${status}.`);
     await form.getByRole('button').last().tap();

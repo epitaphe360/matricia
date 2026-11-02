@@ -1,9 +1,13 @@
 # Independent Provider browser acceptance
 
-Status: **prepared, not executed**. Initial harness base is integration commit
-`b0be5966c67923cdeb36e049e280ad0f08e3573b`. The orchestrator must signal the next
-integrated candidate before any build or database provisioning. No Provider
-acceptance result is implied by passing the local harness guard tests.
+Status: **partially executed on e929; business completion blocked on a reproduced qualification reviewer defect**. Initial harness base was integration commit
+`b0be5966c67923cdeb36e049e280ad0f08e3573b`. Immutable first-candidate receipts are in
+`docs/provider-completion/evidence/browser/candidate-one/`: 18 native entry steps,
+40 FR/AR responsive pages, 64 axe scans with zero violations but unresolved contrast
+incompletes, 8 menu cases and 20 real-role security checks. These are partial
+receipts, not full Provider acceptance. Quotes, contracts, delivery, finance and
+messaging remain unexecuted until their native prerequisites pass. The
+orchestrator must signal each new candidate before schema upgrade or rebuild.
 
 Run from `/workspace/provider-browser` with Node 24, installed workspace
 modules, `/usr/bin/chromium`, cached Supabase images and local Docker socket.
@@ -82,7 +86,7 @@ registry, official legal identity or production antivirus is certified.
 
 ## Remaining fixture prerequisites and business acceptance
 
-`seed-catalogue.mjs` extracts only the reviewed published catalogue/questionnaire blocks from0338/0345 and maps all IDs to the native TEST cohort. Authentication, Provider profile/qualification, ledgers and guard changes are rejected from that extraction. This is historical TEST reference data, with source/SQL hashes; its governance is not claimed as a native publication. `questionnaire-browser.mjs` then requests two services and declares capacity/region/modes/radius through the real UI, starts the Provider questionnaire, tests conditional requirements and server refusal, offline/reconnect, RTL/free text, exact draft resume and final read-only submission. These two scripts are prepared; they have not yet been executed.
+`seed-catalogue.mjs` extracts only the reviewed published catalogue/questionnaire blocks from0338/0345 and maps all IDs to the native TEST cohort. Authentication, Provider profile/qualification, ledgers and guard changes are rejected from that extraction. This is historical TEST reference data, with source/SQL hashes; its governance is not claimed as a native publication. `questionnaire-browser.mjs` then requests two services and declares capacity/region/modes/radius through the real UI, starts the Provider questionnaire, tests conditional requirements and server refusal, offline/reconnect, RTL/free text, exact draft resume and final read-only submission. These two scripts have passed on e929; their receipts do not certify independent human qualification, which remains blocked by the documented reviewer RLS defect.
 
 The seven acceptance groups and every required assertion are enumerated in
 `plan.mjs`. Entry success alone does not certify questionnaire, quote, contract,
@@ -140,3 +144,32 @@ under `work/provider-browser-isolated/<uuid>/`. Stop app/gateway after capture;
 removes the canonical source or the old Client target.
 
 `qualification-review.mjs` follows the intentional partnership workflow: actual private test PDF upload, native scan lease/completion, independent document review and administrative UI decision. The PDF is explicitly `NON_CONTRACTUAL_DEMO`; the legal signature is a historical TEST precondition, never a legal execution certified by this acceptance. It revalidates the current identity after the company decision, then independently approves service A and requests information for B through the actual Admin UI. No `SIGNED`, qualification or balance state is written directly in SQL.
+
+## Resume after the qualification fix
+
+Preserve the original actors, submitted answers, uploaded bytes and decision
+checkpoint. Upgrade only to the orchestrator's exact integrated candidate with
+`upgrade-candidate.mjs --coordinated --candidate=<sha>`; existing applied migration
+hashes are immutable. If the reviewed new files are interleaved with old files,
+use the explicit `--allow-reviewed-interleaved-delta` flag and retain its receipt.
+This forward upgrade does not replace a fresh full SQL replay receipt.
+
+After the complete production-mode rebuild, execute in order:
+
+```sh
+APP_ENV=development node tests/e2e/helpers/provider-browser/qualification-review.mjs --resume-qualification
+APP_ENV=development node tests/e2e/helpers/provider-browser/complete-quote-rfq.mjs
+APP_ENV=development node tests/e2e/helpers/provider-browser/quote-browser.mjs
+APP_ENV=development node tests/e2e/helpers/provider-browser/quote-revision-browser.mjs
+APP_ENV=development node tests/e2e/helpers/provider-browser/native-contract-mission.mjs
+```
+
+The updated reviewer flow explicitly selects the original submitted questionnaire,
+checks its frozen answer display and context hash, then makes an independent human
+decision. The revision stage uses the actual counterparty Client command and
+Provider keyboard/touch UI, verifies immutable published history and denies access
+to the private replacement before republication. Contract selection requires the
+exact newly republished version rather than silently retaining the first version.
+These continuation scripts are prepared; only their own successful native receipts
+can establish that they executed. Never rerun them over a failed native checkpoint
+without investigating the stored state and the exact failed operation.
