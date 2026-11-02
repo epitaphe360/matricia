@@ -20,7 +20,7 @@ const server = http.createServer((req, res) => {
         res.setHeader('vary', 'Origin');
     }
     if (req.method === 'OPTIONS') {
-        res.writeHead(204, { 'access-control-allow-headers': 'authorization,apikey,content-type,x-client-info,x-supabase-api-version', 'access-control-allow-methods': 'GET,POST,PATCH,PUT,DELETE,OPTIONS' });
+        res.writeHead(204, { 'access-control-allow-headers': 'authorization,apikey,content-type,x-client-info,x-supabase-api-version,content-profile,accept-profile,cache-control,x-upsert', 'access-control-allow-methods': 'GET,POST,PATCH,PUT,DELETE,OPTIONS' });
         res.end();
         return;
     }

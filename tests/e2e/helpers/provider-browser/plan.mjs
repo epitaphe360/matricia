@@ -6,6 +6,7 @@ export const ownerRoutes=[
  'sous-traitant/questionnaires','sous-traitant/documents','sous-traitant/consultations','sous-traitant/devis',
  'sous-traitant/contrats','sous-traitant/missions','sous-traitant/planning','sous-traitant/facturation',
  'sous-traitant/facturation/pre-releve','sous-traitant/facturation/echeancier','sous-traitant/litiges','sous-traitant/messages','sous-traitant/entreprise','sous-traitant/parametres',
+ 'sous-traitant/achats','sous-traitant/reputation','sous-traitant/marketing','sous-traitant/mode-client','organisation/roles','notifications',
 ];
 export const requiredFlows=[
  {id:'native-entry',actor:'provider-owner',assertions:['native_otp_verified','native_totp_aal2_verified','native_provider_organization_created','no_client_membership_or_trial']},
