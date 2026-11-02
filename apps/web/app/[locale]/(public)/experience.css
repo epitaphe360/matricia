@@ -16,7 +16,7 @@
 .journey-home{overflow-x:hidden}
 .journey-home section[id],.public-page section[id]{scroll-margin-top:88px}
 .journey-eyebrow{margin:0;color:var(--jp-blue);font-size:.78rem;font-weight:750;letter-spacing:.14em;line-height:1.5;text-transform:uppercase}
-.journey-eyebrow.is-coral{color:var(--jp-coral)}
+.journey-eyebrow.is-coral{color:var(--mat-coral-ink)}
 [dir=rtl] .journey-eyebrow{letter-spacing:0;text-transform:none}
 .journey-home-hero,.journey-home-section,.journey-home-provider,.public-wrap{width:min(100% - 48px,1180px);margin-inline:auto}
 .journey-home-hero{display:grid;width:100%;max-width:none;margin:0;grid-template-columns:minmax(280px,34vw) minmax(0,1fr);gap:12px;align-items:center;padding-block:clamp(28px,5vw,56px);padding-inline-start:max(24px,calc((100% - 1180px) / 2));padding-inline-end:0;position:relative;overflow:visible}
@@ -26,8 +26,8 @@
 .journey-home-hero[data-locale=ar] h1 em{color:var(--jp-coral)}
 .journey-home-hero .journey-primary.is-coral{background:var(--jp-blue);box-shadow:0 10px 22px rgb(109 60 199 / .18)}
 .journey-home-hero .journey-primary.is-coral:hover{background:var(--jp-blue-hover)}
-.journey-home-hero[data-locale=ar] .journey-primary.is-coral{background:var(--jp-coral);box-shadow:0 10px 22px rgb(224 122 95 / .22)}
-.journey-home-hero[data-locale=ar] .journey-primary.is-coral:hover{background:var(--mat-coral)}
+.journey-home-hero[data-locale=ar] .journey-primary.is-coral{background:var(--mat-coral-ink);box-shadow:0 10px 22px rgb(224 122 95 / .22)}
+.journey-home-hero[data-locale=ar] .journey-primary.is-coral:hover{background:var(--mat-color-danger)}
 [dir=rtl] .journey-hero-copy h1,[dir=rtl] .journey-card h1,[dir=rtl] .public-hero h1{letter-spacing:0}
 .journey-lead,.public-lead{max-width:620px;margin:0;color:var(--jp-muted);font-size:clamp(1.02rem,1.35vw,1.14rem);line-height:1.7}
 .journey-trust{display:flex;flex-wrap:wrap;gap:12px 20px;margin-top:22px;padding:0;list-style:none}
@@ -208,8 +208,8 @@
 .public-ecosystem .is-hub{border-color:var(--mat-violet-line);background:var(--jp-pale);border-radius:999px;min-height:140px;display:grid;place-content:center}
 .public-qualify{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:18px}
 .public-qualify li{display:grid;gap:8px;padding:14px;border-radius:16px;background:var(--mat-canvas);font-size:.8rem}
-.journey-primary.is-coral,.premium-nav-action.is-coral{background:var(--jp-coral);box-shadow:0 10px 22px rgb(224 122 95 / .22)}
-.journey-primary.is-coral:hover{background:var(--mat-coral)}
+.journey-primary.is-coral,.premium-nav-action.is-coral{background:var(--mat-coral-ink);color:#fff;box-shadow:0 10px 22px rgb(224 122 95 / .22)}
+.journey-primary.is-coral:hover{background:var(--mat-color-danger)}
 .public-illustrative{margin-top:16px;padding:14px;border:1px dashed var(--mat-border);border-radius:18px;background:#fff}
 .public-illustrative small{display:block;margin-bottom:8px;color:var(--jp-muted);font-size:.72rem;font-weight:750;letter-spacing:.08em;text-transform:uppercase}
 .journey-understood h2{margin:8px 0 10px;font-size:1.2rem;color:var(--jp-navy)}
@@ -400,8 +400,8 @@
   .journey-home-hero{width:100%;padding-block:36px}
   .journey-hero-copy h1,.public-hero h1{font-size:clamp(1.9rem,9vw,2.4rem)}
   .journey-actions .journey-primary,.journey-actions .journey-secondary,.premium-nav-action-mobile{width:100%}
-  .journey-home-hero .journey-primary.is-coral{background:var(--jp-coral);box-shadow:0 10px 22px rgb(224 122 95 / .22)}
-  .journey-home-hero .journey-primary.is-coral:hover{background:var(--mat-coral)}
+  .journey-home-hero .journey-primary.is-coral{background:var(--mat-coral-ink);box-shadow:0 10px 22px rgb(224 122 95 / .22)}
+  .journey-home-hero .journey-primary.is-coral:hover{background:var(--mat-color-danger)}
   .journey-script-float{position:static;text-align:start;max-width:none}
   .public-form-grid,.public-domain-grid,.journey-preview-flow,.journey-outcomes,.journey-priorities,.journey-faq,.public-plans,.journey-provider-steps,.journey-scope,.journey-value-grid,.public-auth-band ul{grid-template-columns:1fr}
   .journey-steps{grid-template-columns:1fr}

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Bell, Search, Sprout } from "lucide-react";
 import type { ReactNode } from "react";
@@ -33,6 +34,7 @@ const routeByActive: Record<ProviderNavKey, string> = {
 export function ProviderAppShell({
   locale,
   selectedQuery,
+  organizations=[],
   selectedOrganizationId,
   userEmail,
   active,
@@ -44,6 +46,7 @@ export function ProviderAppShell({
 }: {
   locale: Locale;
   selectedQuery: string;
+  organizations?:readonly {id:string;name:string}[];
   selectedOrganizationId: string | null;
   userEmail: string | null;
   active: ProviderNavKey;
@@ -91,7 +94,7 @@ export function ProviderAppShell({
           })}
         </nav>
         <figure className="client-side-art">
-          <img src="/scenes/arch-city.png" alt="" width={220} height={120} />
+          <Image src="/scenes/arch-city.png" alt="" width={220} height={120} />
           <figcaption>{c.brandFooter}</figcaption>
         </figure>
       </aside>
@@ -133,6 +136,7 @@ export function ProviderAppShell({
             {alternate.toUpperCase()}
           </Link>
         </div>
+        {organizations.length?<form action={`/${locale}/${route}`} method="get" className="client-card mx-4 flex flex-wrap items-end gap-3"><label className="grid gap-2" htmlFor="provider-organization-selector">{locale==="ar"?"منظمة مقدم الخدمات":"Organisation prestataire"}<select id="provider-organization-selector" name="organizationId" defaultValue={selectedOrganizationId??""} required className="min-h-11 rounded-md border px-3"><option value="" disabled>{locale==="ar"?"اختر مؤسسة":"Choisir une organisation"}</option>{organizations.map(org=><option key={org.id} value={org.id}>{org.name}</option>)}</select></label><button className="client-cta" type="submit">{locale==="ar"?"عرض":"Afficher"}</button></form>:null}
         {title ? (
           <header className="client-mast provider-mast">
             <div>

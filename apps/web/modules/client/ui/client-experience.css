@@ -1565,13 +1565,7 @@ button.client-cta {
   padding: 0.35rem 0.85rem;
 }
 
-.client-ops:not([open]) {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-}
+
 
 @media (min-width: 720px) {
   .client-ops {

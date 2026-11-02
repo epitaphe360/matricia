@@ -1,3 +1,7 @@
+import{randomUUID}from"node:crypto";
+import{accountAccessSchema}from"@/modules/admin/screens/account-access/model";
+import{AccountAccessPanel}from"@/modules/admin/screens/account-access/panel";
+import {getSupabaseServerClient}from"@/modules/shared/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { z } from "zod";
@@ -19,9 +23,14 @@ export default async function AdminUserRolesPage({
   if (!isLocale(locale) || !z.string().uuid().safeParse(userId).success) notFound();
   const space = await resolveAdminSpace({ locale, organizationId: query.organizationId });
   if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/administration/utilisateurs/${userId}/roles` }));
-  const result = await loadAdminActorUser(userId);
-  const row = result.rows[0];
+  const result = await loadAdminActorUser(userId,query.organizationId);
+  const row = result.rows.find((item)=>item.organizationId===query.organizationId) ?? result.rows[0];
   if (!row) notFound();
+  const client=await getSupabaseServerClient();
+  const contextResult=row.membershipId?await client.rpc("get_admin_role_editor_context_v1",{p_membership_id:row.membershipId}):{data:null,error:null};
+  const accessResult=await client.rpc("get_admin_account_access_v1",{p_user_id:userId});
+  const access=accountAccessSchema.safeParse(accessResult.data);
+  const context=z.object({roles:z.array(z.object({roleCode:z.string(),franchiseId:z.string().uuid().nullable(),franchiseLabel:z.string().nullable()})),franchises:z.array(z.object({id:z.string().uuid(),label:z.string()}))}).safeParse(contextResult.data);
   const a = actorCopy(locale);
   const alternate = locale === "ar" ? "fr" : "ar";
 
@@ -36,20 +45,23 @@ export default async function AdminUserRolesPage({
       searchAction={`/${locale}/administration/utilisateurs`}
       searchPlaceholder={a.searchUsers}
       alternateHref={`/${alternate}/administration/utilisateurs/${userId}/roles${space.selectedQuery}`}
-      crumb={<AdminCrumb locale={locale} query={space.selectedQuery} items={[{ href: `/${locale}/administration/entreprises${space.selectedQuery}`, label: locale === "ar" ? "الفاعلون" : "Acteurs" }, { href: `/${locale}/administration/utilisateurs${space.selectedQuery}`, label: a.usersTitle }, { href: `/${locale}/administration/utilisateurs/${userId}${space.selectedQuery}`, label: row.organizationName }, { label: a.editRoles }]} />}
+      crumb={<AdminCrumb locale={locale} query={space.selectedQuery} items={[{ href: `/${locale}/administration/entreprises${space.selectedQuery}`, label: locale === "ar" ? "الفاعلون" : "Acteurs" }, { href: `/${locale}/administration/utilisateurs${space.selectedQuery}`, label: a.usersTitle }, { href: `/${locale}/administration/utilisateurs/${userId}${space.selectedQuery}`, label: row.displayName??row.email??a.userFiche }, { label: a.editRoles }]} />}
       title={a.editRoles}
       lead={a.editRolesLead}
       kicker={locale === "ar" ? "وصول مضبوط لنظام أكثر أماناً" : "Des accès maîtrisés pour un écosystème plus sûr"}
     >
       <main className="client-page">
-        <EditUserRolesForm
+        {row.organizationId&&row.organizationName&&row.membershipId?(!contextResult.error&&context.success?<EditUserRolesForm
           locale={locale}
           query={space.selectedQuery}
           userId={userId}
           organizationId={row.organizationId}
           organizationName={row.organizationName}
-          currentRole={row.roles[0] ?? "CLIENT_MEMBER"}
-        />
+          currentRole={row.roles[0] ?? ""}
+          roleAssignments={!contextResult.error&&context.success?context.data.roles:[]}
+          franchises={!contextResult.error&&context.success?context.data.franchises:[]}
+        />:<p role="alert">{locale==="ar"?"تعذر تحميل الأدوار الحالية. حدّث الملف قبل التغيير.":"Les rôles actuels sont indisponibles. Actualisez la fiche avant tout changement."}</p>):<section className="client-card"><h2>{locale==="ar"?"حساب بدون مؤسسة":"Compte sans organisation"}</h2><p>{locale==="ar"?"ليس لهذا الحساب أي عضوية. أدوار المنصة والجلسات مستقلة عن أدوار المؤسسات.":"Ce compte n’a aucune adhésion. Ses rôles plateforme et ses sessions sont gérés séparément."}</p></section>}
+        {!accessResult.error&&access.success?<AccountAccessPanel context={access.data}locale={locale}requestKey={randomUUID()}/>:<p role="alert">{locale==="ar"?"تعذر تحميل مراجعة وصول الحساب. يلزم تفويض وتحقق متعدد العوامل.":"La revue des accès du compte est indisponible. Vérifiez vos habilitations et votre MFA."}</p>}
       </main>
     </AdminAppShell>
   );

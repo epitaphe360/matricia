@@ -49,8 +49,8 @@ async function serviceLabels(client: Awaited<ReturnType<typeof getSupabaseServer
   return { status: "success" as const, labels: new Map(services.data.flatMap((item) => { const version = item.current_published_version_id ? versionsById.get(item.current_published_version_id) : null; return version ? [[item.id, { fr: version.name_fr, ar: version.name_ar }] as const] : []; })) };
 }
 
-export async function loadProviderReputation(): Promise<{ status: "success"; dashboard: ProviderReputationDashboard } | Failure> {
-  const auth = await activeMembership(["PROVIDER_OWNER", "PROVIDER_MANAGER", "PROVIDER_SALES", "PROVIDER_VIEWER"]);
+export async function loadProviderReputation(requestedOrganizationId?: string): Promise<{ status: "success"; dashboard: ProviderReputationDashboard } | Failure> {
+  const auth = await activeMembership(["PROVIDER_OWNER", "PROVIDER_MANAGER", "PROVIDER_SALES", "PROVIDER_VIEWER"], requestedOrganizationId, true);
   if (auth.failure) return auth.failure;
   const { client, membership: member } = auth;
   const organizationId = member.organization_id;

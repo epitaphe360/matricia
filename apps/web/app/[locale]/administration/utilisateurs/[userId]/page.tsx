@@ -19,11 +19,11 @@ export default async function AdminUserFichePage({
   if (!isLocale(locale) || !z.string().uuid().safeParse(userId).success) notFound();
   const space = await resolveAdminSpace({ locale, organizationId: query.organizationId });
   if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/administration/utilisateurs/${userId}` }));
-  const result = await loadAdminActorUser(userId);
+  const result = await loadAdminActorUser(userId,query.organizationId);
   if (result.rows.length === 0) notFound();
   const a = actorCopy(locale);
   const alternate = locale === "ar" ? "fr" : "ar";
-  const name = result.rows[0]?.organizationName ?? a.userFiche;
+  const name = result.rows[0]?.displayName ?? result.rows[0]?.email ?? a.userFiche;
 
   return (
     <AdminAppShell

@@ -297,9 +297,14 @@ function NeedComposer({
   const copy = getPublicJourneyCopy(locale).need;
   const taxonomy = useMemo(() => getPublicProviderTaxonomy(locale), [locale]);
   const [customTag, setCustomTag] = useState("");
-  const [organizationId, setOrganizationId] = useState(organizations[0]?.id ?? "");
-  const [discovery, setDiscovery] = useState<NeedDiscovery | null>(null);
-  const [discovering, setDiscovering] = useState(false);
+  const [selectedOrganizationId, setOrganizationId] = useState("");
+  const organizationId = organizations.some((item) => item.id === selectedOrganizationId) ? selectedOrganizationId : organizations[0]?.id ?? "";
+  const discoveryText = draft.need.trim();
+  const discoveryKey = JSON.stringify([locale, organizationId, discoveryText]);
+  const canDiscover = authenticated && Boolean(discoverAction) && Boolean(organizationId) && discoveryText.length >= 10;
+  const [discoveryResult, setDiscoveryResult] = useState<{ key: string; value: NeedDiscovery | null } | null>(null);
+  const discovery = canDiscover && discoveryResult?.key === discoveryKey ? discoveryResult.value : null;
+  const discovering = canDiscover && discoveryResult?.key !== discoveryKey;
   const tooShort = draft.need.length > 0 && draft.need.trim().length < 10;
   const canContinue = draft.need.trim().length >= 10;
   const libraryCode = draft.classification?.libraryCode ?? "";
@@ -327,55 +332,39 @@ function NeedComposer({
   ].filter(Boolean);
 
   useEffect(() => {
-    if (organizationId || !organizations[0]) return;
-    setOrganizationId(organizations[0].id);
-  }, [organizationId, organizations]);
-
-  useEffect(() => {
-    const text = draft.need.trim();
-    if (!authenticated || !discoverAction || !organizationId || text.length < 10) {
-      setDiscovery(null);
-      setDiscovering(false);
-      return;
-    }
+    if (!canDiscover || !discoverAction) return;
     let cancelled = false;
-    setDiscovering(true);
     const timer = window.setTimeout(() => {
-      void discoverAction({ locale, organizationId, inputText: text }).then((result) => {
+      void discoverAction({ locale, organizationId, inputText: discoveryText }).then((result) => {
         if (cancelled) return;
-        setDiscovering(false);
-        setDiscovery(result.status === "success" ? result.value : null);
+        const value = result.status === "success" ? result.value : null;
+        setDiscoveryResult({ key: discoveryKey, value });
+        if (!value) return;
+        setDraft((current) => {
+          const answers = { ...current.answers };
+          let changed = false;
+          let location = current.location;
+          if (!location.trim() && value.locationPrefill) {
+            location = value.locationPrefill;
+            changed = true;
+          }
+          for (const question of value.questions) {
+            if (question.prefill && !answers[question.dataKey]) {
+              answers[question.dataKey] = question.prefill.value;
+              changed = true;
+            }
+          }
+          return changed ? { ...current, answers, location, expiresAt: Date.now() + retentionMs } : current;
+        });
       }).catch(() => {
-        if (cancelled) return;
-        setDiscovering(false);
-        setDiscovery(null);
+        if (!cancelled) setDiscoveryResult({ key: discoveryKey, value: null });
       });
     }, 400);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [authenticated, discoverAction, draft.need, locale, organizationId]);
-
-  useEffect(() => {
-    if (!discovery) return;
-    setDraft((current) => {
-      const answers = { ...current.answers };
-      let changed = false;
-      let location = current.location;
-      if (!location.trim() && discovery.locationPrefill) {
-        location = discovery.locationPrefill;
-        changed = true;
-      }
-      for (const question of discovery.questions) {
-        if (question.prefill && !answers[question.dataKey]) {
-          answers[question.dataKey] = question.prefill.value;
-          changed = true;
-        }
-      }
-      return changed ? { ...current, answers, location, expiresAt: Date.now() + retentionMs } : current;
-    });
-  }, [discovery, setDraft]);
+  }, [canDiscover, discoverAction, discoveryKey, discoveryText, locale, organizationId, setDraft]);
 
   function patch(next: Partial<Draft>) {
     setDraft((current) => ({ ...current, ...next, confirmed: false, expiresAt: Date.now() + retentionMs }));

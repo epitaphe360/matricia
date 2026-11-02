@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { resolveClientSpace } from "@/modules/client/data/spaces/context";
+import { resolveConnectedSpace } from "@/modules/shared/lib/account-security/connected-space";
 import { ClientAppShell, type ClientNavKey } from "@/modules/client/ui/client-app-shell";
 import { FranchiseAppShell, type FranchiseNavKey } from "@/modules/franchise/ui/franchise-app-shell";
 import { ProviderAppShell, type ProviderNavKey } from "@/modules/provider/ui/provider-app-shell";
@@ -30,7 +30,7 @@ export async function ConnectedAppShell({
   franchiseActive: FranchiseNavKey;
   children: ReactNode;
 }): Promise<ReactNode> {
-  const space = await resolveClientSpace({ locale, organizationId });
+  const space = await resolveConnectedSpace({ locale, organizationId });
   if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
   const kind = await resolveWorkspaceShell(space.selectedOrganizationId);
   const shared = {

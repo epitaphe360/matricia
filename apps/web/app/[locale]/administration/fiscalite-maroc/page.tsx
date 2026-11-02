@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
@@ -18,6 +19,7 @@ export default async function MoroccoTaxPage({ params }: { params: Promise<{ loc
   if (result.status === "success") result.dashboard.rules.forEach((rule) => { keys[rule.id] = randomUUID(); });
   return (
     <AdminModulePage locale={locale} active="catalog" path="fiscalite-maroc" title={m.title} lead={m.subtitle}>
+      <Link href={`/${locale}/administration/classification-fiscale`} className="inline-flex min-h-11 items-center rounded border px-3 py-2">{locale === "ar" ? "ربط الخدمات بفئات ضريبية معتمدة" : "Associer les services aux catégories fiscales validées"}</Link>
       {result.status === "error" ? (
         <Alert variant="destructive"><AlertTitle>{m.unavailable}</AlertTitle><AlertDescription>{result.reason}</AlertDescription></Alert>
       ) : (

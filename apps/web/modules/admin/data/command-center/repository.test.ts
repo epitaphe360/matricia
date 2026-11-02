@@ -15,7 +15,7 @@ const actionId = "44444444-4444-4444-8444-444444444444";
 function thenable(result: { data: unknown; error: unknown }) {
   const chain: Record<string, unknown> = {};
   const next = () => chain;
-  for (const method of ["select", "eq", "is", "in", "order", "limit"]) {
+  for (const method of ["select", "eq", "is", "in", "order", "limit", "range"]) {
     chain[method] = method === "select"
       ? (columns: string) => {
           mocks.selects.push(columns);

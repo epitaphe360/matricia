@@ -1,3 +1,4 @@
+import {randomUUID} from "node:crypto";
 import { notFound, redirect } from "next/navigation";
 import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
 import { resolveAdminSpace } from "@/modules/admin/data/spaces/context";
@@ -36,7 +37,7 @@ export default async function AdminEnterpriseCreatePage({
       lead={c.createLead}
     >
       <main className="client-page">
-        <CreateOrganizationForm locale={locale} query={space.selectedQuery} />
+        <CreateOrganizationForm idempotencyKey={randomUUID()} resourceId={randomUUID()} locale={locale} query={space.selectedQuery} />
       </main>
     </AdminAppShell>
   );

@@ -112,9 +112,9 @@ describe("admin dashboard mockups", () => {
     );
     expect(consultation).toContain("data-admin-layout=\"consultation\"");
     expect(consultation).toContain("Destinataires sélectionnés");
-    expect(consultation).toContain("Envoyer la consultation");
+    expect(consultation).toContain("Ouvrir la consultation après approbation");
     expect(reuse).toContain("data-admin-layout=\"document-reuse\"");
-    expect(reuse).toContain("Confirmer la liaison");
+    expect(reuse).toContain("Demander le consentement du propriétaire");
     expect(prefs).toContain("data-admin-layout=\"notification-preferences\"");
     expect(prefs).toContain("Modèles de notification publiés");
     expect(prefs).toContain("Aucun modèle actif");

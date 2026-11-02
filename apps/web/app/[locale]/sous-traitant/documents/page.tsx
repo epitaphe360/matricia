@@ -7,18 +7,18 @@ import { ProviderDocumentsBoard } from "@/modules/provider/screens/spaces/boards
 import { ProviderActions, ProviderAppShell } from "@/modules/provider/ui/provider-app-shell";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 
-export default async function ProviderDocumentsPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string; q?: string; vue?: string }> }) {
+export default async function ProviderDocumentsPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string; q?: string; vue?: string; page?:string }> }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
   const space = await resolveProviderSpace({ locale, organizationId: query.organizationId });
   if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/documents` }));
-  const result = await loadProviderDashboard();
+  const result = await loadProviderDashboard(query.organizationId, /^\d{1,6}$/.test(query.page??"")?Number(query.page):1);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/sous-traitant/documents` }));
   const c = providerCopy(locale);
   const view = query.vue === "qualification" ? "qualification" as const : "all" as const;
   return (
-    <ProviderAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="documents" title={c.docsTitle} lead={c.docsLead} kicker={c.kicker} actions={<ProviderActions href={`/${locale}/sous-traitant/qualification${space.selectedQuery}#documents`} label={c.addPiece} />}>
-      <ProviderDocumentsBoard locale={locale} query={space.selectedQuery} documents={result.status === "success" ? result.dashboard.documents : []} loadError={result.status === "error"} search={query.q ?? ""} view={view} />
+    <ProviderAppShell locale={locale} organizations={space.organizations} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="documents" title={c.docsTitle} lead={c.docsLead} kicker={c.kicker} actions={<ProviderActions href={`/${locale}/sous-traitant/qualification${space.selectedQuery}#documents`} label={c.addPiece} />}>
+      <ProviderDocumentsBoard page={result.status==="success"?result.dashboard.documentPage:1} hasMore={result.status==="success"&&result.dashboard.documentsHasMore} locale={locale} query={space.selectedQuery} documents={result.status === "success" ? result.dashboard.documents : []} loadError={result.status === "error"} search={query.q ?? ""} view={view} />
     </ProviderAppShell>
   );
 }

@@ -6,10 +6,10 @@ import { FranchiseValidationsWorkbench } from "@/modules/franchise/screens/libra
 import { franchiseMandateName, requireFranchiseLibrary } from "@/modules/franchise/screens/library/page-helper";
 import { FranchiseAppShell } from "@/modules/franchise/ui/franchise-app-shell";
 
-export default async function FranchiseValidationsPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string }> }) {
+export default async function FranchiseValidationsPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string; franchiseId?:string;page?:string;q?:string;type?:string;category?:string;selected?:string }> }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
-  const { space, result } = await requireFranchiseLibrary({ locale, organizationId: query.organizationId });
+  const { space, result } = await requireFranchiseLibrary({ locale, organizationId: query.organizationId, franchiseId:query.franchiseId,catalog:{kind:query.type==="SERVICE"||query.type==="QUESTIONNAIRE"||query.type==="RULE"?query.type:"ALL",page:query.page,search:query.q,categoryId:query.category,status:"DRAFT",objectId:query.selected} });
   const c = libraryCopy(locale);
   const mandateName = franchiseMandateName(result);
   return (
@@ -17,7 +17,7 @@ export default async function FranchiseValidationsPage({ params, searchParams }:
       {result.status === "error" ? (
         <Alert variant="destructive"><AlertTitle>{c.unavailable}</AlertTitle><AlertDescription>{result.reason === "NO_MANDATE" ? c.noMandate : c.scopeHelp}</AlertDescription></Alert>
       ) : (
-        <FranchiseValidationsWorkbench locale={locale} query={space.selectedQuery} workspace={result.workspace} />
+        <FranchiseValidationsWorkbench locale={locale} query={space.selectedQuery} workspace={result.workspace} filters={query} />
       )}
     </FranchiseAppShell>
   );
