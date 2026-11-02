@@ -55,12 +55,12 @@ export type ProviderMissionDashboard = {
   countsReadState?:"SUCCESS"|"UNAVAILABLE";
   technicianOptions?:Array<{userId:string;displayName:string}>;
   missions: Array<{
-    id: string; title?:string;contractId: string; status: string; startedAt: string | null; completedAt: string | null;
+    id: string; title?:string;canOperate?:boolean;contractId: string; status: string; startedAt: string | null; completedAt: string | null;
     assignments?:Array<{userId:string;assignedAt:string}>;
     contract: { currentVersion: number; priceMinor: string; currency: string; contentHash: string } | null;
     milestones: Array<{ id: string; key: string; title: string; status: string; dueAt: string | null; dueAtLabel?:string|null;rowVersion: number;decisions?:Array<{decision:string;reason:string;decidedAt:string}>;corrections?:Array<{reason:string;submittedAt:string}> }>;
     checklistItems: Array<{ id:string; key:string; label:string; instructions:string|null; proofRequired:boolean; allowedProofTypes:string[]; status:string; templateVersion:number|null; templateHash:string|null; proofOptions:Array<{id:string;type:string}> }>;
-    deliverables: Array<{ id:string; key:string; label:string; proofRequired:boolean; status:string; currentVersion:number; versions:Array<{id:string;version:number;description:string;submittedAt:string;contentHash:string;proofCount:number;proofScanStatus:"NONE"|"PENDING"|"CLEAN"|"INFECTED"|"ERROR";links?:string[];proofs?:Array<{id:string;type:string;scanStatus:string;label:string}>;criteria?:Array<{key:string;status:string;comment:string|null;decidedAt:string|null}>}> }>;
+    deliverables: Array<{ id:string; key:string; label:string; proofRequired:boolean; status:string; currentVersion:number; versions:Array<{id:string;version:number;description:string;submittedAt:string;contentHash:string;proofCount:number;proofScanStatus:"NONE"|"PENDING"|"CLEAN"|"INFECTED"|"ERROR";links?:string[];proofs?:Array<{id:string;type:string;scanStatus:string;label:string}>;criteria?:Array<{key:string;label?:string;status:string;comment:string|null;decidedAt:string|null}>}> }>;
   }>;
 };
 

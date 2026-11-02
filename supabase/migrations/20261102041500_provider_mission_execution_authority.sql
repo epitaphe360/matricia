@@ -1,4 +1,5 @@
 begin;
+set local search_path=pg_catalog;
 -- Read authority is not operational write authority. A Technician+Viewer/Sales
 -- composite membership must still be assigned before submitting work.
 create function private.provider_mission_execution_access_v1(p_mission_id uuid,p_actor uuid default auth.uid())returns boolean language sql stable security definer set search_path=pg_catalog,public,private as $$
