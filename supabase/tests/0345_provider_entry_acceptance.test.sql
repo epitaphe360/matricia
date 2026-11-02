@@ -118,9 +118,23 @@ select is(jsonb_array_length(public.list_provider_entry_documents_v1('d0610000-0
 select is(public.list_provider_entry_documents_v1('d0610000-0000-0000-0000-000000000001')->>'required_documents_complete','false','one certificate cannot complete required legal fiscal insurance dossier');
 insert into entry_observed values('renewal-upload',public.begin_provider_document_upload_v2('d0610000-0000-0000-0000-000000000001','application/pdf',20,repeat('b',64),'d3450000-0000-4000-8000-000000000011'));
 insert into storage.objects(bucket_id,name,metadata)select 'provider-qualification',v->>'storage_object_path','{"mimetype":"application/pdf","size":20}'::jsonb from entry_observed where k='renewal-upload';
-insert into entry_observed values('renewal',public.record_provider_document_version('d0610000-0000-0000-0000-000000000001','CERTIFICATION','ENTRY_CERT',jsonb_build_object('storage_object_path',(select v->>'storage_object_path'from entry_observed where k='renewal-upload'),'content_hash',repeat('b',64),'metadata','{"declared_mime_type":"application/pdf","declared_size_bytes":20}'::jsonb),'{}'::uuid[],'Synthetic renewal without link','entry-document-renewal-0345'));
+insert into entry_observed values('renewal',public.record_provider_document_version('d0610000-0000-0000-0000-000000000001','CERTIFICATION','ENTRY_CERT',jsonb_build_object('storage_object_path',(select v->>'storage_object_path'from entry_observed where k='renewal-upload'),'content_hash',repeat('b',64),'metadata','{"declared_mime_type":"application/pdf","declared_size_bytes":20}'::jsonb),array[(select(v->>'provider_service_id')::uuid from entry_observed where k='service-b')],'Synthetic renewal applicable only to service B','entry-document-renewal-0345'));
 select ok(public.explain_provider_service_eligibility('d0610000-0000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000003')->'reasons'?'MANDATORY_DOCUMENT_INVALID','omitting a link during renewal cannot bypass the existing family service obligation');
-select ok(not(public.explain_provider_service_eligibility('d0610000-0000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000004')->'reasons'?'MANDATORY_DOCUMENT_INVALID'),'renewal still preserves unrelated service');
+select ok(public.explain_provider_service_eligibility('d0610000-0000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000004')->'reasons'?'MANDATORY_DOCUMENT_INVALID','new B-only renewal remains blocked while unreviewed');
+
+reset role;
+set local role service_role;select set_config('request.jwt.claims','{"role":"service_role"}',true);
+create temporary table entry_renewal_scan as select*from public.claim_provider_document_scan_jobs('d3450000-0000-4000-8000-000000000021',1,300);
+select is((select public.complete_provider_document_scan_job(proof_id,lease_token,worker_id,row_version,'CLEAN','SYNTHETIC_TEST','1',repeat('b',64),'entry-renewal-scan-0345')->>'outcome'from entry_renewal_scan),'PROVIDER_DOCUMENT_SCAN_RECORDED','renewal bytes receive their own trusted synthetic scan');
+reset role;
+set local role authenticated;select set_config('request.jwt.claims','{"sub":"d0600000-0000-0000-0000-000000000003","role":"authenticated","aal":"aal2"}',true);
+insert into entry_observed values('renewal-review',public.review_provider_document((select(v->>'document_version_id')::uuid from entry_observed where k='renewal'),'VERIFIED','Synthetic review of B-only evidence','ENTRY-TEST-V1','entry-renewal-review-0345'));
+select is((select count(*)from public.provider_work_scope_versions where provider_organization_id='d0610000-0000-0000-0000-000000000001'),1::bigint,'non-member platform reviewer can read declared scope under AAL2');
+reset role;
+set local role authenticated;select set_config('request.jwt.claims','{"sub":"d0600000-0000-0000-0000-000000000001","role":"authenticated","aal":"aal1"}',true);
+select ok(public.explain_provider_service_eligibility('d0610000-0000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000003')->'reasons'?'MANDATORY_DOCUMENT_INVALID','clean reviewed B-only renewal cannot satisfy A applicability');
+select ok(not(public.explain_provider_service_eligibility('d0610000-0000-0000-0000-000000000001','d3450000-0000-4000-8000-000000000004')->'reasons'?'MANDATORY_DOCUMENT_INVALID'),'B accepts its explicitly linked clean reviewed current evidence');
+
 
 reset role;
 select ok(private.is_valid_questionnaire_document_references('FILE',null,to_jsonb((select v->>'document_version_id'from entry_observed where k='review')),'d0610000-0000-0000-0000-000000000001'),'clean Provider evidence is reusable in own organization');
@@ -135,7 +149,8 @@ reset role;
 set local role authenticated;select set_config('request.jwt.claims','{"sub":"d0600000-0000-0000-0000-000000000002","role":"authenticated","aal":"aal1"}',true);
 select throws_ok($$select public.list_provider_entry_documents_v1('d0610000-0000-0000-0000-000000000001')$$,'42501','PROVIDER_SCOPE_DENIED','another provider cannot enumerate documents');
 select throws_ok($$select public.list_provider_questionnaire_documents_v1('d0610000-0000-0000-0000-000000000001')$$,'42501','PROVIDER_SCOPE_DENIED','another provider cannot enumerate questionnaire attachments');
-select is((select count(*)from public.provider_document_versions where provider_organization_id='d0610000-0000-0000-0000-000000000001'),0::bigint,'RLS hides immutable document history across tenants');
+select is((select count(*)from public.provider_document_versions where provider_organization_id='d0610000-0000-0000-000000000001'),0::bigint,'RLS hides immutable document history across tenants');
+select is((select count(*)from public.provider_work_scope_versions where provider_organization_id='d0610000-0000-0000-0000-000000000001'),0::bigint,'another Provider reads zero scope declarations without helper permission errors');
 reset role;
 select throws_ok($$update public.provider_work_scope_versions set mission_size_summary='Changed facts'$$,'55000',null,'work scope history is immutable');
 select ok(not has_function_privilege('anon','public.list_provider_entry_documents_v1(uuid,integer,text,text[])','EXECUTE'),'anonymous document projection denied');
