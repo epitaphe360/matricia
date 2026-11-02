@@ -413,7 +413,8 @@
   "independentAudit": {
     "agent": "audit_release_scope",
     "source": "ACK bounded source review including final Auth503, Next and explicit multi-organization selection fixes",
-    "scope": "Does not certify all APIs or all tenant isolation policies"
+    "scope": "Does not certify all APIs or all tenant isolation policies",
+    "evidence": "ACK source fingerprints, native helper/build provenance, 225 SQL hashes and complete fixture cleanup; final logs attached"
   },
   "releaseGate": {
     "status": "REFUSED",
@@ -433,5 +434,19 @@
     "Actual expired credit-cycle and already-due annual-month scenarios not certified by revised 0246",
     "Original exact Admin demo account not reused: native own synthetic Admin AAL2 session tested on verified local environment",
     "No hosted staging, production deployment, full assistive-technology audit or signed client acceptance"
+  ],
+  "finalAcceptanceLogs": [
+    {
+      "file": "work/final-candidate/final-acceptance/web-unit.log",
+      "sha256": "b1e582ab2d21a516086d9e4b3fd543ee44280a6369b4a576f40322a793dfc920"
+    },
+    {
+      "file": "work/final-candidate/final-acceptance/public-browser.log",
+      "sha256": "17c45274c183328205b1e5fd4e67fdfdd9ee76399dfad18ed25445a1a8ce7548"
+    },
+    {
+      "file": "work/final-candidate/final-acceptance/build.log",
+      "sha256": "ef0ac4e0efd00e9a9c1c0c61f8f23d14e3dd4dc4ec33da246e828f4e028f0117"
+    }
   ]
 }
