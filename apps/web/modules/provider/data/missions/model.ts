@@ -55,7 +55,7 @@ export type ProviderMissionDashboard = {
   countsReadState?:"SUCCESS"|"UNAVAILABLE";
   technicianOptions?:Array<{userId:string;displayName:string}>;
   missions: Array<{
-    id: string; title?:string;canOperate?:boolean;contractId: string; status: string; startedAt: string | null; completedAt: string | null;
+    scopeReconciliationRequired?:boolean;id: string; title?:string;canOperate?:boolean;contractId: string; status: string; startedAt: string | null; completedAt: string | null;
     assignments?:Array<{userId:string;assignedAt:string}>;
     contract: { currentVersion: number; priceMinor: string; currency: string; contentHash: string } | null;
     milestones: Array<{ id: string; key: string; title: string; status: string; dueAt: string | null; dueAtLabel?:string|null;rowVersion: number;decisions?:Array<{decision:string;reason:string;decidedAt:string}>;corrections?:Array<{reason:string;submittedAt:string}> }>;
@@ -66,7 +66,7 @@ export type ProviderMissionDashboard = {
 
 export const providerMissionRows = {
   membership: z.object({ organization_id: uuid, organizations: z.object({ display_name: z.string().min(1) }),organization_member_roles:z.array(z.object({role_code:z.string(),revoked_at:z.string().nullable()})).optional() }),
-  mission: z.object({ id: uuid, contract_id: uuid, contract_version_id:uuid, status: z.string(), started_at: z.string().nullable(), completed_at: z.string().nullable() }),
+  mission: z.object({ id: uuid, contract_id: uuid, contract_version_id:uuid, scope_reconciliation_required:z.boolean(), status: z.string(), started_at: z.string().nullable(), completed_at: z.string().nullable() }),
   milestone: z.object({ id: uuid, mission_id: uuid, milestone_key: z.string(), title_fr: z.string(), title_ar: z.string(), status: z.string(), due_at: z.string().nullable(), row_version: z.number().int().positive() }),
   deliverable: z.object({ id: uuid, mission_id: uuid, deliverable_key: z.string(), label_fr: z.string(), label_ar: z.string(), proof_required: z.boolean(), status: z.string(), current_version: safeVersion }),
   version: z.object({ id: uuid, deliverable_id: uuid, version: safeVersion, description: z.string(), submitted_at: z.string(), content_hash: z.string().regex(/^[0-9a-f]{64}$/), links:z.array(z.string()).default([]) }),

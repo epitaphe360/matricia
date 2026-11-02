@@ -15,7 +15,7 @@ const versionRow = z.object({ id, contract_id: id, version: z.number().int().pos
 const signatureRow = z.object({ id, contract_id: id, contract_version_id: id, organization_id: id, signer_role: z.string().min(1), contract_hash: hash, signed_at: z.string(), proof: z.object({ method: z.string().min(1), evidence_hash: hash }).passthrough() });
 const itemType = z.enum(["DELIVERABLE", "EXCLUSION", "ACCEPTANCE_CRITERION", "PAYMENT_TERM", "CORRECTION", "PENALTY"]);
 const itemRow = z.object({ id, contract_version_id: id, item_key: z.string(), item_type: itemType, label_fr: z.string().min(1), label_ar: z.string().min(1), sort_order: z.number().int().positive() });
-const missionRow = z.object({ id, contract_id: id, contract_version_id: id, status: z.string(), started_at: z.string().nullable(), completed_at: z.string().nullable() });
+const missionRow = z.object({ id, contract_id: id, contract_version_id: id, scope_reconciliation_required:z.boolean(), status: z.string(), started_at: z.string().nullable(), completed_at: z.string().nullable() });
 const milestoneRow = z.object({ id, mission_id: id, milestone_key: z.string(), title_fr: z.string(), title_ar: z.string(), status: z.string(), due_at: z.string().nullable(), row_version: z.number().int().positive() });
 const deliverableRow = z.object({ id, mission_id: id, deliverable_key: z.string(), label_fr: z.string(), label_ar: z.string(), status: z.string(), current_version: z.number().int().nonnegative() });
 const criterionRow = z.object({ deliverable_id: id, delivery_version: z.number().int().nonnegative(), label_fr:z.string().nullable(), label_ar:z.string().nullable(), criterion_key: z.string(), status: z.string() });
@@ -50,7 +50,7 @@ export async function loadContractMissions(locale: "fr" | "ar", requestedOrganiz
   const [versionsResult, signaturesResult, missionsResult] = await Promise.all([
     readContractRelations(contractIds,(ids,from,to)=>client.from("contract_versions").select("id,contract_id,version,selected_quote_version_id,price_minor,currency,content_hash,change_reason,created_at").in("contract_id", ids).order("version", { ascending: false }).order("id").range(from,to)),
     readContractRelations(contractIds,(ids,from,to)=>client.from("contract_signatures").select("id,contract_id,contract_version_id,organization_id,signer_role,contract_hash,signed_at,proof").in("contract_id", ids).order("id").range(from,to)),
-    readContractRelations(contractIds,(ids,from,to)=>client.from("missions").select("id,contract_id,contract_version_id,status,started_at,completed_at").eq("client_organization_id", organizationId).in("contract_id", ids).order("created_at", { ascending: false }).order("id").range(from,to)),
+    readContractRelations(contractIds,(ids,from,to)=>client.from("missions").select("id,contract_id,contract_version_id,scope_reconciliation_required,status,started_at,completed_at").eq("client_organization_id", organizationId).in("contract_id", ids).order("created_at", { ascending: false }).order("id").range(from,to)),
   ]);
   if (versionsResult.error || signaturesResult.error || missionsResult.error) return { status: "error", reason: "QUERY_FAILED" };
   const versions = rows(versionRow, versionsResult.data), signatures = rows(signatureRow, signaturesResult.data), missions = rows(missionRow, missionsResult.data);
@@ -154,6 +154,7 @@ export async function loadContractMissions(locale: "fr" | "ar", requestedOrganiz
         contractId: mission.contract_id,
         title: versionTitle(contractVersion.selected_quote_version_id),
         contractVersionId: mission.contract_version_id,
+        scopeReconciliationRequired:mission.scope_reconciliation_required,
         contractSnapshot: { versionId: contractVersion.id, version: contractVersion.version, selectedQuoteVersionId: contractVersion.selected_quote_version_id, priceMinor: String(contractVersion.price_minor), currency: contractVersion.currency, contentHash: contractVersion.content_hash, changeReason: contractVersion.change_reason, createdAt: contractVersion.created_at, createdAtLabel: timestampLabel(contractVersion.created_at), items: localizedItems(contractVersion.id), signatures: versionSignatures(contractVersion.id) },
         status: mission.status,
         startedAt: mission.started_at,

@@ -1,6 +1,6 @@
 import { z } from "zod";
 export const amendmentExecutionSchema=z.object({
- amendment_id:z.string().uuid(),status:z.enum(["NO_MISSION","AWAITING_SIGNATURE","MISSION_CANCELLED","SIGNATURE_NOT_EFFECTIVE","MISSING_SIGNED_CRITERIA","READY","APPLIED","NO_ADDITIONAL_WORK"]),
+ amendment_id:z.string().uuid(),status:z.enum(["NO_MISSION","AWAITING_SIGNATURE","MISSION_CANCELLED","SIGNATURE_NOT_EFFECTIVE","MISSING_SIGNED_CRITERIA","READY","APPLIED","NO_ADDITIONAL_WORK","SCOPE_RECONCILIATION_REQUIRED"]),
  mission_id:z.string().uuid().optional(),contract_version_id:z.string().uuid().optional(),contract_hash:z.string().regex(/^[0-9a-f]{64}$/u).optional(),preparation_hash:z.string().regex(/^[0-9a-f]{64}$/u).optional(),deadline_delta_days:z.number().int().optional(),can_apply:z.boolean(),
  items:z.array(z.object({key:z.string(),label_fr:z.string(),label_ar:z.string(),criteria:z.array(z.object({key:z.string(),label_fr:z.string(),label_ar:z.string()})).nullable().optional()})).max(50),
 }).superRefine((value,ctx)=>{if(value.status==="READY"&&(!value.mission_id||!value.contract_version_id||!value.preparation_hash||!value.items.length||value.items.some(item=>!item.criteria?.length)))ctx.addIssue({code:"custom",message:"Incomplete signed preparation"})});
