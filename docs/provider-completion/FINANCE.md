@@ -12,7 +12,7 @@ Source : `7e01276`, branche `codex/provider-finance-20261102`. Aucun déploiemen
 - Les tentatives de clôture et d'ingestion sont mémorisées séparément des ledgers. Une exception ancienne ne bloque pas les autres fournisseurs ou conséquences lorsque le worker traite des lots limités.
 - Les références et devises des factures liées sont chargées indépendamment de leur page visible. Une indisponibilité Auth/transport reste un incident avec reprise, sans fausse déconnexion ni résultat vide. Les formulaires et explications sont disponibles en FR/AR. Le Client confirme dans son propre contexte d'organisation et son propre cadre de navigation.
 
-## Preuves finales
+## Preuves du checkpoint40000–40930
 
 Chaque fichier SQL est exécuté séparément dans une unique transaction annulée sur la cible locale explicitement possédée, schéma de base458 et correctif37000. Migrations40000–40930 appliquées seulement à l'intérieur de cette transaction. Aucun COMMIT envoyé ; empreintes du schéma avant/après identiques. Cette preuve ne vaut pas rejeu intégral sur une base neuve.
 
@@ -44,6 +44,21 @@ Web : `pnpm --filter @matricia/web exec vitest run <9 fichiers Finance/Provider/
 |Montant fixe affiché comme calcul au taux|Snapshot de calcul et libellé de montant fixe|workspace-panel.test.tsx FR/AR|
 
 Les deux signaux retirés par la revue restent documentés : le mode de paiement est réinjecté depuis l'intention persistée ; `p_tax_minor` est volontairement consultatif et ignoré par le moteur fiscal canonique. Aucun contrôle fiscal n'a été abaissé pour satisfaire ces signalements.
+
+## F12 : règle économique issue du contrat signé
+
+La contre-revue F01–F11 est favorable sur `7bc38fc` et les130 assertions ci-dessus : les hashes des migrations/tests ont été recalculés indépendamment. Un constat autonome F12 a ensuite été reproduit : une décision acceptait des montants et un booléen fournis par son opérateur sans clause économique correspondante. Le [reçu de reproduction58](evidence/finance/f12-reproduced-before40940-58.json) documente ce défaut antérieur ; ses deux dernières assertions prouvent un comportement vulnérable, jamais un critère de réussite futur. La [source exacte de reproduction](evidence/finance/f12-reproduction-source.sql) est conservée pour sa provenance, hors de la suite de tests.
+
+`eb3a9bf` ajoute40940 : résolveur du modèle approuvé et signé, garde de décision indépendante AAL2, projection de lecture, rejet des conséquences historiques non autorisées et revalidation des pré-relevés avant facturation. Le [contrat de données](DISPUTE_ECONOMICS.md) décrit les champs, prérequis et limites sans définir de règle commerciale ou juridique réelle.
+
+| Recette40000–40940 | Résultat | Preuve |
+|---|---|---|
+|0356_provider_dispute_economic_authority|76/76 PASS|[Reçu](evidence/finance/f12-signed-authority-final-76.json)|
+|0347_provider_monthly_closing|56/56 PASS|[Reçu](evidence/finance/monthly-with40940-final-56.json)|
+
+Le modèle positif est explicitement TEST, proposé et approuvé par des acteurs distincts puis signé via le flux DEV-mock réel. Une décision native prend ses700+700 de ce modèle, malgré une devise et des montants falsifiés par le caller ; elle accepte aussi un objet de règle vide. Sans clause économique de l'obligation exacte, elle crée une exception et aucune conséquence financière. Le bridge et la clôture refusent aussi une conséquence historique et une ancienne ligne de pré-relevé, sans réécrire le montant immuable. La pénalité Client reste séparée et nécessite son mandat propre. Les lectures étrangères sont refusées. Ces reçus sont chacun annulés et leurs empreintes restaurées ; aucune preuve juridique de production n'est revendiquée.
+
+L'interface d'exception FR/AR a été rejouée :6 tests PASS et ESLint sans avertissement. Les45/16/13 assertions du checkpoint précédent sont conservées avec leurs hashes40000–40930 ; elles ne sont pas présentées comme un nouveau rejeu40940. Le verdict indépendant F12 et la recette de l'UI Admin intégrée restent à recevoir avant clôture.
 
 ## Conditions externes encore nécessaires
 
