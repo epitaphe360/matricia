@@ -12,6 +12,10 @@ import {
 } from "./workbenches";
 
 describe("provider nested workbenches 09-15", () => {
+  it("keeps unavailable team, sessions and security distinct from empty and verified states",()=>{
+    const html=renderToStaticMarkup(<CompanySecurityWorkbench locale="fr" query="" membersUnavailable sessionsUnavailable securityUnavailable />);
+    expect(html).toContain("Chargement de l’équipe indisponible");expect(html).toContain("Chargement des sessions indisponible");expect(html).toContain("État de protection du compte indisponible");expect(html).not.toContain("Aucun membre visible");expect(html).not.toContain("Aucune session");
+  });
   it("compose les écrans de détail sans exemple illustratif ni devis concurrent", () => {
     const html = [
       renderToStaticMarkup(<ConsultationDetailWorkbench locale="fr" query="" consultationId="cr1" />),

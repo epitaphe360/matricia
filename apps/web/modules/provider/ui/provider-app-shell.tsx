@@ -3,7 +3,8 @@ import Link from "next/link";
 import { safeReturnPath } from "@/modules/shared/lib/auth/return-path";
 import { translateLocalPath } from "@/modules/shared/lib/auth/workspace-navigation";
 import { Bell, Search, Sprout } from "lucide-react";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
+import { ProviderLanguageLinks } from "./provider-language-links";
 import { providerCopy } from "@/modules/provider/data/spaces/copy";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import { WorkspaceAccountMenu } from "@/modules/shared/ui/workspace-account-menu";
@@ -16,10 +17,12 @@ export type { ProviderNavKey };
 const routeByActive: Record<ProviderNavKey, string> = {
   home: "tableau-de-bord",
   qualify: "sous-traitant/qualification",
+  questionnaires: "sous-traitant/questionnaires",
   services: "sous-traitant/services",
   consult: "sous-traitant/consultations",
   quotes: "sous-traitant/devis",
   missions: "sous-traitant/missions",
+  contracts: "sous-traitant/contrats",
   planning: "sous-traitant/planning",
   documents: "sous-traitant/documents",
   billing: "sous-traitant/facturation",
@@ -125,10 +128,9 @@ export function ProviderAppShell({
           <Link href={`/${locale}/notifications${selectedQuery}`} className="client-icon-btn" aria-label={locale === "ar" ? "الإشعارات" : "Notifications"}>
             <Bell className="size-4" />
           </Link>
-          <nav className="client-lang-switch" aria-label={locale === "ar" ? "اللغة" : "Langue"}>
-            <Link href={currentPath ? (locale === "fr" ? currentPath : altHref) : `/fr/${route}${selectedQuery}`} aria-current={locale === "fr" ? "page" : undefined}>FR</Link>
-            <Link href={currentPath ? (locale === "ar" ? currentPath : altHref) : `/ar/${route}${selectedQuery}`} aria-current={locale === "ar" ? "page" : undefined}>AR</Link>
-          </nav>
+          <Suspense fallback={<nav className="client-lang-switch" aria-label={locale === "ar" ? "اللغة" : "Langue"}><Link href={homeHref} aria-current="page">{locale.toUpperCase()}</Link><Link href={altHref}>{alternate.toUpperCase()}</Link></nav>}>
+            <ProviderLanguageLinks locale={locale} fallback={homeHref} />
+          </Suspense>
           <span className="client-space-chip">{c.space}</span>
           <WorkspaceAccountMenu
             workspace="provider"

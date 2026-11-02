@@ -2,6 +2,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { ProviderInboxBoard } from "./inbox-board";
 
+vi.mock("next/navigation", () => ({useRouter: () => ({refresh: vi.fn()})}));
+
 vi.mock("@/app/[locale]/messagerie/messaging-forms", () => ({
   OpenThreadForm: () => null,
   SendMessageForm: () => null,
@@ -24,6 +26,14 @@ const thread = {
 };
 
 describe("provider inbox board", () => {
+  it("reports partial loading failures without asserting an empty inbox or notification feed", () => {
+    const html=renderToStaticMarkup(<ProviderInboxBoard locale="fr" query="?organizationId=org" threads={[]} conversation={null} options={[]} inboxError="UNAVAILABLE" optionsError notificationsUnavailable />);
+    expect(html).toContain('role="alert"');expect(html).toContain("Réessayer");expect(html).not.toContain("Aucune conversation liée");expect(html).not.toContain("Aucune notification pour le moment");
+  });
+  it("translates the consultation label without translating the user's message", () => {
+    const html=renderToStaticMarkup(<ProviderInboxBoard locale="ar" query="?page=5" threads={[thread]} conversation={null} options={[]} page={5} total={126}/>);
+    expect(html).toContain("طلب العروض");expect(html).toContain('page=6');expect(html).toContain('page=4');expect(html).toContain(thread.subject);
+  });
   it("affiche une conversation RFQ réelle et le lien consultation", () => {
     const html = renderToStaticMarkup(
       <ProviderInboxBoard

@@ -81,10 +81,10 @@ export default async function MessagingPage({ params, searchParams }: { params: 
   const repository=await createInternalMessagingRepository(),page=Math.min(100000,Math.max(1,Number.parseInt(query.page??"1",10)||1)),needle=(query.q??"").trim().slice(0,200);
   const cursor=parseMessageCursor(query);if(!cursor.valid)notFound();
   const [options, workspaceShell,inbox,history] = await Promise.all([
-    repository.load(undefined,{skipInbox:true}),
+    repository.load(undefined,{skipInbox:true,organizationId:space.selectedOrganizationId??undefined}),
     resolveWorkspaceShell(space.selectedOrganizationId),
     repository.search(needle,space.selectedOrganizationId??undefined,page),
-    query.fil?repository.history(query.fil,cursor.cursor):Promise.resolve(null),
+    query.fil?repository.history(query.fil,cursor.cursor,space.selectedOrganizationId??undefined):Promise.resolve(null),
   ]);
   const result=options.status==="error"?options:history?.status==="error"?history:{status:"success"as const,value:{...options.value,conversation:history?.status==="success"?history.value:null}};
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/messagerie` }));

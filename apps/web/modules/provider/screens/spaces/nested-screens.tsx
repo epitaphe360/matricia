@@ -11,6 +11,8 @@ import { resolveProviderSpace } from "@/modules/provider/data/spaces/context";
 import { providerCopy } from "@/modules/provider/data/spaces/copy";
 import { resolveProviderNestedView } from "@/modules/provider/data/spaces/nested-views";
 import { workbenchCopy } from "@/modules/provider/data/spaces/workbench-copy";
+import { loadProviderInbox } from "@/modules/provider/data/messages/inbox";
+import { parseMessageCursor } from "@/app/[locale]/messagerie/history-navigation";
 import { ProviderInboxBoard } from "@/modules/provider/screens/messages/inbox-board";
 import { ProviderDocumentsBoard } from "@/modules/provider/screens/spaces/boards";
 import { createInternalMessagingRepository } from "@/modules/shared/lib/internal-messaging/server-repository";
@@ -40,18 +42,26 @@ import { ProviderAppShell } from "@/modules/provider/ui/provider-app-shell";
 import { isLocale, type Locale } from "@/modules/shared/lib/i18n/locale";
 import { getAccountSecurity } from "@/app/[locale]/securite/compte/actions";
 import { listMySessions } from "@/app/[locale]/securite/sessions/actions";
-import { listOrganizationRoles } from "@/app/[locale]/organisation/roles/actions";
+import { loadProviderTeam } from "@/modules/provider/data/company/team";
 import { getRoleMessages } from "@/app/[locale]/organisation/roles/messages";
 
 const recordId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
-type Search = Promise<{ organizationId?: string; rfq?: string; q?: string; vue?: string }>;
+type Search = Promise<{ organizationId?: string; rfq?: string; q?: string; vue?: string; page?: string; before?: string; beforeId?: string }>;
 
 async function spaceOrRedirect(locale: string, organizationId?: string) {
   if (!isLocale(locale)) notFound();
   const space = await resolveProviderSpace({ locale, organizationId });
   if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
   return space;
+}
+
+function ProviderReadFailure({locale,space,active,reason}:{locale:Locale;space:Awaited<ReturnType<typeof spaceOrRedirect>>;active:import("@/modules/provider/ui/provider-app-shell").ProviderNavKey;reason:string}) {
+ const restricted=["FORBIDDEN","NO_ORGANIZATION","NO_PROVIDER_ORGANIZATION","NO_BILLING_ORGANIZATION"].includes(reason);
+ const title=locale==="ar"?(restricted?"الوصول إلى هذا النطاق غير متاح":"تعذر تحميل البيانات"):(restricted?"Accès à ce périmètre indisponible":"Chargement indisponible");
+ return <ProviderAppShell locale={locale} organizations={space.organizations} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active={active} title={title}>
+  <main className="client-page"><Alert variant="destructive"><AlertTitle>{title}</AlertTitle><AlertDescription>{locale==="ar"?(restricted?"تحققوا من المؤسسة المختارة والصلاحيات. لم يثبت غياب البيانات.":"تعذر التحقق من البيانات. أعد تحميل الصفحة للمحاولة مجددا؛ لا يعني هذا عدم وجود عناصر."):(restricted?"Vérifiez l’organisation sélectionnée et vos habilitations. Aucune absence de données n’est déduite de ce refus.":"Les données n’ont pas pu être vérifiées. Rechargez la page pour réessayer ; cet incident ne signifie pas que la liste est vide.")}</AlertDescription></Alert><a className="client-text-link" href={`/${locale}/sous-traitant/${active==="billing"?"facturation":active==="quotes"?"devis":active==="consult"?"consultations":"missions"}${space.selectedQuery}`}>{locale==="ar"?"العودة إلى القائمة وإعادة المحاولة":"Revenir à la liste et réessayer"}</a></main>
+ </ProviderAppShell>;
 }
 
 function quoteIdentities(ids: readonly string[]) {
@@ -74,6 +84,7 @@ export async function ProviderConsultationDetailPage({
   const w = workbenchCopy(locale as Locale);
   const result = await loadProviderQuotes(query.organizationId);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error") return <ProviderReadFailure locale={locale as Locale} space={space} active="consult" reason={result.reason} />;
   const found = result.status === "success" ? findInvitation(result.dashboard, consultationId) : null;
   const shared = found ? await loadConsultationSharedDocuments(found.id) : [];
   const invitation = found
@@ -126,6 +137,7 @@ export async function ProviderQuoteWorkbenchPage({
   const w = workbenchCopy(locale as Locale);
   const result = await loadProviderQuotes(query.organizationId);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error") return <ProviderReadFailure locale={locale as Locale} space={space} active="quotes" reason={result.reason} />;
   const invitation = result.status === "success" ? findInvitation(result.dashboard, quoteId) : null;
   if (quoteId !== "nouveau" && !invitation) {
     return (
@@ -140,9 +152,7 @@ export async function ProviderQuoteWorkbenchPage({
     : {};
   const panel = result.status === "success" && invitation
     ? <ProviderLiveQuotePanel dashboard={{ ...result.dashboard, invitations: [invitation] }} locale={locale as Locale} m={m} identities={quoteIdentities([invitation.id])} prefills={prefills} />
-    : result.status === "error"
-      ? <Alert variant="destructive"><AlertTitle>{m.loadError}</AlertTitle><AlertDescription>{result.reason}</AlertDescription></Alert>
-      : null;
+    : null;
   const revisions = result.status === "success" && invitation?.quote ? await loadProviderQuoteHistory(result.dashboard.organizationId, invitation.quote.id) : [];
   const revisionSnapshots:Record<string,import("@/modules/provider/screens/devis/prefill").QuotePrefill>={};
   if(result.status==="success"&&revisions)for(let offset=0;offset<revisions.length;offset+=25)Object.assign(revisionSnapshots,await loadQuotePrefills(result.dashboard.organizationId,revisions.slice(offset,offset+25).map(item=>({invitationId:item.id,versionId:item.id})),locale as Locale));
@@ -167,6 +177,7 @@ export async function ProviderQuotePreviewPage({
   const w = workbenchCopy(locale as Locale);
   const result = await loadProviderQuotes(query.organizationId);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error") return <ProviderReadFailure locale={locale as Locale} space={space} active="quotes" reason={result.reason} />;
   const invitation = result.status === "success" ? findInvitation(result.dashboard, quoteId) : null;
   if (!invitation) {
     return (
@@ -209,6 +220,7 @@ export async function ProviderMissionDeliveryPage({
   const w = workbenchCopy(locale as Locale);
   const result = await loadProviderMissions(locale as Locale, query.organizationId, missionId);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error") return <ProviderReadFailure locale={locale as Locale} space={space} active="missions" reason={result.reason} />;
   const mission = result.status === "success" ? result.dashboard.missions.find((item) => item.id === missionId) ?? null : null;
   if (!mission) {
     return (
@@ -243,6 +255,7 @@ export async function ProviderInvoiceSettlementPage({
   const w = workbenchCopy(locale as Locale);
   const result = await loadProviderBilling(query.organizationId, invoiceId);
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
+  if (result.status === "error") return <ProviderReadFailure locale={locale as Locale} space={space} active="billing" reason={result.reason} />;
   const invoice = result.status === "success" ? result.dashboard.invoices.find((item) => item.id === invoiceId || item.number === invoiceId) ?? null : null;
   if (!invoice) {
     return (
@@ -278,42 +291,47 @@ export async function ProviderMessagesPage({
   const [{ locale, threadId }, query] = await Promise.all([params, searchParams]);
   const space = await spaceOrRedirect(locale, query.organizationId);
   const m = getMessagingMessages(locale as Locale);
-  const requestedThread = threadId && recordId.test(threadId) ? threadId : undefined;
+  if (threadId && !recordId.test(threadId)) notFound();
+  const cursor = parseMessageCursor(query);
+  if (!cursor.valid) notFound();
+  const requestedThread = threadId;
+  const page = Math.min(100000, Math.max(1, Number.parseInt(query.page ?? "1", 10) || 1));
+  const search = (query.q ?? "").trim().slice(0, 120);
   const repository = await createInternalMessagingRepository();
-  const [result, notifications] = await Promise.all([
-    repository.load(requestedThread),
+  const [loaded, notifications] = await Promise.all([
+    loadProviderInbox(repository, { organizationId:space.selectedOrganizationId, threadId:requestedThread, search, page, cursor:cursor.cursor }),
     loadNotificationCenter(locale as Locale),
   ]);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(`/${locale}/connexion`);
-  const threads = result.status === "success" ? result.value.inbox : [];
+  const { inbox, options, history } = loaded;
+  if ([inbox, options, history].some(result => result?.status === "error" && result.reason === "UNAUTHENTICATED")) redirect(`/${locale}/connexion`);
+  const threads = inbox.status === "success" ? inbox.value.inbox : [];
   const matched = query.rfq && recordId.test(query.rfq) ? threads.find((thread) => thread.object_id === query.rfq) : undefined;
-  if (!requestedThread && matched) {
-    redirect(`/${locale}/sous-traitant/messages/${matched.id}${space.selectedQuery}`);
-  }
+  const retained = new URLSearchParams({ ...(space.selectedOrganizationId ? {organizationId:space.selectedOrganizationId} : {}), ...(search ? {q:search} : {}), ...(page > 1 ? {page:String(page)} : {}) });
+  const selectedQuery = retained.size ? `?${retained}` : "";
+  if (!requestedThread && matched) redirect(`/${locale}/sous-traitant/messages/${matched.id}${selectedQuery}`);
   const inboxNotifications = notifications.status === "success"
-    ? notifications.dashboard.notifications.slice(0, 8).map((item) => ({
-        id: item.id,
-        subject: item.subject,
-        createdAt: item.created_at,
-        href: item.cta_path && item.cta_path.startsWith("/") ? item.cta_path : null,
-        unread: item.read_at === null,
-      }))
-    : [];
+    ? notifications.dashboard.notifications.slice(0, 8).map((item) => ({ id:item.id, subject:item.subject, createdAt:item.created_at, href:item.cta_path?.startsWith("/") ? item.cta_path : null, unread:item.read_at === null })) : [];
   return (
     <ProviderAppShell locale={locale as Locale} organizations={space.organizations} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="messages" title={m.title} lead={m.description}>
-      {result.status === "error" ? (
-        <Alert variant="destructive"><AlertTitle>{m.loadError}</AlertTitle><AlertDescription>{result.reason}</AlertDescription></Alert>
-      ) : (
-        <ProviderInboxBoard
-          locale={locale as Locale}
-          query={space.selectedQuery}
-          threads={threads}
-          conversation={result.value.conversation}
-          options={result.value.options}
-          preferredRfqId={query.rfq && recordId.test(query.rfq) ? query.rfq : undefined}
-          notifications={inboxNotifications}
-        />
-      )}
+      <ProviderInboxBoard
+        locale={locale as Locale}
+        query={selectedQuery}
+        organizationId={space.selectedOrganizationId}
+        search={search}
+        page={page}
+        total={inbox.status === "success" ? inbox.value.total : undefined}
+        pageSize={inbox.status === "success" ? inbox.value.pageSize : undefined}
+        threads={threads}
+        inboxError={inbox.status === "error" ? inbox.reason : undefined}
+        conversation={history?.status === "success" ? history.value : null}
+        conversationError={history?.status === "error" ? history.reason : undefined}
+        history={history?.status === "success" ? history.value : undefined}
+        options={options.status === "success" ? options.value.options : []}
+        optionsError={options.status === "error"}
+        preferredRfqId={query.rfq && recordId.test(query.rfq) ? query.rfq : undefined}
+        notifications={inboxNotifications}
+        notificationsUnavailable={notifications.status !== "success"}
+      />
     </ProviderAppShell>
   );
 }
@@ -388,7 +406,7 @@ export async function ProviderCompanyPage({
   const space = await spaceOrRedirect(locale, query.organizationId);
   const w = workbenchCopy(locale as Locale);
   const c = providerCopy(locale as Locale);
-  const [security, sessions, roles] = await Promise.all([getAccountSecurity(), listMySessions(), listOrganizationRoles()]);
+  const [security, sessions, roles] = await Promise.all([getAccountSecurity(), listMySessions(), loadProviderTeam(space.selectedOrganizationId)]);
   const roleMessages = getRoleMessages(locale as Locale);
   const dateLabel = (value: string | null) => {
     if (!value) return "—";
@@ -403,6 +421,9 @@ export async function ProviderCompanyPage({
         organizationName={space.organizationName}
         userEmail={space.userEmail}
         mfaEnabled={security.status === "success" ? security.factors.some((factor) => factor.status === "verified") : null}
+        sessionsUnavailable={sessions.status !== "success"}
+        membersUnavailable={roles.status !== "success"}
+        securityUnavailable={security.status !== "success"}
         sessions={sessions.status === "success" ? sessions.sessions.map((session) => ({
           id: session.id,
           label: session.userAgent && /Mobile|Android|iPhone|iPad/i.test(session.userAgent)
@@ -411,10 +432,10 @@ export async function ProviderCompanyPage({
           lastSeen: dateLabel(session.lastSeenAt),
           isCurrent: session.isCurrent,
         })) : []}
-        members={roles.status === "success" ? roles.memberships.map((member) => ({
+        members={roles.status === "success" ? roles.members.map((member) => ({
           id: member.id,
-          name: member.isCurrentUser ? (locale === "ar" ? "أنتم" : "Vous") : (member.organizationName ?? roleMessages.anotherMember),
-          role: member.roles[0] ? roleMessages.roles[member.roles[0]] : roleMessages.noRole,
+          name: member.isCurrentUser ? (locale === "ar" ? "أنتم" : "Vous") : roleMessages.anotherMember,
+          role: member.roles.length ? member.roles.map(role => roleMessages.roles[role as keyof typeof roleMessages.roles] ?? (locale === "ar" ? "صلاحية خاصة" : "Habilitation particulière")).join(" · ") : roleMessages.noRole,
         })) : []}
       />
     </ProviderAppShell>

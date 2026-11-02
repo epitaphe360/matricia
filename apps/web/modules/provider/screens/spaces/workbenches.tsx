@@ -654,6 +654,9 @@ export function CompanySecurityWorkbench({
   mfaEnabled = null,
   sessions = [],
   members = [],
+  sessionsUnavailable = false,
+  membersUnavailable = false,
+  securityUnavailable = false,
 }: {
   locale: Locale;
   query: string;
@@ -662,6 +665,9 @@ export function CompanySecurityWorkbench({
   mfaEnabled?: boolean | null;
   sessions?: readonly { id: string; label: string; lastSeen: string; isCurrent: boolean }[];
   members?: readonly { id: string; name: string; role: string }[];
+  sessionsUnavailable?: boolean;
+  membersUnavailable?: boolean;
+  securityUnavailable?: boolean;
 }) {
   const w = workbenchCopy(locale);
   const name = organizationName ?? (locale === "ar" ? "مؤسستكم" : "Votre entreprise");
@@ -677,10 +683,10 @@ export function CompanySecurityWorkbench({
           <h2>{w.companyTitle}</h2>
           <p>{w.companyLead}</p>
         </div>
-        <p className="client-verified provider-secure-banner"><ShieldCheck className="size-4" aria-hidden />{w.companySecure} — {w.companySecureLead}</p>
+        <p className="client-access-note">{locale === "ar" ? "تابعوا حالة حماية الحساب والفريق المصرح به أدناه." : "Consultez ci-dessous la protection du compte et l’équipe autorisée."}</p>
       </header>
       <nav className="client-tabs" aria-label={w.companyTitle}>
-        <Link href={`/${locale}/organisation${query}`}>{w.tabProfile}</Link>
+        <Link href={`/${locale}/sous-traitant/identite${query}`}>{w.tabProfile}</Link>
         <Link href={`/${locale}/organisation/roles${query}`}>{w.tabTeam}</Link>
         <Link href={`/${locale}/organisation/roles${query}`}>{w.tabRoles}</Link>
         <Link href={`/${locale}/organisation/roles${query}`}>{w.tabInvites}</Link>
@@ -707,7 +713,7 @@ export function CompanySecurityWorkbench({
           </article>
           <article className="client-card" id="equipe">
             <header className="client-priority-head"><h3>{w.companyOrgScope}</h3><span className="client-status-chip" data-tone="mint">{w.companyPrimaryOrg}</span></header>
-            {members.length === 0 ? <p role="status">{w.sessionsEmpty}</p> : (
+            {membersUnavailable ? <p role="alert">{locale === "ar" ? "تعذر تحميل الفريق. أعد تحميل الصفحة للمحاولة مجددا." : "Chargement de l’équipe indisponible. Rechargez la page pour réessayer."}</p> : members.length === 0 ? <p role="status">{locale === "ar" ? "لا يوجد عضو ظاهر في هذا النطاق." : "Aucun membre visible dans ce périmètre."}</p> : (
               <ul className="client-feed">
                 {members.map((member) => (
                   <li key={member.id}><span><strong>{member.name}</strong><small>{member.role}</small></span></li>
@@ -721,6 +727,7 @@ export function CompanySecurityWorkbench({
           <article className="client-card">
             <header><h3>{w.authSecurity}</h3></header>
             <p>{w.authSecurityLead}</p>
+            {securityUnavailable ? <p role="alert">{locale === "ar" ? "حالة حماية الحساب غير متاحة حاليا." : "État de protection du compte indisponible."}</p> : null}
             <ul className="client-feed">
               <li><Lock className="size-4" aria-hidden /><span><strong>{w.mfaTitle}</strong><small>{w.mfaLead}</small></span><em className="client-status-chip" data-tone={mfaEnabled ? "mint" : "peach"}>{mfaLabel}</em></li>
               <li><span><strong>{w.verifyMethods}</strong><small>{w.verifyApp}</small></span><Link href={`/${locale}/securite/compte${query}`} className="client-text-link">{w.modify}</Link></li>
@@ -728,7 +735,7 @@ export function CompanySecurityWorkbench({
           </article>
           <article className="client-card" id="sessions">
             <header className="client-priority-head"><h3>{w.activeSessions}</h3><Link href={`/${locale}/securite/sessions${query}`} className="client-text-link">{w.seeHistory}</Link></header>
-            {sessions.length === 0 ? <p role="status">{w.sessionsEmpty}</p> : (
+            {sessionsUnavailable ? <p role="alert">{locale === "ar" ? "تعذر تحميل الجلسات. راجعوا سجل الجلسات أو أعيدوا المحاولة." : "Chargement des sessions indisponible. Consultez leur historique ou réessayez."}</p> : sessions.length === 0 ? <p role="status">{w.sessionsEmpty}</p> : (
               <div className="client-table-wrap">
                 <table className="client-space-table">
                   <thead><tr><th>{w.sessionDevice}</th><th>{w.sessionLast}</th><th>{w.sessionStatus}</th></tr></thead>
@@ -747,7 +754,7 @@ export function CompanySecurityWorkbench({
           </article>
           <article className="client-card">
             <header className="client-priority-head"><h3>{w.securityHistory}</h3><Link href={`/${locale}/securite/compte${query}`} className="client-text-link">{w.seeHistory}</Link></header>
-            <p role="status">{w.historyEmpty}</p>
+            <p>{locale === "ar" ? "راجعوا أحداث الحماية في صفحة أمان الحساب." : "Consultez les événements de sécurité dans la page de protection du compte."}</p>
           </article>
         </div>
       </section>
