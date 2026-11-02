@@ -10,7 +10,7 @@ export type QuestionnaireSessionSource = {
   roles(membershipIds: string[]): Promise<Query>;
   organizations(ids: string[]): Promise<Query>;
   documents(organizationIds: string[]): Promise<Query>;
-  publishedVersions(): Promise<Query>;
+  publishedVersions(organizationId?:string): Promise<Query>;
   sessions(userId: string, organizationId: string): Promise<Query>;
   versions(ids: string[]): Promise<Query>;
   session(id: string): Promise<Query>;
@@ -26,17 +26,17 @@ export type QuestionnaireSessionSource = {
 };
 
 const membershipRow = z.object({ id: questionnaireUuid, organization_id: questionnaireUuid }).strict();
-const roleRow = z.object({ membership_id: questionnaireUuid, role_code: z.enum(["CLIENT_OWNER", "CLIENT_ADMIN", "CLIENT_BUYER"]), revoked_at: z.string().nullable() }).strict();
+const roleRow = z.object({ membership_id: questionnaireUuid, role_code: z.enum(["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_BUYER","PROVIDER_OWNER","PROVIDER_MANAGER","PROVIDER_SALES","PROVIDER_TECHNICIAN","PROVIDER_ACCOUNTING","PROVIDER_VIEWER"]), revoked_at: z.string().nullable() }).strict();
 const organizationRow = z.object({ id: questionnaireUuid, display_name: z.string().min(1).max(240) }).strict();
 const documentRow = z.object({
   id: questionnaireUuid,
   organization_id: questionnaireUuid,
   original_file_name: z.string().min(1).max(255),
-  document_type: z.enum(["REGISTRATION_DOCUMENT", "REPRESENTATIVE_AUTHORITY", "TAX_DOCUMENT"]),
+  document_type: z.enum(["REGISTRATION_DOCUMENT", "REPRESENTATIVE_AUTHORITY", "TAX_DOCUMENT","LEGAL","FISCAL","INSURANCE","CERTIFICATION","LICENSE","ACCREDITATION","REFERENCE","PORTFOLIO","PARTNER_CONTRACT"]),
   declared_mime_type: z.string().min(3).max(120),
   status: z.enum(["PENDING_REVIEW", "VERIFIED"]),
 }).strict();
-const versionRow = z.object({ id: questionnaireUuid, version: z.number().int().positive(), status: z.enum(["PUBLISHED", "SUPERSEDED"]), audience: z.literal("CLIENT"), title_fr: z.string().min(1), title_ar: z.string().min(1), description_fr: z.string().min(1), description_ar: z.string().min(1) }).strict();
+const versionRow = z.object({ id: questionnaireUuid, version: z.number().int().positive(), status: z.enum(["PUBLISHED", "SUPERSEDED"]), audience: z.enum(["CLIENT","PROVIDER"]), title_fr: z.string().min(1), title_ar: z.string().min(1), description_fr: z.string().min(1), description_ar: z.string().min(1) }).strict();
 const sessionRow = z.object({ id: questionnaireUuid, organization_id: questionnaireUuid, actor_user_id: questionnaireUuid, questionnaire_version_id: questionnaireUuid, status: sessionStatus, locale: databaseLocale, updated_at: z.string(), submitted_at: z.string().nullable(), row_version: z.number().int().positive() }).strict();
 const sectionRow = z.object({ id: questionnaireUuid, label_fr: z.string().min(1), label_ar: z.string().min(1), help_fr: z.string().nullable(), help_ar: z.string().nullable(), sort_order: z.number().int().positive() }).strict();
 const linkRow = z.object({ section_id: questionnaireUuid, question_version_id: questionnaireUuid, sort_order: z.number().int().positive(), required_override: z.boolean().nullable() }).strict();
@@ -70,7 +70,11 @@ function rows<T>(schema: z.ZodType<T>, query: Query, max: number): Questionnaire
   return parsed.success ? { status: "success", value: parsed.data } : { status: "error", reason: "INVALID_RESPONSE" };
 }
 
-export function createQuestionnaireSessionsRepository(source: QuestionnaireSessionSource): QuestionnaireSessionsRepository {
+export type QuestionnaireAudience = "CLIENT"|"PROVIDER";
+export const questionnaireRoles=(audience:QuestionnaireAudience)=>audience==="PROVIDER"?["PROVIDER_OWNER","PROVIDER_MANAGER","PROVIDER_SALES","PROVIDER_TECHNICIAN","PROVIDER_ACCOUNTING","PROVIDER_VIEWER"]:["CLIENT_OWNER","CLIENT_ADMIN","CLIENT_BUYER"];
+export function createQuestionnaireSessionsRepository(source: QuestionnaireSessionSource, audience:QuestionnaireAudience="CLIENT"): QuestionnaireSessionsRepository {
+  const assertAudience=async(versionId:string)=>{const versions=rows(versionRow,await source.versions([versionId]),1);return versions.status==="success"&&versions.value.length===1&&versions.value[0]!.audience===audience;};
+  const assertSessionAudience=async(sessionId:string)=>{const sessions=rows(sessionRow,await source.session(sessionId),1);return sessions.status==="success"&&sessions.value.length===1&&await assertAudience(sessions.value[0]!.questionnaire_version_id);};
   return {
     async load(selectedSessionId, requestedOrganizationId) {
       if (selectedSessionId && !questionnaireUuid.safeParse(selectedSessionId).success) return { status: "error", reason: "INVALID_INPUT" };
@@ -80,7 +84,7 @@ export function createQuestionnaireSessionsRepository(source: QuestionnaireSessi
       if (memberships.status === "error") return memberships;
       const roles = rows(roleRow, await source.roles(memberships.value.map((item) => item.id)), 300);
       if (roles.status === "error") return roles;
-      const allowedMemberships = new Set(roles.value.filter((role) => role.revoked_at === null).map((role) => role.membership_id));
+      const allowedMemberships = new Set(roles.value.filter((role) => role.revoked_at === null&&questionnaireRoles(audience).includes(role.role_code)).map((role) => role.membership_id));
       const authorized = memberships.value.filter((membership) => allowedMemberships.has(membership.id));
       const context = resolveClientOrganizationContext(authorized, requestedOrganizationId);
       if (context.status === "error") {
@@ -97,15 +101,17 @@ export function createQuestionnaireSessionsRepository(source: QuestionnaireSessi
         return { status: "error", reason: "FORBIDDEN" };
       }
       const organizationIds = [context.membership.organization_id];
-      const [organizationsQuery, documentsQuery, availableQuery, sessionsQuery] = await Promise.all([source.organizations(organizationIds), source.documents(organizationIds), source.publishedVersions(), source.sessions(userId, organizationIds[0]!)]);
+      const [organizationsQuery, documentsQuery, availableQuery, sessionsQuery] = await Promise.all([source.organizations(organizationIds), source.documents(organizationIds), source.publishedVersions(organizationIds[0]), source.sessions(userId, organizationIds[0]!)]);
       const organizations = rows(organizationRow, organizationsQuery, 100), documents = rows(documentRow, documentsQuery, 100), available = rows(versionRow, availableQuery, 50), sessions = rows(sessionRow, sessionsQuery, 100);
       if (organizations.status === "error") return organizations;
       if (documents.status === "error") return documents;
       if (available.status === "error") return available;
+      if(available.value.some(version=>version.audience!==audience))return{status:"error",reason:"FORBIDDEN"};
       if (sessions.status === "error") return sessions;
       const sessionVersionIds = [...new Set(sessions.value.map((session) => session.questionnaire_version_id))];
       const historical = rows(versionRow, await source.versions(sessionVersionIds), 100);
       if (historical.status === "error") return historical;
+      if(historical.value.some(version=>version.audience!==audience))return{status:"error",reason:"FORBIDDEN"};
       const versionById = new Map([...available.value, ...historical.value].map((version) => [version.id, version]));
       const summaries = sessions.value.flatMap((session) => {
         const version = versionById.get(session.questionnaire_version_id);
@@ -126,6 +132,7 @@ export function createQuestionnaireSessionsRepository(source: QuestionnaireSessi
         const versionResult = rows(versionRow, await source.versions([session.questionnaire_version_id]), 1);
         if (versionResult.status === "error") return versionResult;
         const version = versionResult.value[0];
+        if(version?.audience!==audience)return{status:"error",reason:"FORBIDDEN"};
         if (!version) return { status: "error", reason: "INVALID_RESPONSE" };
         const [sectionsQuery, linksQuery, answersQuery] = await Promise.all([source.sections(version.id), source.questionLinks(version.id), source.answers(session.id)]);
         const sections = rows(sectionRow, sectionsQuery, 101), links = rows(linkRow, linksQuery, 101), answers = rows(answerRow, answersQuery, 100);
@@ -168,6 +175,7 @@ export function createQuestionnaireSessionsRepository(source: QuestionnaireSessi
     async start(input) {
       const parsed = startSessionInput.safeParse({ ...input, dueAt: input.dueAt ?? "" });
       if (!parsed.success) return { status: "error", reason: "INVALID_INPUT" };
+      if(audience==="PROVIDER"){const available=rows(versionRow,await source.publishedVersions(parsed.data.organizationId),50);if(available.status!=="success"||!available.value.some(version=>version.id===parsed.data.questionnaireVersionId&&version.audience===audience)||!await assertAudience(parsed.data.questionnaireVersionId))return{status:"error",reason:"FORBIDDEN"};}
       const response = await source.rpc("start_questionnaire_session", { p_organization_id: parsed.data.organizationId, p_questionnaire_version_id: parsed.data.questionnaireVersionId, p_locale: parsed.data.locale === "ar" ? "ar-MA" : "fr-MA", p_due_at: parsed.data.dueAt ? `${parsed.data.dueAt}T23:59:59Z` : null, p_site_id: parsed.data.siteId ? parsed.data.siteId : null, p_idempotency_key: parsed.data.idempotencyKey, p_correlation_id: parsed.data.correlationId });
       if (response.error) return failure(response.error);
       const result = startedResponse.safeParse(response.data);
@@ -175,6 +183,7 @@ export function createQuestionnaireSessionsRepository(source: QuestionnaireSessi
     },
     async save(input) {
       if (!saveAnswerInput.safeParse(input).success) return { status: "error", reason: "INVALID_INPUT" };
+      if(audience==="PROVIDER"&&!await assertSessionAudience(input.sessionId))return{status:"error",reason:"FORBIDDEN"};
       const response = await source.rpc("autosave_questionnaire_answers", { p_session_id: input.sessionId, p_expected_row_version: input.expectedSessionRowVersion, p_answers: [{ question_version_id: input.questionVersionId, value: input.value, expected_answer_row_version: input.expectedAnswerRowVersion }], p_idempotency_key: input.idempotencyKey, p_correlation_id: input.correlationId });
       if (response.error) return failure(response.error);
       const result = saveResponse.safeParse(response.data);
@@ -185,6 +194,7 @@ export function createQuestionnaireSessionsRepository(source: QuestionnaireSessi
     },
     async submit(input) {
       if (!submitSessionInput.safeParse(input).success) return { status: "error", reason: "INVALID_INPUT" };
+      if(audience==="PROVIDER"&&!await assertSessionAudience(input.sessionId))return{status:"error",reason:"FORBIDDEN"};
       const response = await source.rpc("submit_questionnaire_session", { p_session_id: input.sessionId, p_expected_row_version: input.expectedSessionRowVersion, p_idempotency_key: input.idempotencyKey, p_correlation_id: input.correlationId });
       if (response.error) return failure(response.error);
       const result = submittedResponse.safeParse(response.data);

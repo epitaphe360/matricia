@@ -135,3 +135,32 @@ describe("conditional presentation and exact draft resumption", () => {
     expect(session).not.toHaveBeenCalled();
   });
 });
+
+describe("explicit Provider questionnaire audience",()=>{
+ const providerVersion={...version,audience:"PROVIDER"};
+ const providerSource=(overrides:Partial<QuestionnaireSessionSource>={})=>source({roles:async()=>ok([{membership_id:id(2),role_code:"PROVIDER_OWNER",revoked_at:null}]),publishedVersions:async()=>ok([providerVersion]),versions:async()=>ok([providerVersion]),...overrides});
+ it.each(["PROVIDER_OWNER","PROVIDER_MANAGER","PROVIDER_SALES","PROVIDER_TECHNICIAN","PROVIDER_ACCOUNTING","PROVIDER_VIEWER"])("allows authorized %s to read Provider questionnaires",async role=>{
+  const repository=createQuestionnaireSessionsRepository(providerSource({roles:async()=>ok([{membership_id:id(2),role_code:role,revoked_at:null}])}),"PROVIDER");
+  expect((await repository.load(undefined,id(3))).status).toBe("success");
+ });
+ it("keeps Client defaults and rejects revoked or Client-only roles for Provider reads",async()=>{
+  expect(await createQuestionnaireSessionsRepository(providerSource()).load()).toMatchObject({status:"error"});
+  expect(await createQuestionnaireSessionsRepository(source(),"PROVIDER").load()).toMatchObject({status:"error"});
+  expect(await createQuestionnaireSessionsRepository(providerSource({roles:async()=>ok([{membership_id:id(2),role_code:"PROVIDER_OWNER",revoked_at:"2026-01-01"}])}),"PROVIDER").load()).toMatchObject({status:"error"});
+ });
+ it("refuses cross-audience projections before loading private answer details",async()=>{
+  const session=vi.fn(async()=>ok([]));
+  expect(await createQuestionnaireSessionsRepository(providerSource({publishedVersions:async()=>ok([version]),session}),"PROVIDER").load()).toEqual({status:"error",reason:"FORBIDDEN"});
+  expect(session).not.toHaveBeenCalled();
+ });
+ it("cannot start Client content through Provider action even for a multi-role actor",async()=>{
+  const rpc=vi.fn(async()=>ok({}));
+  const repository=createQuestionnaireSessionsRepository(providerSource({publishedVersions:async()=>ok([version]),versions:async()=>ok([version]),rpc}),"PROVIDER");
+  expect(await repository.start({organizationId:id(3),questionnaireVersionId:id(4),locale:"fr",dueAt:null,idempotencyKey:"provider-start",correlationId:id(7)})).toEqual({status:"error",reason:"FORBIDDEN"});expect(rpc).not.toHaveBeenCalled();
+ });
+ it("cannot edit or submit a Client session through Provider commands",async()=>{
+  const rpc=vi.fn(async()=>ok({})),repository=createQuestionnaireSessionsRepository(providerSource({session:async()=>ok([ownDraft]),versions:async()=>ok([version]),rpc}),"PROVIDER");
+  expect(await repository.save({sessionId:id(5),questionVersionId:id(7),expectedSessionRowVersion:2,expectedAnswerRowVersion:0,answerType:"YES_NO",value:false,idempotencyKey:"provider-save",correlationId:id(8)})).toEqual({status:"error",reason:"FORBIDDEN"});
+  expect(await repository.submit({sessionId:id(5),expectedSessionRowVersion:2,idempotencyKey:"provider-submit",correlationId:id(8)})).toEqual({status:"error",reason:"FORBIDDEN"});expect(rpc).not.toHaveBeenCalled();
+ });
+});
