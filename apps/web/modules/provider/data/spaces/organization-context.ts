@@ -9,3 +9,16 @@ export function selectProviderMembership<T extends { organization_id: string }>(
   }
   return unique.length === 1 ? unique[0] : undefined;
 }
+
+export type ProviderReadState = "unavailable" | "forbidden" | "choose-organization" | "no-organization";
+
+/** A failed membership read is never evidence that the account has no organization. */
+export function providerContextReadState(
+  context: { selectedOrganizationId: string | null; organizations: readonly unknown[]; readError?: string | null },
+  requestedOrganizationId?: string,
+): ProviderReadState | null {
+  if (context.readError) return "unavailable";
+  if (context.selectedOrganizationId) return null;
+  if (requestedOrganizationId !== undefined) return "forbidden";
+  return context.organizations.length > 1 ? "choose-organization" : "no-organization";
+}

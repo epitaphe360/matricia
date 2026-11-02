@@ -46,8 +46,8 @@ export default async function ProviderPlanningPage({
   };
   const copy =
     locale === "ar"
-      ? { title: "التخطيط", eyebrow: "المواعيد الحقيقية", lead: "الاستشارات والعروض والمعالم والفواتير وتجديد الوثائق والعقود — كل حدث يفتح ملفه.", unavailable: "تعذر تحميل جزء من المواعيد." }
-      : { title: "Planning", eyebrow: "Échéances réelles", lead: "Consultations, devis, jalons, factures et renouvellements documentaires ou contractuels — chaque événement ouvre son dossier.", unavailable: "Une partie des échéances est indisponible." };
+      ? { title: "التخطيط", eyebrow: "المواعيد الحقيقية", lead: "الاستشارات والعروض والمعالم والفواتير وتجديد الوثائق والعقود — كل حدث يفتح ملفه.", unavailable: "تعذر تحميل المواعيد. أعد المحاولة." }
+      : { title: "Planning", eyebrow: "Échéances réelles", lead: "Consultations, devis, jalons, factures et renouvellements documentaires ou contractuels — chaque événement ouvre son dossier.", unavailable: "Impossible de charger les échéances. Réessayez." };
   const partialFail = planning.status === "error";
 
   return (
@@ -63,7 +63,7 @@ export default async function ProviderPlanningPage({
     >
       {partialFail?<p role="alert">{copy.unavailable}</p>:null}
       {planning.status==="success"&&!planning.billingVisible?<p>{locale==="ar"?"المواعيد المالية متاحة لأدوار المالك والمحاسبة فقط.":"Les échéances financières nécessitent un rôle propriétaire ou comptable."}</p>:null}
-      <PlanningWeekBoard
+      {planning.status === "success" ? <PlanningWeekBoard
         locale={locale}
         events={events}
         days={days}
@@ -71,7 +71,7 @@ export default async function ProviderPlanningPage({
         prevHref={`/${locale}/sous-traitant/planning${weekQuery(addCalendarDays(monday, -7))}`}
         nextHref={`/${locale}/sous-traitant/planning${weekQuery(addCalendarDays(monday, 7))}`}
         todayHref={`/${locale}/sous-traitant/planning${weekQuery(mondayOnOrBefore(today))}`}
-      />
+      /> : <Link href={`/${locale}/sous-traitant/planning${weekQuery(monday, page)}`} className="client-ghost-link">{locale === "ar" ? "إعادة المحاولة" : "Réessayer"}</Link>}
       {planning.status==="success"&&(planning.hasMore||planning.page>1)?<nav aria-label={locale==="ar"?"صفحات مواعيد الأسبوع":"Pages des échéances de la semaine"} className="client-card flex flex-wrap gap-4"><p>{locale==="ar"?"توجد صفحات متعددة لمواعيد هذا الأسبوع":"Les échéances de cette semaine sont réparties sur plusieurs pages"} · {planning.page}</p>{planning.page>1?<Link href={`/${locale}/sous-traitant/planning${weekQuery(monday,planning.page-1)}`}>{locale==="ar"?"الصفحة السابقة":"Page précédente"}</Link>:null}{planning.hasMore?<Link href={`/${locale}/sous-traitant/planning${weekQuery(monday,planning.page+1)}`}>{locale==="ar"?"المواعيد التالية":"Échéances suivantes"}</Link>:null}</nav>:null}
     </ProviderAppShell>
   );

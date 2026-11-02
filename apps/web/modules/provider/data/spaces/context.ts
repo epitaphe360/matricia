@@ -9,5 +9,5 @@ export async function resolveProviderSpace(input:{locale:Locale;organizationId?:
  const memberships=!result.error&&parsed.success?parsed.data:[],selected=selectProviderMembership(memberships,input.organizationId);
  const organizations=[...new Map(memberships.map(item=>[item.organization_id,{id:item.organization_id,name:item.organizations.display_name}])).values()];
  const selectedOrganizationId=selected?.organization_id??null,selectedQuery=selectedOrganizationId?`?organizationId=${encodeURIComponent(selectedOrganizationId)}`:"";
- return{status:"success"as const,locale:input.locale,userEmail:auth.user.email??null,selectedOrganizationId,selectedQuery,organizationName:selected?.organizations.display_name??null,organizations};
+ return{status:"success"as const,readError:result.error?"QUERY_FAILED"as const:!parsed.success?"INVALID_RESPONSE"as const:null,locale:input.locale,userEmail:auth.user.email??null,selectedOrganizationId,selectedQuery,organizationName:selected?.organizations.display_name??null,organizations};
 }
