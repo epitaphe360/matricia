@@ -37,7 +37,7 @@ fichiers complets dans `supabase/tests/`, et non une certification de production
 | C16 | Activation réelle, réservation de pool et RFQ par le formulaire métier normal ; 30030/30040, `demandes/benefit-context.ts`. | SQL 0334/0335 Box : vrai dossier RFQ, activation réelle puis compte rendu et réception indépendante avant consommation. |
 | C17 | Attente, annulation, expiration et remboursement gouverné ; 30020/30030 et écrans FR/AR Client/Finance. | SQL 0333 Box, 0332 remboursements et régression économique 0340. Restitution dans les lots originaux, dates conservées, contre-écritures exactes, panne atomique ; aucun remboursement bancaire implicite. |
 | C18 | Historique complet et agrégats serveur ; `credits-wallet/`, `subscriptions/`, `portfolio/`, notifications ; migration 28000. | Tests de pagination et grands historiques ; totaux indépendants de la page affichée, montants exacts en texte. |
-| C19 | Édition/versionnage de sites, projets et tâches, choix d’un membre autorisé ; `portefeuille/`. | Tests actions/panneaux, SQL 0070 et création réelle de site/projet avec lecture RLS. Les conflits et assignataires étrangers restent refusés. |
+| C19 | Création de sites, édition/versionnage des projets et tâches, choix d’un membre autorisé ; `portefeuille/`. | Tests actions/panneaux, SQL 0070 et création réelle de site/projet avec lecture RLS. Les conflits et assignataires étrangers restent refusés. |
 | C20 | Recherche paginée des cibles d’allocation, garde facture mono-organisation ; `data/portfolio/allocation-targets.ts`. | SQL 0300 : cibles au-delà de la première page, facture autorisée et facture mixte refusée ; ACL privées conservées. |
 | C21 | Entrée de parrainage consentie, événement réel, approbation séparée de l’exécution Finance ; 32000, page d’entrée et récompenses. | SQL 0334 récompenses : 32 assertions, décision Conformité sans privilège Finance, crédits uniques après exécution habilitée, session et rejouabilité. Pas de campagne réelle envoyée. |
 | C22 | Économies vérifiées distinctes du ROI, objets/preuves du dossier, devises issues de la source ; 29000 et `recompenses/`. | SQL 0329 : accès Finance/Conformité aux seules preuves permises ; tests montants JPY/KWD et indépendance de revue. Pas de gain commercial fabriqué. |
@@ -64,6 +64,10 @@ conservant le texte libre bilingue. Aucun service hébergé ni compte réel n’
 déclaré vérifié sur la seule base de ces tests.
 
 Le contrôle RLS réel des achats groupés a aussi reproduit une récursion `42P17` entre réservations et allocations, y compris sans lignes. La migration 36000 remplace les prédicats cycliques par des lectures privées strictement liées à l’acteur et corrige une référence `id` ambiguë ; elle ne confère aucun droit d’écriture. Le test 0343 couvre les organisations et prestataires étrangers.
+
+La recette de paiement avec le véritable rôle serveur a ensuite révélé que trois contrôles différés de cohérence lisaient les ledgers avec les droits du rôle appelant après le retour de la commande. La migration 37000 rend ces seuls contrôles privés `SECURITY DEFINER`, avec chemin de résolution fixé et exécution directe interdite aux rôles API. Aucun droit de table, calcul financier ni corps de contrôle n’est changé. Le test 0344 force les contraintes après retour de la commande sous le véritable rôle `service_role` et vérifie également les écritures incohérentes, le refus Client/anonyme et le rejeu unique.
+
+Les scans axe ont enfin reproduit deux défauts de sémantique du portefeuille : indicateurs de progression sans nom et chiffres budgétaires dans une liste de définitions mal structurée. Le composant partagé donne maintenant un nom contextualisé FR/AR aux indicateurs et utilise des paires `dt`/`dd`, sans modifier les montants ni les données.
 
 Les résultats initiaux en échec sont conservés. Ils comprennent un défaut SQL de
 nom de variable, une projection de rôles ordonnée par une colonne inexistante,
@@ -96,3 +100,10 @@ prouvées en exigences vérifiées.
 Le validateur global `release:validate` reste refusé : les contrats atomiques P01, les approbations des registres, les preuves d’interaction globales et le manifeste de livraison de l’ensemble de l’application ne sont pas clos. Le résultat de ce lot Client ne constitue donc pas une autorisation de livrer toute l’application. Les tests de compatibilité hérités utilisant une désactivation des triggers, dont 0247, sont exclus du rejeu strict ; leurs résultats historiques ne sont pas présentés comme des preuves équivalentes. La recette financière principale 0332 et la régression 0340 s’exécutent avec tous les contrôles actifs.
 
 La première fixture de questionnaire contenait un profil historique incomplet. La page d’onboarding l’a correctement refusé au chargement : une réponse HTTP 200 ne suffisait pas. La fixture corrigée satisfait le validateur canonique complet dans le test 0301 (14 assertions) et sert à une nouvelle recette ; aucune version historique vérifiée n’est réécrite, et le schéma de lecture n’est pas assoupli.
+
+
+## Résultat local et suite
+
+Le lot est sauvegardé avec build/types/lint,904assertionsSQL strictes,220casOwner FR/AR,8contrôlesBuyer financés,32scansaxe sans violation et32mesures de légende≥5,1597:1 après correction. Voir [VALIDATION.md](VALIDATION.md) et le [dossier navigateur](evidence/browser/README.md) pour les commandes, captures, empreintes, exclusions et limites exactes. Ce bilan ne revendique ni signature externe, ni déploiement, ni certification commerciale globale.
+
+La suite demandée est le Sous-traitant complet. Son audit préparatoire a identifié des défauts dans des flux partagés, notamment la correction/réception de livraisons versionnées et la validation indépendante des encaissements. Ils seront corrigés sur une branche issue de ce lot et vérifiés aussi côté Client ; ce rapport ne les masque pas dans ses acquis de préparation de mission.

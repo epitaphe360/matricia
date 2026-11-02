@@ -148,6 +148,30 @@ Worker evidence read at `work/volume-rls343/`:
 R11 cause is addressed in reviewed frozen source and worker SQL regression. Root's fresh integrated migration/tests and nativeGoTrue grouped-purchase browser follow-up remain required. Root reported a prior full456-migration/30-new-test pass before R11; that evidence must not be described as including36000.
 
 
+## R12 — deferred ledger invariants lose trusted execution context
+
+Root/browser encountered actual service-role HTTP403/SQLSTATE42501 on `financial_entries` after successful governed setup and payment preparation. The foundational `assert_financial_journal_has_entries` and `assert_financial_journal_balanced` constraint-trigger functions were SECURITY INVOKER and initially deferred. Their reads execute when constraints flush after the canonical SECURITY DEFINER callback has returned, under the actual service caller, which intentionally lacks raw ledger SELECT. Running the same flow as database owner masked this defect. The same context issue affected deferred `assert_credit_wallet_nonnegative`: Buyer RLS could hide all entries, making the invoker sum incorrectly appear zero instead of validating the true wallet.
+
+Additive37000 changes exactly these three trigger-only invariant functions to SECURITY DEFINER, pins search_path to pg_catalog and revokes direct EXECUTE from public/anon/authenticated/service_role. Their pure SELECT-and-raise bodies, exact NEW organization/journal/wallet predicates, DEFERRABLE constraints, ledger ACLs and RLS remain unchanged. It neither writes financial facts nor grants raw ledger privileges. This fixes the common trusted-read context rather than weakening the financial invariant or broadening service/Buyer access.
+
+Reviewer identified and had the worker correct a proof gap before freeze: an earlier `SET CONSTRAINTS ALL IMMEDIATE` persisted into the positive credit-worker check, so that check would have fired inside its definer command. Frozen0344 explicitly restores `credit_wallet_nonnegative DEFERRED` immediately before executing the native worker and flushes top-level after return while current_user remains service_role.
+
+Frozen contents inspected at `/workspace/client-payment-service-context`, commit `8fa721f4736e7a57632c63fc153f0c2ba3ac8fcc`:
+
+```text
+c43f147cd392fe4ef3d3e96baa5266a63476d93bf550bac019e72e78eb473539  supabase/migrations/20261102037000_deferred_ledger_invariant_execution_context.sql
+e986a8bc3087bad61a800448e9c3cee6ceb0f55a4e0fecb695a70f25b55f808f  supabase/tests/0344_payment_deferred_service_context.test.sql
+```
+
+Worker evidence read at `work/payment37000/`:
+
+- `red.log`:9 successful prerequisite/access assertions, then42501 permission denied for financial_entries from deferred journal-has-entries guard at top-level constraint flush after callback return. This is the expected pre-fix failure, not a passing complete run.
+- `green.log`:31/31 assertions, complete TAP plan, zero not-ok/ERROR/FATAL. Actual SET LOCAL ROLE service_role executes registration/callback and post-return constraint flush; native paid-credit worker similarly returns before wallet flush. Authenticated and anonymous callback/direct-ledger attempts remain denied; malformed gateway/proof fail; exact replay creates one cycle, one balanced journal, two financial entries, ten paid credits, one activation audit and one paid Outbox event.
+- Rollback-only append-only fixtures prove the definer checks still reject empty and unbalanced journals under service role and true negative balance despite Buyer-visible ledger count zero. Balancing entries complete fixtures before rollback; no trigger disable, UPDATE or DELETE bypass.
+- Worker reports original457 guard owners/flags and ledger ACLs were matched before applying the delta to its private clone. Test service/auth claims are local SQL fixtures under actual database roles; they do not certify a genuine GoTrue browser session or real external PSP signature/capture. Root/browser retains the exact original native intent/event for retry.
+
+R12 cause is addressed in reviewed source and worker regression. No additional concrete blocker was identified in the inspected change. Root fresh integrated replay and genuine service-client/Buyer browser after-proof remain required.
+
 ## Final handoff
 
-R1–R11 identified causes are addressed in the frozen source reviewed here. No additional concrete blocking finding remained in these inspected changes at handoff. Integration validation belongs to root: fresh migration replay, final type/lint/build/tests, browser recipe and honest external-access/integration limitations. No merge, production deployment, remote database write, secret inspection or external message was performed by this reviewer.
+R1–R12 identified causes are addressed in the frozen source reviewed here. No additional concrete blocking finding remained in these inspected changes at handoff. Integration validation belongs to root: fresh migration replay, final type/lint/build/tests, browser recipe and honest external-access/integration limitations. No merge, production deployment, remote database write, secret inspection or external message was performed by this reviewer.

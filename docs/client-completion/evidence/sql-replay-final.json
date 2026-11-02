@@ -7,7 +7,7 @@
     "auth": "ghcr.io/supabase/gotrue:v2.196.0",
     "storage": "ghcr.io/supabase/storage-api:v1.72.1"
   },
-  "startedAt": "2026-11-02T18:37:38.491Z",
+  "startedAt": "2026-11-02T19:32:43.480Z",
   "status": "passed",
   "migrations": [
     {
@@ -2294,6 +2294,11 @@
       "file": "20261102036000_volume_reservation_read_scope.sql",
       "sha256": "5b7b64403fbbff95f816df796b71a9a4c3776fbcfcf10e7fbb222f63ad2d477f",
       "passed": true
+    },
+    {
+      "file": "20261102037000_deferred_ledger_invariant_execution_context.sql",
+      "sha256": "c43f147cd392fe4ef3d3e96baa5266a63476d93bf550bac019e72e78eb473539",
+      "passed": true
     }
   ],
   "sql": [
@@ -2494,6 +2499,12 @@
       "sha256": "d52ff2931bce3b1af7badd6954557b55146e164db8f2e7bddfd9060f57e5693e",
       "assertions": 27,
       "passed": true
+    },
+    {
+      "file": "0344_payment_deferred_service_context.test.sql",
+      "sha256": "e986a8bc3087bad61a800448e9c3cee6ceb0f55a4e0fecb695a70f25b55f808f",
+      "assertions": 31,
+      "passed": true
     }
   ],
   "concurrencyIncluded": false,
@@ -2504,5 +2515,5 @@
     "tablesWithoutRls": 0,
     "pgtapApiExecutable": false
   },
-  "finishedAt": "2026-11-02T18:43:32.693Z"
+  "finishedAt": "2026-11-02T19:36:55.548Z"
 }
