@@ -18,6 +18,7 @@ try{
  const foreignRead=await client.rpc('get_my_box_workspace_v1',{p_organization_id:foreign.organizationId});check(foreignRead.error?.code==='42501','foreign_box_workspace_denied');
  const globalWallet=await client.from('credit_wallets').select('id').eq('organization_id',buyer.organizationId);check(!globalWallet.error&&globalWallet.data.length===0,'buyer_global_wallet_rls_denied');
  const admin=await client.rpc('list_admin_supervision_page_v1',{p_limit:25,p_offset:0});check(admin.error?.code==='42501','buyer_admin_finance_rpc_denied');
+ for(const rpc of ['list_client_commercial_documents_v1','list_client_billable_sources_v1']){const result=await client.rpc(rpc,{p_organization_id:buyer.organizationId,p_query:'',p_page:1});check(result.error?.code==='42501',`buyer_global_finance_${rpc}_denied`);}
  await page.goto(`${origin}/fr/client/boxes/mon-enveloppe?organizationId=${buyer.organizationId}`,{waitUntil:'networkidle',timeout:90000});
  const form=page.locator('form').filter({has:page.locator(`input[name="benefitId"][value="${fixture.benefitVersionId}"]`)});await expect(form.getByRole('button',{name:'Réserver dans mon enveloppe',exact:true})).toBeEnabled();
  await form.locator('input[name="expiresAt"]').fill(new Date(Math.min(Date.now()+86400000,new Date(box.period_end).getTime()-3600000)).toISOString().slice(0,16));await form.getByRole('button',{name:'Réserver dans mon enveloppe',exact:true}).focus();await page.keyboard.press('Enter');

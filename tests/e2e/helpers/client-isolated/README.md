@@ -60,6 +60,9 @@ alone is not evidence of a successful business operation.
 
 Auth users have unique `@example.invalid` addresses. GoTrue creates native OTP
 sessions, enrolls TOTP and verifies AAL2. **User JWTs are never fabricated.**
+For a long run, `refresh-sessions.mjs` refreshes the same native sessions through
+GoTrue and persists them only in ignored private state. It checks the exact user
+identity and AAL2 after each refresh; it never creates replacement actors.
 The harness creates its own temporary anon/service configuration keys. Role
 bootstrap uses explicit local test SQL. `seed-questionnaire.mjs` extracts the
 reviewed historical dossier/catalogue fixture from
@@ -118,6 +121,7 @@ invariant guards to SECURITY DEFINER with `search_path=pg_catalog` and revokes
 direct execution from PUBLIC/anon/authenticated/service_role. Source and target
 guards, bodies and ACLs must match. It grants no ledger access. Full SQL test
 receipts belong to the separate strict replay, not these browser helpers.
+Run `guard-fidelity.mjs <source-manifest>` to reproduce the guard inspection.
 
 After the Owner matrix, `prepare-buyer-box.mjs` prepares four separate genuine
 GoTrue/TOTP actors: a plain Owner, a plain Buyer and two independent Finance
@@ -147,3 +151,19 @@ measured ratio of zero or a pass. `contrast-review.mjs` collects each affected
 node's computed color, ancestor backgrounds/gradients, stacking information and
 normal/background-only screenshots for a separate rendered contrast review.
 These automated checks do not claim full manual WCAG certification.
+After correction 236caf9, `contrast-review.mjs --caption-only` measures the
+changed caption in all 32 route/locale/width/menu states. It captures the viewport
+where every caption is visible. The earlier full review of 1,409 incomplete
+nodes stays separate; it is not overwritten in committed evidence.
+Run `python tests/e2e/helpers/client-isolated/contrast-pixels.py
+work/client-browser-isolated/<uuid>/accessibility` with Python/Pillow/NumPy after the
+review capture. It multiplies ancestor opacity, records filters/blend modes,
+excludes clipped and menu-occluded pixels, and reports a conservative lower
+bound across the actually rendered background under text ranges. Areas with no
+visible samples, filters, clipping or occlusion remain separate review items.
+The decorative aria-hidden brand initial has the logotype contrast exception.
+An additional opaque-glyph measurement compares the normal screenshot with the
+rendered background. It keeps pixels matching the composited text color within
+two RGB levels and excludes antialias edges. This separates a white badge's
+rectangle extending onto white canvas from its actual white-on-blue glyphs.
+Unrendered text, clipped areas and menu-covered areas stay explicitly unmeasured.
