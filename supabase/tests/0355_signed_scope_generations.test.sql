@@ -620,6 +620,19 @@ reset role;
 select is((select count(*)from public.provider_payable_events),(select payables from scope354_before),'reopening and withdrawal preserve all payable events');
 select is((select count(*)from public.credit_ledger_entries),(select ledger_entries from scope354_before),'reopening and withdrawal preserve all ledger entries');
 
+-- Complete the actual next generation before signing a further ADD. This
+-- reproduces a completed mission with new signed scope pending preparation,
+-- without inventing a status transition or positive acceptance.
+reset role;
+select set_config('test.scope355_next_deliverable',(select id::text from public.deliverables where mission_id=current_setting('test.provider348_mission')::uuid and contractual_key='NEXT_PHASE'),true);
+update public.deliverables set proof_required=false where id=current_setting('test.scope355_next_deliverable')::uuid;
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000006',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000006","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
+select lives_ok($$select public.submit_delivery(current_setting('test.scope355_next_deliverable')::uuid,'Actual test next phase delivered before further signed scope','[]','[]','scope355-next-complete-delivery')$$,'assigned Provider delivers the actual next signed generation');
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000001',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);
+select lives_ok($$select public.accept_delivery_version_v1(current_setting('test.scope355_next_deliverable')::uuid,1,'[{"criterion_key":"NEXT_REVIEW","status":"COMPLIANT","comment":"Actual next signed phase independently verified in TEST"}]','scope355-next-complete-accept')$$,'Client independently accepts the actual next signed generation');
+select is((select status from public.missions where id=current_setting('test.provider348_mission')::uuid),'COMPLETED','all effective signed deliveries accepted genuinely complete the mission');
+select is((select signed_scope_pending from public.get_mission_signed_scope_states_v1(array[current_setting('test.provider348_mission')::uuid])),false,'completed mission before a new signed act has no pending scope');
+reset role;
 -- An ADD-only signed amendment does not retire existing work, but its missing
 -- operational schedule must still be reported as partial by the native RPC.
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000002',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
@@ -629,10 +642,37 @@ select pg_temp.sign_scope355((select(v->>'amendment_id')::uuid from accept338 wh
 select ok(not(select scope_reconciliation_required from public.missions where id=current_setting('test.provider348_mission')::uuid),'ADD-only signature does not falsely retire or freeze the previous obligations');
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000006',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000006","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
 select is((pg_temp.planning355()->>'operational_scope_incomplete')::boolean,true,'native planning flags unprepared signed ADD even without a retirement hold');
+select is((select status from public.missions where id=current_setting('test.provider348_mission')::uuid),'COMPLETED','new ADD signature does not mutate the legitimately completed original work');
+select is((select signed_scope_pending from public.get_mission_signed_scope_states_v1(array[current_setting('test.provider348_mission')::uuid])),true,'assigned Technician reads signed preparation pending despite COMPLETED status and no hold');
+select is((select count(*)::integer from public.get_mission_signed_scope_states_v1(array[current_setting('test.provider348_mission')::uuid])),1,'bounded projection returns exactly one state for the authorized mission');
+select is((select count(*)::integer from public.get_mission_signed_scope_states_v1(array[current_setting('test.provider348_mission')::uuid]||array(select md5('scope355-state-boundary-'||n::text)::uuid from generate_series(1,99)n))),1,'maximum valid 100-ID batch returns only its authorized existing mission');
+select is((select count(*)::integer from public.get_mission_signed_scope_states_v1(array['fd990000-0000-4000-8000-000000000099'::uuid])),0,'unknown mission produces no fabricated false state');
+select throws_ok($$select *from public.get_mission_signed_scope_states_v1(null::uuid[])$$,'22023','INVALID_MISSION_SCOPE_STATE_IDS','null mission ID batch is rejected');
+select throws_ok($$select *from public.get_mission_signed_scope_states_v1('{}'::uuid[])$$,'22023','INVALID_MISSION_SCOPE_STATE_IDS','empty mission ID batch is rejected');
+select throws_ok($$select *from public.get_mission_signed_scope_states_v1(array[current_setting('test.provider348_mission')::uuid,null::uuid])$$,'22023','INVALID_MISSION_SCOPE_STATE_IDS','null batch element is rejected');
+select throws_ok($$select *from public.get_mission_signed_scope_states_v1(array[current_setting('test.provider348_mission')::uuid,current_setting('test.provider348_mission')::uuid])$$,'22023','INVALID_MISSION_SCOPE_STATE_IDS','duplicate mission IDs are rejected');
+select throws_ok($$select *from public.get_mission_signed_scope_states_v1(array_fill(current_setting('test.provider348_mission')::uuid,array[101]))$$,'22023','INVALID_MISSION_SCOPE_STATE_IDS','mission state batch is bounded to 100 IDs');
+select throws_ok($$select *from public.get_mission_signed_scope_states_v1(array[[current_setting('test.provider348_mission')::uuid]])$$,'22023','INVALID_MISSION_SCOPE_STATE_IDS','multidimensional ID arrays are rejected');
+select ok(not has_function_privilege('anon','public.get_mission_signed_scope_states_v1(uuid[])','EXECUTE'),'anonymous role cannot execute the signed-scope projection');
+select ok(not has_function_privilege('service_role','public.get_mission_signed_scope_states_v1(uuid[])','EXECUTE'),'service role receives no direct grant to the member projection');
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000007',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000007","role":"authenticated","aal":"aal2"}',true);
+select is((select count(*)::integer from public.get_mission_signed_scope_states_v1(array[current_setting('test.provider348_mission')::uuid])),0,'unassigned Technician cannot infer another mission signed-scope state');
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000003',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal2"}',true);
+select is((select count(*)::integer from public.get_mission_signed_scope_states_v1(array[current_setting('test.provider348_mission')::uuid])),0,'foreign Client cannot infer another organization signed-scope state');
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000001',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal1"}',true);
+select is((select signed_scope_pending from public.get_mission_signed_scope_states_v1(array[current_setting('test.provider348_mission')::uuid])),true,'authorized Client can read pending scope at AAL1 without weakening AAL2 execution');
+select set_config('request.jwt.claim.sub','',true);select set_config('request.jwt.claims','{"role":"authenticated","aal":"aal1"}',true);
+select throws_ok($$select *from public.get_mission_signed_scope_states_v1(array[current_setting('test.provider348_mission')::uuid])$$,'42501','MISSION_SCOPE_STATE_READ_DENIED','authenticated SQL role without a member identity cannot read scope states');
+
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000001',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);
 insert into accept338 select'scope355-add-calendar-prep',public.get_mission_amendment_preparation_v1((v->>'amendment_id')::uuid)from accept338 where k='scope355-add-calendar';
 select lives_ok($$select public.execute_signed_mission_amendment_v1((select(v->>'amendment_id')::uuid from accept338 where k='scope355-add-calendar'),(select v->>'preparation_hash'from accept338 where k='scope355-add-calendar-prep'),jsonb_build_array(jsonb_build_object('deliverable_key','LAST_PHASE','due_at',(current_date+20)::text||'T12:00:00Z')),true,'scope355-add-calendar-execute')$$,'Client explicitly schedules the separately signed new phase');
 select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000006',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000006","role":"authenticated","aal":"aal2"}',true);
 select is((pg_temp.planning355()->>'operational_scope_incomplete')::boolean,false,'executing signed ADD restores a complete native planning state');
+select is((select signed_scope_pending from public.get_mission_signed_scope_states_v1(array[current_setting('test.provider348_mission')::uuid])),false,'actual Client execution clears the projected pending state for assigned Provider');
+select set_config('request.jwt.claim.sub','fd100000-0000-4000-8000-000000000001',true);select set_config('request.jwt.claims','{"sub":"fd100000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal1"}',true);
+select is((select signed_scope_pending from public.get_mission_signed_scope_states_v1(array[current_setting('test.provider348_mission')::uuid])),false,'Client observes the same cleared state after real execution');
+select is((select status from public.missions where id=current_setting('test.provider348_mission')::uuid),'ACTIVE','only real signed-scope execution reopens the operational mission');
+
 reset role;
 select *from finish();rollback;
