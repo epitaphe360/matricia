@@ -58,8 +58,8 @@ insert into review329 values('claim',public.claim_client_referral_v1('TEST0329_L
 insert into review329 values('profile',public.advance_client_referral_with_document_v1((select(v->>'referral_conversion_id')::uuid from review329 where k='claim'),'PROFILE_STARTED','d3291000-0000-4000-8000-000000000001',1,'test329-profile'));
 select pg_temp.actor329(3);
 insert into review329 values('verification',public.advance_client_referral_with_document_v1((select(v->>'referral_conversion_id')::uuid from review329 where k='claim'),'VERIFIED','d3291000-0000-4000-8000-000000000001',2,'test329-finance-verification'));
-select is((select conversion_stage from public.referral_conversions where id=(select(v->>'referral_conversion_id')::uuid from review329 where k='claim')),'VERIFIED','Finance reviewer completes the genuine canonical verification transition');
 reset role;
+select is((select conversion_stage from public.referral_conversions where id=(select(v->>'referral_conversion_id')::uuid from review329 where k='claim')),'VERIFIED','Finance reviewer completes the genuine canonical verification transition');
 select is((select evidence_hash from public.referral_conversion_events where referral_conversion_id=(select(v->>'referral_conversion_id')::uuid from review329 where k='claim')and to_stage='VERIFIED'),repeat('a',64),'review transition uses the exact server-side document fingerprint');
 select is((select count(*)::integer from public.client_sites where organization_id='b3290000-0000-4000-8000-000000000001'),0,'reviewer and auditor refusals left no portfolio write');
 select *from finish();

@@ -35,6 +35,8 @@ export function RewardsBoard({
   const inviteHref = `/${locale}/client/recompenses${query}#regles`;
   const ambassador = conversions.some((item) => item.conversion_stage === "ACTIVE");
   const engaged = dashboard.grants.length > 0;
+  const referralGranted = dashboard.referralRewardStatuses?.some((item) => item.state === "GRANTED") ?? false;
+  const referralPending = dashboard.referralRewardStatuses?.some((item) => item.state === "APPROVED_PENDING_EXECUTION") ?? false;
   return (
     <main className="client-page">
       <section className="client-board client-board-compare">
@@ -60,8 +62,9 @@ export function RewardsBoard({
             <li data-state={link ? "done" : "current"}><span>1</span><small>{locale === "ar" ? "مدعو" : "Invité"}</small></li>
             <li data-state={conversions.some((item) => item.conversion_stage !== "REGISTERED") ? "done" : conversions.length > 0 ? "current" : "todo"}><span>2</span><small>{locale === "ar" ? "مسجّل" : "Inscrit"}</small></li>
             <li data-state={conversions.some((item) => item.conversion_stage === "VERIFIED" || item.conversion_stage === "ACTIVE") ? "current" : "todo"}><span>3</span><small>{locale === "ar" ? "مؤهل" : "Éligible"}</small></li>
-            <li data-state={ambassador ? "done" : "todo"}><span>4</span><small>{locale === "ar" ? "مكافأة" : "Récompense"}</small></li>
+            <li data-state={referralGranted ? "done" : referralPending ? "current" : "todo"}><span>4</span><small>{locale === "ar" ? "مكافأة" : "Récompense"}</small></li>
           </ol>
+          {referralPending ? <p role="status" className="client-access-note">{locale === "ar" ? "تمت الموافقة على المكافأة؛ إصدار الرصيد ينتظر معالجة فريق المالية." : "Récompense approuvée ; émission des crédits en attente de traitement par la finance."}</p> : null}
           <p><Link2 className="size-4" aria-hidden /> {c.inviteLink}</p>
           <p dir="ltr">{link ? <Link className="underline break-all" href={`/${locale}/invitation/${encodeURIComponent(link.referral_code)}`}>{`/${locale}/invitation/${link.referral_code}`}</Link> : (locale === "ar" ? "يُنشأ الرابط بعد تفعيل رمز إحالة." : "Le lien apparaît après création d’un code d’invitation.")}</p>
           {link ? (
