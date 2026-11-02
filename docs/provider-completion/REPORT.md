@@ -50,10 +50,10 @@ Les identifiants E/D ci-dessous appartiennent à l'analyse approfondie du parcou
 ## Vérifications et réserves actuelles
 
 - Toutes les preuves SQL citées sont liées aux fichiers et hashes de leur reçu. Les reçus transactionnels indiquent `commitSent:false`, empreintes identiques et rollback. Ce ne sont pas des replays neufs de tout le dépôt.
-- Le build complet local du candidat précédent `e929f99` a réussi avec TypeScript actif. Le nouveau candidat consolidé exige son propre build et sa propre reprise navigateur ; ils restent en cours.
+- Le build complet local du candidat précédent `e929f99` a réussi avec TypeScript actif. Le candidat8941517 a ensuite réussi son build complet avec TypeScript actif ; ses preuves sont dans evidence/browser/candidate-two/. La migration corrective38410 de la file Admin impose un dernier contrôle consolidé.
 - Recette réelle déjà exécutée au checkpoint précédent : quinze identités GoTrue OTP/TOTP AAL2, dossiers TEST distincts, identité/pièces/questionnaire/capacité ; 40 pages FR/AR aux largeurs375/390/768/1440 et8 menus sans débordement, erreur JS ou sens RTL incorrect.
 - Axe :64 scans sans violation automatique, mais64 résultats `color-contrast` incomplets. Cela ne vaut pas contrôle manuel complet ni certification WCAG.
-- Les tests globaux initiaux :2939 réussis,8 échecs et1 skip opt-in. Les8 échecs correspondent à quatre délais PDF et quatre attentes lues pendant l’intégration (navigation, pagination, multi-select). Les groupes PDF/options16 et navigation/pages15 ont ensuite réussi séparément, sans relâcher de délai ; le rejeu complet final reste en cours.
+- Les tests globaux initiaux :2939 réussis,8 échecs et1 skip opt-in. Les8 échecs correspondent à quatre délais PDF et quatre attentes lues pendant l’intégration (navigation, pagination, multi-select). Les groupes PDF/options16 et navigation/pages15 ont ensuite réussi séparément, sans relâcher de délai ; la confirmation globale finale hors PDF passe2922 tests avec1skip opt-in, les25 PDF passent séparément (groupe30 avec5 contrôles MFA recouvrants). Types, lint, worker104 et son build passent.
 - Les régressions et contre-revues sont détaillées dans [revue indépendante](independent-review.md), [Finance](FINANCE.md), [autorité économique](DISPUTE_ECONOMICS.md), [moteur signé](SIGNED-SCOPE.md), [Devis](QUOTES.md), [Entrée](entry.md), [communication](CONTEXT-COMMUNICATION.md).
 
 ## Conditions externes de clôture
