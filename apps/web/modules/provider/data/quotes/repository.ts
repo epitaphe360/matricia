@@ -1,6 +1,7 @@
 import { selectProviderMembership } from "@/modules/provider/data/spaces/organization-context";
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
+import { classifyAuthReadFailure } from "@/modules/shared/lib/auth/read-failure";
 import { consultationPackFromQuoteData, formatDeclaredBytes, type ConsultationPackDocument, type ProviderQuoteDashboard } from "./model";
 
 const id = z.string().uuid();
@@ -19,7 +20,7 @@ const quote = z.object({ id, rfq_provider_id: id, status: z.string(), current_ve
 const quoteVersion = z.object({ id, version_number: z.number().int().positive(), currency, subtotal_minor: minor, tax_minor: minor, total_minor: minor });
 const tax = z.object({ id, category_code: z.string().min(1), rate_basis_points: z.number().int().min(0).max(10000), effective_from: z.string(), effective_to: z.string().nullable(), professional_validation_status: z.literal("VALIDATED") });
 type Tax = z.infer<typeof tax>;
-type Failure = { status: "error"; reason: "UNAUTHENTICATED" | "NO_ORGANIZATION" | "QUERY_FAILED" | "INVALID_RESPONSE" };
+type Failure = { status: "error"; reason: "UNAUTHENTICATED" | "AUTH_QUERY_FAILED" | "NO_ORGANIZATION" | "QUERY_FAILED" | "INVALID_RESPONSE" };
 
 export function unambiguousTaxRules(values: Tax[]): Tax[] {
   const grouped = new Map<string, Tax[]>();
@@ -60,7 +61,9 @@ export async function loadConsultationSharedDocuments(invitationId: string): Pro
 
 export async function loadProviderQuotes(requestedOrganizationId?: string): Promise<{ status: "success"; dashboard: ProviderQuoteDashboard } | Failure> {
   const client = await getSupabaseServerClient();
-  const { data: auth } = await client.auth.getUser();
+  const { data: auth, error: authError } = await client.auth.getUser();
+  const authFailure = classifyAuthReadFailure(authError);
+  if (authFailure) return { status: "error", reason: authFailure === "UNAUTHENTICATED" ? "UNAUTHENTICATED" : "AUTH_QUERY_FAILED" };
   if (!auth.user) return { status: "error", reason: "UNAUTHENTICATED" };
   if (requestedOrganizationId && !id.safeParse(requestedOrganizationId).success) return { status: "error", reason: "NO_ORGANIZATION" };
 

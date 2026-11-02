@@ -3,6 +3,7 @@ import { loadProviderRegions } from "./regions-repository";
 import { selectProviderMembership } from "@/modules/provider/data/spaces/organization-context";
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
+import { classifyAuthReadFailure } from "@/modules/shared/lib/auth/read-failure";
 import type { ProviderDashboard } from "./model";
 
 const uuid = z.string().uuid();
@@ -25,7 +26,7 @@ const eligibilitySchema = z.object({
 });
 
 export type ProviderDashboardProjectionDiagnostic = "PROFILE_SHAPE_INVALID" | "SERVICES_SHAPE_INVALID" | "DOCUMENTS_SHAPE_INVALID" | "CATALOG_SHAPE_INVALID" | "PROVIDER_SERVICE_LABEL_MISSING";
-export type ProviderDashboardErrorReason = "UNAUTHENTICATED" | "NO_PROVIDER_ORGANIZATION" | "MEMBERSHIP_QUERY_FAILED" | "MEMBERSHIP_SHAPE_INVALID" | "PROFILE_QUERY_FAILED" | "SERVICES_QUERY_FAILED" | "DOCUMENTS_QUERY_FAILED" | "CATALOG_QUERY_FAILED" | "HISTORICAL_SERVICE_QUERY_FAILED" | "HISTORICAL_SERVICE_SHAPE_INVALID" | "LOCALIZATION_QUERY_FAILED" | "LOCALIZATION_SHAPE_INVALID" | "ELIGIBILITY_QUERY_FAILED" | "ELIGIBILITY_SHAPE_INVALID" | ProviderDashboardProjectionDiagnostic;
+export type ProviderDashboardErrorReason = "UNAUTHENTICATED" | "AUTH_QUERY_FAILED" | "NO_PROVIDER_ORGANIZATION" | "MEMBERSHIP_QUERY_FAILED" | "MEMBERSHIP_SHAPE_INVALID" | "PROFILE_QUERY_FAILED" | "SERVICES_QUERY_FAILED" | "DOCUMENTS_QUERY_FAILED" | "CATALOG_QUERY_FAILED" | "HISTORICAL_SERVICE_QUERY_FAILED" | "HISTORICAL_SERVICE_SHAPE_INVALID" | "LOCALIZATION_QUERY_FAILED" | "LOCALIZATION_SHAPE_INVALID" | "ELIGIBILITY_QUERY_FAILED" | "ELIGIBILITY_SHAPE_INVALID" | ProviderDashboardProjectionDiagnostic;
 
 export function diagnoseProviderDashboardProjection(input: { profile: unknown; services: unknown; documents: unknown; catalog: unknown }): ProviderDashboardProjectionDiagnostic | null {
   if (input.profile !== null && !profileSchema.safeParse(input.profile).success) return "PROFILE_SHAPE_INVALID";
@@ -41,7 +42,9 @@ export function diagnoseProviderServiceLabelCoverage(serviceIds: readonly string
 
 export async function loadProviderDashboard(requestedOrganizationId?: string, documentPage = 1): Promise<{ status: "success"; dashboard: ProviderDashboard } | { status: "error"; reason: ProviderDashboardErrorReason }> {
   const client = await getSupabaseServerClient();
-  const { data: auth } = await client.auth.getUser();
+  const { data: auth, error: authError } = await client.auth.getUser();
+  const authFailure = classifyAuthReadFailure(authError);
+  if (authFailure) return { status: "error", reason: authFailure === "UNAUTHENTICATED" ? "UNAUTHENTICATED" : "AUTH_QUERY_FAILED" };
   if (!auth.user) return { status: "error", reason: "UNAUTHENTICATED" };
   const membershipResult = await client.from("organization_memberships").select("id,organization_id,organizations!inner(display_name),organization_member_roles!inner(role_code,revoked_at)").eq("user_id", auth.user.id).eq("status", "ACTIVE").is("organization_member_roles.revoked_at", null).in("organization_member_roles.role_code", ["PROVIDER_OWNER", "PROVIDER_MANAGER"]).limit(100);
   if (membershipResult.error) return { status: "error", reason: "MEMBERSHIP_QUERY_FAILED" };

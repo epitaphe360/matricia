@@ -21,6 +21,17 @@ beforeEach(() => {
 });
 
 describe("provider membership transport boundary", () => {
+  it("keeps an Auth 503 unavailable while a known invalid session requires login", async () => {
+    getUser.mockResolvedValue({ data: { user: null }, error: { status: 503 } });
+    const scope = await resolveProviderSpace({ locale: "fr" });
+    if (scope.status !== "success") throw Error("AUTH_503_MUST_NOT_REDIRECT_TO_LOGIN");
+    expect(scope.readError).toBe("AUTH_QUERY_FAILED");
+    expect(providerContextReadState(scope)).toBe("unavailable");
+    expect(from).not.toHaveBeenCalled();
+    getUser.mockResolvedValue({ data: { user: null }, error: { status: 401 } });
+    expect(await resolveProviderSpace({ locale: "fr" })).toEqual({ status: "unauthenticated" });
+  });
+
   it.each([{ data: null, error: { code: "503" } }, { data: [{ organization_id: "invalid" }], error: null }])("preserves failed or malformed reads for the route instead of asserting absence", async (value) => {
     response.value = value;
     const scope = await resolveProviderSpace({ locale: "fr" });

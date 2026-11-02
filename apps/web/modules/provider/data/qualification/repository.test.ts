@@ -85,6 +85,13 @@ function providerReadClient(qualification: unknown = fixtureProjection.services[
 }
 
 describe("provider dashboard read contract", () => {
+  it.each([[503, "AUTH_QUERY_FAILED"], [401, "UNAUTHENTICATED"]] as const)("classifies Auth %s before querying qualification records", async (status, reason) => {
+    const from = vi.fn();
+    vi.mocked(getSupabaseServerClient).mockResolvedValue({ auth: { getUser: async () => ({ data: { user: null }, error: { status } }) }, from } as never);
+    expect(await loadProviderDashboard(organizationId)).toEqual({ status: "error", reason });
+    expect(from).not.toHaveBeenCalled();
+  });
+
   it("loads the PostgREST one-to-one qualification and retains its authorized organization", async () => {
     providerReadClient();
     const result = await loadProviderDashboard(organizationId);
