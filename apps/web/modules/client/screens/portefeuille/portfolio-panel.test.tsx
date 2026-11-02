@@ -57,6 +57,16 @@ it.each(["fr", "ar"] as const)("uses business choices and a real evidence file (
 });
 
 describe("PortfolioPanel", () => {
+  it.each(["fr", "ar"] as const)("names progress indicators and exposes budget facts as semantic terms and values (%s)", locale => {
+    const messages = getMessages(locale);
+    const html = renderToStaticMarkup(<PortfolioPanel locale={locale} data={data} m={messages} keys={{ site: "a", project: "b", task: "c", contract: "d", budget: "e", center: "f", allocation: "g", event: "h" }} />);
+    expect(html.match(/role="progressbar" aria-label="[^"]+"/gu)).toHaveLength(2);
+    expect(html).toContain(`aria-label="${messages.progress} · ${locale === "ar" ? "امتثال" : "Conformité"}"`);
+    const facts = html.match(/<dl class="client-fact-grid">([\s\S]*?)<\/dl>/u)?.[1];
+    expect(facts?.match(/<dt>/gu)).toHaveLength(3);
+    expect(facts?.match(/<dd /gu)).toHaveLength(3);
+    expect(facts).toContain(`<dt>${messages.used}</dt><dd dir="ltr">`);
+  });
   it("shows sites, integer progress and a consumption alert without placeholders", () => {
     const html = renderToStaticMarkup(
       <PortfolioPanel

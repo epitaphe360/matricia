@@ -1484,10 +1484,15 @@ button.client-cta {
   }
 }
 
-.client-fact-grid small {
+.client-fact-grid small,
+.client-fact-grid dt {
   display: block;
   color: var(--client-muted);
   font-size: 0.75rem;
+}
+
+.client-fact-grid dd {
+  margin: 0;
 }
 
 .client-space-table {

@@ -129,7 +129,7 @@ function OrganizationPortfolio({ locale, data, m, keys, organizationId }: Props 
               <p>{project.code} · {m.version} {project.version} · {m.site}: {siteName(project.siteId)}</p>
               <p>{nameOf(locale, project.descriptionFr, project.descriptionAr)}</p>
               <p>{m.progress}: <span dir="ltr">{formatProgressBasisPoints(project.progressBasisPoints, locale)}</span></p>
-              <div className="client-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressBarPercent(project.progressBasisPoints)}>
+              <div className="client-progress" role="progressbar" aria-label={`${m.progress} · ${nameOf(locale, project.nameFr, project.nameAr)}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressBarPercent(project.progressBasisPoints)}>
                 <span style={{ width: `${progressBarPercent(project.progressBasisPoints)}%` }} />
               </div>
               {canPortfolio && !["COMPLETED","CANCELLED","ARCHIVED"].includes(project.status) ? <details><summary>{locale==="ar"?"تعديل المشروع":"Modifier le projet"}</summary><ProjectForm locale={locale} orgId={org.id} sites={sites} m={m} keyValue={keys.project} project={project}/></details>:null}
@@ -188,14 +188,14 @@ function OrganizationPortfolio({ locale, data, m, keys, organizationId }: Props 
                 </div>
                 <p>{m.library}: {libraryName(budget.libraryId)} · {m.site}: {siteName(budget.siteId)} · {m.project}: {projectCode(budget.projectId)}</p>
                 <dl className="client-fact-grid">
-                  <div><small>{m.used}</small><span dir="ltr">{exactMoney(net.toString(), budget.currency)}</span></div>
-                  <div><small>{m.remaining}</small><span dir="ltr">{exactMoney(consumption.remainingMinor, budget.currency)}</span></div>
-                  <div><small>{m.consumption}</small><span dir="ltr">{formatProgressBasisPoints(consumption.usedBasisPoints, locale)}</span></div>
+                  <div><dt>{m.used}</dt><dd dir="ltr">{exactMoney(net.toString(), budget.currency)}</dd></div>
+                  <div><dt>{m.remaining}</dt><dd dir="ltr">{exactMoney(consumption.remainingMinor, budget.currency)}</dd></div>
+                  <div><dt>{m.consumption}</dt><dd dir="ltr">{formatProgressBasisPoints(consumption.usedBasisPoints, locale)}</dd></div>
                 </dl>
                 <p className="client-budget-alert" data-level={consumption.level} role={consumption.level === "ok" ? undefined : "status"}>
                   {m.alerts[consumption.level]}
                 </p>
-                <div className="client-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressBarPercent(consumption.usedBasisPoints)}>
+                <div className="client-progress" role="progressbar" aria-label={`${m.consumption} · ${m.budgets} ${budget.fiscalYear} · ${projectCode(budget.projectId)}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressBarPercent(consumption.usedBasisPoints)}>
                   <span style={{ width: `${progressBarPercent(consumption.usedBasisPoints)}%` }} />
                 </div>
               </div>
