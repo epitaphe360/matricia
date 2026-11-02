@@ -22,6 +22,15 @@ describe("admin authorization context failures", () => {
     mocks.access.mockResolvedValue({ status: "ok", roles: new Set(["SUPER_ADMIN"]), requirementSatisfied: false });
     await expect(resolveAdminSpace({ locale })).rejects.toThrow(`REDIRECT:/${locale}/securite/compte`);
   });
+  it.each(["fr", "ar"] as const)("preserves deep Admin intent without satisfying MFA in %s", async locale => {
+    mocks.access.mockResolvedValue({ status: "ok", roles: new Set(["SUPER_ADMIN"]), requirementSatisfied: false });
+    const next = `/${locale}/administration/entreprises/nouvelle?organizationId=org`;
+    try { await resolveAdminSpace({ locale, returnPath: next }); } catch { /* redirect sentinel */ }
+    const url = new URL(mocks.redirect.mock.calls[0]![0], "https://test.invalid");
+    expect(url.pathname).toBe(`/${locale}/securite/compte`);
+    expect(url.searchParams.get("next")).toBe(next);
+    expect(url.searchParams.get("workspace")).toBe("administration");
+  });
   it("preserves the selected organization exactly after successful authorization", async () => {
     const id = "11111111-1111-4111-8111-111111111111";
     mocks.access.mockResolvedValue({ status: "ok", roles: new Set(["SUPER_ADMIN"]), requirementSatisfied: true, email: "admin@example.invalid" });

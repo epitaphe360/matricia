@@ -1263,3 +1263,8 @@
   .admin-workspace .admin-side-group { flex: 1 1 100%; min-width: 0; }
   .admin-workspace .admin-side-sub { display: flex; flex-wrap: wrap; padding-inline: 0; }
 }
+
+/* The account popover must remain above masthead actions and breadcrumbs. */
+.admin-workspace .client-topbar { z-index: 30; }
+.admin-workspace .client-account { z-index: 31; }
+.admin-workspace .client-account[open] > div { z-index: 32; max-height: min(32rem, 75dvh); overflow-y: auto; }

@@ -10,8 +10,10 @@ const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
   assurance: vi.fn(),
   ensureConsent:vi.fn(),
+  navigation: vi.fn(),
 }));
 
+vi.mock("@/modules/shared/lib/auth/workspace-navigation-server", () => ({ readWorkspaceNavigation: mocks.navigation }));
 vi.mock("@/modules/shared/lib/auth/consent/current-documents",()=>({ensureCurrentConsentDocuments:mocks.ensureConsent}));
 vi.mock("@/modules/shared/lib/supabase/admin", () => ({
   getSupabaseAdminClient: () => ({ rpc: mocks.rpc, auth: { signInWithOtp: mocks.signInWithOtp } }),
@@ -130,9 +132,29 @@ describe("requestOtp", () => {
 });
 
 describe("post login assurance routing", () => {
-  beforeEach(() => { mocks.getUser.mockResolvedValue({data:{user:{id:"actor"}}}); });
+  beforeEach(() => {
+    mocks.getUser.mockResolvedValue({data:{user:{id:"actor"}}});
+    mocks.navigation.mockImplementation(async (locale: string) => ({ status: "ok", requirementSatisfied: true, navigation: { signedIn: true, landing: "client", options: [{ kind: "client", href: `/${locale}/tableau-de-bord` }, { kind: "administration", href: `/${locale}/administration/command-center` }] } }));
+  });
   it("keeps a verified AAL2 dossier and query", async () => { mocks.assurance.mockResolvedValue({data:{currentLevel:"aal2",nextLevel:"aal2"},error:null});mocks.userRpc.mockResolvedValue({data:[{mfa_required:true,current_aal:"aal2",requirement_satisfied:true}],error:null});const next="/ar/client/demandes/id?organizationId=org&tab=offres";await expect(postLoginDestination("ar",next)).resolves.toBe(next); });
   it("preserves a deep return during the MFA challenge", async () => { mocks.assurance.mockResolvedValue({data:{currentLevel:"aal1",nextLevel:"aal2"},error:null});mocks.userRpc.mockResolvedValue({data:[{mfa_required:true,current_aal:"aal1",requirement_satisfied:false}],error:null});const next="/fr/client/demandes/id?organizationId=org";const result=new URL(await postLoginDestination("fr",next),"https://test.invalid");expect(result.pathname).toBe("/fr/securite/compte");expect(result.searchParams.get("next")).toBe(next); });
   it("requires enrollment when the role policy requires MFA", async () => { mocks.assurance.mockResolvedValue({data:{currentLevel:"aal1",nextLevel:"aal1"},error:null});mocks.userRpc.mockResolvedValue({data:[{mfa_required:true,current_aal:"aal1",requirement_satisfied:false}],error:null});expect(await postLoginDestination("fr","/fr/administration")).toContain("/fr/securite/compte?"); });
+  it("never resumes an Administration target for a client-only account", async () => {
+    mocks.navigation.mockResolvedValue({ status: "ok", requirementSatisfied: true, navigation: { signedIn: true, landing: "client", options: [{ kind: "client", href: "/fr/tableau-de-bord" }] } });
+    mocks.assurance.mockResolvedValue({ data: { currentLevel: "aal2", nextLevel: "aal2" }, error: null });
+    mocks.userRpc.mockResolvedValue({ data: [{ mfa_required: false, current_aal: "aal2", requirement_satisfied: true }], error: null });
+    expect(await postLoginDestination("fr", "/fr/administration/entreprises/nouvelle")).toBe("/fr/tableau-de-bord?navigation=role-fallback");
+  });
+  it("retains the Admin creation target at AAL2", async () => {
+    mocks.assurance.mockResolvedValue({ data: { currentLevel: "aal2", nextLevel: "aal2" }, error: null });
+    mocks.userRpc.mockResolvedValue({ data: [{ mfa_required: true, current_aal: "aal2", requirement_satisfied: true }], error: null });
+    expect(await postLoginDestination("ar", "/ar/administration/entreprises/nouvelle?organizationId=org")).toBe("/ar/administration/entreprises/nouvelle?organizationId=org");
+  });
+  it("keeps MFA closed if the role read fails", async () => {
+    mocks.navigation.mockResolvedValue({ status: "error", reason: "QUERY_FAILED" });
+    mocks.assurance.mockResolvedValue({ data: { currentLevel: "aal2", nextLevel: "aal2" }, error: null });
+    mocks.userRpc.mockResolvedValue({ data: [{ mfa_required: false, current_aal: "aal2", requirement_satisfied: true }], error: null });
+    expect(await postLoginDestination("fr", "/fr/administration/entreprises/nouvelle")).toContain("/fr/securite/compte?next=");
+  });
   it("rejects an external target", async () => { mocks.assurance.mockResolvedValue({data:{currentLevel:"aal2",nextLevel:"aal2"},error:null});mocks.userRpc.mockResolvedValue({data:[{mfa_required:false,current_aal:"aal2",requirement_satisfied:true}],error:null});await expect(postLoginDestination("fr","https://evil.invalid")).resolves.toBe("/fr/tableau-de-bord"); });
 });

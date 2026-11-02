@@ -27,8 +27,9 @@ export async function AdminModulePage({
   hubGroup?: AdminDirectoryGroup["id"];
   children: ReactNode;
 }) {
-  const space = await resolveAdminSpace({ locale });
-  if (space.status === "unauthenticated") redirect(`/${locale}/connexion`);
+  const returnPath = `/${locale}/administration/${path}${querySuffix ? `?${querySuffix}` : ""}`;
+  const space = await resolveAdminSpace({ locale, returnPath });
+  if (space.status === "unauthenticated") redirect(`/${locale}/connexion?${new URLSearchParams({ next: returnPath })}`);
   const alternate = locale === "fr" ? "ar" : "fr";
   const query = querySuffix
     ? (space.selectedQuery ? `${space.selectedQuery}&${querySuffix}` : `?${querySuffix}`)

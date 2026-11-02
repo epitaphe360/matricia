@@ -16,7 +16,7 @@ export default async function AdminEnterpriseCreatePage({
 }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
-  const space = await resolveAdminSpace({ locale, organizationId: query.organizationId });
+  const space = await resolveAdminSpace({ locale, organizationId: query.organizationId, returnPath: `/${locale}/administration/entreprises/nouvelle${query.organizationId ? `?organizationId=${encodeURIComponent(query.organizationId)}` : ""}` });
   if (space.status === "unauthenticated") redirect(connexionHref(locale, { next: `/${locale}/administration/entreprises/nouvelle` }));
   const c = adminCopy(locale);
   const alternate = locale === "fr" ? "ar" : "fr";

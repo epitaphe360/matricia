@@ -2,13 +2,12 @@ import Link from "next/link";
 import { safeReturnPath } from "@/modules/shared/lib/auth/return-path";
 import { notFound, redirect } from "next/navigation";
 import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
-import { Alert, AlertDescription, AlertTitle } from "@/modules/shared/ui/alert";
+import { WorkspaceFailure } from "@/modules/shared/ui/workspace-failure";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { AccountSecurityPanel } from "./account-security-panel";
 import { getAccountSecurity } from "./actions";
 import { getAccountSecurityMessages } from "./messages";
 import { ConnectedAppShell } from "@/modules/shared/ui/connected-app-shell";
-import { spaceCopy } from "@/modules/client/data/spaces/copy";
 import { SecurityBoard } from "@/modules/client/screens/spaces/security-board";
 import { listMySessions } from "@/app/[locale]/securite/sessions/actions";
 import { listOrganizationRoles } from "@/app/[locale]/organisation/roles/actions";
@@ -28,13 +27,17 @@ export default async function AccountSecurityPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ organizationId?: string; next?: string }>;
+  searchParams: Promise<{ organizationId?: string; next?: string; workspace?: string }>;
 }) {
   const { locale } = await params;
   const query = await searchParams;
   if (!isLocale(locale)) notFound();
   const nextPath = safeReturnPath(query.next,locale);
-  const selfPath = `/${locale}/securite/compte${nextPath ? `?${new URLSearchParams({ next: nextPath })}` : ""}`;
+  const contextQuery = new URLSearchParams();
+  if (nextPath) contextQuery.set("next", nextPath);
+  if (query.organizationId) contextQuery.set("organizationId", query.organizationId);
+  if (query.workspace) contextQuery.set("workspace", query.workspace);
+  const selfPath = `/${locale}/securite/compte${contextQuery.size ? `?${contextQuery}` : ""}`;
   const [result, sessions, roles, space] = await Promise.all([
     getAccountSecurity(),
     listMySessions(),
@@ -46,23 +49,22 @@ export default async function AccountSecurityPage({
   if (nextPath && result.status === "success" && result.currentAal === "aal2" && result.requirementSatisfied) redirect(nextPath);
   const messages = getAccountSecurityMessages(locale);
   const roleMessages = getRoleMessages(locale);
-  const c = spaceCopy(locale);
   return (
     <ConnectedAppShell
       locale={locale}
       organizationId={query.organizationId}
-      title={c.orgTitle}
-      lead={c.orgLead}
+      currentPath={selfPath}
+      nextPath={nextPath}
+      workspace={query.workspace}
+      title={locale === "ar" ? "أمان حسابي" : "Sécurité de mon compte"}
+      lead={locale === "ar" ? "العامل الثاني وحماية الجلسات في مساحتكم الحالية." : "Second facteur et protection des sessions dans votre espace actuel."}
       clientActive="company"
       providerActive="company"
       franchiseActive="governance"
     >
       <Link className="min-h-11 underline" href={`/${locale}/connexion/consentements`}>{locale==="fr"?"Mes textes versionnés et consentements":"نسخ النصوص وموافقاتي"}</Link>
       {result.status === "error" ? (
-        <Alert variant="destructive">
-          <AlertTitle>{messages.unavailableTitle}</AlertTitle>
-          <AlertDescription>{messages.unavailableDescription}</AlertDescription>
-        </Alert>
+<WorkspaceFailure locale={locale} reason={result.reason === "UNAUTHENTICATED" ? "UNAUTHENTICATED" : "QUERY_FAILED"} returnPath={selfPath} />
       ) : (
         <SecurityBoard
           locale={locale}
