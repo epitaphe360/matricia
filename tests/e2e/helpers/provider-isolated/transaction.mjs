@@ -13,6 +13,7 @@ const browserRoot=resolve(value('browser-root')),output=resolve(value('output'))
 if(!output.startsWith(resolve(invokingRoot,'work')+'/'))throw Error('IGNORED_WORK_OUTPUT_REQUIRED');
 const migrations=args.filter(a=>a.startsWith('--migration=')).map(a=>resolve(a.slice(12))),tests=args.filter(a=>a.startsWith('--test=')).map(a=>resolve(a.slice(7)));
 if(!migrations.length||!tests.length)throw Error('MIGRATIONS_AND_TESTS_REQUIRED');
+if(tests.length!==1)throw Error('ONE_SQL_TEST_PER_ROLLBACK_TRANSACTION_REQUIRED');
 process.chdir(browserRoot);
 const state=await loadOwnState();
 if(state.token!==value('target-token'))throw Error('EXPLICIT_OWNED_CLIENT_TARGET_REQUIRED');

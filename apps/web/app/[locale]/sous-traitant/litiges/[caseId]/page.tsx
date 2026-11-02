@@ -13,7 +13,7 @@ import { createServerDisputesRepository } from "@/modules/shared/lib/disputes/se
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 
 function date(value: string | null, locale: "fr" | "ar") {
-  return value ? new Intl.DateTimeFormat(locale === "ar" ? "ar-MA" : "fr-MA", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "—";
+  return value ? new Intl.DateTimeFormat(locale === "ar" ? "ar-MA" : "fr-MA", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(new Date(value)) : "—";
 }
 
 export default async function ProviderDisputePage({
@@ -56,6 +56,7 @@ export default async function ProviderDisputePage({
       </DisputesBoard>
       <details className="client-ops">
         <summary>{m.actions}</summary>
+        <p className="text-sm text-muted-foreground">{locale === "ar" ? "تعرض الآجال بالتوقيت العالمي UTC؛ يعتمد احتساب أيام العمل على تقويم العقد." : "Les échéances sont affichées en UTC ; les jours ouvrables sont calculés selon le calendrier contractuel."}</p>
         <dl className="client-fact-grid">
           <div><small>{m.policy}</small><span>{d.policyVersion}</span></div>
           <div><small>{m.deadline}</small><span>{date(d.responseDueAt, locale)}</span></div>

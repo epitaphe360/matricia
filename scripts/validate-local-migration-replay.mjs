@@ -83,9 +83,9 @@ try {
     `ANON_KEY=${secret}`, `SERVICE_KEY=${secret}`, 'POSTGREST_URL=http://127.0.0.1:3000',
     'REGION=local', 'TENANT_ID=local', '',
   ].join('\n'), { mode: 0o600 });
-  docker(['run', '--detach', '--pull=never', '--name', name, '--label', label,
+  await commandLog('database-bootstrap.log', () => docker(['run', '--detach', '--pull=never', '--name', name, '--label', label,
     '--network', 'none', '--env-file', environmentFile, images.database,
-    'postgres', '-D', '/etc/postgresql', '-c', 'shared_preload_libraries=pg_cron', '-c', 'cron.database_name=postgres']);
+    'postgres', '-D', '/etc/postgresql', '-c', 'shared_preload_libraries=pg_cron', '-c', 'cron.database_name=postgres'], { timeout: 300_000 }));
   created = true;
   let ready = false;
   for (let attempt = 0; attempt < 30; attempt++) {
@@ -97,10 +97,10 @@ try {
   if (!ready) throw new Error('LOCAL_REPLAY_POSTGRES_UNAVAILABLE');
   sql(`alter role supabase_auth_admin password '${secret}'; alter role supabase_storage_admin password '${secret}';`);
   await commandLog('auth-bootstrap.log', () => docker(['run', '--rm', '--pull=never', '--label', label,
-    '--network', `container:${name}`, '--env-file', environmentFile, images.auth, 'auth', 'migrate']));
+    '--network', `container:${name}`, '--env-file', environmentFile, images.auth, 'auth', 'migrate'], { timeout: 300_000 }));
   await commandLog('storage-bootstrap.log', () => docker(['run', '--rm', '--pull=never', '--label', label,
     '--network', `container:${name}`, '--env-file', environmentFile, '--entrypoint', 'node',
-    images.storage, 'dist/scripts/migrate-call.js']));
+    images.storage, 'dist/scripts/migrate-call.js'], { timeout: 300_000 }));
   for (const migration of migrations) {
     await commandLog(`migration-${migration.file}.log`, () => sql(migration.bytes));
     summary.migrations.push({ file: migration.file, sha256: migration.sha256, passed: true });
