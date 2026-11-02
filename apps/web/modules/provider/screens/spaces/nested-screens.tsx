@@ -341,7 +341,7 @@ export async function ProviderMessagesPage({
   const repository = await createInternalMessagingRepository();
   const [loaded, notifications] = await Promise.all([
     loadProviderInbox(repository, { organizationId:space.selectedOrganizationId, threadId:requestedThread, search, page, cursor:cursor.cursor }),
-    loadNotificationCenter(locale as Locale),
+    loadNotificationCenter(locale as Locale, space.selectedOrganizationId ?? undefined),
   ]);
   const { inbox, options, history } = loaded;
   if ([inbox, options, history].some(result => result?.status === "error" && result.reason === "UNAUTHENTICATED")) redirect(`/${locale}/connexion`);
