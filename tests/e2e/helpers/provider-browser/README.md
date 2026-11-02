@@ -47,6 +47,7 @@ APP_ENV=development node tests/e2e/helpers/provider-browser/entry-browser.mjs
 APP_ENV=development node tests/e2e/helpers/provider-browser/finish-identity.mjs
 APP_ENV=development node tests/e2e/helpers/provider-browser/seed-catalogue.mjs
 APP_ENV=development node tests/e2e/helpers/provider-browser/questionnaire-browser.mjs
+APP_ENV=development node tests/e2e/helpers/provider-browser/qualification-review.mjs
 ```
 
 Do not rerun a fresh-cohort stage over a partially completed native cohort. Keep
@@ -137,3 +138,5 @@ TOTP/OTP, cookies, headers, keys, database dumps and private state stay ignored
 under `work/provider-browser-isolated/<uuid>/`. Stop app/gateway after capture;
 `cleanup.mjs` removes only this run's rechecked labelled target/network. It never
 removes the canonical source or the old Client target.
+
+`qualification-review.mjs` follows the intentional partnership workflow: actual private test PDF upload, native scan lease/completion, independent document review and administrative UI decision. The PDF is explicitly `NON_CONTRACTUAL_DEMO`; the legal signature is a historical TEST precondition, never a legal execution certified by this acceptance. It revalidates the current identity after the company decision, then independently approves service A and requests information for B through the actual Admin UI. No `SIGNED`, qualification or balance state is written directly in SQL.
