@@ -101,3 +101,49 @@ requires exactly one persisted grant and one quota refusal, and verifies
 foreign-organization denial. Its temporary selected-actor/fixture changes are
 restored in `finally`. Never run it concurrently with other harness commands.
 A PostgreSQL deadlock fails the assertion even if only one site persists.
+
+For the canonical source, run `APP_ENV=development node
+tests/e2e/helpers/client-isolated/canonical-source.mjs`. Its retained manifest is
+`work/canonical-acl-source/<uuid>/source-target.json`. This applies the complete
+migration set to an owned no-network source; it is **setup only**, with no green
+SQL test receipt. Restore into a fresh target using `restore.mjs`; restoration
+recreates `postgres` from `template0` so image-default object ACLs cannot survive
+the canonical dump. Inspect with `acl-fidelity.mjs <source-manifest>` before
+actors/fixtures. `--align` may only match canonical grants when every object
+definition and owner matches; arbitrary runtime grants are never admissible.
+
+The historical 457-migration ACL receipt is retained separately from the current
+458-migration inspection. Migration 37000 changes exactly three deferred
+invariant guards to SECURITY DEFINER with `search_path=pg_catalog` and revokes
+direct execution from PUBLIC/anon/authenticated/service_role. Source and target
+guards, bodies and ACLs must match. It grants no ledger access. Full SQL test
+receipts belong to the separate strict replay, not these browser helpers.
+
+After the Owner matrix, `prepare-buyer-box.mjs` prepares four separate genuine
+GoTrue/TOTP actors: a plain Owner, a plain Buyer and two independent Finance
+reviewers. Its staff-role and historical plan bootstrap is explicitly TEST-only;
+commercial publication and governed staff onboarding are not certified. All Box
+and benefit governance, independent reviews, subscription preparation, DEMO
+payment callback, configured Box, canonical ten-credit grant and member limit
+of three use the native commands. Never rerun this fixture on an already paid
+cohort. If a callback fails, `resume-buyer-box.mjs` requires the preserved exact
+DEMO event/intent/paid-at from its private trace; it does not invent a new payment.
+The original 2026-11-02 callback was resumed and replayed without duplication.
+
+Run `buyer-browser.mjs` against the ready funded cohort. It reserves through a
+real keyboard UI Server Action, verifies used/available 0/3 → 3/0, rejects a
+foreign cancellation, releases through touch, and polls the native read until
+the committed cancellation restores 0/3. It also checks foreign workspace,
+global wallet RLS and Admin RPC refusal. Polling avoids claiming an intermediate
+UI transition as persisted business state.
+
+Create a fresh draft through the native `start_questionnaire_session` RPC and
+save only its session UUID in ignored `accessibility-draft.json`. Run
+`accessibility.mjs --scope=all` for 32 axe scans: portfolio, actions, editable
+questionnaire and funded Buyer envelope; FR/AR; 375/768; account menu closed/open
+with keyboard. Tags are WCAG2 A/AA and WCAG2.1 A/AA; no rules are excluded.
+Indeterminate contrast results are retained separately and never count as a
+measured ratio of zero or a pass. `contrast-review.mjs` collects each affected
+node's computed color, ancestor backgrounds/gradients, stacking information and
+normal/background-only screenshots for a separate rendered contrast review.
+These automated checks do not claim full manual WCAG certification.
