@@ -3,6 +3,7 @@ import { collectCatalogPages } from "./paged-query";
 import { classifyAuthReadFailure } from "@/modules/shared/lib/auth/read-failure";
 import { catalogEffectiveStatus } from "./workspace-model";
 import { z } from "zod";
+import { mandateChoicesSchema,mandateChoiceOptions } from "./mandate-choices";
 import { serviceFulfillmentRecordSchema } from "./service-deliverables";
 import { overlayFranchiseLibraryDemo } from "@/modules/franchise/data/library/demo-overlay";
 import {
@@ -168,8 +169,14 @@ async function loadFranchiseLibraryWorkspaceUnchecked(input: { locale: "fr" | "a
     .flatMap((role) => role.organization_member_franchise_assignments?.length?role.organization_member_franchise_assignments.filter((a)=>a.revoked_at===null).map((a)=>({organizationId:member.organization_id,franchiseId:a.franchise_id})):[{ organizationId: member.organization_id, franchiseId: role.franchise_id }]));
   const allowed = franchises.data.filter((item) => roles.some((role) => role.organizationId === item.operator_organization_id && (role.franchiseId === item.id || (role.franchiseId === null && franchises.data.filter((f)=>f.operator_organization_id===item.operator_organization_id).length===1))));
   if (!allowed.length) return { status: "error", reason: "NO_MANDATE" };
-  const candidates = allowed.filter((item)=>(!input.organizationId||item.operator_organization_id===input.organizationId)&&(!input.franchiseId||item.id===input.franchiseId)&&(!input.libraryId||item.library_id===input.libraryId));
-  if (candidates.length > 1 && !input.franchiseId) return { status: "error", reason: "MANDATE_REQUIRED", availableMandates: candidates.map(item => ({id:item.id,organizationId:item.operator_organization_id,libraryId:item.library_id,label:item.operator_code})) };
+  const choicesResult=await client.rpc("franchise_mandate_choices_v1",{p_organization_id:input.organizationId??null});
+  if(choicesResult.error)return{status:"error",reason:choicesResult.error.code==="42501"?"FORBIDDEN":"QUERY_FAILED"};
+  const choices=mandateChoicesSchema.safeParse(choicesResult.data);
+  if(!choices.success)return{status:"error",reason:"INVALID_RESPONSE"};
+  const availableMandates=mandateChoiceOptions(choices.data,input.locale);
+  if(availableMandates.some(option=>!allowed.some(f=>f.id===option.id&&f.library_id===option.libraryId&&f.operator_organization_id===option.organizationId)))return{status:"error",reason:"INVALID_RESPONSE"};
+  const candidates = allowed.filter((item)=>availableMandates.some(option=>option.id===item.id)).filter((item)=>(!input.organizationId||item.operator_organization_id===input.organizationId)&&(!input.franchiseId||item.id===input.franchiseId)&&(!input.libraryId||item.library_id===input.libraryId));
+  if (candidates.length > 1 && !input.franchiseId) return { status: "error", reason: "MANDATE_REQUIRED", availableMandates: availableMandates.filter(option=>candidates.some(item=>item.id===option.id)) };
   const selected = candidates[0];
   if (!selected) return { status: "error", reason: input.organizationId || input.franchiseId || input.libraryId ? "FORBIDDEN" : "NO_MANDATE" };
   const libraryId = selected.library_id;
@@ -420,7 +427,7 @@ async function loadFranchiseLibraryWorkspaceUnchecked(input: { locale: "fr" | "a
       questionnaires: questionnaireRows.map(withReviews),
       rules: ruleRows.map(withReviews),
       questions: questionRows,
-      availableMandates:allowed.map(f=>({id:f.id,organizationId:f.operator_organization_id,libraryId:f.library_id,label:f.operator_code})),
+      availableMandates,
       mandates:allowed.map((f)=>({id:f.id,organizationId:f.operator_organization_id,operatorCode:f.operator_code})),
       compositionRules:compositionRules.data.map((r)=>({versionId:r.questionnaire_version_id,ruleVersionId:r.rule_version_id,order:r.evaluation_order})),
       ruleVersionBank:ruleVersions.map((r)=>({id:r.id,title:rules.find((x)=>x.id===r.rule_id)?.rule_key??r.rule_id,status:r.status,version:r.version})),
