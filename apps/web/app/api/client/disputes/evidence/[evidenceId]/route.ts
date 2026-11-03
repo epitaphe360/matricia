@@ -5,7 +5,7 @@ import{getSupabaseAdminClient}from"@/modules/shared/lib/supabase/admin";
 export const dynamic="force-dynamic";
 const headers={"cache-control":"no-store, private","referrer-policy":"no-referrer","x-content-type-options":"nosniff"};
 const uuid=z.string().uuid();const maxBytes=10485760;
-const grantSchema=z.object({evidence_id:uuid,bucket:z.literal("client-compliance"),object_path:z.string().min(32).max(500).refine(value=>!/(^|\/)\.\.(\/|$)/u.test(value)),file_name:z.string().min(3).max(255).refine(value=>!/[\\/\x00-\x1f]/u.test(value)),mime_type:z.enum(["application/pdf","image/jpeg","image/png"]),size_bytes:z.string().regex(/^[1-9][0-9]{0,8}$/u).transform(Number).refine(value=>value<=maxBytes),sha256:z.string().regex(/^[a-f0-9]{64}$/u)}).strict();
+const grantSchema=z.object({evidence_id:uuid,bucket:z.enum(["client-compliance","provider-qualification","delivery-proofs"]),object_path:z.string().min(32).max(500).refine(value=>!/(^|\/)\.\.(\/|$)/u.test(value)),file_name:z.string().min(3).max(255).refine(value=>!/[\\/\x00-\x1f]/u.test(value)),mime_type:z.enum(["application/pdf","image/jpeg","image/png"]),size_bytes:z.string().regex(/^[1-9][0-9]{0,8}$/u).transform(Number).refine(value=>value<=maxBytes),sha256:z.string().regex(/^[a-f0-9]{64}$/u)}).strict();
 function failure(status:number){return Response.json({code:status===401?"UNAUTHENTICATED":status===403?"DISPUTE_EVIDENCE_DENIED":"DISPUTE_EVIDENCE_UNAVAILABLE"},{status,headers});}
 export async function GET(_request:Request,{params}:{params:Promise<{evidenceId:string}>}){
  const parsed=uuid.safeParse((await params).evidenceId);if(!parsed.success)return failure(403);

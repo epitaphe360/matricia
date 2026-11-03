@@ -62,6 +62,7 @@ type CompareColumn = {
   expired: boolean;
   selectable: boolean;
   completeness: QuoteCompleteness | null;
+  revisionInProgress?:boolean;
 };
 
 export function ComparisonPanel({
@@ -80,6 +81,7 @@ export function ComparisonPanel({
   organizationName,
   offerFacts = {},
   assistanceHref,
+  revisingQuoteIds=[],
 }: {
   locale: Locale;
   requestId: string;
@@ -96,13 +98,14 @@ export function ComparisonPanel({
   organizationName?: string | null;
   offerFacts?: Record<string, ComparisonOfferFacts>;
   assistanceHref?: string;
+  revisingQuoteIds?:string[];
 }) {
   const [state, action, pending] = useActionState(compareQuotesAction, compareIdle);
   const c = spaceCopy(locale);
   const demo = demoClientSpaces(locale, selectedQuery);
   const rows = state.status === "success" ? state.rows : initialComparison?.rows ?? [];
   const preferDemo = canApplyDemoOffer(organizationName ?? null) && rows.length === 0;
-  const columns: CompareColumn[] = preferDemo
+  const columns: CompareColumn[] = (preferDemo
     ? demo.compareOffers.map((offer, index) => {
         const quoteId = offer.slot === "c" ? `demo:${requestId}:c` : `${requestId}-${offer.slot}`;
         return {
@@ -127,7 +130,7 @@ export function ComparisonPanel({
           completeness: null,
         };
       })
-    : rows.map((row, index) => mapRow(row, index, locale, c, messages, nowIso, offerFacts[row.quoteVersionId]));
+    : rows.map((row, index) => mapRow(row, index, locale, c, messages, nowIso, offerFacts[row.quoteVersionId]))).map(column=>({...column,revisionInProgress:revisingQuoteIds.includes(column.quoteId),selectable:column.selectable&&!revisingQuoteIds.includes(column.quoteId)}));
   const snapshotId = state.status === "success" ? state.snapshotId : initialComparison?.snapshotId ?? "";
   const BackIcon = locale === "ar" ? ArrowRight : ArrowLeft;
   const askHref = `/${locale}/messagerie${selectedQuery}`;
@@ -144,7 +147,7 @@ export function ComparisonPanel({
           <span className="client-feed-icon" data-tone="violet"><FileText className="size-4" aria-hidden /></span>
           <div>
             <p>{c.need} : <strong>{requestTitle}</strong></p>
-            <small>{c.sameScope} · {columns.length} {locale === "ar" ? "عروض" : "offres"}</small>
+            <small>{c.sameScope} · {columns.length} {locale === "ar" ? "عروض في المقارنة" : "offres dans la comparaison"}{revisingQuoteIds.length?` · ${revisingQuoteIds.length} ${locale==="ar"?"مراجعات قيد الإعداد":"révisions en préparation"}`:""}</small>
           </div>
         </div>
         <Link href={requestHref} className="client-soft-link">{c.seeRequest}</Link>
@@ -267,7 +270,7 @@ function QuoteColumn({
 }) {
   const [state, action, pending] = useActionState(selectQuoteAction, actionIdle);
   const c = spaceCopy(locale);
-  const detailHref = `/${locale}/client/demandes/${requestId}/offres/${column.quoteId}${selectedQuery}`;
+  const detailHref = `/${locale}/client/demandes/${requestId}/offres/${column.quoteId}?${new URLSearchParams({...Object.fromEntries(new URLSearchParams(selectedQuery.replace(/^\?/,""))),versionId:column.quoteVersionId})}`;
   const canSelect = column.selectable && canManage && !column.expired && Boolean(snapshotId);
   return (
     <article className="client-card client-offer-col" data-recommended={column.recommended ? "true" : undefined}>
@@ -331,6 +334,7 @@ function QuoteColumn({
           </form>
         ) : null}
       </div>
+      {column.revisionInProgress?<p role="status" className="client-access-note">{locale==="ar"?"المراجعة قيد الإعداد؛ هذه النسخة المنشورة محفوظة للاطلاع ولا يمكن اختيارها.":"Révision en préparation ; cette version publiée reste consultable et ne peut pas être sélectionnée."}</p>:null}
       {!column.completeness ? <p role="alert" className="client-access-note">{locale==="ar"?"تفاصيل المقارنة غير متاحة. أعد تحميل الصفحة قبل الاختيار.":"Les détails nécessaires à la comparaison sont indisponibles. Rechargez la page avant de choisir."}</p>:null}
       {column.completeness && column.completeness.basisPoints < 10_000 ? <p role="status" className="client-access-note">{messages.incompleteQuote}</p> : null}
       {column.expired ? <p role="status" className="client-access-note">{messages.expiredQuote}</p> : null}
