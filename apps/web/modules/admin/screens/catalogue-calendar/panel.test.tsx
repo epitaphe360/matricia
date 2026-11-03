@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { formatCalendarDateLabels } from "@/modules/admin/data/catalogue-calendar/date-labels";
 import { CatalogCalendarPanel } from "./panel";
 import { calendarCopy } from "./copy";
 import type { CalendarContext } from "./model";
@@ -10,7 +11,7 @@ const source = (): CalendarContext => ({ complete: true, page: 1, pageSize: 25, 
 for (const locale of ["fr", "ar"] as const)
     describe(`catalogue calendar panel ${locale}`, () => {
         it("labels native sources in business terms, preserves free text and never asks for a hash or UUID", () => {
-            const html = renderToStaticMarkup(<CatalogCalendarPanel locale={locale} context={source()} returnPath={`/${locale}/administration/catalogue/calendrier`}/>);
+            const html = renderToStaticMarkup(<CatalogCalendarPanel locale={locale} context={source()} dateLabels={{[id]:{from:"Date serveur approuvée",until:null}}} returnPath={`/${locale}/administration/catalogue/calendrier`}/>);
             expect(html).toContain(`dir="${locale === "ar" ? "rtl" : "ltr"}"`);
             expect(html).toContain(calendarCopy[locale].choose);
             expect(html).toContain("TEST Catalogue · Ancien TEST");
@@ -22,7 +23,7 @@ for (const locale of ["fr", "ar"] as const)
         it("permits rejection but disables stale approval", () => {
             const context = source();
             context.requests[0]!.sourceChanged = true;
-            const html = renderToStaticMarkup(<CatalogCalendarPanel locale={locale} context={context} returnPath={`/${locale}/administration/catalogue/calendrier`}/>);
+            const html = renderToStaticMarkup(<CatalogCalendarPanel locale={locale} context={context} dateLabels={{[id]:{from:"Date serveur approuvée",until:null}}} returnPath={`/${locale}/administration/catalogue/calendrier`}/>);
             expect(html).toMatch(/value="approve" disabled=""/);
             expect(html).toContain('value="reject">');
             expect(html).toContain(calendarCopy[locale].changed);
@@ -30,7 +31,7 @@ for (const locale of ["fr", "ar"] as const)
         it("keeps an author's pending review read-only without an independent capability", () => {
             const context = source();
             context.requests[0]!.canDecide = false;
-            const html = renderToStaticMarkup(<CatalogCalendarPanel locale={locale} context={context} returnPath={`/${locale}/administration/catalogue/calendrier`}/>);
+            const html = renderToStaticMarkup(<CatalogCalendarPanel locale={locale} context={context} dateLabels={{[id]:{from:"Date serveur approuvée",until:null}}} returnPath={`/${locale}/administration/catalogue/calendrier`}/>);
             expect(html).not.toContain('value="approve"');
             expect(html).not.toContain('value="reject"');
             expect(html).toContain(calendarCopy[locale].independent);
@@ -39,8 +40,23 @@ for (const locale of ["fr", "ar"] as const)
             const context = source();
             context.conflicts = [];
             context.requests = [];
-            const html = renderToStaticMarkup(<CatalogCalendarPanel locale={locale} context={context} returnPath={`/${locale}/administration/catalogue/calendrier`}/>);
+            const html = renderToStaticMarkup(<CatalogCalendarPanel locale={locale} context={context} dateLabels={{[id]:{from:"Date serveur approuvée",until:null}}} returnPath={`/${locale}/administration/catalogue/calendrier`}/>);
             expect(html).toContain(calendarCopy[locale].empty);
             expect(html).toContain(calendarCopy[locale].noRequests);
         });
     });
+
+for (const locale of ["fr", "ar"] as const) it(`serializes server date labels once despite different browser timezone data in ${locale}`, () => {
+    const context = source(), original = JSON.stringify(context);
+    const factory = vi.spyOn(Intl, "DateTimeFormat");
+    factory.mockImplementation(function () { return { format: () => "1 nov. 2026, 22:57" } as unknown as Intl.DateTimeFormat; });
+    const dateLabels = JSON.parse(JSON.stringify(formatCalendarDateLabels(locale, context)));
+    const server = renderToStaticMarkup(<CatalogCalendarPanel locale={locale} context={context} dateLabels={dateLabels} returnPath="/fr/administration/catalogue/calendrier"/>);
+    factory.mockImplementation(function () { return { format: () => "1 nov. 2026, 21:57" } as unknown as Intl.DateTimeFormat; });
+    const browser = renderToStaticMarkup(<CatalogCalendarPanel locale={locale} context={JSON.parse(original)} dateLabels={dateLabels} returnPath="/fr/administration/catalogue/calendrier"/>);
+    expect(browser).toBe(server);
+    expect(browser).toContain("1 nov. 2026, 22:57");
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(context)).toBe(original);
+});
+afterEach(() => vi.restoreAllMocks());

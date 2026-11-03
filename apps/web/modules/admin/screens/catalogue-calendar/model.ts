@@ -22,3 +22,5 @@ export function calendarRpcFailure(error: {
         return "CONFIGURATION";
     return "QUERY_FAILED";
 }
+
+export type CalendarDateLabels = Record<string, { from: string; until: string | null }>;

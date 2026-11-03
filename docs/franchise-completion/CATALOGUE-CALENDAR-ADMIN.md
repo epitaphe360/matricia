@@ -17,3 +17,7 @@ pnpm exec tsc -p work/catalogue-calendar/tsconfig.json
 ```
 
 54 tests dans quatre fichiers, ESLint et graphe TypeScript isolé : réussis. La configuration de types isolée étend `apps/web/tsconfig.json`, désactive l'incrémental et les plugins, et inclut uniquement les trois répertoires ci-dessus avec leur graphe d'imports. Ce lot UI ne revendique ni exécution SQL ni preuve navigateur native ; ces recettes doivent utiliser la migration de contexte et de clôture approuvée par le lot Operations. Aucun déploiement ou donnée de production modifiés.
+
+## Correction d'hydratation des dates
+
+Le navigateur a reproduit une divergence de base de fuseaux entre Node et Chromium : le même instant à Casablanca était affiché à 22:57 puis 21:57. Les libellés sont désormais calculés une seule fois dans le rendu serveur, sérialisés et transmis au panneau. Le navigateur ne reformate aucune date ; les timestamps métier transmis aux commandes restent inchangés. Aucun avertissement d'hydratation n'est supprimé. Un contretest FR/AR simule ces deux bases de fuseaux différentes et vérifie un rendu identique avec les chaînes serveur. Vérification ciblée : 29 tests dans deux fichiers (panneau et route SSR), ESLint réussi ; aucune vérification globale revendiquée pour ce delta.
