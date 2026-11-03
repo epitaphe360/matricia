@@ -1,3 +1,4 @@
+import { formatSignedMinorLocalized } from "@/modules/shared/lib/commercial-documents/money";
 import { z } from "zod";
 
 const uuid = z.string().uuid();
@@ -22,7 +23,7 @@ export type FranchiseDashboard = {
   books: Array<{ id: string; libraryId: string; organizationId: string; type: "IT" | "STANDARD"; operatorCode: string; currency: string; ruleVersionId: string; status: string; entryFee: null | { mode: string; principalMinor: string; depositMinor: string; startsOn: string; dueOn: string }; latestClosure: null | { id: string; version: number; periodStart: string; periodEnd: string; revenueMinor: string; costsMinor: string; profitMinor: string }; closures: Array<{ id: string; version: number; periodStart: string; periodEnd: string; supersedesClosureId: string | null; ruleVersionId: string; cutoffAt: string; revenueMinor: string; costsMinor: string; profitMinor: string; contentHash: string; closedAt: string; allocations: Array<{ id: string; beneficiaryCode: string; shareBps: number; amountMinor: string; roundingAdjustmentMinor: number }> }>; allocations: Array<{ beneficiaryCode: string; shareBps: number; amountMinor: string }>; balances: Array<{ beneficiaryCode: string; amountMinor: string }>; ledgerEntries: Array<{ id: string; closureVersionId: string | null; beneficiaryCode: string; entryType: string; amountMinor: string; referenceType: string; referenceId: string; proofHash: string | null; createdAt: string }>; entryFeeLedger: Array<{ id: string; entryType: string; amountMinor: string; createdAt: string }> }>;
 };
 
-export function formatMinor(value: string, currency: string, locale: "fr" | "ar") { const minor = BigInt(value), negative = minor < BigInt(0), absolute = negative ? -minor : minor, major = absolute / BigInt(100), cents = (absolute % BigInt(100)).toString().padStart(2, "0"); return `${negative ? "−" : ""}${major.toLocaleString(locale === "ar" ? "ar-MA" : "fr-MA")},${cents}\u00a0${currency}`; }
+export function formatMinor(value: string, currency: string, locale: "fr" | "ar") { return formatSignedMinorLocalized(value,currency,locale); }
 export function formatBps(value: number) { const whole = Math.trunc(value / 100), decimals = String(value % 100).padStart(2, "0"); return decimals === "00" ? `${whole}\u00a0%` : `${whole},${decimals}\u00a0%`; }
 export function sumExact(values: string[]) { return values.reduce((total, value) => total + BigInt(value), BigInt(0)).toString(); }
 export function franchiseeBeneficiaryCode(type: "IT" | "STANDARD") { return type === "IT" ? "HATIM_AHMITECH" : "FRANCHISEE"; }

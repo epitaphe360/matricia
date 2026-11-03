@@ -84,7 +84,7 @@ describe("franchise space boards", () => {
     expect(matching).toContain("Studio Atlas");
     expect(matching).toContain("/fr/franchise/fournisseurs/44444444-4444-4444-8444-444444444444");
     const documents = renderToStaticMarkup(<DocumentsBoard locale="fr" query="" board={board} />);
-    expect(documents).toContain("invite://atlas");
+    expect(documents).not.toContain("invite://atlas");
     expect(documents).toContain("name=\"q\"");
     const messages = renderToStaticMarkup(<MessagesBoard locale="fr" query="" board={board} />);
     expect(messages).not.toContain("Invitation envoyée");
@@ -245,5 +245,22 @@ describe("franchise space boards", () => {
     expect(html).toContain("Aucun professionnel n’est encore rattaché à votre périmètre.");
     expect(html).not.toContain("Studio Atlas");
     if (previous) process.env.MATRICIA_DEMO_ACCESS_ENABLED = previous;
+  });
+  it.each(["fr","ar"] as const)("ne présente pas une panne documentaire comme un coffre vide en %s",locale=>{
+    const board=buildFranchiseSpaceBoard({locale,query:"?franchiseId=selected",unavailableSections:["OPERATIONS"]});
+    const html=renderToStaticMarkup(<DocumentsBoard locale={locale} query="?franchiseId=selected" board={board}/>);
+    expect(html).toContain('role="alert"');expect(html).toContain("?franchiseId=selected");
+    expect(html).not.toContain("client-space-table");
+  });
+  it.each(["fr","ar"] as const)("garde les finances consultables si seule la supervision métier échoue en %s",locale=>{
+    const board=buildFranchiseSpaceBoard({locale,query:"",unavailableSections:["OPERATIONS"]});
+    const finance=renderToStaticMarkup(<FranchiseFinanceBoard locale={locale} query="" board={board}/>);
+    const volume=renderToStaticMarkup(<FranchiseFinanceBoard locale={locale} query="" board={board} view="volume"/>);
+    expect(finance).toContain("client-space-table");expect(volume).not.toContain("client-space-table");
+  });
+  it.each(["fr","ar"] as const)("n'affiche pas une absence d'alerte certifiée si le CRM échoue en %s",locale=>{
+    const board=buildFranchiseSpaceBoard({locale,query:"",unavailableSections:["CRM"]});
+    const html=renderToStaticMarkup(<PerformanceBoard locale={locale} query="" board={board}/>);
+    expect(html).toContain(locale==="ar"?"لا يمكن تأكيد عدم وجود تنبيهات":"L’absence d’alertes ne peut pas être confirmée");
   });
 });

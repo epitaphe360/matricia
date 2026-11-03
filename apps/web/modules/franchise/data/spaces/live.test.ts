@@ -102,10 +102,12 @@ describe("franchise space live board", () => {
     expect(board.perimeter.territory).toBe("Casablanca-Settat");
     expect(board.quality[0]?.title).toBe("Couverture du réseau");
     expect(board.finance[0]?.object).toBe("Votre part");
+    expect(board.finance[0]?.kind).toBe("statement");
+    expect(board.finance[0]?.title).toBe("Relevé 2026-09-01 — 2026-09-30");
     expect(board.finance[0]?.amount).toContain("40,00");
     expect(board.people[0]?.activities?.[0]?.evidence).toContain("invite://atlas");
     expect(board.requests[0]?.matching?.map((item) => item.name)).toContain("Studio Atlas");
-    expect(board.documents.map((item) => item.title)).toEqual(expect.arrayContaining(["invite://atlas", "rfq://conseil"]));
+    expect(board.documents).toEqual([]); // Textual CRM references are not private uploaded files.
     expect(board.messages).toEqual([]); // CRM activity is never presented as an actual conversation.
     expect(JSON.stringify(board)).not.toMatch(/50\s*%|Hatim Ahmitech|Jalil-NEOXA|NEOXA_JALIL|ASMA_MATRICIA/);
   });

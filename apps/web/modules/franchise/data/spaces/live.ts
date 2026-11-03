@@ -199,18 +199,7 @@ export function buildFranchiseSpaceBoard(input: {
   }));
   const requests = [...operationalRequests, ...crmRequests];
   const documents = [
-    ...[...providers, ...clients].flatMap((item) => {
-      const href = item.type === "PROVIDER" ? `/${locale}/franchise/fournisseurs/${item.id}/documents${q}` : `/${locale}/franchise/demandes/${item.id}/consultation${q}`;
-      const owner = item.organizationName || item.displayName;
-      return [...folderActivities(item), ...folderEvents(item)].flatMap((entry) => entry.evidence.map((ref, index) => ({
-        id: `${entry.id}-${index}`,
-        title: ref,
-        owner,
-        status: franchiseStageLabel(item.stage, locale),
-        href,
-        kind: "evidence" as const,
-      })));
-    }),
+    // CRM references remain in the folder timeline; only native documents enter the private vault.
     ...(input.operations?.providerDossiers??[]).flatMap((provider)=>provider.documents.map((item)=>({id:item.id,title:item.code,owner:provider.name,status:item.expiresOn&&item.expiresOn<new Date().toISOString().slice(0,10)?"EXPIRED":item.status,href:`/${locale}/franchise/documents/${item.id}${q}`,kind:"evidence"as const,due:item.expiresOn??undefined}))),
   ];
   const renewals: FranchiseSpaceBoardData["renewals"] = (input.operations?.providerDossiers??[]).flatMap((provider)=>[...provider.documents.filter((d)=>d.expiresOn).map((d)=>({id:d.id,title:d.code,owner:provider.name,status:d.expiresOn!<new Date().toISOString().slice(0,10)?"EXPIRED":d.status,href:`/${locale}/franchise/documents/${d.id}${q}`,kind:"renewal"as const,due:d.expiresOn!})),...(provider.partnerContract?.expiresAt?[{id:provider.partnerContract.id,title:locale==="ar"?"عقد الشراكة · نسخة "+provider.partnerContract.version:"Contrat partenaire · v"+provider.partnerContract.version,owner:provider.name,status:provider.partnerContract.status,href:`/${locale}/franchise/fournisseurs/contrats/${provider.partnerContract.id}${q}`,kind:"renewal"as const,due:provider.partnerContract.expiresAt}]:[])]).sort((a,b)=>a.due.localeCompare(b.due));
@@ -344,20 +333,19 @@ export function buildFranchiseSpaceBoard(input: {
         amount: formatMinor(entry.amountMinor, book.currency, locale),
         kind: "entryFee" as const,
       }));
-      const closures = book.closures.flatMap((closure, index) => {
+      const closures = book.closures.flatMap((closure) => {
         const share = franchiseeAllocation(book.type, closure.allocations);
         if (!share) return [];
-        const isLatest = index === 0;
         return [{
           id: closure.id,
           href:`/${locale}/franchise/finance/releves/${closure.id}${q}`,
-          title: isLatest ? c.preStatement : (locale === "ar" ? `كشف ${closure.periodStart} — ${closure.periodEnd}` : `Relevé ${closure.periodStart} — ${closure.periodEnd}`),
+          title: (locale === "ar" ? `كشف ${closure.periodStart} — ${closure.periodEnd}` : `Relevé ${closure.periodStart} — ${closure.periodEnd}`),
           object: c.yourShare,
           status: c.periodClosed,
           auth: formatMinor(share.amountMinor, book.currency, locale),
           tone: "mint" as const,
           amount: formatMinor(share.amountMinor, book.currency, locale),
-          kind: isLatest ? "preStatement" as const : "statement" as const,
+          kind: "statement" as const,
         }];
       });
       const payouts = book.ledgerEntries

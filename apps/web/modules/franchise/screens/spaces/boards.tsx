@@ -287,7 +287,7 @@ function sourceUnavailable(board:FranchiseSpaceBoardData|undefined,sources:strin
 export function NetworkBoard({ locale, query, mandateName, view, itemId, search, page, board, organizationId }: SpaceBoardProps) {
   const c = franchiseCopy(locale);
   const demo = resolveBoard({ locale, query, board });
-  if(sourceUnavailable(board,itemId?['CRM','OPERATIONS']:['CRM']))return <UnavailableSection locale={locale} query={query}/>;
+  if(sourceUnavailable(demo,['CRM','OPERATIONS']))return <UnavailableSection locale={locale} query={query}/>;
   const selected = itemId ? demo.people.find((row) => row.id === itemId) ?? null : null;
   const needle = (search ?? "").trim().toLocaleLowerCase();
   const filtered = demo.people.filter((row) => matchesNetworkFilter(view, row.stage) && (!needle || `${row.name} ${row.services} ${row.status}`.toLocaleLowerCase().includes(needle)));
@@ -718,7 +718,7 @@ export function FranchiseRequestsBoard({ locale, query, mandateName, view, itemI
 export function QualityBoard({ locale, query, mandateName, view, search, page, board, libraryId, organizationId, services }: SpaceBoardProps) {
   const c = franchiseCopy(locale);
   const demo = resolveBoard({ locale, query, board });
-  if(sourceUnavailable(board,['QUALITY', 'OPERATIONS']))return <UnavailableSection locale={locale} query={query}/>;
+  if(sourceUnavailable(demo,['QUALITY','CRM','OPERATIONS']))return <UnavailableSection locale={locale} query={query}/>;
   const needle = (search ?? "").trim().toLocaleLowerCase();
   const matches = (value: string) => !needle || value.toLocaleLowerCase().includes(needle);
   const qualityPath = view ? `/${locale}/franchise/qualite/${view}` : `/${locale}/franchise/qualite`;
@@ -891,6 +891,7 @@ export function PerformanceBoard({ locale, query, mandateName, view, board }: Sp
   const c = franchiseCopy(locale);
   const demo = resolveBoard({ locale, query, board });
   if(sourceUnavailable(board,['OPERATIONS']))return <UnavailableSection locale={locale} query={query}/>;
+  const alertsUnavailable=sourceUnavailable(demo,["CRM","QUALITY"]);
   const metrics=demo.metrics;
   const requestCount=metrics?.requestCount??null;
   const missionDone=metrics?.completedMissions??null;
@@ -935,13 +936,13 @@ export function PerformanceBoard({ locale, query, mandateName, view, board }: Sp
           <p className="franchise-empty-panel" role="status">{c.perfDelayUnavailable}</p>
         </article>
         <article className="client-card">
-          <header className="client-priority-head"><h2>{c.alerts}</h2><em className="client-status-chip" data-tone="peach">{demo.attention.length || 0}</em></header>
+          <header className="client-priority-head"><h2>{c.alerts}</h2><em className="client-status-chip" data-tone="peach">{alertsUnavailable?"—":demo.attention.length}</em></header>
           <ul className="franchise-dot-list">
-            {(demo.attention.length ? demo.attention : [{ id: "empty", title: c.noOut, href: `/${locale}/franchise/performance${query}` }]).map((item) => (
+            {alertsUnavailable?<li role="status">{locale==="ar"?"التنبيهات غير متاحة حالياً.":"Alertes indisponibles pour le moment."}</li>:(demo.attention.length ? demo.attention : [{ id: "empty", title: c.noOut, href: `/${locale}/franchise/performance${query}` }]).map((item) => (
               <li key={item.id}><span className="franchise-dot" data-tone="peach" /><strong>{item.title}</strong><Cta href={item.href} soft>{c.open}</Cta></li>
             ))}
           </ul>
-          <p className="client-access-note">{c.noOut}</p>
+          <p className="client-access-note">{alertsUnavailable?(locale==="ar"?"لا يمكن تأكيد عدم وجود تنبيهات.":"L’absence d’alertes ne peut pas être confirmée."):c.noOut}</p>
         </article>
       </section>
       <section className="franchise-workbench franchise-perf-bottom">
@@ -1267,7 +1268,7 @@ export function GovernanceBoard({ locale, query, mandateName, view, board }: Spa
 export function FranchiseFinanceBoard({ locale, query, mandateName, view, board, libraryId, organizationId }: SpaceBoardProps) {
   const c = franchiseCopy(locale);
   const demo = resolveBoard({ locale, query, board });
-  if(sourceUnavailable(board,['GOVERNANCE', 'OPERATIONS']))return <UnavailableSection locale={locale} query={query}/>;
+  if(sourceUnavailable(demo,view==='volume'?['OPERATIONS']:['GOVERNANCE']))return <UnavailableSection locale={locale} query={query}/>;
   const statements = demo.finance.filter((row) => row.kind !== "entryFee" && row.kind !== "payout" && row.title !== c.entryFee);
   const fees = demo.finance.filter((row) => row.kind === "entryFee" || row.title === c.entryFee);
   const payouts = demo.finance.filter((row) => row.kind === "payout");
@@ -1336,7 +1337,7 @@ export function FranchiseFinanceBoard({ locale, query, mandateName, view, board,
           ) : (
             <div className="client-table-wrap">
               <table className="client-space-table">
-                <thead><tr><th>{c.document}</th><th>{c.linked}</th><th>{c.state}</th><th>{c.authReq}</th></tr></thead>
+                <thead><tr><th>{c.document}</th><th>{c.linked}</th><th>{c.state}</th><th>{locale==="ar"?"المبلغ":"Montant"}</th></tr></thead>
                 <tbody>
                   {rows.length === 0 ? (
                     <tr><td colSpan={4}>{empty}</td></tr>
@@ -1369,6 +1370,7 @@ export function DocumentsBoard({ locale, query, view, search, page, board }: Spa
   const c = franchiseCopy(locale);
   const n = libraryCopy(locale);
   const demo = resolveBoard({ locale, query, board });
+  if(sourceUnavailable(demo,["OPERATIONS"]))return <UnavailableSection locale={locale} query={query}/>;
   const needle = (search ?? "").trim().toLocaleLowerCase();
   const source = view === "renouvellements"
     ? demo.renewals
