@@ -6,7 +6,7 @@ Le plan sans responsable, ou dont le responsable a perdu ses droits, bloque l’
 
 La page d’administration `gouvernance-franchise/plans/[id]/responsable` reste accessible aux administrateurs indépendants qui n’ont aucun rôle franchisé. Une tâche centrale réelle suit le plan jusqu’à sa clôture gouvernée. Son auteur de configuration de mandat est référencé dans le champ historique obligatoire `created_by`, et son contexte précise `actor_origin=SYSTEM` ; cela ne représente pas une action humaine de cet auteur. Si aucune file centrale active n’est configurée, le contrôle échoue explicitement et le rapport/plan ne certifie pas une mise en file inexistante. Le compteur d’échec rend le contrôle non sain jusqu’à correction et reprise.
 
-Approuver le plan exige une affectation approuvée et un responsable actuellement habilité. Déclarer 100 % d’avancement ne prouve pas l’achèvement : les objectifs doivent être remesurés dans un rapport natif postérieur. Aucune assignation, alerte ou clôture ne modifie automatiquement le mandat, les commissions ou les droits financiers.
+Approuver le plan exige une affectation approuvée et un responsable actuellement habilité. Déclarer 100 % d’avancement ne prouve pas l’achèvement : tous les objectifs doivent être atteints ensemble dans le dernier rapport natif du même type et du même modèle, postérieur à l’approbation. Une amélioration ancienne suivie d’une dégradation, ou des améliorations réparties entre différents rapports, ne permettent pas de clôturer. Le rapport ayant effectivement permis une clôture est figé dans une preuve privée immuable liée à l’événement. Aucune assignation, alerte ou clôture ne modifie automatiquement le mandat, les commissions ou les droits financiers.
 
 ## Vérifications
 

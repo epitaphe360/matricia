@@ -105,4 +105,20 @@ reset role;
 select is((select owner_user_id::text from private.franchise_control_approval_owners_v1 where plan_id=(select(v->>'id')::uuid from owner_observed373 where k='plan')),'a3650000-0000-4000-8000-000000000002','replacement keeps the original approval owner evidence intact');
 select is((select count(*)::integer from private.franchise_control_owner_decisions_v1 where plan_id=(select(v->>'id')::uuid from owner_observed373 where k='plan')and decision='APPROVE'),2,'only two real independent assignment approvals exist despite retries');
 select is((select count(*)::integer from public.franchise_control_plan_events_v1 where plan_id=(select(v->>'id')::uuid from owner_observed373 where k='plan')and kind='COMPLETED'),0,'unfinished objectives remain unfinished');
+-- Structural policy counterexamples below are TEST-only score fixtures. They
+-- verify report selection, not native scoring accuracy or a certified completion.
+create function pg_temp.test_control_report373(p_days integer,p_a integer,p_b integer)returns uuid language plpgsql as $$declare x uuid;begin
+ insert into public.franchise_control_reports_v1(franchise_id,model_id,kind,period_start,period_end,completeness,global_score_bps,axis_scores,metrics,methodology,comparison,source_evidence_hash)
+ select 'd3650000-0000-4000-8000-000000000002',model_id,'DAILY',current_date-p_days,current_date-p_days,'PARTIAL',null,jsonb_build_object('CLIENT_NETWORK',p_a,'LIBRARY_QUALITY',p_b),'{}','{"testOnlyStructuralScores":true}','{"status":"INSUFFICIENT_COHORT"}',repeat('3',64)from public.franchise_control_reports_v1 where id=(select report_id from public.franchise_control_plan_proposals_v1 where id=(select(v->>'id')::uuid from owner_observed373 where k='plan'))returning id into x;return x;
+end$$;
+insert into owner_observed373 values('policy-basis',jsonb_build_object('id',pg_temp.test_control_report373(10,1000,1000)));
+insert into public.franchise_control_plan_proposals_v1(id,report_id,franchise_id,objectives,suggested_owner_user_id,due_on)
+values('a3739000-0000-4000-8000-000000000001',(select(v->>'id')::uuid from owner_observed373 where k='policy-basis'),'d3650000-0000-4000-8000-000000000002','[{"axis":"CLIENT_NETWORK","targetScoreBps":6000},{"axis":"LIBRARY_QUALITY","targetScoreBps":6000}]','a3650000-0000-4000-8000-000000000005',current_date+30);
+insert into public.franchise_control_plan_events_v1(plan_id,kind,comment,actor_user_id,idempotency_key)values('a3739000-0000-4000-8000-000000000001','APPROVED','TEST structural approval precondition only','a3650000-0000-4000-8000-000000000003','owner373-structural-approval');
+select pg_temp.test_control_report373(9,7000,1000);select pg_temp.test_control_report373(8,1000,7000);
+-- Existing real daily report is newer than these deliberately historical fixtures;
+-- it does not meet both goals, so selecting improvements across reports must fail.
+select is(private.franchise_control_completion_measurement_v1('a3739000-0000-4000-8000-000000000001'),null::uuid,'different older reports meeting one goal each cannot be combined into a completed plan');
+select pg_temp.test_control_report373(7,7000,7000);select pg_temp.test_control_report373(6,1000,7000);
+select is(private.franchise_control_completion_measurement_v1('a3739000-0000-4000-8000-000000000001'),null::uuid,'an older all-goals improvement does not override a newer degraded measurement');
 select *from finish();rollback;
