@@ -35,6 +35,12 @@ insert into public.catalog_categories(id,library_id,code,slug,created_by)values(
 insert into public.catalog_subcategories(id,library_id,category_id,code,slug,created_by)values('a3687000-0000-4000-8000-000000000002','a3682000-0000-4000-8000-000000000001','a3687000-0000-4000-8000-000000000001','TEST368_SUBCATEGORY','test368-subcategory','a3680000-0000-4000-8000-000000000001');
 insert into public.catalog_services(id,library_id,primary_subcategory_id,code,slug,created_by)values('a3687000-0000-4000-8000-000000000003','a3682000-0000-4000-8000-000000000001','a3687000-0000-4000-8000-000000000002','TEST368_SERVICE','test368-service','a3680000-0000-4000-8000-000000000001');
 insert into public.service_skus(id,service_id,code,version,status,unit_code,unit_quantity,deliverables,exclusions,acceptance_criteria,correction_limit,sla_days,currency,reference_cost_minor,credit_cost,effective_from,content_hash,created_by)values('a3687000-0000-4000-8000-000000000004','a3687000-0000-4000-8000-000000000003','TEST368_SKU',1,'ACTIVE','UNIT',1,'[]','[]','[]',0,1,'MAD',0,0,current_date,repeat('c',64),'a3680000-0000-4000-8000-000000000001');
+-- Test qualification identities only: no approval, questionnaire completion or private answer is invented.
+insert into public.organizations(id,legal_name,display_name,status,created_by)values('a3681000-0000-4000-8000-000000000002','TEST 0368 Provider','TEST Provider','ACTIVE','a3680000-0000-4000-8000-000000000001');
+insert into public.provider_profiles(provider_organization_id,activity_summary,team_size,years_experience,created_by)values('a3681000-0000-4000-8000-000000000002','TEST pending qualification provider',1,1,'a3680000-0000-4000-8000-000000000001');
+insert into public.provider_services(id,provider_organization_id,service_id,requested_by)values('a3688000-0000-4000-8000-000000000001','a3681000-0000-4000-8000-000000000002','a3687000-0000-4000-8000-000000000003','a3680000-0000-4000-8000-000000000001');
+insert into public.provider_qualifications(id,provider_service_id,provider_organization_id,service_id)values('a3688000-0000-4000-8000-000000000002','a3688000-0000-4000-8000-000000000001','a3681000-0000-4000-8000-000000000002','a3687000-0000-4000-8000-000000000003');
+insert into public.organization_memberships(id,organization_id,user_id,status)values('a3686000-0000-4000-8000-000000000099','a3681000-0000-4000-8000-000000000002','a3680000-0000-4000-8000-000000000001','ACTIVE');
 create temporary table scope368(k text primary key,v jsonb);
 grant select,insert on scope368 to authenticated;
 set local role authenticated;
@@ -44,6 +50,11 @@ select is((select v->>'canDecideQualifications'from scope368 where k='expert'),'
 select is((select v->>'canMaintainDefinitions'from scope368 where k='expert'),'true','Expert sees definition authority for its exact mandate');
 select is((select v->>'canProposeVolume'from scope368 where k='expert'),'false','Expert does not gain procurement governance authority');
 select throws_ok($$select public.franchise_operation_permissions_v1('a3683000-0000-4000-8000-000000000002')$$,'42501','FRANCHISE_OPERATIONS_SCOPE_DENIED','sibling mandate of the same operator is still denied to the Expert');
+select throws_ok($$select public.get_provider_qualification_questionnaire_review_v1('a3688000-0000-4000-8000-000000000002')$$,'42501','QUALIFICATION_REVIEW_MFA_REQUIRED','franchise review still requires AAL2 despite valid service authority');
+select set_config('request.jwt.claims','{"sub":"a3680000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);
+insert into scope368 values('qualification-review',public.get_provider_qualification_questionnaire_review_v1('a3688000-0000-4000-8000-000000000002'));
+select is((select v->>'qualificationId'from scope368 where k='qualification-review'),'a3688000-0000-4000-8000-000000000002','Expert can use the purpose-bound review for its service without a platform role');
+select is((select v->>'total'from scope368 where k='qualification-review'),'0','no questionnaire is invented when this fixture has no submitted session');
 select set_config('request.jwt.claims','{"sub":"a3680000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal1"}',true);
 insert into scope368 values('viewer',public.franchise_operation_permissions_v1('a3683000-0000-4000-8000-000000000001'));
 select is((select v->>'canDecideQualifications'from scope368 where k='viewer'),'false','Viewer read access is not a qualification mutation grant');
@@ -54,7 +65,10 @@ insert into scope368 values('provider-manager',public.franchise_operation_permis
 select is((select v->>'canDecideQualifications'from scope368 where k='provider-manager'),'true','Provider Manager may review qualification');
 select is((select v->>'canMaintainDefinitions'from scope368 where k='provider-manager'),'false','Provider Manager does not receive editorial definition rights');
 select throws_ok($$select public.propose_franchise_volume_purchase_for_mandate_v1('a3683000-0000-4000-8000-000000000001','a3682000-0000-4000-8000-000000000001','a3687000-0000-4000-8000-000000000004',1,0,2,'PAY_PER_USE','2026-11-01','2026-12-31','TEST scope denial before proposal','TEST368-forbidden-proposal')$$,'42501','FRANCHISE_VOLUME_PROPOSAL_DENIED','non-owner/non-manager cannot submit a sibling proposal');
+select set_config('request.jwt.claims','{"sub":"a3680000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal2"}',true);
+select throws_ok($$select public.get_provider_qualification_questionnaire_review_v1('a3688000-0000-4000-8000-000000000002')$$,'42501','QUALIFICATION_REVIEW_DENIED','Viewer cannot promote a readable dossier into an independent qualification review');
 select set_config('request.jwt.claims','{"sub":"a3680000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);
+select throws_ok($$select public.get_provider_qualification_questionnaire_review_v1('a3688000-0000-4000-8000-000000000002')$$,'42501','QUALIFICATION_REVIEW_DENIED','franchise Manager who is also a member of the Provider cannot review itself');
 select throws_ok($$select public.propose_franchise_volume_purchase('a3682000-0000-4000-8000-000000000001','a3687000-0000-4000-8000-000000000004',1,0,2,'PAY_PER_USE','2026-11-01','2026-12-31','TEST no arbitrary territory selection','TEST368-legacy-ambiguous')$$,'22023','FRANCHISE_VOLUME_SELECTION_REQUIRED','legacy library-only command refuses multiple authorized mandates');
 insert into scope368 values('proposal',public.propose_franchise_volume_purchase_for_mandate_v1('a3683000-0000-4000-8000-000000000001','a3682000-0000-4000-8000-000000000001','a3687000-0000-4000-8000-000000000004',1.000001,0,2,'PAY_PER_USE','2026-11-01','2026-12-31','TEST exact territorial volume proposal','TEST368-explicit-proposal'));
 select is((select v->>'outcome'from scope368 where k='proposal'),'FRANCHISE_VOLUME_PROPOSED','explicit target creates only a governed proposal');
