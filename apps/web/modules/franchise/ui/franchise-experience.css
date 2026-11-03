@@ -1845,6 +1845,16 @@
   max-width: 28rem;
 }
 
+.franchise-topbar .franchise-mobile-search {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .franchise-topbar .franchise-mobile-search {
+    display: inline-flex;
+  }
+}
+
 .franchise-topbar .client-icon-btn,
 .franchise-topbar .client-lang-switch,
 .franchise-topbar .client-account {

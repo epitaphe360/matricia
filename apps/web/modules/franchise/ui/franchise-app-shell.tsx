@@ -127,6 +127,9 @@ export function FranchiseAppShell({
             <label className="sr-only" htmlFor="franchise-shell-search">{n.search}</label>
             <input id="franchise-shell-search" name="q" placeholder={n.search} />
           </form>
+          <Link href={`/${locale}/franchise/recherche${selectedQuery}`} className="client-icon-btn franchise-mobile-search" aria-label={n.search}>
+            <Search aria-hidden className="size-4" />
+          </Link>
           <Link href={`/${locale}/notifications${selectedQuery}`} className="client-icon-btn" aria-label={locale === "ar" ? "الإشعارات" : "Notifications"}>
             <Bell className="size-4" />
             <span className="franchise-notify-dot" aria-hidden />
