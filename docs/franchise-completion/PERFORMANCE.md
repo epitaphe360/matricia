@@ -26,7 +26,7 @@ Les seuils produisent des alertes figées et une proposition corrective avec obj
 ## Intégration attendue dans la branche principale de travail
 
 - Worker : importer `createFranchisePerformanceScheduler` de `apps/worker/src/franchise-performance.ts`, l’instancier avec le client service existant, l’exécuter comme dépendance indépendante du cycle et de la readiness. Pas de nouveau secret.
-- Page Franchisé : charger `loadNativeFranchiseControl(franchiseId, { before, id: beforeId })`, puis rendre `FranchiseNativePerformancePanel` avec `locale`, `result`, `returnPath`. Les capacités d’interaction proviennent de la réponse serveur, jamais d’un rôle supposé dans l’UI.
+- Page Franchisé : charger `loadNativeFranchiseControl(franchiseId, { before, id: beforeId })`, puis rendre `FranchiseNativePerformancePanel` avec `locale`, `result`, `returnPath`. Les capacités d’interaction proviennent de la réponse serveur, jamais d’un rôle supposé dans l’UI. Pour la suite d’un historique de plan, transmettre aussi `eventPlanId` et `afterEventId` à ce même DAL. Les plans sont limités aux rapports de la page ; leurs événements sont bornés à 50 avec continuation explicite.
 - L’ancien formulaire reste une déclaration manuelle explicitement nommée ; il ne devient pas le moteur automatique.
 
 ## Vérifications réellement exécutées dans ce lot

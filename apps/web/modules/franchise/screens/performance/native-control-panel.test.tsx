@@ -22,7 +22,7 @@ describe("native control FR/AR states", () => {
 
 it("uses server capabilities for plan controls and preserves free text in Arabic", () => {
   const dashboard = nativeControlFixture();
-  dashboard.plans = [{ id: "a3652000-0000-4000-8000-000000000001", franchise_id: dashboard.franchiseId, report_id: dashboard.reports[0]!.id, due_on: "2026-12-03", origin: "SYSTEM_PROPOSAL", suggested_owner_user_id: null, objectives: [{ axis: "LIBRARY_QUALITY", observedScoreBps: 0, targetScoreBps: 6000, completionCriterion: "REMEASURE_NATIVE_SOURCE_AT_OR_ABOVE_TARGET" }], events: [{ id: 1, kind: "COMMENT", comment: "Texte libre français conservé", progress_percent: null, created_at: "2026-11-03T10:00:00Z" }] }];
+  dashboard.plans = [{ id: "a3652000-0000-4000-8000-000000000001", franchise_id: dashboard.franchiseId, report_id: dashboard.reports[0]!.id, due_on: "2026-12-03", origin: "SYSTEM_PROPOSAL", suggested_owner_user_id: null, objectives: [{ axis: "LIBRARY_QUALITY", observedScoreBps: 0, targetScoreBps: 6000, completionCriterion: "REMEASURE_NATIVE_SOURCE_AT_OR_ABOVE_TARGET" }], eventCount: 1, nextEventAfter: null, events: [{ id: 1, kind: "COMMENT", comment: "Texte libre français conservé", progress_percent: null, created_at: "2026-11-03T10:00:00Z" }] }];
   const render = () => renderToStaticMarkup(<FranchiseNativePerformancePanel locale="ar" result={{ status: "success", dashboard }} returnPath="/ar/franchise/performance"/>);
   expect(render()).toContain("Texte libre français conservé");
   expect(render()).not.toContain("data-native-plan"); expect(render()).not.toContain("data-native-decision");
