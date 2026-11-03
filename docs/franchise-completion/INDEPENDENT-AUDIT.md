@@ -194,3 +194,54 @@ Un défaut reste ouvert dans `20261103454510_franchise_control_actor_recheck.sql
 Contre-exemple déterministe à ajouter en SQL : un premier rapport récent améliore A mais laisse B sous sa cible ; un second améliore B alors qu'A a régressé. Le prédicat actuel trouve le premier pour A et le second pour B : il autorise la clôture alors qu'aucune mesure ne satisfait les objectifs ensemble. Un ancien rapport satisfaisant n'est pas invalidé par une mesure plus récente dégradée. Ce défaut ne déclenche aucun versement automatique ; il permet une certification incorrecte d'achèvement du plan.
 
 Cause et contre-test transmis au propriétaire performance et à l'intégrateur. Correction demandée : un même helper pour capacité et commande, fondé sur une remesure native explicitement sélectionnée et comparable, postérieure à l'approbation et satisfaisant tous les objectifs sur le même rapport. Les 23 tests Web cités ci-dessus ne couvrent pas ce prédicat SQL et ne ferment donc pas FA15.
+
+## Quatrième contre-revue — FA15, preuve de coût nul et signaux de gouvernance
+
+Source intégrée inspectée : `349774fd` dans `/workspace/franchise-completion`, comprenant le correctif de remesure `4fcd2097` (intégré `c64afebc`), le lot de signaux `2ccab4fe` et son successeur `06def1f1`. Cette revue ne certifie aucun DDL ni intégration distante ; le rejeu SQL frais est encore à la charge de l'intégrateur.
+
+### FA15 corrigé en source
+
+La migration454530 remplace le prédicat dispersé par `private.franchise_control_completion_measurement_v1`, partagé entre capacité et commande. Elle choisit le dernier rapport du même type sans sauter un dernier modèle incompatible, exige le modèle exact du plan et une collecte après approbation, puis vérifie tous les objectifs sur ce seul rapport. La clôture future reçoit une preuve privée immuable liant son événement au rapport précis. Cela ferme les contre-exemples « A puis B avec régression de A » et « ancienne réussite puis dégradation » dans le code ; l'exécution des nouveaux contre-tests0373 reste attendue. Les rapports structurels TEST ne prouvent pas une remédiation native complète passée en production.
+
+### Coffre financier et vrai coût égal à zéro
+
+Lecture de45300/45310 et de leurs appelants serveur : la cible est un financement avec capture native exacte ou une consommation livrée et acceptée avec allocations cohérentes. La preuve n'est ni un montant utilisateur arbitraire ni un hash saisi sans fichier. Le navigateur réserve une identité de fichier bornée ; le serveur télécharge les octets privés après autorisation, contrôle taille, SHA-256 et type ; le scanner de confiance détient un bail/version, revérifie les octets et enregistre un verdict natif. Un incident de scan garde un état non recevable et une reprise durable. Le mode sandbox est explicitement refusé en production.
+
+La lecture des bytes CLEAN passe par une capacité serveur liée au document/acteur, une vérification effective des octets et un reçu privé audité. La décision indépendante exige ce reçu et refuse auteur du document, auteur de proposition, opérateur et parties concernées. Un zéro admis ajoute une preuve analytique exacte ; aucun journal nul, faux encaissement ou solde n'est inséré. Révocation et remplacement zéro→zéro sont append-only. La clôture et le versement revalident l'admissibilité, et la révocation participe au verrou de cohérence des sources. Une preuve absente/rejetée/révoquée ne devient jamais zéro par défaut.
+
+Tests indépendants réellement exécutés :
+
+```sh
+corepack pnpm --filter @matricia/web exec vitest run \
+  modules/shared/lib/finance-cost-proofs/server.test.ts \
+  modules/shared/lib/finance-cost-proofs/review-commands.test.ts \
+  modules/shared/lib/finance-cost-proofs/browser-upload.test.ts \
+  modules/shared/lib/finance-cost-proofs/scan-consumer.test.ts \
+  modules/admin/screens/pnl/finance-cost-proof-panel.test.tsx \
+  'app/api/finance/cost-proofs/uploads/[uploadId]/route.test.ts' \
+  app/api/workers/finance-cost-scans/route.test.ts --maxWorkers=2
+```
+
+**82 tests / sept fichiers réussis**, [journal](evidence/independent-finance-vault.log). Ces tests utilisent des adaptateurs contrôlés : ils prouvent les contrats/erreurs et vérifications des octets, pas l'existence d'un scanner ou d'un objet hébergé réel. Le test SQL0370 représente les métadonnées et callbacks de scan TEST comme tels, sans prétendre certifier un antivirus de production.
+
+Deux écarts concrets transmis à l'intégrateur :
+
+| ID | Statut et cause | Recette requise |
+|---|---|---|
+| FA16 — P2 | **Ouvert à cette révision.** `get_finance_cost_documents_v1` (45310:184–188) ne reprend pas les exclusions de membres d'organisations des allocations/faits de `decide_credit_economic_cost_v1` (45310:75–78). Exemple PSP : le document appartient au client, un Finance membre du franchisé peut voir `can_decide=true` puis être refusé à la commande. La protection serveur reste effective. | Compte Finance composite lié au franchisé ou client concerné : capacité false et refus serveur ; compte indépendant admissible : capacité cohérente avec prérequis de lecture/scan. Employer la même règle plutôt qu'élargir la commande. |
+| FA17 — P2 reprise financière | **Ouvert à cette révision.** Après zéro admis puis révoqué, une facture EXPENSE réelle ne peut remplacer ce zéro. La proposition positive effective452210:55 refuse toute réconciliation préexistante ;45310 conserve ce chemin et renomme seulement la décision en helper privé. Cette décision positive insère encore la version par défaut1, et l'attribution45310:130 refuse ensuite zéro→positif. La panne reste bloquante et sûre, mais une preuve réellement devenue payante n'a pas de reprise métier. | Zéro admis → révocation indépendante → vrai journal EXPENSE positif → proposition/décision indépendantes → version suivante et attribution positive exacte → clôture corrigée avec delta. Tous anciens documents, réconciliations, attributions et ledgers doivent rester immuables. Ne pas permettre une preuve nulle d'effacer une dépense admise. |
+
+### Signaux Gold§16.9 : périmètre mesuré et limites conservées
+
+La collecte45440 fige les missions, passages matching, panels/invitations, décisions de qualification et revues, conflits déclarés et réaffectations. La qualification utilise l'audit immuable antérieur à la décision, pas un `requested_at` mutable. La vue membre n'expose pas les conflits libres ni identités de revue ; l'inspection Admin AAL2 est motivée, bornée et auditée. Proposition et approbation sont séparées, indépendantes de l'organisation opératrice ; aucune conclusion n'écrit de sanction ni de commission. Une file RISK_FLAGS absente échoue explicitement.
+
+Le correctif454410 crée une vraie demande et tâche successeurs après conclusion approuvée FURTHER_REVIEW_REQUIRED ; le rejeu retourne la même réponse sans recréer de suite. Les sources utilisent un agrégat de bibliothèque explicitement déclaré : faute de binding métier territorial, aucune attribution à un territoire ou franchisé n'est certifiée. Les seuils numériques approuvés restent manquants ; absence de verdict explicite, pas score de culpabilité inventé. Cette limite empêche de déclarer Gold§16.9 totalement clos.
+
+```sh
+corepack pnpm --filter @matricia/web exec vitest run \
+  modules/franchise/data/governance-signals/repository.test.ts \
+  modules/franchise/screens/performance/governance-signal-actions.test.ts \
+  modules/franchise/screens/performance/governance-signals-panel.test.tsx --maxWorkers=2
+```
+
+**17 tests / trois fichiers réussis**, [journal](evidence/independent-governance-signals.log). Aucun nouveau P1 concret de permission ou d'écriture financière n'a été trouvé dans ce lot par cette lecture. Les contre-tests SQL0371 et la recette de saisie native de conflit/missions restent à attester séparément.
