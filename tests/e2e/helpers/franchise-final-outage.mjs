@@ -2,11 +2,12 @@ import { fixtureState,privateDirectory,actorSession,sourceCandidate } from './fr
 import { docker } from './provider-browser/safety.mjs';
 import { readFile,writeFile,mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { chromium,expect } from '@playwright/test';
 if(!process.argv.includes('--coordinated-outage'))throw Error('EXCLUSIVE_COORDINATED_OWNED_REST_OUTAGE_REQUIRED');
+const { chromium, expect } = await import('@playwright/test');
 const state=await fixtureState(),pin=await sourceCandidate(),dir=await privateDirectory(state),file=resolve(dir,'actors.private.json'),cohort=JSON.parse(await readFile(file));
+if(JSON.stringify(state.candidate.migrations)!==JSON.stringify(pin.migrations))throw Error('REVIEWED_EXACT_DATABASE_SCHEMA_REQUIRED');
 const owner=cohort.actors.find(value=>value.label==='owner'),mandate=cohort.mandates.find(value=>value.label==='FIRST');if(!mandate?.activation)throw Error('NATIVE_TEST_MANDATE_REQUIRED');const native=await actorSession(state,owner,file,cohort),name=`matricia_provider_browser_rest_${state.token.replaceAll('-','').slice(0,16)}`;if(!state.children.includes(name))throw Error('EXACT_OWNED_POSTGREST_CONTAINER_REQUIRED');
-const out=resolve('docs/franchise-completion/evidence/browser/outage');await mkdir(out,{recursive:true});const proof={scope:'OWNED_POSTGREST_OUTAGE_AND_REAL_FRANCHISE_RECOVERY',candidate:pin.commit,appTree:pin.appTree,status:'RUNNING',authStopped:false,sqlChanged:false,rlsChanged:false,steps:[]};
+const out=resolve(`docs/franchise-completion/evidence/browser/rest-outage-${pin.commit.slice(0,7)}`);await mkdir(out,{recursive:true});const proof={scope:'OWNED_POSTGREST_OUTAGE_AND_REAL_FRANCHISE_RECOVERY',candidate:pin.commit,appTree:pin.appTree,status:'RUNNING',authStopped:false,sqlChanged:false,rlsChanged:false,steps:[]};
 const browser=await chromium.launch({headless:true,executablePath:'/usr/bin/chromium'}),context=await browser.newContext({viewport:{width:390,height:900},serviceWorkers:'block'});await context.addCookies(native.cookies);const page=await context.newPage(),target=`http://127.0.0.1:${state.appPort}/fr/franchise/accueil?${new URLSearchParams({organizationId:owner.organizationId,franchiseId:mandate.activation.franchiseId})}`;let stopped=false;
 try{
  await page.goto(target,{waitUntil:'networkidle',timeout:90000});await expect(page.locator('[data-workspace-failure]')).toHaveCount(0);proof.steps.push({id:'REAL_WORKSPACE_AVAILABLE_BEFORE_OUTAGE',status:'PASS'});

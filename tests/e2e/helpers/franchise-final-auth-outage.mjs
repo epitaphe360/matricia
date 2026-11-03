@@ -2,8 +2,8 @@ import { fixtureState, privateDirectory, actorSession, sourceCandidate } from '.
 import { docker } from './provider-browser/safety.mjs';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { chromium, expect } from '@playwright/test';
 if (!process.argv.includes('--coordinated-outage')) throw Error('EXCLUSIVE_COORDINATED_OWNED_AUTH_OUTAGE_REQUIRED');
+const { chromium, expect } = await import('@playwright/test');
 const state = await fixtureState(), pin = await sourceCandidate();
 if (JSON.stringify(state.candidate.migrations) !== JSON.stringify(pin.migrations)) throw Error('REVIEWED_EXACT_DATABASE_SCHEMA_REQUIRED');
 const dir = await privateDirectory(state), file = resolve(dir, 'actors.private.json'), cohort = JSON.parse(await readFile(file));
