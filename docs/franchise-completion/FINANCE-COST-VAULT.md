@@ -54,7 +54,7 @@ Réponse : `{targets: [{id, component, label}], canUpload, page, page_size: 20, 
 ## Vérifications de l’auteur
 
 - Tests serveur, consommateur et routes : **30 PASS, quatre fichiers**, incluant octets réels, hash, chemin, identité d’acteur, panne Auth distincte, absence de service read avant autorisation, origine, refus des champs de preuve fournis par le navigateur, baux, analyse indisponible, ACK et budget de réponse.
-- Typecheck Web : **PASS** sur le lot serveur et ses premiers tests ; lint ciblé **PASS**. Les contrôles d’intégration sur le code final et le panneau UI ont leurs propres reçus.
+- Typecheck Web : **PASS** sur le lot serveur, ses quatre fichiers de tests et les routes finales ; lint ciblé **PASS**. Les contrôles d’intégration sur le code final et le panneau UI ont leurs propres reçus.
 - SQL `0370` : **recette à exécuter par root** sur sa cible isolée ou son rejeu neuf. Le test utilise des commandes natives, des métadonnées Storage et des verdicts explicitement TEST pour le contrat DB, sans désactiver de trigger. Les contrôles d’octets et le protocole réel de scanner sont des preuves d’adaptateur distinctes. Aucun succès SQL ou navigateur n’est anticipé dans cette section.
 
 Le test `0370` couvre notamment la pièce non analysée, le SHA nul interdit pour CLEAN, un bail incorrect, l’auto-approbation, la récupération serveur obligatoire, les claims MFA absents/nuls, les rôles composites en lecture seule, les cibles réelles, les deux coûts nuls indépendants, l’absence de journal inventé, la révocation et la nouvelle version de preuve.
