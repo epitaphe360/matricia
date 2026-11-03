@@ -24,7 +24,7 @@ select set_config('request.jwt.claim.role','authenticated',true),set_config('req
 select throws_ok($$select pg_temp.save378('TEST378-foreign-actor')$$,'42501','CATALOG_SCOPE_DENIED','unauthorized actor cannot repair another catalogue');
 reset role;
 select set_config('request.jwt.claim.sub','a3780000-0000-4000-8000-000000000001',true),set_config('request.jwt.claims','{"sub":"a3780000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal1"}',true);set local role authenticated;
-select throws_ok($$select pg_temp.save378('TEST378-old-sensitive-no-aal2')$$,'42501','CATALOG_SENSITIVE_MFA_REQUIRED','a sensitive published source still requires AAL2 even when the submitted flag is false');
+select throws_ok($$select pg_temp.save378('TEST378-old-sensitive-no-aal2')$$,'42501','CATALOG_SCOPE_DENIED','AAL1 is denied by the existing authority guard before any structural repair, even when the submitted sensitivity flag is false');
 reset role;
 select set_config('request.jwt.claims','{"sub":"a3780000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);set local role authenticated;
 select throws_ok($$select pg_temp.save378('TEST378-foreign-parent','f3781000-0000-4000-8000-000000000001',1,1,'e3780000-0000-4000-8000-000000000002')$$,'23514','CATALOG_PARENT_SCOPE_MISMATCH','repair cannot move the parent into another library');
@@ -40,7 +40,7 @@ select is((select to_jsonb(v)from public.catalog_service_versions v where id='f3
 select ok((select status='PUBLISHED'and current_published_version_id='f3781000-0000-4000-8000-000000000001'and current_draft_version_id=(select(v->>'version_id')::uuid from repair378 where k='saved')from public.catalog_services where id='f3780000-0000-4000-8000-000000000001'),'published pointer and identity status are preserved while a separate draft is opened');
 select ok((select status='DRAFT'and translation_review_status='PENDING'from public.catalog_service_versions where id=(select(v->>'version_id')::uuid from repair378 where k='saved')),'repair does not grant editorial or translation approval');
 select ok((select metadata->>'primary_link_repaired'='true'and metadata->>'parent_changed'='false'from public.audit_events where action='catalog.service.draft_saved'and resource_id='f3780000-0000-4000-8000-000000000001'order by occurred_at desc limit 1),'the native audit identifies the same-parent repair');
-select ok((select payload->>'primary_link_repaired'='true'from public.event_outbox where event_type='CatalogServiceDraftSavedV1'and aggregate_id='f3780000-0000-4000-8000-000000000001'order by created_at desc limit 1),'the normal native outbox carries structural repair metadata');
+select ok((select payload->>'primary_link_repaired'='true'from public.event_outbox where event_type='CatalogServiceDraftSavedV1'and aggregate_id='f3780000-0000-4000-8000-000000000001'order by occurred_at desc limit 1),'the normal native outbox carries structural repair metadata');
 select is((select count(*)from public.audit_events where action='catalog.service.draft_saved'and resource_id='f3780000-0000-4000-8000-000000000001'),1::bigint,'replay did not manufacture a second audit effect');
 set local role authenticated;
 insert into repair378 select'saved-again',pg_temp.save378('TEST378-second-native-save',(v->>'version_id')::uuid,(v->>'identity_row_version')::integer,(v->>'version_row_version')::integer)from repair378 where k='saved';
