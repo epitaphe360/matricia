@@ -37,7 +37,7 @@ create table public.finance_cost_document_uploads_v1(
 create table private.finance_cost_document_scan_claims_v1(upload_id uuid primary key references public.finance_cost_document_uploads_v1(id),worker_id uuid not null,lease_token uuid not null,row_version integer not null,leased_until timestamptz not null);
 create table private.finance_cost_document_scan_results_v1(
  id uuid primary key default extensions.gen_random_uuid(),upload_id uuid not null references public.finance_cost_document_uploads_v1(id),result text not null check(result in('CLEAN','INFECTED','ERROR')),
- computed_sha256 text not null,computed_size_bytes integer not null,engine_code text not null,engine_version text not null,worker_id uuid not null,lease_token uuid not null,row_version integer not null,
+ computed_sha256 text,computed_size_bytes integer,engine_code text not null,engine_version text not null,worker_id uuid not null,lease_token uuid not null,row_version integer not null,
  created_at timestamptz not null default clock_timestamp(),unique(upload_id,lease_token)
 );
 alter table public.finance_cost_document_uploads_v1 add foreign key(scan_result_id)references private.finance_cost_document_scan_results_v1(id);
@@ -90,7 +90,8 @@ $$;
 revoke all on function private.finance_cost_storage_write_allowed_v1(text),private.finance_cost_storage_read_allowed_v1(text)from public,anon,authenticated,service_role;
 grant execute on function private.finance_cost_storage_write_allowed_v1(text),private.finance_cost_storage_read_allowed_v1(text)to authenticated;
 create policy finance_cost_doc_storage_insert on storage.objects for insert to authenticated with check(bucket_id='finance-cost-proofs'and private.finance_cost_storage_write_allowed_v1(name));
-create policy finance_cost_doc_storage_read on storage.objects for select to authenticated using(bucket_id='finance-cost-proofs'and private.finance_cost_storage_read_allowed_v1(name));
+-- No direct authenticated SELECT or signed download: the server-authorized
+-- endpoint records actual verified retrieval before returning private bytes.
 
 create function public.get_finance_cost_upload_context_v1(p_upload_id uuid)
 returns jsonb language plpgsql stable security definer set search_path=pg_catalog as $$
@@ -142,10 +143,10 @@ begin
  end if;
  select*into claim from private.finance_cost_document_scan_claims_v1 where upload_id=p_upload_id;
  if u.id is null or claim.upload_id is null or claim.worker_id is distinct from p_worker_id or claim.lease_token is distinct from p_lease_token or claim.row_version is distinct from p_expected_row_version or claim.leased_until<=clock_timestamp()or u.row_version<>p_expected_row_version then raise exception'FINANCE_COST_SCAN_LEASE_STALE'using errcode='40001';end if;
- if p_result is null or p_result not in('CLEAN','INFECTED','ERROR')or coalesce(p_computed_sha256,'')!~'^[a-f0-9]{64}$'or p_computed_size_bytes is null or p_computed_size_bytes<0 or coalesce(p_engine_code,'')!~'^[A-Z][A-Z0-9_.-]{2,79}$'or length(btrim(coalesce(p_engine_version,'')))not between 1 and 80 then raise exception'INVALID_FINANCE_COST_SCAN_RESULT'using errcode='22023';end if;
+ if p_result is null or p_result not in('CLEAN','INFECTED','ERROR')or(p_computed_sha256 is not null and p_computed_sha256!~'^[a-f0-9]{64}$')or(p_computed_size_bytes is not null and p_computed_size_bytes<0)or(p_result<>'ERROR'and(p_computed_sha256 is null or p_computed_size_bytes is null)) or coalesce(p_engine_code,'')!~'^[A-Z][A-Z0-9_.-]{2,79}$'or length(btrim(coalesce(p_engine_version,'')))not between 1 and 80 then raise exception'INVALID_FINANCE_COST_SCAN_RESULT'using errcode='22023';end if;
  select configuration.environment into environment from private.admin_execution_environment_v1 configuration where configuration.singleton;
  if p_engine_code='MATRICIA_SANDBOX'and environment is distinct from'DEVELOPMENT'and environment is distinct from'STAGING'then raise exception'FINANCE_COST_REAL_SCANNER_REQUIRED'using errcode='42501';end if;
- if p_result='CLEAN'and(p_computed_sha256<>u.sha256 or p_computed_size_bytes<>u.size_bytes or not exists(select 1 from storage.objects object where object.bucket_id=u.storage_bucket and object.name=u.storage_path and object.metadata->>'mimetype'=u.mime_type and object.metadata->>'size'=u.size_bytes::text))then raise exception'FINANCE_COST_DOCUMENT_BYTES_MISMATCH'using errcode='55000';end if;
+ if p_result='CLEAN'and(p_computed_sha256 is distinct from u.sha256 or p_computed_size_bytes is distinct from u.size_bytes or not exists(select 1 from storage.objects object where object.bucket_id=u.storage_bucket and object.name=u.storage_path and object.metadata->>'mimetype'=u.mime_type and object.metadata->>'size'=u.size_bytes::text))then raise exception'FINANCE_COST_DOCUMENT_BYTES_MISMATCH'using errcode='55000';end if;
  insert into private.finance_cost_document_scan_results_v1(id,upload_id,result,computed_sha256,computed_size_bytes,engine_code,engine_version,worker_id,lease_token,row_version)values(result_id,u.id,p_result,p_computed_sha256,p_computed_size_bytes,p_engine_code,p_engine_version,p_worker_id,p_lease_token,p_expected_row_version);
  update public.finance_cost_document_uploads_v1 set scan_status=case p_result when'CLEAN'then'CLEAN'when'INFECTED'then'REJECTED'else'ERROR'end,scan_result_id=result_id,row_version=row_version+1,next_attempt_at=clock_timestamp()+make_interval(secs=>least(3600,30*(2^attempt_count)::integer))where id=u.id returning*into u;
  delete from private.finance_cost_document_scan_claims_v1 where upload_id=u.id;
