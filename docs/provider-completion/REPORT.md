@@ -2,7 +2,7 @@
 
 Source explicite : Client `7e01276818e8af11cf18f616615721f1662951fe`, conservé dans `codex/provider-completion-20261102`. Aucun déploiement ni fusion en production. Le présent rapport distingue implémentation, tests locaux et recette hébergée ; il ne certifie pas une livraison commerciale complète.
 
-Produit final : `5b8b0f738137abee19f6552aef538e906d04f24a`, arbre `apps/web` `ef4b62c67a4d8ad5a6403e6a4568bd9dc1774c75`. Les versions8941517 et5e06b32 restent les candidats exacts des recettes intermédiaires, avec provenance conservée. Les commits de tests/preuves/documentation suivants ne constituent pas une autre interface.
+Produit final : `5b8b0f738137abee19f6552aef538e906d04f24a`, arbre `apps/web` `ef4b62c67a4d8ad5a6403e6a4568bd9dc1774c75`. Les versions `8941517` et `5e06b32` restent les candidats exacts des recettes intermédiaires, avec provenance conservée. Les commits de tests/preuves/documentation suivants ne constituent pas une autre interface.
 
 ## Périmètre et preuves
 
@@ -31,11 +31,11 @@ Les identifiants E/D ci-dessous appartiennent à l'analyse approfondie du parcou
 | D02 | Échéancier approuvé lié aux échéances réelles |40500, contre-tests financiers et refus échéance impayée |
 | D03 | Pré-relevé, contradiction, exceptions et clôture durable |40100–40950, SQL0347 56 assertions au checkpoint40940 ; délais réels conservés |
 | D04 | RejetV1, correctionV2 et rejeu exact du reçu |41700/41800, SQL0348 102 assertions au checkpoint41830 |
-| D05 | Jalons corrigés avec décisions historiques |41400, SQL0348 ; la recette native navigateur reste à finir |
+| D05 | Jalons corrigés avec décisions historiques |41400, SQL0348 ; réception native V1 refusée puis V2 acceptée, preuves et commentaires conservés sur 8941517 |
 | D06 | Contrat complet avant signature et historique | Contrat natif généré après sélectionV2, PDF FR/AR et création de mission réussis ; signature DEV-mock SIMPLE, externe non certifiée |
-| D07 | ADD/REPLACE/REMOVE signés, préparés et exécutés |41950/41960, SQL0355 170,0355b27,0355c18 ; legacy0354 129, chaque transaction annulée |
+| D07 | ADD/REPLACE/REMOVE signés, préparés et exécutés |41950/41960, SQL0355 204, 0355b 27, 0355c 18 ; legacy0354 129, chaque transaction annulée |
 | D08 | Encaissement des missions livrées/terminées |40000+, contre-tests financiers et confirmation Client séparée |
-| D09 | Technicien affecté, lecture séparée de l'exécution |41500/41820/41950, rôles composites et révocation SQL ; recette navigateur préparée |
+| D09 | Technicien affecté, lecture séparée de l'exécution |41500/41820/41950, rôles composites et révocation SQL ; technicien non affecté puis révoqué refusé pendant la recette navigateur sur 8941517 |
 | D10 | Preuves et commentaires de réception accessibles sous droits | Versions privées propres, commentaires immuables, tests route/UI et SQL0348 |
 | D11 | Histoire financière paginée et anciennes devises | DAL, tests anciennes factures hors première page et devises exactes |
 | D12 | Relations missions/contrats paginées |41300/41830, recherche native SQL ; détail direct sous RLS |
