@@ -1,3 +1,4 @@
+import { financeCostProofCopy } from "@/modules/admin/screens/pnl/finance-cost-proof-copy";
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -54,6 +55,7 @@ export default async function AdminFinancePage({
   return (
     <AdminModulePage locale={locale} active="finance" path="finance" title={m.title} lead={c.hubFinanceLead} hubGroup="finance">
       <Link className="admin-btn-outline inline-flex min-h-11 items-center" href={`/${locale}/administration/finance/recompenses`}>{ar?"مراجعة مكافآت إحالة العملاء":"Examiner les récompenses du parrainage Client"}</Link>
+      <Link className="admin-btn-outline inline-flex min-h-11 items-center" href={`/${locale}/administration/finance/rapprochements-couts`}>{financeCostProofCopy[locale].openReconciliation}</Link>
       {result.status === "error" ? (
         <Alert variant="destructive">
           <AlertTitle>{result.reason === "MFA_REQUIRED" ? mfaRequiredMessage(locale) : result.reason === "FORBIDDEN" ? m.forbidden : m.unavailable}</AlertTitle>

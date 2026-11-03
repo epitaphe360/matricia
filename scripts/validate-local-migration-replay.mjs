@@ -140,7 +140,7 @@ try {
   if (summary.sql.some(test => !test.passed)) throw new Error('LOCAL_REPLAY_SQL_TESTS_FAILED');
   summary.status = 'passed';
 } catch (error) {
-  summary.failure = /^LOCAL_REPLAY_[A-Z_]+(?::[a-zA-Z0-9_.-]+)?$/.test(error.message) ? error.message : 'LOCAL_REPLAY_FAILED';
+  summary.failure = /^LOCAL_REPLAY_[A-Z0-9_]+(?::[a-zA-Z0-9_.-]+)?$/.test(error.message) ? error.message : 'LOCAL_REPLAY_FAILED';
   process.exitCode = 1;
 } finally {
   try {
