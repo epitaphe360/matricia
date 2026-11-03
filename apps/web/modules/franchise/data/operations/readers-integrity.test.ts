@@ -41,6 +41,7 @@ describe("franchise complete readers and explicit incidents",()=>{
   expect(result.dashboard.prospects[0]?.invitation).toBeUndefined();
   expect(result.dashboard.prospects[300]?.invitation).toMatchObject({status:"QUEUED",deliveryMode:"NON_CONTRACTUAL_DEMO",sentAt:null});
   expect(mocks.queries.filter(q=>q.table==="franchise_crm_prospects").map(q=>[q.from,q.to])).toEqual([[0,99],[100,199],[200,299],[300,399]]);
+  for(const table of["franchise_crm_activities","franchise_pipeline_events"])expect(mocks.queries.find(q=>q.table===table)?.matches).toEqual({franchise_id:franchise});
  });
  it("returns an explicit incident when a later CRM page fails",async()=>{
   mocks.rows.set("franchises",Array.from({length:100},()=>({id:franchise,operator_organization_id:org,franchise_type:"IT",operator_code:"HATIM_AHMITECH"})));
