@@ -248,11 +248,11 @@ export function FranchiseMandateInviteForm({ locale, organizationId }: { locale:
       <div>
         <Label htmlFor={`${prefix}-role`}>{c.memberRole}</Label>
         <select id={`${prefix}-role`} name="roleCode" required className={control}>
-          <option value="FRANCHISE_EXPERT">FRANCHISE_EXPERT</option>
-          <option value="FRANCHISE_PROVIDER_MANAGER">FRANCHISE_PROVIDER_MANAGER</option>
-          <option value="FRANCHISE_ACCOUNTING">FRANCHISE_ACCOUNTING</option>
-          <option value="FRANCHISE_MANAGER">FRANCHISE_MANAGER</option>
-          <option value="FRANCHISE_VIEWER">FRANCHISE_VIEWER</option>
+          <option value="FRANCHISE_EXPERT">{locale==="ar"?"خبير الامتياز":"Expert franchisé"}</option>
+          <option value="FRANCHISE_PROVIDER_MANAGER">{locale==="ar"?"مسؤول شبكة مقدمي الخدمة":"Responsable réseau sous-traitants"}</option>
+          <option value="FRANCHISE_ACCOUNTING">{locale==="ar"?"محاسبة الامتياز":"Comptabilité franchisé"}</option>
+          <option value="FRANCHISE_MANAGER">{locale==="ar"?"مسؤول الامتياز":"Responsable franchisé"}</option>
+          <option value="FRANCHISE_VIEWER">{locale==="ar"?"مشاهد الامتياز":"Observateur franchisé"}</option>
         </select>
       </div>
       <div>
