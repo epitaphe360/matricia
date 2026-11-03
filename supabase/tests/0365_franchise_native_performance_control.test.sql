@@ -108,6 +108,7 @@ select is((select count(*)::integer from public.audit_events where action='franc
 select is((select status from public.franchises where id='d3650000-0000-4000-8000-000000000001'),'ACTIVE','control engine never sanctions or terminates a franchise automatically');
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"a3650000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal2"}',true);
+select is(public.list_franchise_native_control_v1('d3650000-0000-4000-8000-000000000002')#>>'{capabilities,canDecide}','false','the composite operator is not offered independent approval controls');
 select throws_ok(format($q$select public.record_franchise_control_plan_event_v1(%L,'APPROVED','Cannot approve the operator own plan',null,'control365-composite')$q$,(select id from public.franchise_control_plan_proposals_v1 where franchise_id='d3650000-0000-4000-8000-000000000002'limit 1)),'42501','FRANCHISE_CONTROL_PLAN_INDEPENDENT_REVIEW_REQUIRED','composite Admin and franchise member cannot approve the operator plan');
 reset role;
 
