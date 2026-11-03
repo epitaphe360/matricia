@@ -139,10 +139,7 @@ create or replace function public.open_franchise_pnl_book(p_library_id uuid,p_fr
 returns jsonb language plpgsql security definer set search_path=pg_catalog set timezone='UTC' as $$
 declare candidate record;counted integer;
 begin
- -- Keep the established lexical anchor for migration452110 while the first
- -- guard and authoritative explicit command already reject SQL NULL assurance.
- if auth.jwt()->>'aal'is distinct from'aal2'then raise exception'FRANCHISE_BOOK_DENIED'using errcode='42501';end if;
- if auth.uid()is null or private.has_platform_role(array['SUPER_ADMIN','FINANCE_MANAGER'])is distinct from true or auth.jwt()->>'aal'<>'aal2'then raise exception'FRANCHISE_BOOK_DENIED'using errcode='42501';end if;
+ if auth.uid()is null or private.has_platform_role(array['SUPER_ADMIN','FINANCE_MANAGER'])is distinct from true or auth.jwt()->>'aal'is distinct from'aal2'then raise exception'FRANCHISE_BOOK_DENIED'using errcode='42501';end if;
  select count(*)into counted from public.franchises f join public.franchise_approval_requests q on q.franchise_id=f.id and q.status='APPROVED'
   where f.library_id=p_library_id and f.operator_organization_id=p_franchise_organization_id;
  if counted<>1 then raise exception'FRANCHISE_BOOK_MANDATE_SELECTION_REQUIRED'using errcode='55000';end if;
