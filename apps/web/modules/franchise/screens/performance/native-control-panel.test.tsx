@@ -14,7 +14,7 @@ describe("native control FR/AR states", () => {
   it.each(["fr", "ar"] as const)("has a concrete worker recovery message before the first report in %s", locale => {
     const dashboard = nativeControlFixture(); dashboard.reports = [];
     const html = renderToStaticMarkup(<FranchiseNativePerformancePanel locale={locale} result={{ status: "success", dashboard }} returnPath={`/${locale}/franchise/performance`}/>);
-    expect(html).toContain(locale === "fr" ? "Le worker n’a pas encore produit" : "لم ينتج العامل الآلي");
+    expect(html).toContain(locale === "fr" ? "Les rapports ne sont pas encore disponibles" : "التقارير غير متاحة بعد");
     expect(html).not.toContain(locale === "fr" ? "Les six axes sont mesurés" : "المحاور الستة مقاسة");
   });
 });
