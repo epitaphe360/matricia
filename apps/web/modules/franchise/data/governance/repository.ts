@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { unstable_rethrow } from "next/navigation";
 import { loadMyPlatformAccess } from "@/modules/shared/lib/account-security/platform-access";
 import { type FranchiseDashboard } from "./model";
 
@@ -19,16 +20,21 @@ const closure = z.object({ id, book_id: id, period_start: z.string(), period_end
 const allocation = z.object({ id, closure_version_id: id, beneficiary_code: z.string(), share_bps: z.number().int(), amount_minor: minor, rounding_adjustment_minor: z.number().int() });
 const ledger = z.object({ id: ledgerId, book_id: id, closure_version_id: id.nullable(), beneficiary_code: z.string(), entry_type: z.string(), amount_minor: minor, reference_type: z.string(), reference_id: z.string(), proof_hash: z.string().regex(/^[0-9a-f]{64}$/).nullable(), created_at: z.string() });
 
-export type FranchiseLoadResult = { status: "success"; dashboard: FranchiseDashboard } | { status: "error"; reason: "UNAUTHENTICATED" | "FORBIDDEN" | "QUERY_FAILED" | "INVALID_RESPONSE" };
+export type FranchiseLoadResult = { status: "success"; dashboard: FranchiseDashboard } | { status: "error"; reason: "UNAUTHENTICATED" | "MFA_REQUIRED" | "FORBIDDEN" | "QUERY_FAILED" | "INVALID_RESPONSE" };
 
 export async function loadFranchiseDashboard(locale: "fr" | "ar", scope?: {franchiseId:string;organizationId?:string;libraryId?:string}): Promise<FranchiseLoadResult> {
   const access = await loadMyPlatformAccess();
   if (access.status === "error") return { status: "error", reason: access.reason };
   const client = access.client;
+  const platformReadRoles = ["SUPER_ADMIN", "MATRICIA_ADMIN", "FINANCE_MANAGER", "LIBRARY_MANAGER", "READ_ONLY_AUDITOR"];
+  const platformReader = platformReadRoles.some(role => access.roles.has(role));
+  if (platformReader && !access.requirementSatisfied) return { status: "error", reason: "MFA_REQUIRED" };
   const roles = access.requirementSatisfied ? access.roles : new Set<string>();
-  const snapshotResult=await client.rpc("franchise_governance_dashboard_snapshot",{p_franchise_id:scope?.franchiseId??null});
+  let snapshotResult;
+  try { snapshotResult = await client.rpc("franchise_governance_dashboard_snapshot", { p_franchise_id: scope?.franchiseId ?? null }); }
+  catch (error) { unstable_rethrow(error); return { status: "error", reason: "QUERY_FAILED" }; }
   const snapshot=z.object({complete:z.literal(true),snapshotAt:z.string(),balances:z.array(z.object({book_id:id,beneficiary_code:z.string(),balance_minor:z.string().regex(/^-?\d+$/)})),fs:z.array(z.unknown()),ls:z.array(z.unknown()),lvs:z.array(z.unknown()),ts:z.array(z.unknown()),ms:z.array(z.unknown()),aps:z.array(z.unknown()),decisions:z.array(z.unknown()),ins:z.array(z.unknown()),rs:z.array(z.unknown()),bs:z.array(z.unknown()),fees:z.array(z.unknown()),cs:z.array(z.unknown()),als:z.array(z.unknown()),ledgers:z.array(z.unknown()),feeLedgers:z.array(z.unknown())}).safeParse(snapshotResult.data);
-  if(snapshotResult.error)return{status:"error",reason:"QUERY_FAILED"};
+  if(snapshotResult.error)return{status:"error",reason:snapshotResult.error.code === "42501" ? "FORBIDDEN" : "QUERY_FAILED"};
   if(!snapshot.success)return{status:"error",reason:"INVALID_RESPONSE"};
   const balances={success:true as const,data:snapshot.data.balances};
   const fs={data:snapshot.data.fs};
@@ -49,7 +55,7 @@ export async function loadFranchiseDashboard(locale: "fr" | "ar", scope?: {franc
   const parsed = [z.array(franchise).safeParse(fs.data), z.array(library).safeParse(ls.data), z.array(libraryVersion).safeParse(lvs.data), z.array(territory).safeParse(ts.data), z.array(mandate).safeParse(ms.data), z.array(approval).safeParse(aps.data), z.array(approvalDecision).safeParse(decisionsResult.data), z.array(invitation).safeParse(ins.data), z.array(rule).safeParse(rs.data), z.array(book).safeParse(bs.data), z.array(fee).safeParse(fees.data), z.array(closure).safeParse(cs.data), z.array(allocation).safeParse(als.data), z.array(ledger).safeParse(ledgers.data), z.array(feeLedger).safeParse(feeLedgersResult.data)] as const;
   if (parsed.some((result) => !result.success)) return { status: "error", reason: "INVALID_RESPONSE" };
   const [franchises, libraries, libraryVersions, territories, mandates, approvals, decisions, invitations, rules, books, schedules, closures, allocations, entries, feeLedgers] = parsed.map((result) => result.success ? result.data : []) as [z.infer<typeof franchise>[], z.infer<typeof library>[], z.infer<typeof libraryVersion>[], z.infer<typeof territory>[], z.infer<typeof mandate>[], z.infer<typeof approval>[], z.infer<typeof approvalDecision>[], z.infer<typeof invitation>[], z.infer<typeof rule>[], z.infer<typeof book>[], z.infer<typeof fee>[], z.infer<typeof closure>[], z.infer<typeof allocation>[], z.infer<typeof ledger>[], z.infer<typeof feeLedger>[]];
-  if (!franchises.length && !roles.size) return { status: "error", reason: "FORBIDDEN" };
+  if (!franchises.length && !platformReader) return { status: "error", reason: "FORBIDDEN" };
   return { status: "success", dashboard: {
     canApprove: roles.has("SUPER_ADMIN") || roles.has("MATRICIA_ADMIN"), canManageFinance: roles.has("SUPER_ADMIN") || roles.has("FINANCE_MANAGER"),
     franchises: franchises.map((f) => {
