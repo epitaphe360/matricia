@@ -68,7 +68,7 @@ export async function FranchiseNestedPage({
   searchParams,
 }: {
   params: Promise<{ locale: string; slug: string[] }>;
-  searchParams: Promise<{ organizationId?: string; franchiseId?:string; q?: string; stage?: string; owner?: string; page?: string; bucket?: string;type?:string;category?:string;selected?:string }>;
+  searchParams: Promise<{ organizationId?: string; franchiseId?:string; q?: string; stage?: string; owner?: string; page?: string; bucket?: string;type?:string;category?:string;selected?:string;service?:string;status?:string;capacity?:string;zone?:string;docs?:string }>;
 }) {
   const [{ locale, slug }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale) || !slug?.length) notFound();
@@ -134,7 +134,7 @@ export async function FranchiseNestedPage({
       ) : nested.kind === "validations" ? (
         <FranchiseValidationsWorkbench locale={locale} query={space.selectedQuery} workspace={result.workspace} filters={query} bucket={nested.view && nested.view in FRANCHISE_VALIDATION_BUCKETS ? nested.view : null} commandIdentity={commandIdentity()} organizationId={space.selectedOrganizationId} />
       ) : nested.kind === "network" ? (
-        <NetworkBoard locale={locale} query={space.selectedQuery} mandateName={mandateName} view={nested.view} itemId={nested.itemId} search={query.q} page={query.page} board={board} organizationId={commandScope.organizationId} />
+        <NetworkBoard networkFilters={query} locale={locale} query={space.selectedQuery} mandateName={mandateName} view={nested.view} itemId={nested.itemId} search={query.q} page={query.page} board={board} organizationId={commandScope.organizationId} />
       ) : nested.kind === "requests" ? (
         <FranchiseRequestsBoard locale={locale} query={space.selectedQuery} mandateName={mandateName} view={nested.view} itemId={nested.itemId} search={query.q} stageFilter={query.stage} ownerFilter={query.owner} page={query.page} board={board} />
       ) : nested.kind === "quality" ? (
@@ -163,7 +163,7 @@ export async function FranchiseServiceDetailPage({
   searchParams,
 }: {
   params: Promise<{ locale: string; serviceId: string }>;
-  searchParams: Promise<{ organizationId?: string; franchiseId?:string;q?:string;type?:string;category?:string;selected?:string }>;
+  searchParams: Promise<{ organizationId?: string; franchiseId?:string;q?:string;type?:string;category?:string;selected?:string;service?:string;status?:string;capacity?:string;zone?:string;docs?:string }>;
 }) {
   const [{ locale, serviceId }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
@@ -184,7 +184,7 @@ export async function FranchiseQuestionnaireToolPage({
   searchParams,
 }: {
   params: Promise<{ locale: string; questionnaireId: string; tool: string }>;
-  searchParams: Promise<{ organizationId?: string; franchiseId?:string;q?:string;type?:string;category?:string;selected?:string }>;
+  searchParams: Promise<{ organizationId?: string; franchiseId?:string;q?:string;type?:string;category?:string;selected?:string;service?:string;status?:string;capacity?:string;zone?:string;docs?:string }>;
 }) {
   const [{ locale, questionnaireId, tool }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();

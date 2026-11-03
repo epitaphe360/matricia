@@ -388,7 +388,7 @@ export async function proposeFranchiseVolumePurchase(_: FranchiseCommandState, f
     correlationId: text(form, "correlationId"),
   });
   if (!parsed.success) return { status: "error", reason: "VALIDATION" };
-  const scaled=(value:string)=>{const[whole,fraction=""]=value.split(".");return BigInt(whole!)*1000000n+BigInt(fraction.padEnd(6,"0"));};
+  const scaled=(value:string)=>{const[whole,fraction=""]=value.split(".");return BigInt(whole!)*BigInt(1_000_000)+BigInt(fraction.padEnd(6,"0"));};
   if (scaled(parsed.data.minimumCommitmentUnits) > scaled(parsed.data.maximumUnits) || scaled(parsed.data.forecastUnits) > scaled(parsed.data.maximumUnits) || parsed.data.periodEnd < parsed.data.periodStart) {
     return { status: "error", reason: "VALIDATION" };
   }

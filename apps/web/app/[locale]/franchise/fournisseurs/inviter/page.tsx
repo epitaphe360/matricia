@@ -16,7 +16,7 @@ export default async function FranchiseInvitePage({ params, searchParams }: { pa
   if (!isLocale(locale)) notFound();
   const { space, result } = await requireFranchiseLibrary({ returnPath: `/${locale}/franchise/fournisseurs/inviter`, returnQuery: query, locale, organizationId: query.organizationId, franchiseId:query.franchiseId });
   const crm = await loadFranchiseCrm();
-  if (crm.status === "error" && crm.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/franchise/fournisseurs/inviter` }));
+  if (crm.status === "error" && crm.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: space.currentPath }));
   const c = franchiseCopy(locale);
   const mandateName = franchiseMandateName(result);
   const writable = crm.status === "success" ? crm.dashboard.franchises.find((item) => item.canWrite && item.territory) : null;

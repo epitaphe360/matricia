@@ -29,6 +29,10 @@ export async function requireFranchiseLibrary(input: { locale: Locale; organizat
   }
   const result = await loadFranchiseLibraryWorkspace({ locale: input.locale, organizationId: space.selectedOrganizationId ?? undefined,franchiseId:input.franchiseId,catalog:input.catalog });
   if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(input.locale, { next }));
+  if (result.status === "error" && result.reason === "MANDATE_REQUIRED") return {
+    space: { ...space, mandates: (result.availableMandates ?? []).filter(item => item.organizationId === space.selectedOrganizationId) },
+    result,
+  };
   if (result.status === "success") {
     const organizationId = result.workspace.mandate.operatorOrganizationId ?? null;
     const mandates = (result.workspace.availableMandates ?? []).filter(item => item.organizationId === organizationId);

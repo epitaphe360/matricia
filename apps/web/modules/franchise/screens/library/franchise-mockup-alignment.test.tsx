@@ -239,7 +239,8 @@ describe("alignement maquettes constructeurs et espaces (06–20)", () => {
     expect(html).toContain("franchise-kanban");
     expect(html).toContain("Professionnels de votre périmètre");
     expect(html).toContain("Ouvrir le dossier fournisseur");
-    expect(html).toContain("Revues à réaliser");
+    expect(html).toContain("Signalements disponibles");
+    expect(html).not.toContain("Revues à réaliser");
     expect(html).toContain("franchise-dense-table");
     expect(html).toContain("franchise-perf-kpis");
     expect(html).toContain("Volume de demandes");

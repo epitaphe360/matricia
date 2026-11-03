@@ -20,7 +20,7 @@ export default async function FranchiseMarketingPage({ params, searchParams }: {
   const m = getMarketingMessages(locale);
   const c = franchiseCopy(locale);
   const result = space.errorReason ? { status: "error" as const, reason: space.errorReason } : await loadWorkspaceMarketingDashboard(space.selectedOrganizationId);
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/franchise/marketing` }));
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: space.currentPath }));
   const mandateName = franchiseMandateName(library);
   const brandDefaults = result.status === "success" && space.selectedOrganizationId ? await loadMarketingBrandDefaults(space.selectedOrganizationId, locale, mandateName ? [mandateName] : []) : null;
   const dimensionLabels = result.status === "success" ? await loadMarketingDimensionLabels(result.dashboard, locale) : {};

@@ -7,7 +7,20 @@ vi.mock("@/modules/franchise/ui/franchise-app-shell",()=>({FranchiseAppShell:({c
 vi.mock("@/modules/franchise/ui/franchise-access-page",()=>({FranchiseAccessPage:({reason}:{reason:string})=><p data-reason={reason}>READ_FAILED</p>}));
 const org="22222222-2222-4222-8222-222222222222",franchise="33333333-3333-4333-8333-333333333333",question="44444444-4444-4444-8444-444444444444";
 const query=`?organizationId=${org}&franchiseId=${franchise}`;
-function fixture(){return{space:{selectedQuery:query,selectedOrganizationId:org,currentPath:"/fr/franchise/recherche",userEmail:null,mandates:[]},result:{status:"success",workspace:{mandate:{franchiseId:franchise,libraryName:"TEST"},services:[],questionnaires:[],rules:[],questions:[{id:question,label:"Question TEST",status:"DRAFT"}],serverPage:{page:1,pageSize:25,groups:{SERVICE:{total:0},QUESTIONNAIRE:{total:0},RULE:{total:0},QUESTION:{total:26}}}}};}
+function fixture() {
+  return {
+    space: { selectedQuery: query, selectedOrganizationId: org, currentPath: "/fr/franchise/recherche", userEmail: null, mandates: [] },
+    result: {
+      status: "success",
+      workspace: {
+        mandate: { franchiseId: franchise, libraryName: "TEST" }, services: [], questionnaires: [], rules: [],
+        questions: [{ id: question, label: "Question TEST", status: "DRAFT" }],
+        serverPage: { page: 1, pageSize: 25, groups: { SERVICE: { total: 0 }, QUESTIONNAIRE: { total: 0 }, RULE: { total: 0 }, QUESTION: { total: 26 } } },
+      },
+    },
+  };
+}
+
 beforeEach(()=>mocks.load.mockReset().mockResolvedValue(fixture()));
 for(const locale of ["fr","ar"] as const)describe(`Franchise catalogue search ${locale}`,()=>{
  it("searches all four object types on the server with the exact selected context",async()=>{

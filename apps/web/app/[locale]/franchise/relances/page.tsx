@@ -19,7 +19,7 @@ export default async function FranchiseFollowupsPage({ params, searchParams }: {
   if (library.status === "error") return <FranchiseAccessPage locale={locale} space={space} reason={library.reason} active="followups" returnPath={space.currentPath} />;
   const m = getFollowupMessages(locale);
   const r = await loadFranchiseFollowups(library.status === "success" ? library.workspace.mandate.franchiseId : "00000000-0000-4000-8000-000000000000");
-  if (r.status === "error" && r.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/franchise/relances` }));
+  if (r.status === "error" && r.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: space.currentPath }));
   const c = franchiseCopy(locale);
   const mandateName = franchiseMandateName(library);
   const board=await loadFranchiseSpaceFromLibrary({locale,query:space.selectedQuery,result:library});

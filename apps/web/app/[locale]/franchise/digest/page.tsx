@@ -20,7 +20,7 @@ export default async function FranchiseDigestPage({ params, searchParams }: { pa
   const board=await loadFranchiseSpaceFromLibrary({locale,query:space.selectedQuery,result:library});
   const m = getFranchiseDigestMessages(locale);
   const result = await loadFranchiseDigest(library.status === "success" ? library.workspace.mandate.franchiseId : "00000000-0000-4000-8000-000000000000");
-  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/franchise/digest` }));
+  if (result.status === "error" && result.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: space.currentPath }));
   const c = franchiseCopy(locale);
   const mandateName = franchiseMandateName(library);
   const keys: Record<string, string> = {};
