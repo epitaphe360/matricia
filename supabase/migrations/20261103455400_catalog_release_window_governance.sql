@@ -48,12 +48,12 @@ declare actor uuid:=auth.uid();target public.catalog_releases%rowtype;lib public
  perform private.assert_catalog_window_central_v1();
  select*into target from public.catalog_releases where id=p_release_id;
  if target.id is null or private.has_library_permission(target.library_id,'CATALOG_APPROVE',actor)is distinct from true then raise exception'CATALOG_SCOPE_DENIED'using errcode='42501';end if;
- -- A publishing lease owns its release row before the library row. Reject that
- -- ineligible target before taking the inverse governance/library lock order.
- if target.status is distinct from'PUBLISHED'then raise exception'CATALOG_RELEASE_WINDOW_REVIEW_NOT_ELIGIBLE'using errcode='55000';end if;
  if p_expected_row_version is null or p_expected_row_version<1 or coalesce(p_expected_snapshot_hash,'')!~'^[a-f0-9]{64}$'or length(btrim(coalesce(p_reason,'')))not between 3 and 1000 or p_correlation_id is null then raise exception'INVALID_CATALOG_WINDOW_REQUEST'using errcode='22023';end if;
  h:=private.canonical_request_hash(jsonb_build_object('release',p_release_id,'version',p_expected_row_version,'hash',p_expected_snapshot_hash,'reason',btrim(p_reason)));
  select b.command_id,b.response_body into command,replay from private.begin_catalog_command(actor,'catalog.release.window.request.v1',p_idempotency_key,h)b;if replay is not null then return replay;end if;
+ -- A publishing lease owns its release row before the library row. Reject that
+ -- ineligible target before taking the inverse governance/library lock order.
+ if target.status is distinct from'PUBLISHED'then raise exception'CATALOG_RELEASE_WINDOW_REVIEW_NOT_ELIGIBLE'using errcode='55000';end if;
  perform pg_advisory_xact_lock(hashtextextended('catalog-library:'||target.library_id::text,0));
  select*into lib from public.catalog_libraries where id=target.library_id for update;
  perform 1 from public.catalog_releases where id in(p_release_id,lib.current_release_id)order by id for update;
