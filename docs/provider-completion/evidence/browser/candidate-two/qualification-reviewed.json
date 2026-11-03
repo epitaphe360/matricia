@@ -7,25 +7,27 @@
     {
       "step": "actual_private_partner_upload_scan_and_independent_document_review",
       "passed": true,
-      "candidate": "8941517a6beacfac1fd0b785035ce9ec15d877dc"
+      "candidate": "e929f99135953bf05301c45b34f062fb5884c156"
     },
     {
       "step": "independent_admin_ui_attests_test_historical_partnership_without_direct_sql_state_write",
       "passed": true,
-      "candidate": "8941517a6beacfac1fd0b785035ce9ec15d877dc"
+      "candidate": "e929f99135953bf05301c45b34f062fb5884c156"
     },
     {
       "step": "current_identity_revalidated_after_company_decision_change",
       "passed": true,
-      "candidate": "8941517a6beacfac1fd0b785035ce9ec15d877dc"
+      "candidate": "e929f99135953bf05301c45b34f062fb5884c156"
     },
     {
       "step": "native_independent_service_A_approval_and_service_B_information_required_remain_separate",
-      "passed": true
+      "passed": true,
+      "candidate": "8941517a6beacfac1fd0b785035ce9ec15d877dc"
     },
     {
       "step": "provider_owner_cannot_self_approve_service",
-      "passed": true
+      "passed": true,
+      "candidate": "8941517a6beacfac1fd0b785035ce9ec15d877dc"
     }
   ],
   "partnerSignatureSource": "HISTORICAL_TEST_LEGAL_SIGNATURE_PREREQUISITE_NOT_CERTIFIED",
@@ -58,5 +60,15 @@
     "manifestHash": "d0fe7da1324bb10a8ed4c3e15b3b283d5b8478294c359ea798c850b780967265",
     "engineScoreDisplayed": true,
     "humanScorePercent": "80"
+  },
+  "sourcePartnerPrerequisites": {
+    "candidate": "e929f99135953bf05301c45b34f062fb5884c156",
+    "receipt": "candidate-one/qualification-reviewed.json",
+    "receiptSha256": "4a0d5b4dd410c24feb7ca2d4512655774dc4e3eca3dcaeb4fb9709a9821c3a37",
+    "matchingDocumentIdHashScanJobAndVersion": true,
+    "stepsMatched": 3,
+    "correction": "Repeated resume annotated existing steps with the most recent failed receipt candidate. Original immutable receipt establishes these unchanged completed prerequisites on e929; no native mutation replayed.",
+    "asRecordedReceipt": "candidate-two/qualification-reviewed-as-recorded.json",
+    "asRecordedReceiptSha256": "cbc0e19a214a08510bf0a9920655ca21395ac10aa9abd0abae433f5b5919515e"
   }
 }

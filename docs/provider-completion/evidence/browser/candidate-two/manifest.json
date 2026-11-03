@@ -185,9 +185,14 @@
       "sha256": "df5ea70f2b0df206ecc9063394289c2421cbb96ac8c8f80036d3bdec2a144982"
     },
     {
-      "file": "qualification-reviewed.json",
+      "file": "qualification-reviewed-as-recorded.json",
       "sizeBytes": 2307,
       "sha256": "cbc0e19a214a08510bf0a9920655ca21395ac10aa9abd0abae433f5b5919515e"
+    },
+    {
+      "file": "qualification-reviewed.json",
+      "sizeBytes": 3165,
+      "sha256": "20dbc9988106baade32fe8476349fbcd6d1e09d56b182d06907b4995b427d3fa"
     },
     {
       "file": "quote-revision/client-retained-published-fr-768.png",
@@ -218,6 +223,11 @@
       "file": "quotes/summary.json",
       "sizeBytes": 2312,
       "sha256": "205e263bfef0aea6c30d4a4681a82200e165e301dd31aa57333e2d736e3ed094"
+    },
+    {
+      "file": "rfq-provenance.json",
+      "sizeBytes": 2846,
+      "sha256": "315b617c2cddc6d574991b12d47a00975b2c064fea116d4183001240e78e24ac"
     },
     {
       "file": "upgrade.json",

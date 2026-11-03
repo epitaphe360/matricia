@@ -1,0 +1,91 @@
+{
+  "scope": "FINAL_PROVIDER_NATIVE_ACCEPTANCE_WITH_EXPLICIT_REMAINING_LIMITS",
+  "candidate": "706cd89347e39425cadbd8a75beb8a93d3dd3e2a",
+  "appTree": "c43980c6da4345d8da6260ffb264b5089becf2f2",
+  "status": "BROWSER_CHECKS_PASSED_FINANCIAL_CLOSURE_AND_EXTERNAL_CERTIFICATIONS_NOT_CLAIMED",
+  "productionDeployment": false,
+  "remoteSupabaseVercelRailwayCertified": false,
+  "latestRuntimeBuild": {
+    "status": "PASSED",
+    "typescriptCompleted": true
+  },
+  "responsive": {
+    "pages": 232,
+    "routes": 29,
+    "locales": [
+      "fr",
+      "ar"
+    ],
+    "widths": [
+      375,
+      390,
+      768,
+      1440
+    ],
+    "failures": 0,
+    "javascriptErrors": 0,
+    "horizontalOverflows": 0,
+    "captureCount": 232
+  },
+  "axe": {
+    "scans": 256,
+    "violations": 0,
+    "incompleteRuleOccurrences": 256,
+    "incompleteRuleIds": [
+      "color-contrast"
+    ],
+    "exclusions": [],
+    "fullWcagCertified": false
+  },
+  "selectedRenderedContrast": {
+    "scans": 8,
+    "targets": 56,
+    "backgroundBoundsPass": 48,
+    "opaqueGlyphsPass": 6,
+    "notMeasured": 2,
+    "belowThreshold": 0,
+    "allAxeIncompletesResolved": false
+  },
+  "accountMenu": {
+    "cases": 8,
+    "passed": 8,
+    "hitTestedActionsPerCase": 3,
+    "keyboardTabOrder": true,
+    "touchOpenClose": true
+  },
+  "modeClient": {
+    "steps": 4,
+    "status": "PASSED",
+    "governedActivationCandidate": "5e06b3241a0eed0c387e4cdaad7983b6fec764c4",
+    "sameOrganizationAndMembership": true,
+    "providerOnlyAcceptancePrecededActivation": true
+  },
+  "navigation": {
+    "steps": 3,
+    "status": "PASSED",
+    "sameDocumentAcrossLocaleSwitches": true,
+    "ordinaryMissionSignedScopePending": false,
+    "ordinaryScopeNoticeAbsentFrAr": true,
+    "generalAdminOrganizationSelect": 0,
+    "purposeBoundProviderQueueRows": 1
+  },
+  "nativeBusinessProvenance": {
+    "entryIdentityQuestionnaire": "e929f99135953bf05301c45b34f062fb5884c156",
+    "qualificationPartnerPrerequisites": "e929f99135953bf05301c45b34f062fb5884c156",
+    "qualificationServiceDecisionsQuotesRevisionContractMissionDeliveryMessages": "8941517a6beacfac1fd0b785035ce9ec15d877dc",
+    "currentFinanceAndGovernedClientRoleActivation": "5e06b3241a0eed0c387e4cdaad7983b6fec764c4",
+    "finalBuildNavigationMatrixMenusContrast": "706cd89347e39425cadbd8a75beb8a93d3dd3e2a"
+  },
+  "helperGuardTests": {
+    "passed": 15,
+    "failed": 0
+  },
+  "remainingLimits": [
+    "Current November3 financial declaration cannot enter October31 pre-statement; await actual November month-end cutoff and full approved dispute window. No closed invoice/payment plan/allocation browser certification.",
+    "No real legal signature, physical production antivirus, bank movement, professional fiscal validation or approved legal issuer publication certified.",
+    "No actual signed-amendment-awaiting-client-preparation UI flow played; ordinary false state verified; SQL and unit evidence remains separate.",
+    "Two selected contrast targets not rendered; all other axe contrast incompletes remain unresolved, no full WCAG certification.",
+    "Final quote FR1440 capture retains SELECTED raw enum in badge and verification; no exhaustive label translation certification.",
+    "Mode Client checks governance and context only, without rerunning full Client acceptance or bypassing Client compliance."
+  ]
+}

@@ -1,12 +1,18 @@
 # Independent Provider browser acceptance
 
-Status: **partially executed on e929 and candidate 8941517; native qualification now passed, business continuation in progress**. Initial harness base was integration commit
+Status: **native Provider business continuation executed, with financial closure deliberately not certified before its real deadline**. The final optimized local runtime is pinned to
+`706cd89347e39425cadbd8a75beb8a93d3dd3e2a` (app tree
+`c43980c6da4345d8da6260ffb264b5089becf2f2`). Initial harness base was integration commit
 `b0be5966c67923cdeb36e049e280ad0f08e3573b`. Immutable first-candidate receipts are in
 `docs/provider-completion/evidence/browser/candidate-one/`: 18 native entry steps,
 40 FR/AR responsive pages, 64 axe scans with zero violations but unresolved contrast
 incompletes, 8 menu cases and 20 real-role security checks. These are partial
-receipts, not full Provider acceptance. Quotes, contracts, delivery, finance and
-messaging await their own native continuation receipts. The
+receipts, not full Provider acceptance. `candidate-two/` contains actual native
+qualification, quote, revised quote, contract/mission, delivery correction/reception
+and private messaging receipts on the explicitly attributed candidate 8941517.
+`candidate-final/` contains current financial governance on 5e06, the original
+reproductions and final navigation, mode selection and rendered-contrast evidence.
+Each receipt retains the candidate on which its mutations actually ran. The
 orchestrator must signal each new candidate before schema upgrade or rebuild.
 
 Run from `/workspace/provider-browser` with Node 24, installed workspace
@@ -170,8 +176,8 @@ decision. The revision stage uses the actual counterparty Client command and
 Provider keyboard/touch UI, verifies immutable published history and denies access
 to the private replacement before republication. Contract selection requires the
 exact newly republished version rather than silently retaining the first version.
-These continuation scripts are prepared; only their own successful native receipts
-can establish that they executed. Never rerun them over a failed native checkpoint
+These continuation scripts executed successfully; their individual receipts, rather
+than this command list, establish the actual steps and candidate. Never rerun them over a failed native checkpoint
 without investigating the stored state and the exact failed operation.
 
 Candidate `8941517a6beacfac1fd0b785035ce9ec15d877dc` has a complete production-mode
@@ -189,3 +195,33 @@ adds their detail pages, all Provider lists and planning at every FR/AR width. I
 explicitly excludes a closed invoice detail if no real financial closure can yet
 exist because of the mandatory dispute period. It never sets `FIXTURE_READY` or
 certifies that missing invoice flow.
+
+## Final continuation and its limits
+
+The current matrix uses `--current-business-state --preserve-reviewed-native-provenance`.
+It rereads the original canonical rows and exact revised offer, preserving the 894
+business mutations and 5e06 financial mutation attribution rather than relabelling
+them as executions on the final runtime. There is one mixed one-time/recurring
+quote, not two independently created quotes. The former assigned Technician remains
+revoked after the actual delivery boundary test.
+
+Financial acceptance created one real current declaration and accrual after Client
+confirmation and a distinct Finance review. No ledger, invoice, payment, balance,
+receipt or clock was injected. The generated October pre-statement is outside the
+November 3 declaration period; its empty lines are valid, not proof that the current
+accrual was billed. The current accrual must await its November month-end cutoff and
+the real dispute window. Closed invoice, payment plan/allocation, external payment,
+production fiscal/legal validation, production antivirus and contractual signature
+are not certified by this browser acceptance.
+
+Mode Client activation occurred only after all Provider-only business steps, by a
+real Owner request and independent AAL2 governance decision; Owner self-approval
+remained refused. The same organization and membership were retained. Final role
+navigation and the true SPA FR→AR→FR locale transition use existing native sessions,
+with identical `performance.timeOrigin` across both language clicks. No reload is
+used to conceal a stale document locale.
+
+Rendered-glyph checks concern selected visible texts only. Two non-rendered targets
+remain unmeasured; axe color-contrast incompletes outside this subset remain
+unresolved. Zero automated violations is not a full WCAG certification. See the
+final evidence index for exact measured counts, candidates and remaining limits.
