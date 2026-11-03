@@ -13,9 +13,10 @@
     "status": "passed",
     "typecheck": "passed"
   },
-  "finalWebTypecheck": "running",
-  "finalWebLint": "running",
+  "finalWebTypecheck": "passed",
+  "finalWebLint": "passed",
   "browserFinal": "pending",
   "sqlFreshFinal": "pending",
-  "ci": "not_started_account_billing"
+  "ci": "not_started_account_billing",
+  "optimizedTypedBuild": "passed"
 }
