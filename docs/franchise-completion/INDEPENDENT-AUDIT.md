@@ -120,3 +120,30 @@ Même préfixe PATH/COREPACK_HOME que la commande de base. Résultats : **123 te
 Course liée à FA11 : le reçu adverse peut exister dans `private.verified_payment_dispatch_inbox_v1` avant son import dans `credit_pack_payment_adjustments_v1`. Les protections de clôture et de versement doivent inclure cette source et ses écrivains, pas uniquement la table d'ajustements finale. Une signature de paiement correctement vérifiée mais non encore dispatchée ne doit pas laisser une fenêtre de distribution admissible. Ce point a été transmis au propriétaire financier.
 
 Cette passe est une **contre-revue intermédiaire**. Les tests SQL réellement exécutés par le chantier d'intégration, la recette native, la matrice visuelle et le nouveau moteur de performance45400 restent à examiner avant conclusion finale. Les 123/31 tests UI/contrats ne sont pas présentés comme une preuve monétaire ou de disponibilité externe.
+
+## Deuxième contre-revue — performance et concordance économique
+
+Le lot natif45400 et ses corrections additives45410/45420/45430 ont été lus jusqu'au commit de domaine `3b03bacb`. Un contrôle indépendant des quatre fichiers de tests DAL/action/rendu/export a été exécuté après cette révision : **23 tests réussis**, journal [performance corrigée](evidence/independent-performance-corrected.log). Il complète les contrôles précédents ; ne pas compter cette reprise comme 23 nouveaux tests distincts du même groupe.
+
+Lecture favorable des mécanismes suivants : six axes dérivés des faits, absence mesurée par `null`, aucun score global sans six mesures, modèle à deux administrateurs AAL2, rapports quotidiens/mensuels/trimestriels immuables, benchmark anonyme au minimum cinq autres franchises comparables, rapports/plans par page et événements50 avec continuation, séparation des mesures manuelles historiques. Les compteurs d'événements d'acquisition sont distincts de la cohorte d'invitations créée dans la période. Les commentaires utilisateur restent inchangés. La décision sur un plan est refusée à un membre actif de l'organisation opératrice, même s'il cumule un rôle Admin ; la capacité affichée suit ce refus. Les plans identiques encore ouverts ne sont plus multipliés par les trois rapports périodiques.
+
+Le worker est réellement raccordé au planificateur natif, indépendamment de l'outbox et de l'antivirus. Son état est faux avant la première exécution, pendant un calcul, si le verrou est occupé ou après un échec ; readiness et heartbeat ne transforment pas ces états en réussite. La publication hébergée et les déclencheurs externes ne sont pas certifiés par cette lecture ni par les tests unitaires.
+
+La portée de l'axe conformité est précisée près de l'interface : mandat et droit d'entrée applicable, pas certification de toute la clôture comptable. Un vrai coût égal à zéro n'a pas encore de mode de preuve dans le rapprochement45220 ; il reste bloqué, plutôt que supposé nul. Les rapports ne certifient pas une attribution personnelle des revenus.
+
+### FA14 — P1 : concordance livre / franchise / droits du mandat
+
+Un autre agent préparant la recette historique a signalé une incohérence ; elle a été **confirmée indépendamment dans le code** :
+
+- `open_franchise_pnl_book` dans `20260912006800` valide la règle financière, le type et l'opérateur fournis, l'existence de la bibliothèque et l'organisation active. Il ne relie pas ces termes à une franchise/son mandat réel.
+- `private.credit_economic_book_route_v1` dans `20261031268031:5` relie bibliothèque, organisation et devise à un mandat, mais ne compare pas le type, l'opérateur ou les parts du livre/règle financière aux termes du mandat.
+- Conséquence : une route de franchise STANDARD pourrait désigner un livre IT et la clôture calculer50/50 au lieu de50/25/25. Le rôle technique Finance ou une route approuvée ne peut remplacer les droits économiques contractuels.
+
+Le propriétaire financier et l'intégrateur ont reçu la cause. Contre-tests requis : refus de l'ouverture/routage/clôture/versement avec termes incompatibles ; autorisation du cycle exact sous ses vraies conditions ; historique et anciens ledgers conservés, avec exception de rapprochement si incompatibles. La recette historique ne doit pas exploiter ce défaut pour produire un solde positif. L'ouverture d'un livre de préparation doit rester compatible avec l'étape de droit d'entrée avant activation, sans permettre sa distribution avant mandat admissible.
+
+### Réserves de preuve à cette étape
+
+- La lecture des patchs de claim AAL, verrou commun du livre, coût central, revalidation avant versement, revenu historique et acquisition non bloquante du financement est favorable. Les reçus SQL finaux doivent encore démontrer ces comportements après toutes les migrations ; les anciens échecs de fixture sont conservés, jamais présentés comme verts.
+- La surveillance native de favoritisme (Gold§16.9) est un chantier séparé en cours : les anciens schémas/revues déclaratives ne suffisent pas à la certifier. Une mesure de concentration ne prouve aucune faute ; toute conclusion et sanction demeurent humaines et autorisées.
+- Le digest possède une vraie route de worker (`/api/workers/franchise-digests`) : absence non alléguée. Le scheduler de relances existe aussi ; son état n'était pas encore inclus dans la readiness du worker et une déférence de job pouvait rester un résultat de cycle résolu. À vérifier avant certification d'exploitation complète.
+- Les nouvelles réceptions natives, clôtures et versements historiques doivent être identifiés comme TEST, avec leurs vrais prérequis. Aucun score, texte juridique, taxe, reçu de paiement, signature ou période écoulée n'est inventé dans ce rapport.
