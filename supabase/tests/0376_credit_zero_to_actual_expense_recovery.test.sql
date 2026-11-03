@@ -265,7 +265,7 @@ reset role;
 insert into storage.objects(bucket_id,name,metadata)select 'finance-cost-proofs',v->>'path',jsonb_build_object('mimetype','application/pdf','size',(select(v->>'size_bytes')::integer from proof376 where k='bytes'))from proof376 where k in('PSP_FEE','FULFILLMENT_COST');
 set local role authenticated;select pg_temp.actor275(2);
 select public.commit_finance_cost_document_upload_v1((v->>'upload_id')::uuid,(select v->>'sha256'from proof376 where k='bytes'),(select(v->>'size_bytes')::integer from proof376 where k='bytes'))from proof376 where k in('PSP_FEE','FULFILLMENT_COST');
-select throws_ok($$select public.claim_finance_cost_document_scan_jobs_v1('e3760000-0000-4000-8000-000000000099',(select(v->>'upload_id')::uuid from proof376 where k='PSP_FEE'))$$,'42501','FINANCE_COST_SCANNER_SERVICE_REQUIRED','a Finance user cannot forge a scanner lease');
+select throws_ok($$select public.claim_finance_cost_document_scan_jobs_v1('e3760000-0000-4000-8000-000000000099',(select(v->>'upload_id')::uuid from proof376 where k='PSP_FEE'))$$,'42501','permission denied for function claim_finance_cost_document_scan_jobs_v1','a Finance user cannot obtain the scanner EXECUTE privilege');
 reset role;select pg_temp.service275();set local role service_role;
 insert into proof376 select'claim-'||k,(public.claim_finance_cost_document_scan_jobs_v1('e3760000-0000-4000-8000-000000000099',(v->>'upload_id')::uuid)->0)from proof376 where k in('PSP_FEE','FULFILLMENT_COST');
 select is(public.claim_finance_cost_document_scan_jobs_v1('e3760000-0000-4000-8000-000000000098',(select(v->>'upload_id')::uuid from proof376 where k='PSP_FEE')),'[]'::jsonb,'a competing worker cannot claim an active lease');
@@ -283,7 +283,7 @@ select throws_ok($$select public.decide_credit_economic_cost_v1((v->>'proposal_i
 select pg_temp.actor275(3);
 select throws_ok($$select public.decide_credit_economic_cost_v1((v->>'proposal_id')::uuid,v->>'source_hash',true,'TEST approver must retrieve and inspect the actual private file')from proof376 where k='proposal-PSP_FEE'$$,'55000','FINANCE_COST_DOCUMENT_REVIEW_READ_REQUIRED','even independent Finance cannot approve without verified document retrieval');
 insert into proof376 select'read-'||k,public.authorize_finance_cost_document_read_v1((v->>'upload_id')::uuid)from proof376 where k in('PSP_FEE','FULFILLMENT_COST');
-select throws_ok($$select public.record_finance_cost_document_read_v1((select(v->>'read_capability_id')::uuid from proof376 where k='read-PSP_FEE'),(select v->>'sha256'from proof376 where k='bytes'),(select(v->>'size_bytes')::integer from proof376 where k='bytes'))$$,'42501','FINANCE_COST_DOCUMENT_SERVER_REQUIRED','browser cannot forge a verified download receipt');
+select throws_ok($$select public.record_finance_cost_document_read_v1((select(v->>'read_capability_id')::uuid from proof376 where k='read-PSP_FEE'),(select v->>'sha256'from proof376 where k='bytes'),(select(v->>'size_bytes')::integer from proof376 where k='bytes'))$$,'42501','permission denied for function record_finance_cost_document_read_v1','browser lacks EXECUTE permission for verified download receipts');
 reset role;select pg_temp.service275();set local role service_role;
 select public.record_finance_cost_document_read_v1((v->>'read_capability_id')::uuid,(select v->>'sha256'from proof376 where k='bytes'),(select(v->>'size_bytes')::integer from proof376 where k='bytes'))from proof376 where k like'read-%';
 reset role;set local role authenticated;select pg_temp.actor275(3);
