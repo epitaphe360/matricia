@@ -15,7 +15,8 @@ do $$declare definition text;old text;begin
  if strpos(definition,old)=0 then raise exception'FRANCHISE_ACTIVATION_CHRONOLOGY_SOURCE_MISMATCH';end if;
  definition:=replace(definition,old,$source$
  select*into invitation from public.franchise_invitations where id=evidence.invitation_id;
- if invitation.id is null or invitation.franchise_id is distinct from binding.franchise_id
+ if(select count(*)from public.franchise_activation_evidence other where other.franchise_id=binding.franchise_id and other.approved_mandate_version_id=approved.id)<>1
+  or invitation.id is null or invitation.franchise_id is distinct from binding.franchise_id
   or invitation.status is distinct from'ACCEPTED'or invitation.accepted_by is distinct from evidence.actor_user_id
   or invitation.accepted_at is null or invitation.accepted_at<invitation.created_at or invitation.accepted_at>invitation.expires_at
   or evidence.recorded_at<invitation.accepted_at or evidence.recorded_at<active.created_at

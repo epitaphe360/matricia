@@ -76,6 +76,7 @@ set local role authenticated;select pg_temp.actor372(2);
 select throws_ok($$select public.open_franchise_pnl_book_for_mandate_v1(franchise,approved,mandate_hash,'MAD',finance_rule,'TEST372-legacy-bad-basis')from basis372 where k='LEGACY'$$,'55000','FRANCHISE_LEGACY_BOOK_RECONCILIATION_REQUIRED','an inconsistent existing book is not silently rebound or overwritten');
 select throws_ok($$select public.close_franchise_profit_period('f372b000-0000-4000-8000-000000000001',current_date-2,current_date-1,(select id from public.franchise_finance_rule_versions where franchise_type='IT'and version=1),clock_timestamp(),'TEST372 no silent earnings from an unbound book','TEST372-close-unbound')$$,'55000','FRANCHISE_BOOK_BINDING_REVIEW_REQUIRED','an old unbound book cannot be certified by closing an otherwise empty period');
 reset role;
+select throws_ok($$insert into public.franchise_distribution_ledger_entries(book_id,beneficiary_code,entry_type,amount_minor,currency,reference_type,reference_id,correlation_id,created_by)values('f372b000-0000-4000-8000-000000000001','HATIM_AHMITECH','PAYOUT',-1,'MAD','TEST','INVALID_UNBOUND_PAYOUT','f372c000-0000-4000-8000-000000000001','a3720000-0000-4000-8000-000000000002')$$,'55000','FRANCHISE_BOOK_BINDING_REVIEW_REQUIRED','even an internal malformed payout insert cannot bypass an unbound book');
 select ok(private.franchise_book_binding_review_required_v1('f372b000-0000-4000-8000-000000000001'),'inconsistent historical book is explicitly marked for reconciliation');
 select is((select count(*)::integer from public.franchise_pnl_book_bindings_v1 where book_id='f372b000-0000-4000-8000-000000000001'),0,'failed recovery leaves no manufactured binding');
 select throws_ok($$update public.franchise_pnl_book_bindings_v1 set basis_hash=repeat('f',64)where book_id=(select(opening->>'book_id')::uuid from basis372 where k='S1')$$,'55000','IMMUTABLE_RECORD','even maintenance cannot rewrite an accepted immutable book basis');
@@ -121,6 +122,7 @@ select is((select opening->>'book_id'from basis372 where k='HISTORY'),'f372b000-
 reset role;
 select lives_ok($$select private.assert_franchise_book_period_basis_v1('f372b000-0000-4000-8000-000000000009','2026-10-02','2026-10-31',(select id from public.franchise_finance_rule_versions where franchise_type='STANDARD'and version=1))$$,'expiration and termination do not invalidate the source for an eligible historical period');
 select throws_ok($$select private.assert_franchise_book_period_basis_v1('f372b000-0000-4000-8000-000000000009','2026-11-03','2026-11-04',(select id from public.franchise_finance_rule_versions where franchise_type='STANDARD'and version=1))$$,'55000','FRANCHISE_HISTORICAL_BOOK_BASIS_RECONCILIATION_REQUIRED','the historical mandate cannot back operations after its own effective window');
+select throws_ok($$insert into public.franchise_distribution_ledger_entries(book_id,beneficiary_code,entry_type,amount_minor,currency,reference_type,reference_id,correlation_id,created_by)values('f372b000-0000-4000-8000-000000000009','FRANCHISEE','PAYOUT',-1,'MAD','TEST','NO_CLOSURE_PAYOUT','f372c000-0000-4000-8000-000000000009','a3720000-0000-4000-8000-000000000002')$$,'55000','FRANCHISE_DISTRIBUTION_APPROVED_BASIS_REQUIRED','a valid historical mandate alone never manufactures an earned distribution without a sourced closure');
 select is((select status from public.franchises where id='f372a000-0000-4000-8000-000000000001'),'TERMINATED','historical recovery does not reactivate the franchise');
 select ok(not has_table_privilege('service_role','public.franchise_pnl_book_bindings_v1','INSERT')and not has_table_privilege('authenticated','public.franchise_pnl_book_bindings_v1','INSERT'),'no browser or service receives a direct binding write grant');
 select pg_temp.actor372(2);set local role authenticated;
@@ -131,5 +133,12 @@ select throws_ok($$select public.franchise_book_opening_context_v1()$$,'42501','
 select pg_temp.actor372(4);
 select throws_ok($$select public.franchise_book_opening_context_v1()$$,'42501','FRANCHISE_BOOK_DENIED','the selector is not an unprotected cross-organization discovery endpoint');
 reset role;
+-- Deliberately invalid initial metadata: a second evidence row is not another
+-- source to choose silently. The failed check never inserts financial money.
+insert into public.franchise_invitations(id,franchise_id,invited_email,status,expires_at)select'f372d000-0000-4000-8000-000000000001',franchise,'book372-1@example.invalid','SENT',clock_timestamp()+interval'1 day'from basis372 where k='S1';
+insert into public.franchise_activation_evidence(invitation_id,franchise_id,approved_mandate_version_id,active_mandate_version_id,mandate_hash,activation_mode,environment,actor_user_id,evidence_snapshot,evidence_hash)
+select'f372d000-0000-4000-8000-000000000001',original.franchise_id,original.approved_mandate_version_id,original.active_mandate_version_id,original.mandate_hash,original.activation_mode,original.environment,original.actor_user_id,original.evidence_snapshot,original.evidence_hash
+from public.franchise_activation_evidence original join basis372 item on item.franchise=original.franchise_id where item.k='S1';
+select throws_ok($$select private.franchise_book_active_basis_v1((select(opening->>'book_id')::uuid from basis372 where k='S1'))$$,'55000','FRANCHISE_BOOK_ACTIVATION_CHRONOLOGY_REQUIRED','ambiguous activation evidence cannot select the first row and certify a financial source');
 select *from finish();rollback;
 
