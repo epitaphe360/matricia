@@ -38,3 +38,20 @@ describe("governance read prerequisites",()=>{
   expect(await loadFranchiseDashboard("fr")).toEqual({status:"error",reason}); expect(mocks.rpc).not.toHaveBeenCalled();
  });
 });
+
+describe("mandate basis evidence",()=>{
+ it("does not turn a pre-binding server response into a healthy certification",async()=>{
+  const result=await loadFranchiseDashboard("fr");expect(result.status).toBe("success");
+  if(result.status==="success")expect(result.dashboard.bookBindingReviewRequired).toBeNull();
+ });
+ it.each([true,false])("preserves an explicit server review flag %s and its book mandate",async flag=>{
+  const id="11111111-1111-4111-8111-111111111111";
+  mocks.rpc.mockResolvedValue({data:{...snapshot(),bookBindingReviewRequired:flag,bs:[{id,franchise_id:id,binding_review_required:flag,library_id:id,franchise_organization_id:id,franchise_type:"STANDARD",operator_code:"FRANCHISEE",currency:"MAD",opened_under_rule_version_id:id,status:"OPEN"}]},error:null});
+  const result=await loadFranchiseDashboard("fr");expect(result.status).toBe("success");
+  if(result.status==="success"){expect(result.dashboard.bookBindingReviewRequired).toBe(flag);expect(result.dashboard.books[0]).toMatchObject({franchiseId:id,bindingReviewRequired:flag});}
+ });
+ it("rejects a malformed certification rather than coercing it",async()=>{
+  mocks.rpc.mockResolvedValue({data:{...snapshot(),bookBindingReviewRequired:"false"},error:null});
+  expect(await loadFranchiseDashboard("ar")).toEqual({status:"error",reason:"INVALID_RESPONSE"});
+ });
+});
