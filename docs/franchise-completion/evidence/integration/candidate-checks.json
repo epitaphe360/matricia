@@ -16,7 +16,31 @@
   "finalWebTypecheck": "passed",
   "finalWebLint": "passed",
   "browserFinal": "pending",
-  "sqlFreshFinal": "pending",
+  "sqlFreshFinal": {
+    "status": "passed",
+    "migrations": 558,
+    "files": 73,
+    "assertions": 2813,
+    "publicTables": 664,
+    "tablesWithoutRls": 0,
+    "apiPgtapExecutable": false,
+    "cleanup": "passed"
+  },
   "ci": "not_started_account_billing",
-  "optimizedTypedBuild": "passed"
+  "optimizedTypedBuild": "passed",
+  "semanticDelta": {
+    "candidate": "b433394c",
+    "appTree": "c318ec4094656f3937f7754c488954f10bbce56a",
+    "files": 13,
+    "tests": 117,
+    "lint": "passed",
+    "typecheck": "passed",
+    "overlapsWebGroup": true
+  },
+  "prCreation": {
+    "status": "blocked",
+    "reason": "API_GRAPHQL_FORBIDDEN",
+    "base": "codex/bootstrap-foundation",
+    "head": "codex/franchise-finance-completion-20261103"
+  }
 }
