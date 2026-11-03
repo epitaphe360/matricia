@@ -41,7 +41,7 @@ create or replace function public.propose_credit_economic_cost_v1(p_component te
 returns jsonb language plpgsql security definer set search_path=pg_catalog set timezone='UTC' as $$
 declare source jsonb;h text;p public.credit_economic_cost_proposals_v1%rowtype;id uuid:=extensions.gen_random_uuid();response jsonb;
 begin
- if private.credit_revenue_finance_access_v1(auth.uid(),true)is distinct from truethen raise exception'CREDIT_ECONOMIC_COST_REVIEW_DENIED'using errcode='42501';end if;
+ if private.credit_revenue_finance_access_v1(auth.uid(),true)is distinct from true then raise exception'CREDIT_ECONOMIC_COST_REVIEW_DENIED'using errcode='42501';end if;
  if length(btrim(coalesce(p_reason,'')))not between 10 and 2000 or length(coalesce(p_idempotency_key,''))not between 8 and 200 then raise exception'INVALID_CREDIT_ECONOMIC_COST_PROPOSAL'using errcode='22023';end if;
  perform pg_advisory_xact_lock(hashtextextended('credit-economic-cost:'||p_component||':'||p_target_id::text,0));
  source:=private.credit_economic_cost_source_v1(p_component,p_target_id,p_financial_journal_id);h:=private.canonical_request_hash(source);
@@ -65,7 +65,7 @@ create or replace function public.decide_credit_economic_cost_v1(p_proposal_id u
 returns jsonb language plpgsql security definer set search_path=pg_catalog set timezone='UTC' as $$
 declare p public.credit_economic_cost_proposals_v1%rowtype;d public.credit_economic_cost_decisions_v1%rowtype;source jsonb;h text;reconciled uuid:=extensions.gen_random_uuid();response jsonb;
 begin
- if private.credit_revenue_finance_access_v1(auth.uid(),true)is distinct from truethen raise exception'CREDIT_ECONOMIC_COST_REVIEW_DENIED'using errcode='42501';end if;
+ if private.credit_revenue_finance_access_v1(auth.uid(),true)is distinct from true then raise exception'CREDIT_ECONOMIC_COST_REVIEW_DENIED'using errcode='42501';end if;
  select*into p from public.credit_economic_cost_proposals_v1 where id=p_proposal_id for update;
  if p.id is null or p.created_by=auth.uid()or p.source_snapshot#>>'{journal,created_by}'=auth.uid()::text
   or private.is_active_org_member((p.source_snapshot->>'organization_id')::uuid,auth.uid())
@@ -100,7 +100,7 @@ declare b public.franchise_pnl_books%rowtype;a record;cost_kind text;share jsonb
  amount bigint;pnl uuid;h text;response jsonb;correlation uuid:=extensions.gen_random_uuid();counted integer:=0;
 begin
  select*into b from public.franchise_pnl_books where id=p_book_id;
- if private.credit_revenue_finance_access_v1(auth.uid(),true)is distinct from trueor b.id is null or private.is_active_org_member(b.franchise_organization_id,auth.uid())then raise exception'CREDIT_ECONOMIC_COST_REVIEW_DENIED'using errcode='42501';end if;
+ if private.credit_revenue_finance_access_v1(auth.uid(),true)is distinct from true or b.id is null or private.is_active_org_member(b.franchise_organization_id,auth.uid())then raise exception'CREDIT_ECONOMIC_COST_REVIEW_DENIED'using errcode='42501';end if;
  if p_period_start is null or p_period_end is null or p_period_end<p_period_start or p_period_end>=p_period_start+interval'1 year'or length(btrim(coalesce(p_reason,'')))not between 10 and 2000 then raise exception'INVALID_CREDIT_ECONOMIC_PROFIT_PERIOD'using errcode='22023';end if;
  perform pg_advisory_xact_lock(hashtextextended('franchise.pnl.book.'||b.id::text,0));
  perform pg_advisory_xact_lock(hashtextextended('credit-economic-profit:'||b.id::text,0));
@@ -108,7 +108,7 @@ begin
  response:=private.begin_contract_command(b.franchise_organization_id,'credit.economic.profit.reconcile',p_idempotency_key,h,auth.uid());if response is not null then return response;end if;
  for a in select x.*,e.effective_on from public.credit_economic_allocations_v1 x join private.credit_economic_pnl_sources_v1 s on s.allocation_id=x.id join public.franchise_pnl_entries e on e.id=s.pnl_entry_id
   where x.book_id=b.id and e.effective_on between p_period_start and p_period_end order by x.created_at,x.id loop
-  perform pg_advisory_xact_lock(hashtextextended('credit-economic-funding:'||a.funding_source_id::text,0));
+  if not pg_try_advisory_xact_lock(hashtextextended('credit-economic-funding:'||a.funding_source_id::text,0))then raise exception'CREDIT_ECONOMIC_FUNDING_BUSY_RETRY_REQUIRED'using errcode='55P03';end if;
   foreach cost_kind in array array['PSP_FEE','FULFILLMENT_COST']loop
    share:=private.credit_economic_cost_share_v1(a.id,cost_kind);h:=private.canonical_request_hash(share);amount:=(share->>'amount_minor')::bigint;
    select*into old from public.credit_economic_cost_attributions_v1 where allocation_id=a.id and credit_economic_cost_attributions_v1.component=cost_kind;
@@ -141,7 +141,7 @@ declare b public.franchise_pnl_books%rowtype;ready boolean:=true;reason text;cen
 begin
  select*into b from public.franchise_pnl_books where id=p_book_id;
  central:=private.credit_revenue_finance_access_v1();
- if auth.uid()is null or auth.jwt()->>'aal'is distinct from'aal2'or b.id is null or private.franchise_book_access(b.id,auth.uid())is distinct from truethen raise exception'CREDIT_ECONOMIC_PROFIT_READ_DENIED'using errcode='42501';end if;
+ if auth.uid()is null or auth.jwt()->>'aal'is distinct from'aal2'or b.id is null or private.franchise_book_access(b.id,auth.uid())is distinct from true then raise exception'CREDIT_ECONOMIC_PROFIT_READ_DENIED'using errcode='42501';end if;
  if p_page is null or p_page not between 1 and 10000 or p_period_start is null or p_period_end is null or p_period_end<p_period_start or p_period_end>=p_period_start+interval'1 year'then raise exception'INVALID_CREDIT_ECONOMIC_PROFIT_PERIOD'using errcode='22023';end if;
  begin perform private.assert_credit_economic_profit_close_ready_v1(b.id,p_period_start,p_period_end);
  exception when sqlstate'55000'or sqlstate'23514' then ready:=false;reason:='CREDIT_ECONOMIC_FINAL_RECONCILIATION_REQUIRED';end;
