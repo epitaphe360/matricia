@@ -14,12 +14,14 @@ export type QuestionnaireSessionSource = {
   sessions(userId: string, organizationId: string): Promise<Query>;
   versions(ids: string[]): Promise<Query>;
   session(id: string): Promise<Query>;
+  latestDraft?(userId: string, organizationId: string): Promise<Query>;
   sections(versionId: string): Promise<Query>;
   questionLinks(versionId: string): Promise<Query>;
   questions(ids: string[]): Promise<Query>;
   answers(sessionId: string): Promise<Query>;
   revisions(ids: string[]): Promise<Query>;
   prefills?(sessionId: string): Promise<Query>;
+  presentation(sessionId: string): Promise<Query>;
   rpc(name: string, input: Record<string, unknown>): Promise<Query>;
 };
 
@@ -42,6 +44,8 @@ const questionRow = z.object({ id: questionnaireUuid, label_fr: z.string().min(1
 const answerRow = z.object({ id: questionnaireUuid, question_version_id: questionnaireUuid, current_revision_id: questionnaireUuid.nullable(), row_version: z.number().int().positive() }).strict();
 const revisionRow = z.object({ id: questionnaireUuid, value: z.unknown(), answered_at: z.string(), expires_at: z.string().nullable() }).strict();
 const prefillRow=z.object({question_version_id:questionnaireUuid,value:z.unknown(),source:z.enum(["PROFILE","ORGANIZATION","SITE","PREVIOUS_ANSWER","DOCUMENT"]),source_updated_at:z.string(),fresh_until:z.string(),requires_confirmation:z.boolean()}).strict();
+const presentationRow = z.object({ question_version_id: questionnaireUuid, visible: z.boolean(), required: z.boolean() }).strict();
+const presentationResponse = z.object({ session_id: questionnaireUuid, row_version: z.number().int().positive(), questions: z.array(presentationRow).max(100) }).strict();
 const hash = z.string().regex(/^[0-9a-f]{64}$/u);
 const startedResponse = z.object({ outcome: z.literal("QUESTIONNAIRE_SESSION_STARTED"), session_id: questionnaireUuid, row_version: z.number().int().positive(), questionnaire_version_id: questionnaireUuid, session_snapshot_id: questionnaireUuid, session_snapshot_hash: hash }).strict();
 const acceptedAnswer = z.object({ question_version_id: questionnaireUuid, answer_row_version: z.number().int().positive() }).strict();
@@ -108,8 +112,14 @@ export function createQuestionnaireSessionsRepository(source: QuestionnaireSessi
         return version ? [{ id: session.id, organizationId: session.organization_id, questionnaireVersionId: session.questionnaire_version_id, status: session.status, locale: session.locale, updatedAt: session.updated_at, submittedAt: session.submitted_at, rowVersion: session.row_version, titleFr: version.title_fr, titleAr: version.title_ar }] : [];
       });
       let selected: QuestionnaireDashboard["selected"] = null;
-      if (selectedSessionId) {
-        const sessionResult = rows(sessionRow, await source.session(selectedSessionId), 1);
+      // Only resume this actor's unfinished session in the explicitly resolved tenant.
+      const drafts = !selectedSessionId && source.latestDraft ? rows(sessionRow, await source.latestDraft(userId, organizationIds[0]!), 1) : { status: "success" as const, value: sessions.value };
+      if (drafts.status === "error") return drafts;
+      const resumeId = selectedSessionId ?? [...drafts.value]
+        .filter((session) => session.actor_user_id === userId && session.organization_id === organizationIds[0] && ["DRAFT", "IN_PROGRESS", "READY"].includes(session.status))
+        .sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at))[0]?.id;
+      if (resumeId) {
+        const sessionResult = rows(sessionRow, await source.session(resumeId), 1);
         if (sessionResult.status === "error") return sessionResult;
         const session = sessionResult.value[0];
         if (!session || session.actor_user_id !== userId || session.organization_id !== organizationIds[0]) return { status: "error", reason: "FORBIDDEN" };
@@ -129,19 +139,29 @@ export function createQuestionnaireSessionsRepository(source: QuestionnaireSessi
         if (revisions.status === "error") return revisions;
         const prefills=source.prefills?rows(prefillRow,await source.prefills(session.id),100):{status:"success",value:[]}as const;
         if(prefills.status==="error")return prefills;
+        const presentationQuery = await source.presentation(session.id);
+        if (presentationQuery.error) return failure(presentationQuery.error);
+        const presentation = presentationResponse.safeParse(presentationQuery.data);
+        if (!presentation.success || presentation.data.session_id !== session.id) return { status: "error", reason: "INVALID_RESPONSE" };
+        // Do not combine answers from one revision with visibility from another autosave.
+        if (presentation.data.row_version !== session.row_version) return { status: "error", reason: "CONFLICT" };
+        const presentationByQuestion = new Map(presentation.data.questions.map((question) => [question.question_version_id, question]));
+        if (presentationByQuestion.size !== links.value.length || links.value.some((link) => !presentationByQuestion.has(link.question_version_id))) return { status: "error", reason: "INVALID_RESPONSE" };
         const questionById = new Map(questions.value.map((question) => [question.id, question]));
         const revisionById = new Map(revisions.value.map((revision) => [revision.id, revision]));
         const answerByQuestion = new Map(answers.value.map((answer) => [answer.question_version_id, answer])),prefillByQuestion=new Map(prefills.value.map(item=>[item.question_version_id,item]));
         const sectionModels = sections.value.map((section) => ({ id: section.id, labelFr: section.label_fr, labelAr: section.label_ar, helpFr: section.help_fr, helpAr: section.help_ar, sortOrder: section.sort_order, questions: links.value.filter((link) => link.section_id === section.id).flatMap((link) => {
           const question = questionById.get(link.question_version_id);
           if (!question) return [];
+          const state = presentationByQuestion.get(question.id)!;
+          if (!state.visible) return [];
           const answer = answerByQuestion.get(question.id), revision = answer?.current_revision_id ? revisionById.get(answer.current_revision_id) : undefined,prefill=prefillByQuestion.get(question.id);
           const expiresAt = revision?.expires_at ?? null;
-          return [{ id: question.id, sectionId: section.id, sortOrder: link.sort_order, labelFr: question.label_fr, labelAr: question.label_ar, helpFr: question.help_fr, helpAr: question.help_ar, whyFr: question.why_we_ask_fr, whyAr: question.why_we_ask_ar, type: question.answer_type, required: link.required_override ?? question.required_by_default, nullable: question.nullable, options: question.options, validation: question.validation_schema, structured: question.structured_schema, answer: answer && revision ? { value: revision.value, rowVersion: answer.row_version, answeredAt: revision.answered_at, expiresAt, requiresRevalidation: expiresAt !== null && Date.parse(expiresAt) <= Date.now() } : prefill?{value:prefill.value,rowVersion:0,answeredAt:prefill.source_updated_at,expiresAt:prefill.fresh_until,requiresRevalidation:true,prefilled:true,source:prefill.source}:null }];
-        }).sort((a, b) => a.sortOrder - b.sortOrder) })).sort((a, b) => a.sortOrder - b.sortOrder);
+          return [{ id: question.id, sectionId: section.id, sortOrder: link.sort_order, labelFr: question.label_fr, labelAr: question.label_ar, helpFr: question.help_fr, helpAr: question.help_ar, whyFr: question.why_we_ask_fr, whyAr: question.why_we_ask_ar, type: question.answer_type, required: state.required, nullable: question.nullable, options: question.options, validation: question.validation_schema, structured: question.structured_schema, answer: answer && revision ? { value: revision.value, rowVersion: answer.row_version, answeredAt: revision.answered_at, expiresAt, requiresRevalidation: expiresAt !== null && Date.parse(expiresAt) <= Date.now() } : prefill?{value:prefill.value,rowVersion:0,answeredAt:prefill.source_updated_at,expiresAt:prefill.fresh_until,requiresRevalidation:true,prefilled:true,source:prefill.source}:null }];
+        }).sort((a, b) => a.sortOrder - b.sortOrder) })).filter((section) => section.questions.length > 0).sort((a, b) => a.sortOrder - b.sortOrder);
         const summary = { id: session.id, organizationId: session.organization_id, questionnaireVersionId: session.questionnaire_version_id, status: session.status, locale: session.locale, updatedAt: session.updated_at, submittedAt: session.submitted_at, rowVersion: session.row_version, titleFr: version.title_fr, titleAr: version.title_ar };
         const allQuestions = sectionModels.flatMap((section) => section.questions);
-        selected = { ...summary, descriptionFr: version.description_fr, descriptionAr: version.description_ar, sections: sectionModels, answeredCount: allQuestions.filter((question) => question.answer !== null && !question.answer.requiresRevalidation).length, expiringAnswerCount: allQuestions.filter((question) => question.answer?.expiresAt != null).length, expiredAnswerCount: allQuestions.filter((question) => question.answer?.requiresRevalidation).length, questionCount: links.value.length };
+        selected = { ...summary, descriptionFr: version.description_fr, descriptionAr: version.description_ar, sections: sectionModels, answeredCount: allQuestions.filter((question) => question.answer !== null && question.answer.value !== null && !question.answer.requiresRevalidation).length, expiringAnswerCount: allQuestions.filter((question) => question.answer?.expiresAt != null).length, expiredAnswerCount: allQuestions.filter((question) => question.answer?.requiresRevalidation).length, questionCount: allQuestions.length };
       }
       return { status: "success", value: { organizations: organizations.value.map((organization) => ({ id: organization.id, name: organization.display_name })), documents: documents.value.filter((document) => document.organization_id === organizationIds[0]).map((document) => ({ id: document.id, organizationId: document.organization_id, name: document.original_file_name, type: document.document_type, mimeType: document.declared_mime_type, status: document.status })), questionnaires: available.value.map((version) => ({ id: version.id, version: version.version, titleFr: version.title_fr, titleAr: version.title_ar, descriptionFr: version.description_fr, descriptionAr: version.description_ar })), sessions: summaries.filter((session) => session.organizationId === organizationIds[0]), selected } };
     },

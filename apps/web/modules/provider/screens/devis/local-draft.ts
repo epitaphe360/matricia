@@ -1,5 +1,5 @@
 import {z}from"zod";
-export const quoteDraftFields=["solution","deliverables","inclusions","exclusions","prerequisites","warranty","correctionTerms","proposedStartDate","durationDays","validUntil","changeReason"]as const;
+export const quoteDraftFields=["paymentTerms","maintenanceTerms","solution","deliverables","inclusions","exclusions","prerequisites","warranty","correctionTerms","proposedStartDate","durationDays","validUntil","changeReason"]as const;
 export const storedQuoteLine=z.object({key:z.number().int().positive(),label:z.string().max(500),quantity:z.string().max(50),unitCode:z.string().max(32),unitPrice:z.string().max(50),taxRuleVersionId:z.string().max(36),itemKind:z.enum(["ONE_TIME","RECURRING"]),recurrenceInterval:z.enum(["","MONTH","QUARTER","YEAR"])});
 export type QuoteLine=z.infer<typeof storedQuoteLine>;
 const stored=z.object({version:z.literal(3),expiresAt:z.number().finite(),baseVersionId:z.string().uuid().nullable(),fields:z.record(z.string(),z.string().max(12000)),lines:z.array(storedQuoteLine).min(1).max(50),operation:z.object({revision:z.string().uuid(),correlation:z.string().uuid()})});

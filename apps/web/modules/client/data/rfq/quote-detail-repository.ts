@@ -1,3 +1,4 @@
+import{readQuoteCommercialTerms}from"@/modules/shared/lib/contracts-missions/quote-commercial-terms";
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
@@ -26,6 +27,7 @@ const quoteRow = z.object({
 }).strict();
 const rfqRow = z.object({ id: uuidSchema, request_id: uuidSchema }).strict();
 const versionRow = z.object({
+  sla:z.unknown().optional(),
   id: uuidSchema,
   quote_id: uuidSchema,
   rfq_id: uuidSchema,
@@ -123,7 +125,7 @@ export async function loadClientOfferDetail(input: {
   if (!versionId) return { status: "not_found" };
 
   const [versionResult, itemsResult, bindingsResult] = await Promise.all([
-    client.from("quote_versions").select("id,quote_id,rfq_id,version_number,lifecycle_status,solution_fr,solution_ar,deliverables,inclusions,exclusions,prerequisites,warranty_fr,warranty_ar,correction_terms_fr,correction_terms_ar,proposed_start_date,duration_days,valid_until,currency").eq("id", versionId).eq("quote_id", quote.data[0].id).limit(1),
+    client.from("quote_versions").select("sla,id,quote_id,rfq_id,version_number,lifecycle_status,solution_fr,solution_ar,deliverables,inclusions,exclusions,prerequisites,warranty_fr,warranty_ar,correction_terms_fr,correction_terms_ar,proposed_start_date,duration_days,valid_until,currency").eq("id", versionId).eq("quote_id", quote.data[0].id).limit(1),
     client.from("quote_items").select("id,quote_version_id,line_number,label_fr,label_ar,quantity::text,unit_code,tax_rate_basis_points,total_minor::text").eq("quote_version_id", versionId).order("line_number").limit(200),
     client.from("client_document_bindings").select("document_id,target_id").eq("target_type", "SERVICE_REQUEST").eq("target_id", dossier.id).limit(50),
   ]);
@@ -174,6 +176,7 @@ export async function loadClientOfferDetail(input: {
         `${copy.validUntil} ${formatDate(version.valid_until, input.locale)}`,
       ],
       conditions: [
+        ...(readQuoteCommercialTerms(version.sla)?[(input.locale==="ar"?"شروط الدفع":"Modalités de paiement")+" : "+readQuoteCommercialTerms(version.sla)!.payment_terms,...(readQuoteCommercialTerms(version.sla)!.maintenance_terms?[(input.locale==="ar"?"الصيانة والمتابعة":"Maintenance et suivi")+" : "+readQuoteCommercialTerms(version.sla)!.maintenance_terms]:[])]:[]),
         `${copy.warranty} : ${localizedText(input.locale, version.warranty_fr, version.warranty_ar)}`,
         `${copy.corrections} : ${localizedText(input.locale, version.correction_terms_fr, version.correction_terms_ar)}`,
         ...prerequisites.slice(0, 2),

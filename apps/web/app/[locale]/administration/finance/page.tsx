@@ -53,6 +53,7 @@ export default async function AdminFinancePage({
 
   return (
     <AdminModulePage locale={locale} active="finance" path="finance" title={m.title} lead={c.hubFinanceLead} hubGroup="finance">
+      <Link className="admin-btn-outline inline-flex min-h-11 items-center" href={`/${locale}/administration/finance/recompenses`}>{ar?"مراجعة مكافآت إحالة العملاء":"Examiner les récompenses du parrainage Client"}</Link>
       {result.status === "error" ? (
         <Alert variant="destructive">
           <AlertTitle>{result.reason === "MFA_REQUIRED" ? mfaRequiredMessage(locale) : result.reason === "FORBIDDEN" ? m.forbidden : m.unavailable}</AlertTitle>
