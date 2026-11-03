@@ -61,7 +61,7 @@ describe("franchise space boards", () => {
     expect(html).toContain("Vous ne pouvez pas auto-valider");
     expect(html).toContain("Couverture du réseau");
     expect(html).toContain("Conseil Anfa");
-    expect(html).toContain("Aucun montant, solde ou donnée financière");
+    expect(html).toContain("Vérification financière indisponible");
     expect(html).toContain("/fr/franchise/fournisseurs/inviter");
     expect(html).toContain("/fr/franchise/clients/inviter");
     expect(html).toContain("/fr/franchise/fournisseurs/accompagnement");
@@ -99,6 +99,7 @@ describe("franchise space boards", () => {
       crm,
       libraryName: "Informatique",
       governance: {
+        bookBindingReviewRequired:false,
         canApprove: false,
         canManageFinance: false,
         franchises: [],
@@ -106,6 +107,7 @@ describe("franchise space boards", () => {
         invitations: [],
         rules: [],
         books: [{
+          bindingReviewRequired:false,
           id: "99999999-9999-4999-8999-999999999999",
           libraryId: "22222222-2222-4222-8222-222222222222",
           organizationId: "22222222-2222-4222-8222-222222222222",
@@ -254,7 +256,7 @@ describe("franchise space boards", () => {
     expect(html).not.toContain("client-space-table");
   });
   it.each(["fr","ar"] as const)("garde les finances consultables si seule la supervision métier échoue en %s",locale=>{
-    const board=buildFranchiseSpaceBoard({locale,query:"",unavailableSections:["OPERATIONS"]});
+    const board=buildFranchiseSpaceBoard({locale,query:"",unavailableSections:["OPERATIONS"]});board.financeBindingStatus="READY";
     const finance=renderToStaticMarkup(<FranchiseFinanceBoard locale={locale} query="" board={board}/>);
     const volume=renderToStaticMarkup(<FranchiseFinanceBoard locale={locale} query="" board={board} view="volume"/>);
     expect(finance).toContain("client-space-table");expect(volume).not.toContain("client-space-table");
@@ -281,6 +283,17 @@ describe("franchise space boards", () => {
     const html=renderToStaticMarkup(<NetworkBoard locale="fr" query="?franchiseId=selected" board={native} itemId={dossier.organizationId} view="documents"/>);
     expect(html).toContain("PROOF_NATIVE");expect(html).toContain(`/fr/franchise/documents/${dossier.documents[0]!.id}?franchiseId=selected`);
     expect(html).not.toContain("Consigner une activité");
+  });
+
+  it.each(["fr","ar"] as const)("ne transforme pas un rattachement financier inconnu ou à rapprocher en faux zéro en %s",locale=>{
+    const board=buildFranchiseSpaceBoard({locale,query:""});
+    const unknown=renderToStaticMarkup(<FranchiseFinanceBoard locale={locale} query="?franchiseId=selected" board={board}/>);
+    expect(unknown).not.toContain("franchise-kpi-tile");
+    board.financeBindingStatus="REVIEW_REQUIRED";
+    const review=renderToStaticMarkup(<FranchiseFinanceBoard locale={locale} query="?franchiseId=selected" board={board}/>);
+    expect(review).toContain(locale==="ar"?"يلزم التحقق من ربط الدفتر بالتفويض":"Rapprochement du mandat requis");
+    expect(review).toContain('dir="ltr">—</strong>');
+    expect(review).toContain("/franchise/gouvernance?franchiseId=selected");
   });
 
 });

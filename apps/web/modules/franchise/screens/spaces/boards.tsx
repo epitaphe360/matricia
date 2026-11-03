@@ -291,7 +291,7 @@ export function PerimeterBoard({ locale, query, mandateName, view, board, organi
   );
 }
 
-function UnavailableSection({locale,query}:{locale:Locale;query:string}){return <main className="client-page"><article className="client-card" role="alert"><h2>{locale==="ar"?"البيانات غير متاحة مؤقتاً":"Données temporairement indisponibles"}</h2><p>{locale==="ar"?"تعذر تحميل هذا القسم. لا يمكن تأكيد العدد أو عدم وجود عناصر حالياً.":"Le chargement de cette section a échoué. Le nombre d’éléments et leur absence ne peuvent pas être confirmés."}</p><a className="franchise-tool" href={query||"?"}>{locale==="ar"?"إعادة المحاولة":"Réessayer"}</a></article></main>;}
+function UnavailableSection({locale,query,title,message}:{locale:Locale;query:string;title?:string;message?:string}){return <main className="client-page"><article className="client-card" role="alert"><h2>{title??(locale==="ar"?"البيانات غير متاحة مؤقتاً":"Données temporairement indisponibles")}</h2><p>{message??(locale==="ar"?"تعذر تحميل هذا القسم. لا يمكن تأكيد العدد أو عدم وجود عناصر حالياً.":"Le chargement de cette section a échoué. Le nombre d’éléments et leur absence ne peuvent pas être confirmés.")}</p><a className="franchise-tool" href={query||"?"}>{locale==="ar"?"إعادة المحاولة":"Réessayer"}</a></article></main>;}
 function sourceUnavailable(board:FranchiseSpaceBoardData|undefined,sources:string[]){return Boolean(board?.unavailableSections.some(source=>sources.includes(source)));}
 
 export function NetworkBoard({ locale, query, mandateName, view, itemId, search, page, board, organizationId,networkFilters={} }: SpaceBoardProps) {
@@ -1272,6 +1272,8 @@ export function FranchiseFinanceBoard({ locale, query, mandateName, view, board,
   const c = franchiseCopy(locale);
   const demo = resolveBoard({ locale, query, board });
   if(sourceUnavailable(demo,view==='volume'?['OPERATIONS']:['GOVERNANCE']))return <UnavailableSection locale={locale} query={query}/>;
+  if(view!=="volume"&&demo.financeBindingStatus==="UNAVAILABLE")return <UnavailableSection locale={locale} query={query} title={locale==="ar"?"التحقق المالي غير متاح":"Vérification financière indisponible"} message={locale==="ar"?"لم يتم تأكيد التحقق من ربط الدفاتر بالتفويض. لا يمكن استنتاج وجود رصيد أو غيابه. أعيدوا المحاولة أو اطلبوا المراجعة من الإدارة.":"La vérification du rattachement des livres au mandat n’est pas confirmée. Aucun solde ni absence de données ne peut être certifié. Réessayez ou demandez une revue à l’administration."}/>;
+  const bindingReview=view!=="volume"&&demo.financeBindingStatus==="REVIEW_REQUIRED";
   const statements = demo.finance.filter((row) => row.kind !== "entryFee" && row.kind !== "payout" && row.title !== c.entryFee);
   const fees = demo.finance.filter((row) => row.kind === "entryFee" || row.title === c.entryFee);
   const payouts = demo.finance.filter((row) => row.kind === "payout");
@@ -1281,7 +1283,7 @@ export function FranchiseFinanceBoard({ locale, query, mandateName, view, board,
       : view === "paiements" ? payouts
         : view === "pre-releve" ? preStatements
           : statements.length ? statements : demo.finance;
-  const empty = view === "volume" ? c.emptyVolume
+  const empty = bindingReview?(locale==="ar"?"يلزم التحقق من ربط الدفتر بالتفويض. لا يمكن تأكيد المبالغ غير المطابقة.":"Le rattachement du livre au mandat doit être rapproché. Les montants non rapprochés ne peuvent pas être certifiés."): view === "volume" ? c.emptyVolume
     : view === "droit-entree" ? c.emptyFinance
       : view === "paiements" ? c.emptyPayments
         : view === "pre-releve" ? c.emptyPreStatement
@@ -1294,18 +1296,19 @@ export function FranchiseFinanceBoard({ locale, query, mandateName, view, board,
   return (
     <main className="client-page">
       <Banner locale={locale} query={query} mandateName={mandateName} board={demo} />
+      {bindingReview?<section className="client-card" role="alert"><h2>{locale==="ar"?"يلزم التحقق من ربط الدفتر بالتفويض":"Rapprochement du mandat requis"}</h2><p>{locale==="ar"?"تُعرض أدناه الكشوف المصرح بقراءتها والمتسقة فقط. لا يمكن تأكيد المجاميع أو صرف مبالغ من دفتر غير مربوط.":"Seuls les relevés cohérents et autorisés en lecture sont présentés ci-dessous. Les totaux et les versements d’un livre non rattaché ne peuvent pas être certifiés."}</p><Link className="client-soft-link" href={`/${locale}/franchise/gouvernance${query}`}>{locale==="ar"?"مراجعة التفويض":"Consulter le mandat"}</Link> · <Link className="client-soft-link" href={`/${locale}/franchise/messages${query}`}>{locale==="ar"?"طلب المعالجة":"Demander le rapprochement"}</Link></section>:null}
       <section className="franchise-treat">
         <article className="franchise-kpi-tile" data-tone="sky">
           <span className="franchise-kpi-icon" data-tone="sky"><FileText className="size-4" aria-hidden /></span>
-          <span><strong dir="ltr">{statements.length}</strong><small>{c.statements}</small></span>
+          <span><strong dir="ltr">{bindingReview?"—":statements.length}</strong><small>{c.statements}</small></span>
         </article>
         <article className="franchise-kpi-tile" data-tone="peach">
           <span className="franchise-kpi-icon" data-tone="peach"><ShieldCheck className="size-4" aria-hidden /></span>
-          <span><strong dir="ltr">{fees.length}</strong><small>{c.entryFee}</small></span>
+          <span><strong dir="ltr">{bindingReview?"—":fees.length}</strong><small>{c.entryFee}</small></span>
         </article>
         <article className="franchise-kpi-tile" data-tone="mint">
           <span className="franchise-kpi-icon" data-tone="mint"><FileText className="size-4" aria-hidden /></span>
-          <span><strong dir="ltr">{payouts.length}</strong><small>{c.payments}</small></span>
+          <span><strong dir="ltr">{bindingReview?"—":payouts.length}</strong><small>{c.payments}</small></span>
         </article>
       </section>
       <section className="franchise-workbench">
@@ -1361,7 +1364,7 @@ export function FranchiseFinanceBoard({ locale, query, mandateName, view, board,
         <article className="client-card">
           <header><h2>{c.understand}</h2></header>
           <p>{c.understandLead}</p>
-          <p>{demo.finance.some((row) => row.amount) ? c.yourShareLead : c.noAmount}</p>
+          <p>{bindingReview?empty:demo.finance.some((row) => row.amount) ? c.yourShareLead : c.noAmount}</p>
           {view === "paiements" || view === "pre-releve" ? <p className="client-access-note">{c.paymentPlatformNote}</p> : <p className="client-access-note">{c.goodToKnowLead}</p>}
         </article>
         <FranchiseMandateRail locale={locale} name={mandateName} />

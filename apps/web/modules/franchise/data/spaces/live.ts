@@ -313,8 +313,10 @@ export function buildFranchiseSpaceBoard(input: {
     title: item.requestType,
     actor: item.decision?.decision ?? item.status,
   }));
+  const governanceBinding=input.governance&&"bookBindingReviewRequired"in input.governance?input.governance.bookBindingReviewRequired:null;
+  const financeBindingStatus:FranchiseSpaceBoardData["financeBindingStatus"]=governanceBinding!==true&&governanceBinding!==false?"UNAVAILABLE":governanceBinding===true?"REVIEW_REQUIRED":(input.governance?.books??[]).some(book=>!("bindingReviewRequired"in book)||book.bindingReviewRequired!==false)?"UNAVAILABLE":"READY";
   const finance: FinanceRow[] = [
-    ...(input.governance?.books ?? []).flatMap((book) => {
+    ...(input.governance?.books ?? []).filter(book=>"bindingReviewRequired"in book&&book.bindingReviewRequired===false).flatMap((book) => {
       const beneficiary = franchiseeBeneficiaryCode(book.type);
       const fee = book.entryFee
         ? [{
@@ -573,6 +575,7 @@ export function buildFranchiseSpaceBoard(input: {
     decisions,
     mandates,
     govHistory,
+    financeBindingStatus,
     finance,
     corrective,
     quotes,

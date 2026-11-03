@@ -183,6 +183,7 @@ export function demoFranchiseSpaces(locale: Locale, query: string) {
       { id: "gh3", title: fr ? "Communication aux professionnels" : "تبليغ المهنيين", actor: fr ? "Réseau" : "الشبكة" },
     ],
     corrective: [] as Array<{ id: string; title: string; status: string; due: string }>,
+    financeBindingStatus:"UNAVAILABLE" as "READY"|"REVIEW_REQUIRED"|"UNAVAILABLE",
     finance: [
       { id: "fi1", title: fr ? "Relevé de répartition" : "كشف التوزيع", object: fr ? "Période septembre 2026" : "فترة سبتمبر 2026", status: fr ? "À examiner" : "للمراجعة", auth: fr ? "Oui" : "نعم", tone: "peach" as const, amount: undefined },
       { id: "fi2", title: fr ? "Note d’allocation" : "مذكرة التخصيص", object: fr ? "Règle versionnée en vigueur" : "قاعدة بنسخة سارية", status: fr ? "En validation" : "قيد المصادقة", auth: fr ? "Oui" : "نعم", tone: "peach" as const, amount: undefined },

@@ -51,6 +51,7 @@ const crm: FranchiseCrmDashboard = {
 };
 
 const governance = {
+  bookBindingReviewRequired:false,
   canApprove: false,
   canManageFinance: false,
   franchises: [],
@@ -58,6 +59,7 @@ const governance = {
   invitations: [],
   rules: [],
   books: [{
+    bindingReviewRequired:false,
     id: "99999999-9999-4999-8999-999999999999",
     libraryId: "22222222-2222-4222-8222-222222222222",
     organizationId: "22222222-2222-4222-8222-222222222222",
