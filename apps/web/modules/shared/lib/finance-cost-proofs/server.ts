@@ -27,7 +27,10 @@ export async function transferFinanceCostDocument(uploadId: string, commit: bool
     if (authFailure) return financeCostFileFailure(authFailure === "UNAUTHENTICATED" ? "UNAUTHENTICATED" : "AUTH_UNAVAILABLE", authFailure === "UNAUTHENTICATED" ? 401 : 503);
     if (!auth.data.user) return financeCostFileFailure("UNAUTHENTICATED", 401);
     const authorized = await deadline(client.rpc(commit ? "get_finance_cost_upload_context_v1" : "authorize_finance_cost_document_read_v1", { p_upload_id: uploadId }), 5_000);
-    if (authorized.error) return financeCostFileFailure("FINANCE_COST_DOCUMENT_ACCESS_DENIED", rpcStatus(authorized.error.code));
+    if (authorized.error) {
+      const code = authorized.error.message === "FINANCE_COST_MFA_REQUIRED" ? "FINANCE_COST_MFA_REQUIRED" : authorized.error.message === "FINANCE_COST_UNAUTHENTICATED" ? "UNAUTHENTICATED" : "FINANCE_COST_DOCUMENT_ACCESS_DENIED";
+      return financeCostFileFailure(code, code === "UNAUTHENTICATED" ? 401 : rpcStatus(authorized.error.code));
+    }
     const parsed = (commit ? financeCostUploadContextSchema : financeCostReadContextSchema).safeParse(authorized.data);
     if (!parsed.success || parsed.data.upload_id !== uploadId || parsed.data.path !== `finance-cost/${uploadId}`) return financeCostFileFailure("FINANCE_COST_DOCUMENT_AUTHORIZATION_INVALID");
     const source = parsed.data;

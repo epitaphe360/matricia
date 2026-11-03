@@ -237,9 +237,9 @@ select throws_ok($$select public.reserve_finance_cost_document_v1('PSP_FEE',(sel
 select throws_ok($$select public.authorize_finance_cost_document_read_v1((select(v->>'upload_id')::uuid from proof370 where k='PSP_FEE'))$$,'55000','FINANCE_COST_DOCUMENT_NOT_CLEAN','an unscanned file cannot be read as proof');
 select throws_ok($$select public.propose_credit_economic_zero_cost_v1('PSP_FEE',(select(v#>>'{}')::uuid from p275 where k='funding'),(select(v->>'upload_id')::uuid from proof370 where k='PSP_FEE'),'TEST unscanned declaration is not evidence of free fees','TEST370-no-scan')$$,'55000','FINANCE_COST_CLEAN_DOCUMENT_REQUIRED','zero cannot be asserted before a trusted scan');
 select set_config('request.jwt.claims','{"sub":"a2750000-0000-4000-8000-000000000002","role":"authenticated"}',true);
-select throws_ok($$select public.reserve_finance_cost_document_v1('PSP_FEE',(select(v#>>'{}')::uuid from p275 where k='funding'),'absent-aal.pdf','application/pdf',20,repeat('a',64),'e3700000-0000-4000-8000-000000000003')$$,'42501','FINANCE_COST_DOCUMENT_WRITE_DENIED','known Finance without aal cannot reserve financial evidence');
+select throws_ok($$select public.reserve_finance_cost_document_v1('PSP_FEE',(select(v#>>'{}')::uuid from p275 where k='funding'),'absent-aal.pdf','application/pdf',20,repeat('a',64),'e3700000-0000-4000-8000-000000000003')$$,'42501','FINANCE_COST_MFA_REQUIRED','known Finance without aal cannot reserve financial evidence');
 select pg_temp.actor275(2,null);
-select throws_ok($$select public.reserve_finance_cost_document_v1('PSP_FEE',(select(v#>>'{}')::uuid from p275 where k='funding'),'null-aal.pdf','application/pdf',20,repeat('a',64),'e3700000-0000-4000-8000-000000000003')$$,'42501','FINANCE_COST_DOCUMENT_WRITE_DENIED','known Finance with null aal cannot reserve financial evidence');
+select throws_ok($$select public.reserve_finance_cost_document_v1('PSP_FEE',(select(v#>>'{}')::uuid from p275 where k='funding'),'null-aal.pdf','application/pdf',20,repeat('a',64),'e3700000-0000-4000-8000-000000000003')$$,'42501','FINANCE_COST_MFA_REQUIRED','known Finance with null aal cannot reserve financial evidence');
 select pg_temp.actor275(2);
 reset role;
 -- TEST storage metadata only. Real private bytes/hashes and scanner signatures
