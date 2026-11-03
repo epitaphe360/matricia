@@ -14,7 +14,8 @@ for(const locale of ["fr","ar"] as const)describe(`Franchise explicit context ${
   const path=`/${locale}/franchise/questionnaires/${first}/simulation${query}&q=texte-libre`;
   const html=renderToStaticMarkup(<FranchiseAppShell locale={locale} selectedQuery={query} selectedOrganizationId={org} userEmail={null} active="questionnaires" languagePath={path} mandates={mandates}><p>TEST</p></FranchiseAppShell>);
   expect(html).toContain(`name="franchiseId" value="${second}"`);
-  expect(html).toContain(`href="/${locale}/franchise/recherche?organizationId=${org}&amp;franchiseId=${second}" class="client-icon-btn franchise-mobile-search"`);
+  const mobileSearch = html.match(/<a\b[^>]*class="client-icon-btn franchise-mobile-search"[^>]*>/u)?.[0];
+  expect(mobileSearch).toContain(`href="/${locale}/franchise/recherche?organizationId=${org}&amp;franchiseId=${second}"`);
   const other=locale==="fr"?"ar":"fr";
   expect(html).toContain(`href="/${other}/franchise/questionnaires/${first}/simulation?organizationId=${org}&amp;franchiseId=${second}&amp;q=texte-libre"`);
   expect(html).toContain(locale==="ar"?'dir="rtl"':'dir="ltr"');
