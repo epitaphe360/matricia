@@ -73,3 +73,50 @@ Les lignes « mécanisme présent » décrivent une lecture du code et les tests
 La fusion est une vraie base à conserver ; l'existence de 195 tests verts ne ferme pas les écarts repérés. Les causes partagées sont l'erreur Auth ignorée, les projections tronquées ou insuffisamment contextualisées, les contrôles de rejeu trop tardifs et la confusion entre événement enregistré et action effectivement accomplie.
 
 La sécurité du mandat/signature et plusieurs contrôles RLS sont présents ; aucun contournement ne doit être utilisé pour rendre les écrans verts. La base ne peut pas être déclarée « Franchisé 100 % » avant contre-tests exécutés, revue indépendante des nouvelles corrections, parcours natifs et preuves d'intégrations autorisées. Les six contrôles GitHub de la capture relèvent d'une enquête CI séparée ; leur cause n'est pas déduite de la durée ni du succès Vercel.
+
+## Contre-revue des corrections — première passe
+
+Source d'intégration lue : `50e0e96`, puis nouveaux lots jusqu'à `8c0c5d06` ; les deux ajustements locaux de `page-helper.ts` et du test de recherche sont signalés dans l'état de travail du propriétaire. La revue porte sur le code effectif, pas uniquement ses descriptions. Les migrations en cours ne sont pas considérées appliquées en hébergement.
+
+Contrôles indépendants réellement exécutés dans le worktree d'intégration :
+
+```sh
+corepack pnpm --filter @matricia/web exec vitest run \
+  modules/franchise/data/spaces/context.test.ts \
+  modules/franchise/data/library/workspace-access.test.ts \
+  modules/franchise/screens/access-readiness.test.tsx \
+  modules/franchise/ui/franchise-context-navigation.test.tsx \
+  'app/[locale]/franchise/recherche/page.test.tsx' \
+  modules/franchise/screens/library/actions.test.ts --maxWorkers=2
+
+corepack pnpm --filter @matricia/web exec vitest run \
+  modules/franchise/data/network/invitation-token.test.ts \
+  modules/franchise/data/network/invitation-consumer.test.ts \
+  modules/franchise/screens/network/recipient-actions.test.ts \
+  modules/franchise/screens/network/invitation-status-action.test.ts \
+  modules/franchise/screens/network/actions.test.ts --maxWorkers=2
+```
+
+Même préfixe PATH/COREPACK_HOME que la commande de base. Résultats : **123 tests / six fichiers** et **31 tests / cinq fichiers**, tous réussis. [UI](evidence/independent-corrective-ui.log), [invitations](evidence/independent-invitations.log). Ces groupes sont inclus dans les futurs totaux globaux et ne doivent pas y être ajoutés une deuxième fois. Aucun `tsc` global, Docker ou test SQL supplémentaire n'a été lancé par l'auditeur pendant cette passe.
+
+### Corrections confirmées à la lecture et par les tests ciblés
+
+- L'incident Auth 503 reste un incident sans requête métier ; une session absente ou invalide conduit à la connexion. Les pages de barrage maintiennent le cadre de navigation et ne fabriquent plus de succès vide ou de formulaire métier lorsque le mandat manque.
+- Le lien profond, l'organisation, le mandat explicite, la recherche et le changement de langue utilisent le même contexte ; `safeReturnPath` borne la destination. Aucun élargissement de permission n'est requis pour ce comportement.
+- La projection éditoriale conserve les protections effectives de la dernière fonction40950 : lecteur de bibliothèque ciblé, audience, validation et sécurité. L'archive de l'identité doit prévaloir sur une ancienne version publiée. Les erreurs de lecture et de validation restent distinctes des refus.
+- Le nouveau parcours d'acquisition45300 est distinct d'une invitation de membre ou d'un contrat de franchise : token HMAC avec clé serveur, empreinte privée, expiration, destinataire email vérifié, organisation et rôle autorisés. Le batch est atomique et rejouable ; la demande outbox n'embarque ni token ni adresse email. Le consommateur appelle réellement l'adaptateur avec une clé fournisseur stable, puis ne confirme SENT qu'après acceptation par le fournisseur. Le mode DEMO est explicite et interdit en production. Il n'ajoute ni membre, ni rôle, ni qualification, ni droit économique. Aucun SMTP réel n'est certifié par les tests contractuels ci-dessus.
+- La nouvelle réconciliation45220 dérive les montants depuis des écritures EXPENSE réelles, séparément des actifs de taxe récupérable, et les rattache à une capture/une réception Client canonique ; proposition et décision indépendantes, captures figées et droits bornés. Les proportions sont calculées en décimaux exacts avec arrondi cumulatif ; aucune saisie de montant libre dans la commande de rapprochement. Un coût absent ou égal à zéro non prouvé reste bloquant.
+
+### Problèmes supplémentaires trouvés dans cette passe
+
+| ID | Risque précis | Correctif demandé / reçu, validation restante |
+|---|---|---|
+| FA09 — P1 | Deux clôtures sur des intervalles différents mais se chevauchant ne retrouvaient pas la même clôture précédente : mêmes revenus pouvaient produire deux accruals complets. Le verrou initial ne portait que sur `(book,start,end)`. | Patch `82d0eeae` / migration452120 : verrou commun du livre et refus du chevauchement d'un intervalle différent. Une correction de l'intervalle identique reste versionnée. Lecture favorable ; contre-tests SQL natifs et course concurrente à confirmer par l'intégrateur. |
+| FA10 — P1 | `auth.jwt()->>'aal' <> 'aal2'` vaut NULL si la claim manque ; `IF NOT access()` ne dénie pas non plus si `access()` vaut NULL. Un rôle Finance valide pouvait ainsi passer les nouveaux points d'entrée avec une claim AAL absente. | `26109cf4` normalise les six gardes historiques ; `3debfc73` emploie `IS DISTINCT FROM TRUE` dans les rapprochements. Les contre-tests doivent couvrir claim absente et JSON-null, pas seulement AAL1. Les remplacements initiaux produisaient les tokens invalides `truethen`/`trueor`, signalés avant rejeu SQL ; résultat final exigé après réparation syntaxique. |
+| FA11 — P1 | Après clôture, un remboursement/litige natif peut rendre les revenus inadmissibles alors que l'accrual historique reste positif. Le versement utilisait uniquement ce solde et un journal de règlement, sans revalider les sources. | `a0283770` ajoute une revalidation des périodes avant tout nouveau versement, après le retour d'un rejeu historique exact. Contre-test indispensable : clôture positive → remboursement vérifié → nouveau versement refusé, sans réécriture de l'ancienne clôture. |
+| FA12 — P1 | La catégorie `APPROVED_SHARED_CENTRAL_COST` du chemin P&L historique restait un texte libre sans règle d'allocation centrale contractuellement approuvée. Un effet COST pouvait aussi utiliser une catégorie de revenu. | `178a4d6d` / migration452130 : exclusion par défaut des coûts centraux et couplage effet/catégorie. Lecture favorable ; contre-tests SQL requis. Ne pas inventer une politique permettant de fermer le test. |
+| FA13 — P2 fiabilité | Le verrou de livre ajouté à l'écriture d'allocation ne supprime pas le verrou de financement déjà pris par son appelant68031:76. Un rapprochement prenait livre puis financement alors qu'une consommation pouvait tenir financement puis attendre livre : cycle de deadlock. | Signalé au propriétaire ; utiliser un ordre cohérent sur tous les appelants ou une acquisition non bloquante avec erreur55P03 reprenable. L'atomicité évite un ledger partiel, mais ne suffit pas à revendiquer une exploitation fiable. |
+
+Course liée à FA11 : le reçu adverse peut exister dans `private.verified_payment_dispatch_inbox_v1` avant son import dans `credit_pack_payment_adjustments_v1`. Les protections de clôture et de versement doivent inclure cette source et ses écrivains, pas uniquement la table d'ajustements finale. Une signature de paiement correctement vérifiée mais non encore dispatchée ne doit pas laisser une fenêtre de distribution admissible. Ce point a été transmis au propriétaire financier.
+
+Cette passe est une **contre-revue intermédiaire**. Les tests SQL réellement exécutés par le chantier d'intégration, la recette native, la matrice visuelle et le nouveau moteur de performance45400 restent à examiner avant conclusion finale. Les 123/31 tests UI/contrats ne sont pas présentés comme une preuve monétaire ou de disponibilité externe.
