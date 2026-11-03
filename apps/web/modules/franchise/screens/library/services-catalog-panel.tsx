@@ -147,7 +147,7 @@ export function ServicesCatalogPanel({
                     <td>{item.versionLabel ?? "—"}</td>
                     <td><LanguageMarks item={item} /></td>
                     <td>
-                      <span className="franchise-complete" aria-label={`${completeness(item)}%`}><span style={{ width: `${completeness(item)}%` }} /></span>
+                      <span className="franchise-complete" aria-hidden="true"><span style={{ width: `${completeness(item)}%` }} /></span>
                       <small dir="ltr">{completeness(item)}%</small>
                     </td>
                     <td><StatusChip status={item.status} locale={locale} /></td>

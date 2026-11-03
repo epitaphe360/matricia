@@ -419,7 +419,8 @@
   gap: 0.2rem;
 }
 
-.franchise-props small {
+.franchise-props small,
+.franchise-props dt {
   color: var(--client-muted);
   font-size: 0.75rem;
 }

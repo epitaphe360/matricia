@@ -100,10 +100,10 @@ function ServiceProperties({ locale, workspace, service, commandIdentity, organi
         <p className="client-access-note">{workspace.mandate.libraryName} · {service.code}</p>
         <h3>{c.generalInfo}</h3>
         <dl className="franchise-props">
-          <div><small>{c.labelFr}</small><span>{service.nameFr ?? service.title}</span></div>
-          <div><small>{c.labelAr}</small><span dir="rtl" lang="ar">{service.nameAr ?? "—"}</span></div>
-          <div><small>{c.linked}</small><span>{service.category ?? "—"} / {service.subcategory ?? "—"}</span></div>
-          <div><small>{c.version}</small><span>{service.versionLabel ?? "—"}</span></div>
+          <div><dt>{c.labelFr}</dt><dd>{service.nameFr ?? service.title}</dd></div>
+          <div><dt>{c.labelAr}</dt><dd dir="rtl" lang="ar">{service.nameAr ?? "—"}</dd></div>
+          <div><dt>{c.linked}</dt><dd>{service.category ?? "—"} / {service.subcategory ?? "—"}</dd></div>
+          <div><dt>{c.version}</dt><dd>{service.versionLabel ?? "—"}</dd></div>
         </dl>
         {service.description ? <p>{service.description}</p> : null}
         <div className="franchise-split">
@@ -304,9 +304,9 @@ export function FranchiseQuestionnairesWorkbench({
           {selected && !createMode ? (
             <>
               <dl className="franchise-props">
-                <div><small>{c.technicalKey}</small><span dir="ltr">{selected.code}</span></div>
-                <div><small>{c.version}</small><span>{selected.versionLabel ?? "—"}</span></div>
-                <div><small>{c.state}</small><StatusChip status={selected.status} locale={locale} /></div>
+                <div><dt>{c.technicalKey}</dt><dd dir="ltr">{selected.code}</dd></div>
+                <div><dt>{c.version}</dt><dd>{selected.versionLabel ?? "—"}</dd></div>
+                <div><dt>{c.state}</dt><dd><StatusChip status={selected.status} locale={locale} /></dd></div>
               </dl>
               <FranchiseCatalogSubmitForm locale={locale} workspace={workspace} item={selected} commandIdentity={commandIdentity} organizationId={organizationId} />
               <FranchiseCloneQuestionnaireForm locale={locale} workspace={workspace} item={selected} commandIdentity={commandIdentity} organizationId={organizationId} />
