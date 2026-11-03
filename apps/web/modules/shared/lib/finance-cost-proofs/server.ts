@@ -51,7 +51,9 @@ export async function transferFinanceCostDocument(uploadId: string, commit: bool
       if (saved.error || saved.data?.outcome !== "FINANCE_COST_DOCUMENT_UPLOADED") return financeCostFileFailure("FINANCE_COST_DOCUMENT_COMMIT_UNAVAILABLE", rpcStatus(saved.error?.code));
       // The durable uploaded state/outbox survives a scanner outage. Returning
       // the native scan state never pretends that the evidence is already CLEAN.
-      await scanOneFinanceCostDocument(admin, uploadId);
+      // Keep the upload response within its route budget. The native lease and
+      // uploaded outbox event retain retry ownership if scanning takes longer.
+      await deadline(scanOneFinanceCostDocument(admin, uploadId), 20_000).catch(() => undefined);
       const refreshed = await deadline(client.rpc("get_finance_cost_upload_context_v1", { p_upload_id: uploadId }), 5_000);
       const state = financeCostUploadContextSchema.safeParse(refreshed.data);
       if (refreshed.error || !state.success || state.data.upload_id !== uploadId) return financeCostFileFailure("FINANCE_COST_DOCUMENT_STATUS_UNAVAILABLE");

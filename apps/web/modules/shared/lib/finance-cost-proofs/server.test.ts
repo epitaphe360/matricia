@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ auth: vi.fn(), rpc: vi.fn(), adminRpc: vi.fn(), admin: vi.fn(), download: vi.fn(), scan: vi.fn() }));
 vi.mock("@/modules/shared/lib/supabase/server", () => ({ getSupabaseServerClient: async () => ({ auth: { getUser: mocks.auth }, rpc: mocks.rpc }) }));
 vi.mock("@/modules/shared/lib/supabase/admin", () => ({ getSupabaseAdminClient: mocks.admin }));
@@ -17,6 +17,7 @@ beforeEach(() => {
   mocks.adminRpc.mockResolvedValue({ data: { outcome: "FINANCE_COST_DOCUMENT_READ_RECORDED", upload_id: id }, error: null });
   mocks.scan.mockResolvedValue({ ok: true, code: "FINANCE_COST_DOCUMENT_SCAN_RECORDED", scanStatus: "CLEAN" });
 });
+afterEach(() => { vi.useRealTimers(); });
 describe("Finance private evidence transfer", () => {
   it("records actual bytes before returning a private audited download", async () => {
     const response = await transferFinanceCostDocument(id, false);
@@ -79,6 +80,17 @@ describe("Finance private evidence transfer", () => {
     const response = await transferFinanceCostDocument(id, true);
     expect(response.status).toBe(200);
     expect((await response.json()).scan_status).toBe("PENDING");
+  });
+  it("returns the durable pending state when the inline scan reaches its bounded response budget", async () => {
+    vi.useFakeTimers();
+    mocks.scan.mockReturnValue(new Promise(() => undefined));
+    mocks.rpc.mockImplementation(async (name: string) => name === "commit_finance_cost_document_upload_v1" ? { data: { outcome: "FINANCE_COST_DOCUMENT_UPLOADED", upload_id: id, scan_status: "PENDING" }, error: null } : { data: { ...source, status: "UPLOADED", scan_status: "PENDING" }, error: null });
+    const pending = transferFinanceCostDocument(id, true);
+    await vi.advanceTimersByTimeAsync(20_001);
+    const response = await pending;
+    expect(response.status).toBe(200);
+    expect((await response.json()).scan_status).toBe("PENDING");
+    expect(mocks.adminRpc).not.toHaveBeenCalled();
   });
   it("rejects a media mismatch before committing or scanning an upload", async () => {
     mocks.rpc.mockResolvedValue({ data: { ...source, mime_type: "image/png", status: "RESERVED", scan_status: "PENDING" }, error: null });

@@ -299,6 +299,31 @@ select throws_ok($$select public.reconcile_credit_economic_profit_v1((select(v->
 reset role;
 select is((select count(*)from public.credit_economic_cost_reconciliations_v1),2::bigint,'revocation preserves both historical accepted evidence records');
 select is((select count(*)from public.credit_economic_cost_attributions_v1),2::bigint,'revocation never deletes or reverses the former zero evidence');
+-- A revoked zero proof can be replaced through a new real immutable file,
+-- scan, retrieval and independent review. No accepted row is edited or deleted.
+set local role authenticated;select pg_temp.actor275(2);
+insert into proof370 values('replacement',public.reserve_finance_cost_document_v1('PSP_FEE',(select(v#>>'{}')::uuid from p275 where k='funding'),'TEST370-frais-nuls-correction.pdf','application/pdf',(select(v->>'size_bytes')::integer from proof370 where k='bytes'),(select v->>'sha256'from proof370 where k='bytes'),'e3700000-0000-4000-8000-000000000004'));
+reset role;
+insert into storage.objects(bucket_id,name,metadata)select 'finance-cost-proofs',v->>'path',jsonb_build_object('mimetype','application/pdf','size',(select(v->>'size_bytes')::integer from proof370 where k='bytes'))from proof370 where k='replacement';
+set local role authenticated;select pg_temp.actor275(2);
+select public.commit_finance_cost_document_upload_v1((v->>'upload_id')::uuid,(select v->>'sha256'from proof370 where k='bytes'),(select(v->>'size_bytes')::integer from proof370 where k='bytes'))from proof370 where k='replacement';
+reset role;select pg_temp.service275();set local role service_role;
+insert into proof370 select'claim-replacement',public.claim_finance_cost_document_scan_jobs_v1('e3700000-0000-4000-8000-000000000099',(v->>'upload_id')::uuid)->0 from proof370 where k='replacement';
+select public.complete_finance_cost_document_scan_v1((v->>'upload_id')::uuid,'e3700000-0000-4000-8000-000000000099',(v->>'lease_token')::uuid,(v->>'row_version')::integer,'CLEAN',(select v->>'sha256'from proof370 where k='bytes'),(select(v->>'size_bytes')::integer from proof370 where k='bytes'),'SQL_TEST_SCANNER','test-only')from proof370 where k='claim-replacement';
+reset role;set local role authenticated;select pg_temp.actor275(2);
+insert into proof370 values('replacement-proposal',public.propose_credit_economic_zero_cost_v1('PSP_FEE',(select(v#>>'{}')::uuid from p275 where k='funding'),(select(v->>'upload_id')::uuid from proof370 where k='replacement'),'TEST ONLY corrected statement independently replaces revoked historical evidence','TEST370-replacement-proposal'));
+select pg_temp.actor275(3);
+insert into proof370 values('read-replacement',public.authorize_finance_cost_document_read_v1((select(v->>'upload_id')::uuid from proof370 where k='replacement')));
+reset role;select pg_temp.service275();set local role service_role;
+select public.record_finance_cost_document_read_v1((v->>'read_capability_id')::uuid,(select v->>'sha256'from proof370 where k='bytes'),(select(v->>'size_bytes')::integer from proof370 where k='bytes'))from proof370 where k='read-replacement';
+reset role;set local role authenticated;select pg_temp.actor275(3);
+select public.decide_credit_economic_cost_v1((v->>'proposal_id')::uuid,v->>'source_hash',true,'TEST ONLY new independent review of corrected real private evidence')from proof370 where k='replacement-proposal';
+select public.reconcile_credit_economic_profit_v1((select(v->>'book_id')::uuid from p275 where k='book'),current_date,current_date,'TEST ONLY append the replacement zero evidence version','TEST370-replacement-reconcile');
+select is(public.get_credit_economic_profit_context_v1((select(v->>'book_id')::uuid from p275 where k='book'),current_date,current_date)->>'ready','true','a fully re-reviewed replacement restores real financial readiness');
+reset role;
+select is((select count(*)from public.credit_economic_cost_reconciliations_v1),3::bigint,'replacement appends a third accepted source and retains both former sources');
+select is((select count(*)from public.credit_economic_cost_attributions_v1),3::bigint,'replacement appends the next PSP evidence version without duplicating fulfillment');
+select is((select count(*)from public.financial_journals),(select(v#>>'{}')::bigint from proof370 where k='journal-count'),'replacement evidence still creates no fictitious zero journal or money entry');
 set local role authenticated;select pg_temp.actor275(4);
 select throws_ok($$select public.get_finance_cost_documents_v1('PSP_FEE',(select(v#>>'{}')::uuid from p275 where k='funding'))$$,'42501','FINANCE_COST_DOCUMENT_READ_DENIED','foreign Client cannot inspect the financial proof vault');
 select throws_ok($$select public.authorize_finance_cost_document_read_v1((select(v->>'upload_id')::uuid from proof370 where k='FULFILLMENT_COST'))$$,'42501','FINANCE_COST_DOCUMENT_READ_DENIED','foreign Client cannot download even a known clean proof');
