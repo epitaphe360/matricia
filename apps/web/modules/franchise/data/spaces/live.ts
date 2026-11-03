@@ -1,3 +1,4 @@
+import { franchiseInvitationLabel } from "@/modules/franchise/data/network/invitation-label";
 import type { FranchiseCrmDashboard } from "@/modules/franchise/data/crm/model";
 import type { FranchiseDigestDashboard } from "@/modules/franchise/data/digest/model";
 import type { FollowupDashboard } from "@/modules/franchise/data/followups/model";
@@ -143,7 +144,7 @@ export function buildFranchiseSpaceBoard(input: {
     createdAt:item.createdAt,
     dossier:input.operations?.providerDossiers?.find((d)=>d.organizationId===item.linkedOrganizationId),
     services:input.operations?.providerDossiers?.find((d)=>d.organizationId===item.linkedOrganizationId)?.qualifications.map((q)=>q.serviceCode).join(", ")??(locale==="ar"?"خدمات غير موثقة":"Services non renseignés"),
-    status: input.operations?.providerDossiers?.find((d)=>d.organizationId===item.linkedOrganizationId)?.status??franchiseStageLabel(item.stage, locale),
+    status: [input.operations?.providerDossiers?.find((d)=>d.organizationId===item.linkedOrganizationId)?.status??franchiseStageLabel(item.stage, locale),franchiseInvitationLabel(item.invitation,locale)].filter(Boolean).join(" · "),
     next: item.nextFollowupAt ? item.nextFollowupAt.slice(0, 10) : franchiseStageLabel(item.stage, locale),
     tone: providerTone(item.stage),
     stage: item.stage,
@@ -176,7 +177,7 @@ export function buildFranchiseSpaceBoard(input: {
     title: item.organizationName || item.displayName,
     stage: franchiseStageLabel(item.stage, locale),
     owner: item.displayName,
-    flag: item.nextFollowupAt ? item.nextFollowupAt.slice(0, 10) : item.sourceCode,
+    flag: [item.nextFollowupAt ? item.nextFollowupAt.slice(0, 10) : item.sourceCode,franchiseInvitationLabel(item.invitation,locale)].filter(Boolean).join(" · "),
     tone: providerTone(item.stage),
     stageCode: item.stage,
     email: item.contactEmail ?? undefined,

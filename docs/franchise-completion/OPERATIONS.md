@@ -29,3 +29,11 @@ Source : `df67da4`, fusion des lots Client et Sous-traitant. Travail isolé sur 
 MFA/AAL2, habilitations serveur, isolation RLS, journaux et allocations immuables, audit/outbox, règles IT Hatim 50 % / NEOXA 50 % / Asma 0 % avec droit d'entrée nul. Pas de taux ni de prix fiscal inventé. Aucune date de production déplacée pour faire aboutir une clôture.
 
 La recette navigateur et les contrôles SQL d'intégration devront citer leur candidat exact. Ce rapport ne certifie pas les intégrations hébergées, les conditions légales ou une mise en production.
+
+## Extension des listes et états natifs d’invitation
+
+Le CRM, les relances, le digest et les plans correctifs utilisent également une collecte ordonnée par pages. Le plan correctif accepte le `franchiseId` du mandat sélectionné avant la pagination ; le chargeur de page doit transmettre cette valeur. Les rejets de transport sont contenus en incident technique ; une réponse Auth 503 n’est pas transformée en déconnexion. Les relances exposées sont limitées aux prospects réellement chargés dans ce périmètre.
+
+Les dossiers CRM présentent maintenant le dernier état de la vraie invitation (`QUEUED`, acquittement du service d’envoi, ouverture, inscription, expiration, révocation) et son mode. Un test non contractuel reste explicitement marqué ; un prospect sans invitation n’implique aucun envoi. Cette projection nécessite la migration du lot Invitations `45300+` et ne lit aucun token privé.
+
+Preuves complémentaires : six tests de lecteurs (301 prospects, échec de seconde page, Auth 503/401/rejet, deux périmètres de plans), quatre tests de libellés d’invitation et reprise du groupe opérationnel. Le reçu SQL final de `0362` doit provenir de l’intégration : le premier passage avait correctement exclu une charge créée après une coupure historique trop ancienne ; le correctif de fixture fige maintenant la coupure après la commande native, sans modifier les dates de création.

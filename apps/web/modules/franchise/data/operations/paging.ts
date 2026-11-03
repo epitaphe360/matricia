@@ -3,7 +3,8 @@ export async function collectOperationPages<T>(query:(from:number,to:number)=>Pr
   const collected:T[]=[];
   const pageSize=100;
   for(let from=0;;from+=pageSize){
-    const page=await query(from,from+pageSize-1);
+    let page;
+    try{page=await query(from,from+pageSize-1);}catch(error){return{data:[],error};}
     if(page.error)return{data:[],error:page.error};
     if(!page.data)return{data:[],error:new Error("FRANCHISE_OPERATIONS_RESPONSE_MISSING")};
     collected.push(...page.data);

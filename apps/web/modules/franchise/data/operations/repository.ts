@@ -1,3 +1,4 @@
+import { classifyAuthReadFailure } from "@/modules/shared/lib/auth/read-failure";
 import { supervisionMetrics,type FranchiseSupervisionMetrics } from "../spaces/metrics";
 import { providerDossiers,type ProviderDossier } from "../network/provider-dossier";
 import { z } from "zod";
@@ -39,7 +40,7 @@ export async function loadFranchiseOperations(input: { libraryId: string; operat
   if (!id.safeParse(input.libraryId).success || !id.safeParse(input.franchiseId).success) throw new Error("FRANCHISE_OPERATIONS_SCOPE_REQUIRED");
   const client = await getSupabaseServerClient();
   const { data: auth, error: authError } = await client.auth.getUser();
-  if (authError) throw new Error("FRANCHISE_OPERATIONS_AUTH_UNAVAILABLE");
+  if (authError) throw new Error(classifyAuthReadFailure(authError)==="UNAUTHENTICATED"?"FRANCHISE_OPERATIONS_UNAUTHENTICATED":"FRANCHISE_OPERATIONS_AUTH_UNAVAILABLE");
   if (!auth.user) throw new Error("FRANCHISE_OPERATIONS_UNAUTHENTICATED");
   const[dossiersResult,metricsResult,missionResult]=await Promise.all([client.rpc("franchise_provider_dossiers",{p_franchise_id:input.franchiseId}),client.rpc("franchise_supervision_metrics",{p_franchise_id:input.franchiseId}),client.rpc("franchise_operational_missions_v1",{p_franchise_id:input.franchiseId})]);
   const metrics=metricsResult.data?supervisionMetrics.safeParse(metricsResult.data):null;
