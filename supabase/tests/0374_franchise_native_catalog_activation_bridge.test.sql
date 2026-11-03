@@ -4,6 +4,10 @@ begin;
 set local search_path=public,extensions;
 select no_plan();
 grant usage on schema extensions to authenticated,service_role;
+-- Introspection-only assertions below call existing private permission helpers.
+-- The application behaviour is exercised through public.franchise_catalog_page.
+-- This rollback-only schema usage grant does not grant any table or new RPC.
+grant usage on schema private to authenticated;
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
 select ('a3740000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','catalog374-'||n||'@example.invalid','',now(),'{}','{}',now(),now()from generate_series(1,5)n;
 insert into public.organizations(id,legal_name,display_name,status,created_by)values('b3740000-0000-4000-8000-000000000001','TEST374 operator','TEST374 operator','ACTIVE','a3740000-0000-4000-8000-000000000001');
