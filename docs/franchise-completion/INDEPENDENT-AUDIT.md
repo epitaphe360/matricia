@@ -147,3 +147,50 @@ Le propriétaire financier et l'intégrateur ont reçu la cause. Contre-tests re
 - La surveillance native de favoritisme (Gold§16.9) est un chantier séparé en cours : les anciens schémas/revues déclaratives ne suffisent pas à la certifier. Une mesure de concentration ne prouve aucune faute ; toute conclusion et sanction demeurent humaines et autorisées.
 - Le digest possède une vraie route de worker (`/api/workers/franchise-digests`) : absence non alléguée. Le scheduler de relances existe aussi ; son état n'était pas encore inclus dans la readiness du worker et une déférence de job pouvait rester un résultat de cycle résolu. À vérifier avant certification d'exploitation complète.
 - Les nouvelles réceptions natives, clôtures et versements historiques doivent être identifiés comme TEST, avec leurs vrais prérequis. Aucun score, texte juridique, taxe, reçu de paiement, signature ou période écoulée n'est inventé dans ce rapport.
+
+## Troisième contre-revue — rattachement économique et responsables des plans
+
+Sources lues le 3 novembre 2026 : `/workspace/franchise-history` au commit `93ba426d` pour les migrations452800–452840 et `/workspace/franchise-risk` au commit `01d91255` pour45450/454510/454520. Le travail anti-favoritisme45440 présent sans commit dans le second worktree est distinct et n'est pas déclaré validé ici. Aucune modification produit, aucun DDL ni commande SQL n'a été effectué par l'auditeur.
+
+Contrôles indépendants exécutés, avec le même préfixe PATH/COREPACK_HOME documenté :
+
+```sh
+corepack pnpm --filter @matricia/web exec vitest run \
+  modules/franchise/screens/gouvernance/book-opening-actions.test.ts \
+  modules/franchise/screens/gouvernance/book-opening-form.test.tsx --maxWorkers=2
+
+corepack pnpm --filter @matricia/web exec vitest run \
+  modules/franchise/screens/performance/native-owner-actions.test.ts \
+  modules/franchise/screens/performance/native-owner-controls.test.tsx \
+  modules/franchise/screens/performance/native-plan-actions.test.ts \
+  modules/franchise/screens/performance/native-control-panel.test.tsx --maxWorkers=2
+```
+
+Résultats : **21 tests / deux fichiers** pour les livres et **23 tests / quatre fichiers** pour les plans, tous réussis. Journaux [livres](evidence/independent-book-review.log) et [responsables](evidence/independent-owner-review.log). Une partie des tests plans était déjà incluse dans les contrôles antérieurs : ces chiffres décrivent les exécutions, pas un nombre cumulatif de tests distincts.
+
+### FA14 : correction favorable en source, preuve SQL finale attendue
+
+Le registre immuable lie désormais chaque livre au mandat approuvé exact, à sa décision indépendante, à son hash, à la règle financière et aux parts réelles. Les arguments type/opérateur de l'ancien appel ne peuvent plus redéfinir les droits approuvés. L'ouverture explicite autorise la préparation du droit d'entrée avant activation ; les écritures financières ultérieures passent par des gardes de table, qui persistent même si un corps de commande est remplacé plus tard.
+
+La route active vérifie le clone d'activation exact, son identité et les bornes temporelles. La clôture historique utilise les termes figés du mandat applicable ; la fin actuelle de franchise ne crée ni ne supprime rétroactivement un revenu. Un versement sans clôture sourcée est refusé. Les preuves d'activation ambiguës et les anciens livres incohérents restent des rapprochements requis ; aucun solde, reçu ou événement légal n'est fabriqué pour les rendre recevables.
+
+Les projections de gouvernance et l'export filtrent le `franchise_id` exact du registre, y compris si deux territoires partagent la même organisation et bibliothèque. Le fallback ancien est limité à un rattachement unique et cohérent. La dette de droit d'entrée en production exige une preuve signée effective, même avant activation ; le mode non contractuel est attesté côté serveur uniquement en DEVELOPMENT/STAGING. Les montants, modes et échéances proviennent du mandat, avec sérialisation de la dette au niveau de la franchise. La lecture des contre-tests0372 est favorable ; leur exécution après toutes les migrations appartient au chantier d'intégration.
+
+### Responsables : reprise gouvernée sans réécriture
+
+Les propositions de plans gardent leur suggestion d'origine. Une affectation réelle se fait par proposition puis décision d'un autre Admin AAL2 indépendant, sans appartenance active à l'organisation opératrice ; version, cible et habilitation exacte sont revérifiées sous verrou. Une nouvelle affectation gouvernée permet de reprendre un plan dont le responsable a été révoqué, sans modifier l'approbation historique. Un responsable absent ou révoqué bloque la progression/la clôture, sans remplacement silencieux. Les nouvelles tables privées ne reçoivent pas de droits d'écriture API.
+
+Deux défauts supplémentaires trouvés pendant cette revue ont déjà été corrigés en source par le propriétaire :
+
+- `5a3092db` /454510 réévalue le droit de l'acteur COMMENT/PROGRESS après verrouillage des lignes d'habilitation. La première version vérifiait ce droit avant le verrou, ce qui laissait une course avec une révocation.
+- `01d91255` /454520 exige une file centrale ACTIVE. La première version utilisait un `INSERT SELECT` sans vérifier le cas sans ligne et pouvait créer le plan sans tâche centrale. L'absence lève maintenant55000 et fait échouer explicitement la transaction et le cycle ; les tâches des plans ouverts sont reprises. Ce cas n'est pas transformé en file vide ou en réussite.
+
+La page Admin de responsable et la tâche centrale existent réellement. L'affectation seule ne ferme pas la tâche : seule une clôture gouvernée du plan permet de la résoudre. Les capacités UI reprennent la séparation des responsabilités et l'état courant. La fraîcheur des contre-tests0373 doit être vérifiée par l'intégrateur.
+
+### FA15 — P2 : clôture avec des remesures anciennes incompatibles
+
+Un défaut reste ouvert dans `20261103454510_franchise_control_actor_recheck.sql:32` et dans `private.franchise_control_owner_context_v1` de45450 : le critère COMPLETED cherche, **pour chaque objectif séparément**, n'importe quel rapport du franchisé créé après la proposition, sans sélectionner une remesure commune récente ni imposer un modèle comparable.
+
+Contre-exemple déterministe à ajouter en SQL : un premier rapport récent améliore A mais laisse B sous sa cible ; un second améliore B alors qu'A a régressé. Le prédicat actuel trouve le premier pour A et le second pour B : il autorise la clôture alors qu'aucune mesure ne satisfait les objectifs ensemble. Un ancien rapport satisfaisant n'est pas invalidé par une mesure plus récente dégradée. Ce défaut ne déclenche aucun versement automatique ; il permet une certification incorrecte d'achèvement du plan.
+
+Cause et contre-test transmis au propriétaire performance et à l'intégrateur. Correction demandée : un même helper pour capacité et commande, fondé sur une remesure native explicitement sélectionnée et comparable, postérieure à l'approbation et satisfaisant tous les objectifs sur le même rapport. Les 23 tests Web cités ci-dessus ne couvrent pas ce prédicat SQL et ne ferment donc pas FA15.
