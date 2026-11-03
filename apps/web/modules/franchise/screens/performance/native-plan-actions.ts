@@ -20,6 +20,7 @@ export async function recordNativePlanProgress(_: NativePlanActionState, form: F
     return { status: "error", reason: "QUERY_FAILED" };
   }
   if (!z.object({ outcome: z.literal("FRANCHISE_CONTROL_PLAN_EVENT_RECORDED") }).safeParse(response.data).success) return { status: "error", reason: "QUERY_FAILED" };
+  revalidatePath("/[locale]/administration/gouvernance-franchise/plans/[planId]/responsable", "page");
   revalidatePath(`/${p.data.locale}/franchise/performance`);
   return { status: "success" };
 }

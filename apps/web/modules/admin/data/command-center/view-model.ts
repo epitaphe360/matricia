@@ -87,6 +87,7 @@ export const RESOLUTION_CODES = [
 export function dossierHref(locale: "fr" | "ar", item: AdminWorkItem) {
   const type = item.resourceType.toLowerCase();
   const id = item.resourceId;
+  if (type === "franchise_control_plan_owner") return `/${locale}/administration/gouvernance-franchise/plans/${id}/responsable`;
   if (type === "notification_template_review") return `/${locale}/administration/messagerie/preferences`;
   if (type === "membership_capability_review") return `/${locale}/administration/revues-capacites`;
   if (type === "privacy_retention_action") return `/${locale}/administration/confidentialite`;

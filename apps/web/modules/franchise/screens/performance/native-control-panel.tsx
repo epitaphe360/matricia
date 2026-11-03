@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 import { franchiseAxes, type NativeControlResult } from "@/modules/franchise/data/performance/native-control";
 import { WorkspaceFailure } from "@/modules/shared/ui/workspace-failure";
+import { NativePlanOwnerControls } from "./native-owner-controls";
 import { NativePlanProgressForm, NativePlanDecisionForm } from "./native-plan-form";
 const axisLabels = {
   fr: { CLIENT_NETWORK: "Développement clients et réseau", LIBRARY_QUALITY: "Qualité de la bibliothèque", PROVIDER_NETWORK: "Réseau de sous-traitants", DELIVERY_PERFORMANCE: "Livraisons dans les délais", CLIENT_SATISFACTION: "Satisfaction client", COMPLIANCE_FINANCE: "Conformité contractuelle et financière" },
@@ -39,13 +40,13 @@ export function FranchiseNativePerformancePanel({ locale, result, returnPath }: 
     </article>)}
     {dashboard.nextCursor ? <Link className="franchise-tool" href={`${next.pathname}${next.search}`}>{ar ? "تقارير أقدم" : "Rapports précédents"}</Link> : null}
     {dashboard.plans.map(plan => <article className="client-card space-y-3" key={plan.id}><h3>{ar ? "مقترح خطة تصحيحية للمراجعة البشرية" : "Proposition de plan correctif à examiner"}</h3><p>{ar ? "الموعد المقترح" : "Échéance proposée"} : <time dateTime={plan.due_on}>{plan.due_on}</time></p>
-      <p>{plan.suggested_owner_user_id ? ar ? "المسؤول المقترح: مسؤول مخوّل في التكليف." : "Responsable proposé : référent habilité du mandat." : ar ? "يجب إسناد مسؤول مخوّل للتكليف قبل اعتماد الخطة." : "Un responsable habilité doit être affecté au mandat avant l’approbation du plan."}</p>
+      <NativePlanOwnerControls locale={locale} planId={plan.id} context={plan.ownerContext}/>
       <ul>{plan.objectives.map(objective => <li key={objective.axis}>{axisLabels[locale][objective.axis]} : {format(objective.observedScoreBps)} → {format(objective.targetScoreBps)}</li>)}</ul>
       <p>{ar ? "لا تصبح الخطة معتمدة إلا بقرار إدارة مخوّلة. تُقبل النتيجة بعد إعادة قياس مصادرها." : "La proposition attend une décision d’un administrateur habilité. L’achèvement se vérifie par une nouvelle mesure des sources."}</p>
       <ol>{plan.events.map(event => <li key={event.id}><time dateTime={event.created_at}>{event.created_at.slice(0, 10)}</time> · <span dir="auto">{event.comment}</span>{event.progress_percent !== null ? ` · ${event.progress_percent}%` : ""}</li>)}</ol>
       {plan.nextEventAfter ? <Link className="franchise-tool" href={planEventsHref(plan.id, plan.nextEventAfter)}>{ar ? "الجزء التالي من سجل المتابعة" : "Suite de l’historique de suivi"}</Link> : null}
-      {dashboard.capabilities.canWrite ? <NativePlanProgressForm locale={locale} planId={plan.id}/> : null}
-      {dashboard.capabilities.canDecide ? <NativePlanDecisionForm locale={locale} planId={plan.id}/> : null}
+      {dashboard.capabilities.canWrite ? <NativePlanProgressForm locale={locale} planId={plan.id} canProgress={plan.ownerContext.canProgress}/> : null}
+      {dashboard.capabilities.canDecide && (plan.ownerContext.canApprovePlan || plan.ownerContext.canCompletePlan || plan.ownerContext.canRejectPlan) ? <NativePlanDecisionForm locale={locale} planId={plan.id} canApprove={plan.ownerContext.canApprovePlan} canReject={plan.ownerContext.canRejectPlan} canComplete={plan.ownerContext.canCompletePlan}/> : null}
     </article>)}
   </section>;
 }

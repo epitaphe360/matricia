@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { planOwnerContextSchema } from "./owner-context";
 import { unstable_rethrow } from "next/navigation";
 import { classifyAuthReadFailure } from "@/modules/shared/lib/auth/read-failure";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
@@ -13,7 +14,7 @@ export const nativeReportSchema = z.object({
   previous_report_id: z.string().uuid().nullable(), source_evidence_hash: z.string().regex(/^[a-f0-9]{64}$/), generated_at: z.string(),
 }).refine(report => (report.completeness === "COMPLETE") === (report.global_score_bps !== null) && (report.global_score_bps !== null) === franchiseAxes.every(axis => report.axis_scores[axis] !== null));
 const planEvent = z.object({ id: z.union([z.number().int(), z.string().regex(/^\d+$/)]), kind: z.enum(["COMMENT", "PROGRESS", "APPROVED", "REJECTED", "COMPLETED"]), comment: z.string(), progress_percent: z.number().int().nullable(), created_at: z.string() });
-const planSchema = z.object({ id: z.string().uuid(), franchise_id: z.string().uuid(), report_id: z.string().uuid(), due_on: z.string().date(), origin: z.literal("SYSTEM_PROPOSAL"), suggested_owner_user_id: z.string().uuid().nullable(), objectives: z.array(z.object({ axis: z.enum(franchiseAxes), observedScoreBps: z.number().int(), targetScoreBps: z.number().int(), completionCriterion: z.literal("REMEASURE_NATIVE_SOURCE_AT_OR_ABOVE_TARGET") })), events: z.array(planEvent).max(50), eventCount: z.number().int().nonnegative(), nextEventAfter: z.string().regex(/^\d{1,19}$/).nullable() });
+const planSchema = z.object({ id: z.string().uuid(), franchise_id: z.string().uuid(), report_id: z.string().uuid(), due_on: z.string().date(), origin: z.literal("SYSTEM_PROPOSAL"), suggested_owner_user_id: z.string().uuid().nullable(), objectives: z.array(z.object({ axis: z.enum(franchiseAxes), observedScoreBps: z.number().int(), targetScoreBps: z.number().int(), completionCriterion: z.literal("REMEASURE_NATIVE_SOURCE_AT_OR_ABOVE_TARGET") })), ownerContext: planOwnerContextSchema, events: z.array(planEvent).max(50), eventCount: z.number().int().nonnegative(), nextEventAfter: z.string().regex(/^\d{1,19}$/).nullable() });
 const cursorSchema = z.object({ before: z.string().datetime({ offset: true }), id: z.string().uuid() });
 const responseSchema = z.object({ capabilities: z.object({ canWrite: z.boolean(), canDecide: z.boolean() }), franchiseId: z.string().uuid(), reports: z.array(nativeReportSchema), plans: z.array(planSchema), nextCursor: cursorSchema.nullable() });
 export type NativeFranchiseControl = z.infer<typeof responseSchema>;
