@@ -40,6 +40,17 @@ describe("franchise library workbenches", () => {
     expect(html).not.toMatch(/exemple illustratif/i);
   });
 
+  it("marks only the actual descriptive fields and presents persisted review feedback",()=>{
+    const actual={...workspace,services:[{...workspace.services[0]!,nameFr:"",nameAr:"نص محفوظ",description:"Description présente",reviewEvents:[{id:"review",versionId:"version",status:"REJECTED",requestedAt:"2026-11-01T00:00:00Z",reviewedAt:"2026-11-02T00:00:00Z",comment:"Compléter le justificatif original"}]}]};
+    const html=renderToStaticMarkup(<FranchiseServicesWorkbench locale="fr" query="" workspace={actual} selectedId={actual.services[0]!.id} createMode={false} organizationId={null} commandIdentity={command}/>);
+    expect(html).toContain("Compléter le justificatif original");
+    expect(html).not.toContain("Questionnaire associé");
+    expect(html).toContain("Champs descriptifs renseignés");
+    expect(html).toContain('<li>Contenu FR renseigné</li>');
+    expect(html).toContain('<li data-done="true">Contenu AR renseigné</li>');
+    expect(html).toContain("Ouvrir le coffre documentaire");
+  });
+
   it("affiche le cycle questionnaire et le bandeau de mandat", () => {
     const html = renderToStaticMarkup(
       <FranchiseQuestionnairesWorkbench locale="fr" query="" workspace={workspace} selectedId={null} createMode={false} commandIdentity={command} />,

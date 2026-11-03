@@ -1,4 +1,5 @@
 "use client";
+import { editorialFailureMessage } from "./command-errors";
 import{useDraftAutosave,DraftAutosaveControl}from"./use-draft-autosave";
 import{CatalogBankSearch}from"./bank-search";
 import { useActionState, useRef, useState, type SetStateAction } from "react";
@@ -57,7 +58,7 @@ export function QuestionnaireCompositionEditor({ workspace, selected, locale, or
    <button type="submit" className="franchise-tool franchise-tool-primary" disabled={pending}>{pending?(ar?"جارٍ الحفظ…":"Enregistrement…"):(ar?"حفظ التركيب":"Enregistrer la composition")}</button>
   </fieldset>
   {!editable?<p role="status">{ar?"هذه نسخة ثابتة. أنشئوا مسودة جديدة قبل التعديل.":"Cette version est figée. Créez une nouvelle version brouillon avant de modifier sa composition."}</p>:null}
-  {state.status==="error"?<p role="alert">{state.reason==="CONFLICT"?(ar?"تغير الإصدار. أعيدوا تحميله قبل المحاولة.":"La version a changé. Rechargez-la avant de réessayer."):(ar?"تعذر الحفظ. بقيت تعديلاتكم في الشاشة.":"Enregistrement impossible. Vos modifications restent dans cet écran.")}</p>:null}
+  {state.status==="error"?<p role="alert">{editorialFailureMessage(state.reason,locale)}</p>:null}
   {pending?<p role="status">{ar?"جارٍ الحفظ في الخادم…":"Enregistrement en cours sur le serveur…"}</p>:dirty?<p role="status">{ar?"تعديلات غير محفوظة":"Modifications non enregistrées"}</p>:state.status==="success"?<p role="status">{ar?"تم الحفظ في الخادم":"Composition enregistrée sur le serveur"} {savedAt?<time dateTime={savedAt}>{new Intl.DateTimeFormat(ar?"ar-MA":"fr-MA",{timeStyle:"medium"}).format(new Date(savedAt))}</time>:null}</p>:null}
 
  </form>;

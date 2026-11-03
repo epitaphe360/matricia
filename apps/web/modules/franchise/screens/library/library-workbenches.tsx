@@ -25,7 +25,7 @@ function ToolLink({ href, label, tone = "ghost", icon }: { href: string; label: 
 }
 
 function completeness(item: FranchiseCatalogRow) {
-  return Math.round(([item.nameFr, item.nameAr, item.description].filter(Boolean).length / 3) * 100);
+  return Math.round(([item.nameFr, item.nameAr, item.description].filter(value => Boolean(value?.trim())).length / 3) * 100);
 }
 
 function answerTypeLabel(type: string | null, locale: Locale) {
@@ -81,6 +81,9 @@ export function FranchiseServicesWorkbench({
 function ServiceProperties({ locale, workspace, service, commandIdentity, organizationId }: { locale: Locale; workspace: FranchiseLibraryWorkspace; service: FranchiseCatalogRow; commandIdentity: { idempotencyKey: string; correlationId: string }; organizationId: string | null }) {
   const c = libraryCopy(locale);
   const score = completeness(service);
+  const contentChecks = [service.nameFr, service.nameAr, service.description].map(value => Boolean(value?.trim()));
+  const latestReview = service.reviewEvents?.[0];
+  const reviewComment = latestReview?.comment?.trim() || c.noMatriciaReturn;
   return (
     <>
       <header className="client-priority-head">
@@ -105,13 +108,13 @@ function ServiceProperties({ locale, workspace, service, commandIdentity, organi
         {service.description ? <p>{service.description}</p> : null}
         <div className="franchise-split">
           <article>
-            <h3>{c.draftCompleteness}</h3>
+            <h3>{locale === "ar" ? "اكتمال الحقول الوصفية" : "Champs descriptifs renseignés"}</h3>
             <span className="franchise-complete" aria-hidden><span style={{ width: `${score}%` }} /></span>
             <p><bdi dir="ltr">{score}%</bdi></p>
           </article>
           <article>
             <h3>{c.matriciaReturn}</h3>
-            <p>{c.noMatriciaReturn}</p>
+            <p dir="auto">{reviewComment}</p>
           </article>
         </div>
       </section>
@@ -121,19 +124,19 @@ function ServiceProperties({ locale, workspace, service, commandIdentity, organi
       </section>
       <section id="documents">
         <h3>{c.inspectorDocuments}</h3>
-        <p>{c.noDocuments}</p>
+        <p>{locale === "ar" ? "تتوفر الوثائق المصرح بها في الخزنة ضمن سياقها المهني." : "Les pièces autorisées sont consultables dans le coffre, selon leur contexte métier."}</p><Link href={`/${locale}/franchise/documents?organizationId=${workspace.mandate.operatorOrganizationId ?? organizationId ?? ""}&franchiseId=${workspace.mandate.franchiseId}`} className="franchise-tool">{locale === "ar" ? "فتح خزنة الوثائق" : "Ouvrir le coffre documentaire"}</Link>
       </section>
       <section id="historique">
         <h3>{c.inspectorHistory}</h3>
         <p>{service.versionLabel ?? "v1"} · {kindLabel(service.kind, locale)}</p>
       </section>
       <ul className="franchise-draft-checklist">
-        {c.draftChecklist.map((item, index) => {
-          const done = index < Math.round((score / 100) * c.draftChecklist.length);
+        {c.draftChecklist.slice(0, 3).map((item, index) => {
+          const done = contentChecks[index] === true;
           return <li key={item} data-done={done ? "true" : undefined}>{item}</li>;
         })}
       </ul>
-      <p className="franchise-matricia-note" role="note">{c.matriciaReturn}: {c.noMatriciaReturn}</p>
+      <p className="franchise-matricia-note" role="note">{c.matriciaReturn}: {reviewComment}</p>
       {service.command ? (
         <>
           <FranchiseServiceCommandForms locale={locale} workspace={workspace} service={service} commandIdentity={commandIdentity} organizationId={organizationId} />

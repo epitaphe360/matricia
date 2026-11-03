@@ -91,6 +91,7 @@ export type FranchiseLibraryWorkspace = {
     operatorOrganizationId?: string;
   };
   serverPage?:CatalogServerPage;
+  availableMandates?:Array<{id:string;organizationId:string;libraryId:string;label:string}>;
   mandates?:Array<{id:string;organizationId:string;operatorCode:string}>;
   counts: { drafts: number; inReview: number; published: number; returns: number };
   categories: FranchiseCategoryNode[];
@@ -153,4 +154,9 @@ export function catalogStatusTone(status: string): "violet" | "sky" | "mint" | "
   if (reviewStatuses.has(status)) return "sky";
   if (publishedStatuses.has(status)) return "mint";
   return "violet";
+}
+
+/** Archiving an identity never rewrites its historical published/draft version. */
+export function catalogEffectiveStatus(identityStatus: string, versionStatus?: string | null): string {
+  return ["ARCHIVED", "RETIRED"].includes(identityStatus) ? identityStatus : versionStatus ?? identityStatus;
 }

@@ -1,4 +1,5 @@
 "use client";
+import { editorialFailureMessage } from "./command-errors";
 import{useDraftAutosave,DraftAutosaveControl}from"./use-draft-autosave";
 import{CatalogBankSearch}from"./bank-search";
 import { useActionState, useRef, useState } from "react";
@@ -32,7 +33,7 @@ export function FranchiseRuleEditor({locale,workspace,selected,organizationId}:{
    <label className="franchise-field">{ar?"سبب التعديل":"Motif de la révision"}<input name="changeReason" value={reason} onChange={(e)=>{setReason(e.target.value);setDirty(true);}} required minLength={3} maxLength={500}/></label>
    <button className="franchise-tool franchise-tool-primary" type="submit">{pending?(ar?"جارٍ الحفظ…":"Enregistrement…"):(ar?"حفظ المسودة":"Enregistrer le brouillon")}</button>
   </fieldset>
-  <p role={state.status==="error"?"alert":"status"}>{state.status==="error"?(state.reason==="CONFLICT"?(ar?"تغير الإصدار. أعيدوا تحميل الصفحة.":"La version a changé. Rechargez la page."):state.reason==="VALIDATION"?(ar?"تحققوا من تعريف القاعدة ومراجعها وإجراءاتها.":"Complétez les conditions, les paramètres des actions et vérifiez les dépendances."):(ar?"تعذر حفظ القاعدة. احتُفظ بمحتواكم هنا.":"La règle n’a pas pu être enregistrée. Votre saisie est conservée ici.")):dirty?(ar?"تغييرات غير محفوظة":"Modifications non enregistrées"):state.status==="success"?(ar?"تم حفظ مسودة مستقلة في الخادم":"Un nouveau brouillon a été enregistré sur le serveur"):null}</p>
+  <p role={state.status==="error"?"alert":"status"}>{state.status==="error"?editorialFailureMessage(state.reason,locale):dirty?(ar?"تغييرات غير محفوظة":"Modifications non enregistrées"):state.status==="success"?(ar?"تم حفظ مسودة مستقلة في الخادم":"Un nouveau brouillon a été enregistré sur le serveur"):null}</p>
  {savedAt&&!dirty?<time dateTime={savedAt}>{new Intl.DateTimeFormat(ar?"ar-MA":"fr-MA",{timeStyle:"medium"}).format(new Date(savedAt))}</time>:null}
  </form>;
 }
