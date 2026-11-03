@@ -99,6 +99,7 @@ begin
   or(select count(*)from public.credit_economic_funding_sources_v1 where organization_id='${ORG}'and financial_journal_id=e.financial_journal_id)<>1
   or funding.id is null or funding.source_id is distinct from'DEMO:DEMO:${CAPTURE}'or funding.gross_minor<>10001 or funding.currency<>'EUR'or funding.source_hash is distinct from private.canonical_request_hash(funding.source_snapshot)
   or funding.source_kind is distinct from'CREDIT_PACK'or funding.source_version_id is distinct from e.pack_version_id
+  or(select count(*)from public.financial_entries where journal_id=e.financial_journal_id)<>2
   or not exists(select 1 from public.financial_entries line join public.financial_accounts account on account.id=line.account_id
    where line.journal_id=e.financial_journal_id and line.organization_id='${ORG}'and account.organization_id='${ORG}'and line.currency='EUR'and account.currency='EUR'
    group by line.journal_id having count(*)=2
