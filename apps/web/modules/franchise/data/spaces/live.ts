@@ -318,6 +318,10 @@ export function buildFranchiseSpaceBoard(input: {
   const finance: FinanceRow[] = [
     ...(input.governance?.books ?? []).filter(book=>"bindingReviewRequired"in book&&book.bindingReviewRequired===false).flatMap((book) => {
       const beneficiary = franchiseeBeneficiaryCode(book.type);
+      const executionMode=book.entryFee&&"executionMode"in book.entryFee?book.entryFee.executionMode:null;
+      const executionEnvironment=book.entryFee&&"executionEnvironment"in book.entryFee?book.entryFee.executionEnvironment:null;
+      const environmentLabel=executionEnvironment==="DEVELOPMENT"?(locale==="ar"?"التطوير":"développement"):executionEnvironment==="STAGING"?(locale==="ar"?"الاختبار المرحلي":"staging"):executionEnvironment==="PRODUCTION"?(locale==="ar"?"الإنتاج":"production"):null;
+      const executionNotice=executionMode==="NON_CONTRACTUAL_DEMO"&&environmentLabel?(locale==="ar"?`محاكاة غير تعاقدية · ${environmentLabel}`:`Simulation non contractuelle · ${environmentLabel}`):executionMode==="CONTRACTUAL"&&environmentLabel?(locale==="ar"?`تنفيذ تعاقدي · ${environmentLabel}`:`Exécution contractuelle · ${environmentLabel}`):(locale==="ar"?"الأساس التعاقدي غير معتمد · يلزم تحقق الإدارة":"Base contractuelle non certifiée · validation administrative requise");
       const fee = book.entryFee
         ? [{
           id: `${book.id}-entry`,
@@ -328,6 +332,7 @@ export function buildFranchiseSpaceBoard(input: {
           tone: "sky" as const,
           amount: formatMinor(book.entryFee.principalMinor, book.currency, locale),
           kind: "entryFee" as const,
+          executionNotice,
         }]
         : [];
       const feeLedger = (book.entryFeeLedger ?? []).map((entry) => ({
@@ -339,6 +344,7 @@ export function buildFranchiseSpaceBoard(input: {
         tone: entry.entryType === "PAYMENT" ? "mint" as const : "sky" as const,
         amount: formatMinor(entry.amountMinor, book.currency, locale),
         kind: "entryFee" as const,
+        executionNotice,
       }));
       const closures = book.closures.flatMap((closure) => {
         const share = franchiseeAllocation(book.type, closure.allocations);

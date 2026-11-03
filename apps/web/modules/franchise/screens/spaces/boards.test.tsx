@@ -285,6 +285,14 @@ describe("franchise space boards", () => {
     expect(html).not.toContain("Consigner une activité");
   });
 
+  it.each(["fr","ar"] as const)("affiche le caractère non contractuel des frais dans leur tableau en %s",locale=>{
+    const board=buildFranchiseSpaceBoard({locale,query:""});board.financeBindingStatus="READY";
+    const notice=locale==="ar"?"محاكاة غير تعاقدية · التطوير":"Simulation non contractuelle · développement";
+    board.finance=[{id:"fee-test",title:"Frais TEST",object:"TEST",status:"PENDING",auth:"1 000 MAD",tone:"sky",kind:"entryFee",executionNotice:notice}];
+    const html=renderToStaticMarkup(<FranchiseFinanceBoard locale={locale} query="" board={board} view="droit-entree"/>);
+    expect(html).toContain(notice);
+  });
+
   it.each(["fr","ar"] as const)("ne transforme pas un rattachement financier inconnu ou à rapprocher en faux zéro en %s",locale=>{
     const board=buildFranchiseSpaceBoard({locale,query:""});
     const unknown=renderToStaticMarkup(<FranchiseFinanceBoard locale={locale} query="?franchiseId=selected" board={board}/>);

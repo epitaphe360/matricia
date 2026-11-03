@@ -1350,7 +1350,7 @@ export function FranchiseFinanceBoard({ locale, query, mandateName, view, board,
                     <tr><td colSpan={4}>{empty}</td></tr>
                   ) : rows.map((row) => (
                     <tr key={row.id}>
-                      <td>{"href"in row&&row.href?<Link href={row.href} prefetch={false} className="client-soft-link">{row.title}</Link>:row.title}</td>
+                      <td>{"href"in row&&row.href?<Link href={row.href} prefetch={false} className="client-soft-link">{row.title}</Link>:row.title}{"executionNotice"in row&&row.executionNotice?<small className="client-access-note">{row.executionNotice}</small>:null}</td>
                       <td>{"object" in row ? row.object : "—"}</td>
                       <td><span className="client-status-chip" data-tone={"tone" in row ? row.tone : "sky"}>{networkStateLabel(row.status,locale)}</span></td>
                       <td>{"auth" in row ? row.auth : "—"}</td>

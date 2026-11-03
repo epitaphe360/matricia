@@ -18,7 +18,7 @@ export type NoticeRow = { id: string; title: string; meta: string; href: string 
 export type SupervisionRow = { id: string; title: string; status: string; meta?: string; href: string; tone?: Tone; rowVersion?: number };
 export type QualityRow = { evidence?:string[]; severity?:string; id: string; title: string; type: string; status: string; next: string; tone: Tone; href?: string };
 export type FinanceKind = "statement" | "entryFee" | "payout" | "preStatement";
-export type FinanceRow = { id: string; title: string; object: string; status: string; auth: string; tone: Tone; amount?: string; kind?: FinanceKind;href?:string };
+export type FinanceRow = { id: string; title: string; object: string; status: string; auth: string; tone: Tone; amount?: string; kind?: FinanceKind;href?:string;executionNotice?:string };
 
 export function demoFranchiseSpaces(locale: Locale, query: string) {
   const fr = locale === "fr";

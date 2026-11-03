@@ -172,3 +172,15 @@ describe("franchise space live board", () => {
     if (previous) process.env.MATRICIA_DEMO_ACCESS_ENABLED = previous;
   });
 });
+
+
+describe("entry fee execution evidence",()=>{
+  it.each(["fr","ar"]as const)("marks test-only fees and missing legal evidence explicitly in %s",locale=>{
+    const entryFee={mode:"UPFRONT",principalMinor:"100000",depositMinor:"0",startsOn:"2026-10-01",dueOn:"2026-10-31"};
+    const book={...governance.books[0]!,entryFee};
+    const unknown=buildFranchiseSpaceBoard({locale,query:"",crm,libraryName:"TEST",governance:{...governance,books:[book]}}).finance.find(row=>row.kind==="entryFee");
+    expect(unknown?.executionNotice).toContain(locale==="ar"?"غير معتمد":"non certifiée");
+    const simulation=buildFranchiseSpaceBoard({locale,query:"",crm,libraryName:"TEST",governance:{...governance,books:[{...book,entryFee:{...entryFee,executionMode:"NON_CONTRACTUAL_DEMO",executionEnvironment:"DEVELOPMENT"}}]}}).finance.find(row=>row.kind==="entryFee");
+    expect(simulation?.executionNotice).toContain(locale==="ar"?"محاكاة غير تعاقدية":"Simulation non contractuelle");
+  });
+});
