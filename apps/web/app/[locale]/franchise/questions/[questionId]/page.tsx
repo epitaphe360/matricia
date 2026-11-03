@@ -15,7 +15,7 @@ export default async function QuestionPage({ params, searchParams }: {
 }) {
   const [{ locale, questionId }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale) || !z.string().uuid().safeParse(questionId).success) notFound();
-  const { space, result } = await requireFranchiseLibrary({ locale, organizationId: query.organizationId, franchiseId: query.franchiseId, catalog: {kind:"QUESTION",objectId:questionId} });
+  const { space, result } = await requireFranchiseLibrary({returnPath:`/${locale}/franchise/questions/${questionId}`,returnQuery:query, locale, organizationId: query.organizationId, franchiseId: query.franchiseId, catalog: {kind:"QUESTION",objectId:questionId} });
   const path = `/${locale}/franchise/questions/${questionId}${space.selectedQuery}`;
   let detail = null;
   let reason = result.status === "error" ? result.reason : null;
@@ -27,7 +27,7 @@ export default async function QuestionPage({ params, searchParams }: {
     else if (!parsed.success || parsed.data.id !== questionId || parsed.data.libraryId !== result.workspace.mandate.libraryId) reason = "INVALID_RESPONSE";
     else detail = parsed.data;
   }
-  return <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} languagePath={path} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="questionnaires" title={locale === "ar" ? "تحرير السؤال" : "Éditer la question"} mandateName={result.status === "success" ? result.workspace.mandate.libraryName : null}>
+  return <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} mandates={space.mandates} languagePath={path} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="questionnaires" title={locale === "ar" ? "تحرير السؤال" : "Éditer la question"} mandateName={result.status === "success" ? result.workspace.mandate.libraryName : null}>
     {reason ? <FranchiseAccessState locale={locale} reason={reason} returnPath={path} /> : detail && result.status === "success" ? <main className="client-page"><FranchiseQuestionEditor detail={detail} franchiseId={result.workspace.mandate.franchiseId} locale={locale} /></main> : null}
     <Link className="franchise-tool m-4" href={`/${locale}/franchise/questions${space.selectedQuery}`}>{locale === "ar" ? "العودة إلى البنك" : "Retour à la banque"}</Link>
   </FranchiseAppShell>;

@@ -1,3 +1,4 @@
+import { FranchiseAccessPage } from "@/modules/franchise/ui/franchise-access-page";
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
 import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
@@ -14,7 +15,8 @@ import { isLocale } from "@/modules/shared/lib/i18n/locale";
 export default async function FranchiseDigestPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string; franchiseId?:string }> }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
-  const { space, result: library } = await requireFranchiseLibrary({ locale, organizationId: query.organizationId, franchiseId:query.franchiseId });
+  const { space, result: library } = await requireFranchiseLibrary({ returnPath: `/${locale}/franchise/digest`, returnQuery: query, locale, organizationId: query.organizationId, franchiseId:query.franchiseId });
+  if (library.status === "error") return <FranchiseAccessPage locale={locale} space={space} reason={library.reason} active="followups" returnPath={space.currentPath} />;
   const board=await loadFranchiseSpaceFromLibrary({locale,query:space.selectedQuery,result:library});
   const m = getFranchiseDigestMessages(locale);
   const result = await loadFranchiseDigest(library.status === "success" ? library.workspace.mandate.franchiseId : "00000000-0000-4000-8000-000000000000");
@@ -24,7 +26,7 @@ export default async function FranchiseDigestPage({ params, searchParams }: { pa
   const keys: Record<string, string> = {};
   if (result.status === "success") for (const franchise of result.dashboard.franchises) keys[franchise.id] = randomUUID();
   return (
-    <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="home" title={c.homeTitle} lead={c.homeLead} kicker={c.kicker} mandateName={mandateName}>
+    <FranchiseAppShell languagePath={space.currentPath} locale={locale} selectedQuery={space.selectedQuery} mandates={space.mandates} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="home" title={c.homeTitle} lead={c.homeLead} kicker={c.kicker} mandateName={mandateName}>
       <FranchiseHomeBoard board={board} locale={locale} query={space.selectedQuery} mandateName={mandateName} />
       <details className="client-ops">
         <summary>{c.opsDigest}</summary>

@@ -12,13 +12,13 @@ export default async function QuestionsPage({ params, searchParams }: {
 }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
-  const { space, result } = await requireFranchiseLibrary({ locale, organizationId: query.organizationId, franchiseId: query.franchiseId, catalog: { kind: "QUESTION", search: query.q, page: query.page } });
+  const { space, result } = await requireFranchiseLibrary({returnPath:`/${locale}/franchise/questions`,returnQuery:query, locale, organizationId: query.organizationId, franchiseId: query.franchiseId, catalog: { kind: "QUESTION", search: query.q, page: query.page } });
   const ar = locale === "ar", path = `/${locale}/franchise/questions`;
   const currentQuery = new URLSearchParams(space.selectedQuery.replace(/^\?/,""));
   if (query.q) currentQuery.set("q",query.q);
   if (query.page) currentQuery.set("page",query.page);
   const currentPath = `${path}${currentQuery.size ? `?${currentQuery}` : ""}`;
-  return <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} languagePath={currentPath} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="questionnaires" title={ar ? "بنك الأسئلة" : "Banque de questions"} mandateName={result.status === "success" ? result.workspace.mandate.libraryName : null}>
+  return <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} mandates={space.mandates} languagePath={currentPath} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="questionnaires" title={ar ? "بنك الأسئلة" : "Banque de questions"} mandateName={result.status === "success" ? result.workspace.mandate.libraryName : null}>
     <FranchiseOrganizationSelector locale={locale} organizations={space.organizations} selectedOrganizationId={space.selectedOrganizationId} returnPath={path} />
     {result.status === "error" ? <FranchiseAccessState locale={locale} reason={result.reason} returnPath={currentPath} /> : <main className="client-page">
       <form method="get" role="search">

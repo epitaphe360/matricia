@@ -1,3 +1,4 @@
+import { FranchiseAccessPage } from "@/modules/franchise/ui/franchise-access-page";
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
 import { connexionHref } from "@/modules/shared/lib/auth/connexion-href";
@@ -14,7 +15,8 @@ import { isLocale } from "@/modules/shared/lib/i18n/locale";
 export default async function FranchisePerformancePage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ organizationId?: string; franchiseId?:string }> }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   if (!isLocale(locale)) notFound();
-  const { space, result: library } = await requireFranchiseLibrary({ locale, organizationId: query.organizationId, franchiseId:query.franchiseId });
+  const { space, result: library } = await requireFranchiseLibrary({ returnPath: `/${locale}/franchise/performance`, returnQuery: query, locale, organizationId: query.organizationId, franchiseId:query.franchiseId });
+  if (library.status === "error") return <FranchiseAccessPage locale={locale} space={space} reason={library.reason} active="performance" returnPath={space.currentPath} />;
   const m = getFranchiseCrmMessages(locale);
   const r = await loadFranchiseCrm(library.status === "success" ? library.workspace.mandate.franchiseId : "00000000-0000-4000-8000-000000000000");
   if (r.status === "error" && r.reason === "UNAUTHENTICATED") redirect(connexionHref(locale, { next: `/${locale}/franchise/performance` }));
@@ -33,7 +35,7 @@ export default async function FranchisePerformancePage({ params, searchParams }:
     });
   }
   return (
-    <FranchiseAppShell locale={locale} selectedQuery={space.selectedQuery} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="performance" title={c.perfTitleRich} lead={c.perfLeadRich} kicker={c.kicker} mandateName={mandateName}>
+    <FranchiseAppShell languagePath={space.currentPath} locale={locale} selectedQuery={space.selectedQuery} mandates={space.mandates} selectedOrganizationId={space.selectedOrganizationId} userEmail={space.userEmail} active="performance" title={c.perfTitleRich} lead={c.perfLeadRich} kicker={c.kicker} mandateName={mandateName}>
       <PerformanceBoard locale={locale} query={space.selectedQuery} mandateName={mandateName} board={board} />
       <details id="performance" className="client-ops">
         <summary>{c.opsPerf}</summary>

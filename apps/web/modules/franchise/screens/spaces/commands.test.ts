@@ -202,3 +202,25 @@ describe("franchise remaining command actions", () => {
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
 });
+
+describe("franchise command auth prerequisites", () => {
+  const validDefinition = () => form({ libraryId: id, definitionKey: "TEST_SIGNAL", severity: "INFO", titleFr: "Signal test", titleAr: "إشارة اختبار", descriptionFr: "Description de test", descriptionAr: "وصف خاص بالاختبار", blocking: "no", evidenceRequired: "no", changeReason: "Recette du formulaire" });
+  it("does not run a mutation while Auth is unavailable, even with a cached user", async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: { id } }, error: { status: 503 } });
+    expect(await upsertFranchiseAnomalyDefinition(idle, validDefinition())).toEqual({ status: "error", reason: "FAILED" });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it("distinguishes a known invalid session from missing permissions", async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: { id } }, error: { status: 401 } });
+    expect(await upsertFranchiseAnomalyDefinition(idle, validDefinition())).toEqual({ status: "error", reason: "UNAUTHENTICATED" });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it.each(["MFA_REQUIRED", "AAL2_REQUIRED"])("distinguishes %s from permission denial", async (message) => {
+    mocks.rpc.mockResolvedValue({ data: null, error: { code: "42501", message } });
+    expect(await upsertFranchiseAnomalyDefinition(idle, validDefinition())).toEqual({ status: "error", reason: "MFA_REQUIRED" });
+  });
+  it("does not reinterpret an unrelated permission denial as MFA", async () => {
+    mocks.rpc.mockResolvedValue({ data: null, error: { code: "42501", message: "FRANCHISE_SCOPE_DENIED" } });
+    expect(await upsertFranchiseAnomalyDefinition(idle, validDefinition())).toEqual({ status: "error", reason: "FORBIDDEN" });
+  });
+});

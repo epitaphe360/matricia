@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useId, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/modules/shared/ui/button";
 import { Input } from "@/modules/shared/ui/input";
 import { Label } from "@/modules/shared/ui/label";
@@ -27,12 +28,17 @@ function Feedback({ state, locale, success }: { state: FranchiseCommandState; lo
     ? success
     : state.status === "error"
       ? state.reason === "VALIDATION" ? c.commandInvalid
-        : state.reason === "FORBIDDEN" ? c.commandForbidden
+        : state.reason === "MFA_REQUIRED" ? locale === "ar" ? "أكّدوا العامل الثاني لتنفيذ هذا الإجراء." : "Confirmez votre second facteur pour effectuer cette action."
+          : state.reason === "FORBIDDEN" ? c.commandForbidden
           : state.reason === "CONFLICT" ? c.commandConflict
-            : state.reason === "UNAUTHENTICATED" ? c.commandForbidden
+            : state.reason === "UNAUTHENTICATED" ? locale === "ar" ? "أعيدوا الاتصال قبل متابعة الإجراء." : "Reconnectez-vous avant de reprendre cette action."
               : c.commandFailed
       : "";
-  return <p role={state.status === "error" ? "alert" : "status"} aria-live="polite" className={state.status === "error" ? "min-h-5 text-sm text-destructive" : "min-h-5 text-sm text-primary"}>{value}</p>;
+  return <div role={state.status === "error" ? "alert" : "status"} aria-live="polite" className={state.status === "error" ? "min-h-5 text-sm text-destructive" : "min-h-5 text-sm text-primary"}>
+    <p>{value}</p>
+    {state.status === "error" && state.reason === "MFA_REQUIRED" ? <Link className="inline-flex min-h-11 items-center underline" href={`/${locale}/securite/compte`}>{locale === "ar" ? "إعداد العامل الثاني أو تأكيده" : "Configurer ou vérifier mon second facteur"}</Link> : null}
+    {state.status === "error" && state.reason === "UNAUTHENTICATED" ? <Link className="inline-flex min-h-11 items-center underline" href={`/${locale}/connexion`}>{locale === "ar" ? "إعادة الاتصال" : "Me reconnecter"}</Link> : null}
+  </div>;
 }
 
 type CommandKeys = { idempotencyKey: string; correlationId: string };

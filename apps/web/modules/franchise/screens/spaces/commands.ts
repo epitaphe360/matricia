@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { classifyAuthReadFailure } from "@/modules/shared/lib/auth/read-failure";
 import { uuidSchema } from "@/modules/shared/lib/catalogue-builder/model";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
@@ -9,7 +10,7 @@ import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 export type FranchiseCommandState =
   | { status: "idle" }
   | { status: "success"; outcome: string }
-  | { status: "error"; reason: "VALIDATION" | "UNAUTHENTICATED" | "FORBIDDEN" | "CONFLICT" | "FAILED" };
+  | { status: "error"; reason: "VALIDATION" | "UNAUTHENTICATED" | "MFA_REQUIRED" | "FORBIDDEN" | "CONFLICT" | "FAILED" };
 
 const keySchema = z.string().trim().regex(/^[A-Z][A-Z0-9_.-]{1,119}$/u);
 const bilingual = z.string().trim().min(2).max(240);
@@ -36,10 +37,13 @@ function revalidate(locale: string, organizationId: string) {
 
 async function rpc(name: string, args: Record<string, unknown>): Promise<FranchiseCommandState> {
   const client = await getSupabaseServerClient();
-  const { data: auth } = await client.auth.getUser();
+  const { data: auth, error: authError } = await client.auth.getUser();
+  const authFailure = classifyAuthReadFailure(authError);
+  if (authFailure) return { status: "error", reason: authFailure === "UNAUTHENTICATED" ? "UNAUTHENTICATED" : "FAILED" };
   if (!auth.user) return { status: "error", reason: "UNAUTHENTICATED" };
   const result = await client.rpc(name, args);
   if (result.error) {
+    if (result.error.code === "42501" && /\b(?:MFA|AAL2)(?:_|\b)/i.test(result.error.message ?? "")) return { status: "error", reason: "MFA_REQUIRED" };
     if (result.error.code === "42501") return { status: "error", reason: "FORBIDDEN" };
     if (["40001", "23505", "23514", "23P01"].includes(result.error.code ?? "") || /STALE|IDEMPOTENCY|TRANSITION|INVALID_/i.test(result.error.message ?? "")) {
       return { status: "error", reason: "CONFLICT" };
