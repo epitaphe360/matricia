@@ -12,6 +12,7 @@ const libraryId = "22222222-2222-4222-8222-222222222222";
 const requestId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const franchiseId="33333333-3333-4333-8333-333333333333";
 const currentVersionId="77777777-7777-4777-8777-777777777777";
+const permissions={franchiseId,libraryId,canDecideQualifications:true,canMaintainDefinitions:true,canInstructDisputes:true,canProposeVolume:true};
 const metrics={methodologyVersion:"FRANCHISE_SUPERVISION_V1",grain:"LIBRARY_ALL_HISTORY",libraryId,franchiseId,asOf:"2026-11-03T00:00:00Z",requestCount:0,conversionDenominator:0,convertedRequests:0,missionCount:0,completedMissions:0,capacityProviders:0,availableProviders:0,responseAverageSeconds:null,qualitySnapshot:null,byService:[],byProvider:[]};
 const serviceId = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
 
@@ -28,7 +29,7 @@ function chain(data: unknown) {
 }
 
 describe("franchise operations repository", () => {
-  beforeEach(()=>{vi.clearAllMocks();mocks.rpc.mockImplementation(async(name:string)=>({error:null,data:name==="franchise_supervision_metrics"?metrics:name==="franchise_operational_missions_v1"?{complete:true,libraryId,franchiseId,missions:[]}:[]}));});
+  beforeEach(()=>{vi.clearAllMocks();mocks.rpc.mockImplementation(async(name:string)=>({error:null,data:name==="franchise_operation_permissions_v1"?permissions:name==="franchise_supervision_metrics"?metrics:name==="franchise_operational_missions_v1"?{complete:true,libraryId,franchiseId,missions:[]}:[]}));});
   it("ne charge rien hors session", async () => {
     mocks.getUser.mockResolvedValue({ data: { user: null } });
     await expect(loadFranchiseOperations({ libraryId, franchiseId })).rejects.toThrow("FRANCHISE_OPERATIONS_UNAUTHENTICATED");
@@ -70,7 +71,7 @@ describe("franchise operations repository", () => {
       if (table === "provider_qualifications") return chain([{ id: "61616161-6161-4616-8616-616161616161", service_id: serviceId, row_version: 3, current_decision_id: null }]);
       return chain([]);
     });
-    mocks.rpc.mockImplementation(async(name:string)=>({error:null,data:name==="franchise_supervision_metrics"?metrics:name==="franchise_operational_missions_v1"?{complete:true,libraryId,franchiseId,missions:[]}:[{organizationId:"11111111-1111-4111-8111-111111111111",name:"TEST",companyStatus:"VERIFIED",status:"ACTIVE",createdAt:"2026-11-03T00:00:00Z",teamSize:1,regions:[],qualifications:[{id:"61616161-6161-4616-8616-616161616161",serviceId,serviceCode:"TEST_SERVICE",rowVersion:3,status:"PENDING"}],capacities:[],documents:[]}]}));
+    mocks.rpc.mockImplementation(async(name:string)=>({error:null,data:name==="franchise_operation_permissions_v1"?permissions:name==="franchise_supervision_metrics"?metrics:name==="franchise_operational_missions_v1"?{complete:true,libraryId,franchiseId,missions:[]}:[{organizationId:"11111111-1111-4111-8111-111111111111",name:"TEST",companyStatus:"VERIFIED",status:"ACTIVE",createdAt:"2026-11-03T00:00:00Z",teamSize:1,regions:[],qualifications:[{id:"61616161-6161-4616-8616-616161616161",serviceId,serviceCode:"TEST_SERVICE",rowVersion:3,status:"PENDING"}],capacities:[],documents:[]}]}));
     const snapshot = await loadFranchiseOperations({ libraryId, franchiseId });
     expect(snapshot.anomalyDefinitions).toEqual([expect.objectContaining({ id: definitionId, titleFr: "Score critique", severity: "CRITICAL" })]);
     expect(snapshot.volumeProposals).toEqual([expect.objectContaining({ status: "PROPOSED", paymentModel: "PAY_PER_USE" })]);
@@ -83,7 +84,7 @@ describe("franchise operations repository", () => {
   });
   it("refuse un contexte de bibliothèque différent dans la projection serveur",async()=>{
     mocks.getUser.mockResolvedValue({data:{user:{id:franchiseId}}});
-    mocks.rpc.mockImplementation(async(name:string)=>({error:null,data:name==="franchise_supervision_metrics"?{...metrics,libraryId:serviceId}:name==="franchise_operational_missions_v1"?{complete:true,libraryId,franchiseId,missions:[]}:[]}));
+    mocks.rpc.mockImplementation(async(name:string)=>({error:null,data:name==="franchise_operation_permissions_v1"?permissions:name==="franchise_supervision_metrics"?{...metrics,libraryId:serviceId}:name==="franchise_operational_missions_v1"?{complete:true,libraryId,franchiseId,missions:[]}:[]}));
     await expect(loadFranchiseOperations({libraryId,franchiseId})).rejects.toThrow("METRICS_UNAVAILABLE");expect(mocks.from).not.toHaveBeenCalled();
   });
   it("lit toutes les pages des demandes et utilise la version courante même si une ancienne arrive après",async()=>{

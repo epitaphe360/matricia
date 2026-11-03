@@ -268,33 +268,33 @@ export function FranchiseMandateInviteForm({ locale, organizationId }: { locale:
 }
 
 export function FranchiseVolumeProposeForm({
-  locale, libraryId, organizationId, skus,
+  locale, libraryId, franchiseId, organizationId, skus,
 }: {
-  locale: Locale; libraryId: string; organizationId?: string | null; skus: Array<{ id: string; title: string }>;
+  locale: Locale; libraryId: string;franchiseId:string; organizationId?: string | null; skus: Array<{ id: string; title: string }>;
 }) {
   const c = franchiseCopy(locale);
   const prefix = useId();
   const { state, action, pending, keys } = useCommand(proposeFranchiseVolumePurchase);
   const rows = skus.filter((item) => uuidPattern.test(item.id));
-  if (!uuidPattern.test(libraryId) || rows.length === 0) return <p className="client-access-note">{c.proposeVolume}</p>;
+  if (!uuidPattern.test(libraryId) || !uuidPattern.test(franchiseId)|| rows.length === 0) return <p className="client-access-note">{c.proposeVolume}</p>;
   return (
     <form action={action} className="franchise-props-form">
-      <HiddenScope locale={locale} libraryId={libraryId} organizationId={organizationId} keys={keys} />
+      <HiddenScope locale={locale} libraryId={libraryId} organizationId={organizationId} keys={keys} extra={{franchiseId}}/>
       <div>
         <Label htmlFor={`${prefix}-sku`}>{c.sku}</Label>
         <select id={`${prefix}-sku`} name="skuId" required className={control}>
           {rows.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
         </select>
       </div>
-      <div><Label htmlFor={`${prefix}-fc`}>{c.forecastUnits}</Label><Input id={`${prefix}-fc`} name="forecastUnits" type="number" min={1} step="1" required /></div>
-      <div><Label htmlFor={`${prefix}-min`}>{c.minUnits}</Label><Input id={`${prefix}-min`} name="minimumCommitmentUnits" type="number" min={0} step="1" required /></div>
-      <div><Label htmlFor={`${prefix}-max`}>{c.maxUnits}</Label><Input id={`${prefix}-max`} name="maximumUnits" type="number" min={1} step="1" required /></div>
+      <div><Label htmlFor={`${prefix}-fc`}>{c.forecastUnits}</Label><Input id={`${prefix}-fc`} name="forecastUnits" type="number" min="0.000001" step="0.000001" required /></div>
+      <div><Label htmlFor={`${prefix}-min`}>{c.minUnits}</Label><Input id={`${prefix}-min`} name="minimumCommitmentUnits" type="number" min="0" step="0.000001" required /></div>
+      <div><Label htmlFor={`${prefix}-max`}>{c.maxUnits}</Label><Input id={`${prefix}-max`} name="maximumUnits" type="number" min="0.000001" step="0.000001" required /></div>
       <div>
         <Label htmlFor={`${prefix}-pay`}>{c.paymentModel}</Label>
         <select id={`${prefix}-pay`} name="paymentModel" className={control}>
-          <option value="PAY_PER_USE">PAY_PER_USE</option>
-          <option value="PREPAID">PREPAID</option>
-          <option value="HYBRID">HYBRID</option>
+          <option value="PAY_PER_USE">{locale==="ar"?"الدفع حسب الاستهلاك":"Paiement à la consommation"}</option>
+          <option value="PREPAID">{locale==="ar"?"الدفع المسبق":"Prépaiement"}</option>
+          <option value="HYBRID">{locale==="ar"?"دفع مختلط":"Paiement mixte"}</option>
         </select>
       </div>
       <div><Label htmlFor={`${prefix}-from`}>{c.periodStart}</Label><Input id={`${prefix}-from`} name="periodStart" type="date" required /></div>

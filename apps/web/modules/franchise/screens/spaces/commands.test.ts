@@ -160,6 +160,7 @@ describe("franchise remaining command actions", () => {
     const result = await proposeFranchiseVolumePurchase(idle, form({
       libraryId: id,
       skuId: id,
+      franchiseId:id,
       forecastUnits: "100",
       minimumCommitmentUnits: "20",
       maximumUnits: "200",
@@ -169,10 +170,11 @@ describe("franchise remaining command actions", () => {
       rationale: "Prévision de consommation sur le SKU sauvegarde.",
     }));
     expect(result.status).toBe("success");
-    expect(mocks.rpc).toHaveBeenCalledWith("propose_franchise_volume_purchase", expect.objectContaining({
+    expect(mocks.rpc).toHaveBeenCalledWith("propose_franchise_volume_purchase_for_mandate_v1", expect.objectContaining({
+      p_franchise_id:id,
       p_sku_id: id,
       p_payment_model: "PAY_PER_USE",
-      p_forecast_units: 100,
+      p_forecast_units: "100",
     }));
   });
 
@@ -215,7 +217,7 @@ describe("franchise command auth prerequisites", () => {
     expect(await upsertFranchiseAnomalyDefinition(idle, validDefinition())).toEqual({ status: "error", reason: "UNAUTHENTICATED" });
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
-  it.each(["MFA_REQUIRED", "AAL2_REQUIRED"])("distinguishes %s from permission denial", async (message) => {
+  it.each(["MFA_REQUIRED", "AAL2_REQUIRED", "FRANCHISE_MFA_REQUIRED", "FRANCHISE_AAL2_REQUIRED"])("distinguishes %s from permission denial", async (message) => {
     mocks.rpc.mockResolvedValue({ data: null, error: { code: "42501", message } });
     expect(await upsertFranchiseAnomalyDefinition(idle, validDefinition())).toEqual({ status: "error", reason: "MFA_REQUIRED" });
   });

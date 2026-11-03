@@ -155,13 +155,10 @@ export function buildFranchiseSpaceBoard(input: {
     activities: folderActivities(item),
     pipelineEvents: folderEvents(item),
   }));
-  const matching = people.filter((item) => item.stage === "VERIFIED" || item.stage === "CONTRACT_SIGNED").map((item) => ({
-    id: item.id,
-    name: item.name,
-    status: item.status,
-    href: `/${locale}/franchise/fournisseurs/${item.id}${q}`,
-    tone: item.tone,
-  }));
+  for(const dossier of input.operations?.providerDossiers??[]){
+    if(people.some(row=>row.linkedOrganizationId===dossier.organizationId))continue;
+    people.push({id:dossier.organizationId,linkedOrganizationId:dossier.organizationId,createdAt:dossier.createdAt,dossier,name:dossier.name,services:dossier.qualifications.map(q=>q.serviceCode).join(", "),status:dossier.status,next:locale==="ar"?"ملف مقدم الخدمة":"Dossier prestataire",tone:dossier.status==="ACTIVE"?"mint":"sky",stage:dossier.status,source:"PROVIDER_PROFILE",activities:[],pipelineEvents:[]});
+  }
   const operationalMatching = (input.operations?.matching ?? []).map((item) => ({
     id: item.id,
     name: item.eligible
@@ -186,7 +183,7 @@ export function buildFranchiseSpaceBoard(input: {
     nextFollowupAt: item.nextFollowupAt,
     activities: folderActivities(item),
     pipelineEvents: folderEvents(item),
-    matching,
+    matching: [], // A CRM prospect is not a service request or a matching run.
   }));
   const operationalRequests = (input.operations?.requests ?? []).map((item) => ({
     id: item.id,
@@ -244,7 +241,9 @@ export function buildFranchiseSpaceBoard(input: {
       id: item.id,
       title: locale === "ar" ? item.explanationAr : item.explanationFr,
       type: item.type,
-      status: item.severity,
+      severity:item.severity,
+      status: item.status,
+      evidence:evidenceLabels(item.evidenceRefs),
       next: item.metricCode ?? item.status,
       tone: item.severity === "CRITICAL" ? "peach" as const : item.severity === "WARNING" ? "violet" as const : "sky" as const,
       href: `/${locale}/franchise/qualite${q}`,
@@ -253,7 +252,8 @@ export function buildFranchiseSpaceBoard(input: {
       id: item.id,
       title: locale === "ar" ? item.titleAr : item.titleFr,
       type: c.anomalies,
-      status: item.severity,
+      severity:item.severity,
+      status: item.status,
       next: item.status,
       tone: item.severity === "CRITICAL" || item.severity === "HIGH" ? "peach" as const : "violet" as const,
       href: `/${locale}/franchise/qualite/anomalies${q}`,
@@ -553,6 +553,8 @@ export function buildFranchiseSpaceBoard(input: {
       mandate: franchise && "operatorCode" in franchise ? franchise.operatorCode : empty.perimeter.mandate,
       status: input.governance?.franchises[0]?.status ?? (franchise ? "ACTIVE" : empty.perimeter.status),
     },
+    franchiseId:franchise?.id??null,
+    permissions:input.operations?.permissions??empty.permissions,
     canWrite: Boolean(input.crm?.canWrite),
     people,
     requests,

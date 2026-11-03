@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { classifyAuthReadFailure } from "@/modules/shared/lib/auth/read-failure";
+import { exactUnits } from "@/modules/shared/lib/volume-procurement/model";
 import { uuidSchema } from "@/modules/shared/lib/catalogue-builder/model";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
@@ -43,7 +44,7 @@ async function rpc(name: string, args: Record<string, unknown>): Promise<Franchi
   if (!auth.user) return { status: "error", reason: "UNAUTHENTICATED" };
   const result = await client.rpc(name, args);
   if (result.error) {
-    if (result.error.code === "42501" && /\b(?:MFA|AAL2)(?:_|\b)/i.test(result.error.message ?? "")) return { status: "error", reason: "MFA_REQUIRED" };
+    if (result.error.code === "42501" && /(?:^|_)(?:MFA|AAL2)(?:_|$)/i.test(result.error.message ?? "")) return { status: "error", reason: "MFA_REQUIRED" };
     if (result.error.code === "42501") return { status: "error", reason: "FORBIDDEN" };
     if (["40001", "23505", "23514", "23P01"].includes(result.error.code ?? "") || /STALE|IDEMPOTENCY|TRANSITION|INVALID_/i.test(result.error.message ?? "")) {
       return { status: "error", reason: "CONFLICT" };
@@ -354,10 +355,11 @@ export async function proposeFranchiseVolumePurchase(_: FranchiseCommandState, f
     locale: z.string().refine(isLocale),
     organizationId: z.string().optional(),
     libraryId: uuidSchema,
+    franchiseId:uuidSchema,
     skuId: uuidSchema,
-    forecastUnits: z.coerce.number().positive(),
-    minimumCommitmentUnits: z.coerce.number().min(0),
-    maximumUnits: z.coerce.number().positive(),
+    forecastUnits: exactUnits,
+    minimumCommitmentUnits: z.string().trim().regex(/^(?:0|[1-9]\d{0,13})(?:\.\d{1,6})?$/),
+    maximumUnits: exactUnits,
     paymentModel: z.enum(["PAY_PER_USE", "PREPAID", "HYBRID"]),
     periodStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/u),
     periodEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/u),
@@ -369,6 +371,7 @@ export async function proposeFranchiseVolumePurchase(_: FranchiseCommandState, f
     locale: text(form, "locale"),
     organizationId: text(form, "organizationId") || undefined,
     libraryId: text(form, "libraryId"),
+    franchiseId:text(form,"franchiseId"),
     skuId: text(form, "skuId"),
     forecastUnits: text(form, "forecastUnits"),
     minimumCommitmentUnits: text(form, "minimumCommitmentUnits"),
@@ -382,10 +385,12 @@ export async function proposeFranchiseVolumePurchase(_: FranchiseCommandState, f
     correlationId: text(form, "correlationId"),
   });
   if (!parsed.success) return { status: "error", reason: "VALIDATION" };
-  if (parsed.data.minimumCommitmentUnits > parsed.data.maximumUnits || parsed.data.forecastUnits > parsed.data.maximumUnits || parsed.data.periodEnd < parsed.data.periodStart) {
+  const scaled=(value:string)=>{const[whole,fraction=""]=value.split(".");return BigInt(whole!)*1000000n+BigInt(fraction.padEnd(6,"0"));};
+  if (scaled(parsed.data.minimumCommitmentUnits) > scaled(parsed.data.maximumUnits) || scaled(parsed.data.forecastUnits) > scaled(parsed.data.maximumUnits) || parsed.data.periodEnd < parsed.data.periodStart) {
     return { status: "error", reason: "VALIDATION" };
   }
-  const result = await rpc("propose_franchise_volume_purchase", {
+  const result = await rpc("propose_franchise_volume_purchase_for_mandate_v1", {
+    p_franchise_id:parsed.data.franchiseId,
     p_library_id: parsed.data.libraryId,
     p_sku_id: parsed.data.skuId,
     p_forecast_units: parsed.data.forecastUnits,

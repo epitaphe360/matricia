@@ -37,3 +37,16 @@ Le CRM, les relances, le digest et les plans correctifs utilisent également une
 Les dossiers CRM présentent maintenant le dernier état de la vraie invitation (`QUEUED`, acquittement du service d’envoi, ouverture, inscription, expiration, révocation) et son mode. Un test non contractuel reste explicitement marqué ; un prospect sans invitation n’implique aucun envoi. Cette projection nécessite la migration du lot Invitations `45300+` et ne lit aucun token privé.
 
 Preuves complémentaires : six tests de lecteurs (301 prospects, échec de seconde page, Auth 503/401/rejet, deux périmètres de plans), quatre tests de libellés d’invitation et reprise du groupe opérationnel. Le reçu SQL final de `0362` doit provenir de l’intégration : le premier passage avait correctement exclu une charge créée après une coupure historique trop ancienne ; le correctif de fixture fige maintenant la coupure après la commande native, sans modifier les dates de création.
+
+## Réseau, gouvernance et constats de revue supplémentaire
+
+- Le réseau inclut les vrais dossiers prestataires autorisés même sans prospect CRM. Ces lignes ne deviennent pas des prospects fictifs : les commandes de chronologie CRM nécessitent leur vraie version de prospect. Les pièces natives sont accessibles par le parcours privé existant.
+- Les cinq filtres réseau proposent de vraies options (service, profil, capacité, région, documents), s’appliquent conjointement et conservent le mandat pendant recherche et pagination. Les filtres de qualité sans implémentation effective ne sont plus proposés ; recherche et vues métier restent disponibles.
+- Les formulaires GET des dossiers, de qualité, du coffre et de la messagerie conservent organisation et franchise. Les paramètres réseau doivent être transmis par les routes racines et imbriquées.
+- La permission CRM ne sert plus de permission de qualification ou d’édition : une projection du mandat expose séparément les habilitations Expert, Responsable prestataires, Viewer et Manager. Les contrôles de mutation serveur restent souverains.
+- La proposition volume porte un `franchiseId` explicite, des quantités décimales exactes et des libellés métier FR/AR. L’ancienne commande limitée à la bibliothèque refuse une sélection ambiguë ; elle ne choisit plus un territoire selon sa date de création.
+- Un prospect CRM qualifié n’est plus présenté comme résultat d’un matching inexistant. Seuls les vrais résultats serveur alimentent ce matching.
+- Le panneau qualité ne certifie plus des photos, rapports, étapes achevées ni une décision en attente sans donnée. Il affiche les signalements, références et plans réellement chargés et renvoie vers la messagerie pour l’instruction.
+- Les nouveaux gardes SQL refusent AAL absent/null, les clôtures de périodes chevauchantes et les charges centrales non approuvées. Le verrou de livre est partagé par classement, clôture et versement. Les montants/historiques existants restent immuables.
+
+Avant refactor du lecteur de qualification : 42 tests ciblés réussis dans cinq fichiers ; lint ciblé réussi. SQL `0368` ajouté, recette réelle à lire dans le reçu du parent (aucune preuve d’activation juridique tirée de ses seules fixtures).

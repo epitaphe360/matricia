@@ -8,6 +8,7 @@ import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
 const id = z.string().uuid();
 
 export type FranchiseOperationsSnapshot = {
+  permissions?:{canDecideQualifications:boolean;canMaintainDefinitions:boolean;canInstructDisputes:boolean;canProposeVolume:boolean};
   providerDossiers?:ProviderDossier[];
   metrics?:FranchiseSupervisionMetrics|null;
   requests: Array<{ id: string; status: string; title: string; urgency: string | null }>;
@@ -42,9 +43,11 @@ export async function loadFranchiseOperations(input: { libraryId: string; operat
   const { data: auth, error: authError } = await client.auth.getUser();
   if (authError) throw new Error(classifyAuthReadFailure(authError)==="UNAUTHENTICATED"?"FRANCHISE_OPERATIONS_UNAUTHENTICATED":"FRANCHISE_OPERATIONS_AUTH_UNAVAILABLE");
   if (!auth.user) throw new Error("FRANCHISE_OPERATIONS_UNAUTHENTICATED");
-  const[dossiersResult,metricsResult,missionResult]=await Promise.all([client.rpc("franchise_provider_dossiers",{p_franchise_id:input.franchiseId}),client.rpc("franchise_supervision_metrics",{p_franchise_id:input.franchiseId}),client.rpc("franchise_operational_missions_v1",{p_franchise_id:input.franchiseId})]);
+  const[dossiersResult,metricsResult,missionResult,permissionsResult]=await Promise.all([client.rpc("franchise_provider_dossiers",{p_franchise_id:input.franchiseId}),client.rpc("franchise_supervision_metrics",{p_franchise_id:input.franchiseId}),client.rpc("franchise_operational_missions_v1",{p_franchise_id:input.franchiseId}),client.rpc("franchise_operation_permissions_v1",{p_franchise_id:input.franchiseId})]);
   const metrics=metricsResult.data?supervisionMetrics.safeParse(metricsResult.data):null;
   if(metricsResult.error||!metrics?.success||metrics.data.libraryId!==input.libraryId||metrics.data.franchiseId!==input.franchiseId)throw new Error("FRANCHISE_METRICS_UNAVAILABLE");
+  const permissions=z.object({franchiseId:id,libraryId:id,canDecideQualifications:z.boolean(),canMaintainDefinitions:z.boolean(),canInstructDisputes:z.boolean(),canProposeVolume:z.boolean()}).safeParse(permissionsResult.data);
+  if(permissionsResult.error||!permissions.success||permissions.data.libraryId!==input.libraryId||permissions.data.franchiseId!==input.franchiseId)throw new Error("FRANCHISE_PERMISSIONS_UNAVAILABLE");
   const missionSnapshot=z.object({complete:z.literal(true),libraryId:id,franchiseId:id,missions:z.array(z.object({id,status:z.string(),started_at:z.string().nullable()}))}).safeParse(missionResult.data);
   if(missionResult.error||!missionSnapshot.success||missionSnapshot.data.libraryId!==input.libraryId||missionSnapshot.data.franchiseId!==input.franchiseId)throw new Error("FRANCHISE_MISSIONS_UNAVAILABLE");
   const dossiers=providerDossiers.safeParse(dossiersResult.data);
@@ -132,6 +135,7 @@ export async function loadFranchiseOperations(input: { libraryId: string; operat
   }
   const rfqRequest = new Map(rfqs.map((item) => [item.id, item.request_id]));
   return {
+    permissions:permissions.data,
     providerDossiers:dossiers.data,
     metrics:metrics?.success?metrics.data:null,
     requests: requestRows.map((item) => ({
