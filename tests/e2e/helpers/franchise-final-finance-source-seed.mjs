@@ -44,6 +44,8 @@ begin
  if current_database()<>'postgres'or(select environment from private.admin_execution_environment_v1 where singleton)is distinct from'DEVELOPMENT'
   or not exists(select 1 from public.catalog_libraries where code='TEST_PROVIDER_B9BD23E48232')
  then raise exception'EXACT_B9BD_DEVELOPMENT_DATABASE_REQUIRED';end if;
+  payload_hash:=private.canonical_request_hash(jsonb_build_object('scope','${SCOPE}','provider','DEMO','event','${EVENT}','order','${ORDER}','capture','${CAPTURE}','amount_minor',10001,'currency','EUR'));
+  verification_hash:=private.canonical_request_hash(jsonb_build_object('scope','${SCOPE}','method','DEMO_SIMULATION','not_external_psp_verification',true));
  select*into org from public.organizations where id='${ORG}';
  if org.id is null then
   if exists(select 1 from auth.users where id in('${CLIENT}','${MAKER}','${REVIEWER}')or email in('test-finance-c2-b9bd-client@example.invalid','test-finance-c2-b9bd-maker@example.invalid','test-finance-c2-b9bd-reviewer@example.invalid'))
@@ -75,8 +77,6 @@ begin
   if preparation->>'create_authorized'is distinct from'true'then raise exception'NATIVE_TEST_CHECKOUT_CREATE_NOT_AUTHORIZED';end if;
   perform set_config('request.jwt.claim.sub','',true);perform set_config('request.jwt.claim.role','service_role',true);perform set_config('request.jwt.claims','{"role":"service_role"}',true);
   registered:=public.register_credit_pack_payment_intent_v1((preparation->>'preparation_id')::uuid,'DEMO','${ORDER}',10001,'EUR');
-  payload_hash:=private.canonical_request_hash(jsonb_build_object('scope','${SCOPE}','provider','DEMO','event','${EVENT}','order','${ORDER}','capture','${CAPTURE}','amount_minor',10001,'currency','EUR'));
-  verification_hash:=private.canonical_request_hash(jsonb_build_object('scope','${SCOPE}','method','DEMO_SIMULATION','not_external_psp_verification',true));
   captured:=public.process_verified_credit_pack_payment_v1('DEMO','DEMO','${EVENT}','${ORDER}','PAYMENT_SUCCEEDED',10001,'EUR',clock_timestamp(),'${CAPTURE}',payload_hash,verification_hash,'ffe90000-0000-4000-8000-000000000001');
   if captured->>'outcome'is distinct from'CREDIT_PACK_CAPTURED'or captured->>'verification_method'is distinct from'DEMO_SIMULATION'then raise exception'NATIVE_TEST_DEMO_CAPTURE_FAILED';end if;
  end if;
@@ -91,9 +91,9 @@ begin
  select*into e from public.credit_pack_payment_events_v1 where organization_id='${ORG}'and gateway='DEMO'and provider_environment='DEMO'and provider_event_id='${EVENT}';
  canonical:=private.credit_pack_payment_source_v1(e.id);
  select*into funding from public.credit_economic_funding_sources_v1 where organization_id='${ORG}'and source_kind='CREDIT_PACK'and financial_journal_id=e.financial_journal_id;
- if canonical is null or e.provider_intent_id is distinct from'${ORDER}'or e.payment_reference is distinct from'${CAPTURE}'or e.deployment_environment is distinct from'DEVELOPMENT'
+ if canonical is null or canonical->>'created_by'is distinct from'${CLIENT}'or e.payload_hash is distinct from payload_hash or e.verification_evidence_hash is distinct from verification_hash or e.provider_intent_id is distinct from'${ORDER}'or e.payment_reference is distinct from'${CAPTURE}'or e.deployment_environment is distinct from'DEVELOPMENT'
   or e.verification_method is distinct from'DEMO_SIMULATION'or e.amount_minor is distinct from 10001::bigint or e.currency is distinct from'EUR'::bpchar
-  or not exists(select 1 from public.credit_pack_versions v join public.credit_pack_definitions d on d.id=v.pack_id where v.id=e.pack_version_id and d.code='${PACK}'and v.quantity=3 and v.price_minor=10001 and v.currency='EUR')
+  or not exists(select 1 from public.credit_pack_versions v join public.credit_pack_definitions d on d.id=v.pack_id where v.id=e.pack_version_id and v.created_by='${MAKER}'and d.code='${PACK}'and v.quantity=3 and v.price_minor=10001 and v.currency='EUR')
   or(select count(*)from public.credit_pack_payment_events_v1 where organization_id='${ORG}')<>1
   or(select count(*)from public.financial_journals where organization_id='${ORG}'and journal_type='CREDIT_PACK_PAYMENT')<>1
   or(select count(*)from public.credit_economic_funding_sources_v1 where organization_id='${ORG}'and financial_journal_id=e.financial_journal_id)<>1
