@@ -121,7 +121,7 @@ export function ServicesCatalogPanel({
           </label>
         </div>
         {rows.length === 0 ? <p>{c.emptyServices}</p> : (
-          <div className="client-table-wrap client-compare">
+          <div className="client-table-wrap client-compare" role="region" aria-label={c.filterServices} tabIndex={0}>
             <table className="client-space-table">
                 <thead>
                   <tr>

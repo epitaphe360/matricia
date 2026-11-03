@@ -2488,3 +2488,61 @@
 [dir="rtl"] .client-space-table {
   direction: rtl;
 }
+
+/* Keep dense catalogues readable within their own scroll region. */
+.franchise-workspace .client-table-wrap .client-space-table {
+  min-width: 48rem;
+  table-layout: auto;
+}
+
+.franchise-workspace .client-space-table th,
+.franchise-workspace .client-space-table td {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.franchise-topbar .franchise-mandate-chip > span:not(.franchise-mandate-chip-icon) {
+  min-width: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 720px) {
+  .franchise-topbar {
+    flex-wrap: wrap;
+    column-gap: 0.35rem;
+    row-gap: 0.5rem;
+  }
+
+  .franchise-topbar .franchise-mobile-brand {
+    flex: 1 1 4rem;
+    min-width: 0;
+  }
+
+  .franchise-topbar .franchise-mandate-chip {
+    order: 1;
+    flex: 1 0 100%;
+    max-width: 100%;
+  }
+
+  .franchise-workspace .franchise-kpi-tile {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.55rem;
+  }
+
+  .franchise-kpi-tile > .franchise-kpi-icon {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .franchise-kpi-tile > span:not(.franchise-kpi-icon) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+  }
+
+  .franchise-kpi-tile > svg {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
