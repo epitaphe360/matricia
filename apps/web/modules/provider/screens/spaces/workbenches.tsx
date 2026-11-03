@@ -1,3 +1,4 @@
+import { quoteStatusLabel } from "@/modules/provider/screens/devis/status-labels";
 import { SignedScopePendingNotice } from "@/modules/shared/ui/signed-scope-pending-notice";
 import {workflowStatusLabel}from"@/modules/shared/lib/i18n/workflow-statuses";
 import { InvoiceFacts } from "@/modules/provider/screens/facturation/invoice-facts";
@@ -285,7 +286,7 @@ export function QuoteMultilineWorkbench({
         </div>
         <div className="provider-workbench-meta">
           <span className="provider-autosave"><FileText className="size-4" aria-hidden />{invitation?.quote?.currentVersionId ? (locale==="ar"?`نسخة الخادم v${invitation.quote.versionNumber??"—"} محفوظة`:`Version serveur v${invitation.quote.versionNumber??"—"} enregistrée`) : (locale === "ar" ? "لم تحفظ نسخة بعد" : "Aucune version enregistrée")}</span>
-          <span className="client-status-chip" data-tone="mint">{invitation?.quote?.status ?? w.quoteDraftStatus}</span>
+          <span className="client-status-chip" data-tone="mint">{invitation?.quote?.status ? quoteStatusLabel(invitation.quote.status, locale) : w.quoteDraftStatus}</span>
         </div>
       </header>
       <section className="provider-quote-meta client-card">
@@ -330,7 +331,7 @@ export function QuoteMultilineWorkbench({
             <header><h3>{w.quoteChecks}</h3></header>
             <ul className="client-feed">
               <li><span>{locale === "ar" ? "تظهر نتائج التحقق في نموذج العرض قبل الحفظ والإرسال." : "Les contrôles du formulaire déterminent les champs manquants avant enregistrement et envoi."}</span></li>
-              <li><span>{locale === "ar" ? "حالة النسخة المحفوظة" : "État de la version enregistrée"} : {invitation?.quote?.status ?? "—"}</span></li>
+              <li><span>{locale === "ar" ? "حالة النسخة المحفوظة" : "État de la version enregistrée"} : {invitation?.quote?.status ? quoteStatusLabel(invitation.quote.status, locale) : "—"}</span></li>
             </ul>
             <div className="provider-workbench-actions">
               <Link href={`/${locale}/sous-traitant/devis${query}`} className="client-ghost-link">{w.breadcrumbQuotes}</Link>
