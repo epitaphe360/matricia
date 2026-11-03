@@ -1,3 +1,4 @@
+import { networkStateLabel } from "@/modules/franchise/data/network/filters";
 import { franchiseInvitationLabel } from "@/modules/franchise/data/network/invitation-label";
 import type { FranchiseCrmDashboard } from "@/modules/franchise/data/crm/model";
 import type { FranchiseDigestDashboard } from "@/modules/franchise/data/digest/model";
@@ -137,14 +138,17 @@ export function buildFranchiseSpaceBoard(input: {
     type: item.libraryCode,
     status: mandate.status,
   })));
-  const people: PersonRow[] = providers.map((item) => ({
+  const providerByOrganization=new Map((input.operations?.providerDossiers??[]).map(dossier=>[dossier.organizationId,dossier]));
+  const people: PersonRow[] = providers.map((item) => {
+    const dossier=providerByOrganization.get(item.linkedOrganizationId??"");
+    return ({
     id: item.id,
     name: item.organizationName || item.displayName,
     linkedOrganizationId:item.linkedOrganizationId,
     createdAt:item.createdAt,
-    dossier:input.operations?.providerDossiers?.find((d)=>d.organizationId===item.linkedOrganizationId),
-    services:input.operations?.providerDossiers?.find((d)=>d.organizationId===item.linkedOrganizationId)?.qualifications.map((q)=>q.serviceCode).join(", ")??(locale==="ar"?"خدمات غير موثقة":"Services non renseignés"),
-    status: [input.operations?.providerDossiers?.find((d)=>d.organizationId===item.linkedOrganizationId)?.status??franchiseStageLabel(item.stage, locale),franchiseInvitationLabel(item.invitation,locale)].filter(Boolean).join(" · "),
+    dossier,
+    services:dossier?.qualifications.map((q)=>q.serviceCode).join(", ")??(locale==="ar"?"خدمات غير موثقة":"Services non renseignés"),
+    status: [dossier?networkStateLabel(dossier.status,locale):franchiseStageLabel(item.stage, locale),franchiseInvitationLabel(item.invitation,locale)].filter(Boolean).join(" · "),
     next: item.nextFollowupAt ? item.nextFollowupAt.slice(0, 10) : franchiseStageLabel(item.stage, locale),
     tone: providerTone(item.stage),
     stage: item.stage,
@@ -154,10 +158,10 @@ export function buildFranchiseSpaceBoard(input: {
     nextFollowupAt: item.nextFollowupAt,
     activities: folderActivities(item),
     pipelineEvents: folderEvents(item),
-  }));
+  });});
   for(const dossier of input.operations?.providerDossiers??[]){
     if(people.some(row=>row.linkedOrganizationId===dossier.organizationId))continue;
-    people.push({id:dossier.organizationId,linkedOrganizationId:dossier.organizationId,createdAt:dossier.createdAt,dossier,name:dossier.name,services:dossier.qualifications.map(q=>q.serviceCode).join(", "),status:dossier.status,next:locale==="ar"?"ملف مقدم الخدمة":"Dossier prestataire",tone:dossier.status==="ACTIVE"?"mint":"sky",stage:dossier.status,source:"PROVIDER_PROFILE",activities:[],pipelineEvents:[]});
+    people.push({id:dossier.organizationId,linkedOrganizationId:dossier.organizationId,createdAt:dossier.createdAt,dossier,name:dossier.name,services:dossier.qualifications.map(q=>q.serviceCode).join(", "),status:networkStateLabel(dossier.status,locale),next:locale==="ar"?"ملف مقدم الخدمة":"Dossier prestataire",tone:dossier.status==="ACTIVE"?"mint":"sky",stage:dossier.status,source:"PROVIDER_PROFILE",activities:[],pipelineEvents:[]});
   }
   const operationalMatching = (input.operations?.matching ?? []).map((item) => ({
     id: item.id,
