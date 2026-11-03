@@ -52,7 +52,15 @@ select throws_ok($$insert into public.franchise_pnl_book_bindings_v1(book_id,fra
 select is(public.create_franchise_entry_fee_schedule((select(opening->>'book_id')::uuid from basis372 where k='IT'),'EXEMPT',0,0,null,null,current_date,current_date,'{}','TEST372-it-exemption')->>'principal_minor','0','the approved IT mandate can prepare its actual zero entry fee before activation');
 select throws_ok($$select public.create_franchise_entry_fee_schedule((select(opening->>'book_id')::uuid from basis372 where k='S1'),'UPFRONT',200000,200000,null,null,current_date,current_date,'{}','TEST372-wrong-entry-fee')$$,'55000','FRANCHISE_ENTRY_FEE_APPROVED_TERMS_REQUIRED','a valid schedule format cannot replace the fee approved in the mandate');
 select is(public.create_franchise_entry_fee_schedule((select(opening->>'book_id')::uuid from basis372 where k='S1'),'UPFRONT',100000,100000,null,null,current_date,current_date,'{}','TEST372-approved-entry-fee')->>'principal_minor','100000','the approved standard amount is linked to its exact book before activation');
-select pg_temp.actor372(2,'aal1');
+reset role;
+select is((select execution_mode from public.franchise_entry_fee_schedules where book_id=(select(opening->>'book_id')::uuid from basis372 where k='S1')),'NON_CONTRACTUAL_DEMO','pre-activation TEST fee carries a server-attested non-contractual mode');
+update private.admin_execution_environment_v1 set environment='PRODUCTION',configuration_reference='TEST372_NO_PRODUCTION_SIGNATURE',configured_at=clock_timestamp()where singleton;
+select pg_temp.actor372(2);set local role authenticated;
+select throws_ok($$select public.create_franchise_entry_fee_schedule((select(opening->>'book_id')::uuid from basis372 where k='S2'),'UPFRONT',100000,100000,null,null,current_date,current_date,'{}','TEST372-prod-no-signature')$$,'55000','FRANCHISE_ENTRY_FEE_SIGNED_MANDATE_REQUIRED','central approval alone cannot create a production entry debt without exact signed mandate proof');
+reset role;
+select is((select count(*)::integer from public.franchise_entry_fee_schedules where book_id=(select(opening->>'book_id')::uuid from basis372 where k='S2')),0,'the production prerequisite failure leaves neither a schedule nor a due entry');
+update private.admin_execution_environment_v1 set environment='DEVELOPMENT',configuration_reference='TEST372_NON_CONTRACTUAL_BOOK_BINDING',configured_at=clock_timestamp()where singleton;
+set local role authenticated;select pg_temp.actor372(2,'aal1');
 select throws_ok($$select public.open_franchise_pnl_book_for_mandate_v1(franchise,approved,mandate_hash,'MAD',finance_rule,'TEST372-open-'||k)from basis372 where k='S1'$$,'42501','FRANCHISE_BOOK_DENIED','even a stored opening receipt requires current AAL2');
 select pg_temp.actor372(2,null);
 select throws_ok($$select public.open_franchise_pnl_book_for_mandate_v1(franchise,approved,mandate_hash,'MAD',finance_rule,'TEST372-null-assurance')from basis372 where k='S1'$$,'42501','FRANCHISE_BOOK_DENIED','JSON-null assurance fails closed at the explicit boundary');
@@ -115,5 +123,13 @@ select lives_ok($$select private.assert_franchise_book_period_basis_v1('f372b000
 select throws_ok($$select private.assert_franchise_book_period_basis_v1('f372b000-0000-4000-8000-000000000009','2026-11-03','2026-11-04',(select id from public.franchise_finance_rule_versions where franchise_type='STANDARD'and version=1))$$,'55000','FRANCHISE_HISTORICAL_BOOK_BASIS_RECONCILIATION_REQUIRED','the historical mandate cannot back operations after its own effective window');
 select is((select status from public.franchises where id='f372a000-0000-4000-8000-000000000001'),'TERMINATED','historical recovery does not reactivate the franchise');
 select ok(not has_table_privilege('service_role','public.franchise_pnl_book_bindings_v1','INSERT')and not has_table_privilege('authenticated','public.franchise_pnl_book_bindings_v1','INSERT'),'no browser or service receives a direct binding write grant');
+select pg_temp.actor372(2);set local role authenticated;
+select is(jsonb_array_length(public.franchise_book_opening_context_v1((select franchise from basis372 where k='S1'))->'choices'),1,'the native opening selector contains only the selected approved mandate and compatible rule');
+select is(public.franchise_book_opening_context_v1((select franchise from basis372 where k='S1'))#>>'{choices,0,boundBookId}',(select opening->>'book_id'from basis372 where k='S1'),'the selector returns the already bound book without exposing a sibling territory');
+select pg_temp.actor372(2,'aal1');
+select throws_ok($$select public.franchise_book_opening_context_v1()$$,'42501','AAL2_REQUIRED','the purpose-scoped selector requires current AAL2 too');
+select pg_temp.actor372(4);
+select throws_ok($$select public.franchise_book_opening_context_v1()$$,'42501','FRANCHISE_BOOK_DENIED','the selector is not an unprotected cross-organization discovery endpoint');
+reset role;
 select *from finish();rollback;
 

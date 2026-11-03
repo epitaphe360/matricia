@@ -55,3 +55,20 @@ describe("mandate basis evidence",()=>{
   expect(await loadFranchiseDashboard("ar")).toEqual({status:"error",reason:"INVALID_RESPONSE"});
  });
 });
+
+describe("entry fee execution basis",()=>{
+ const id="11111111-1111-4111-8111-111111111111";
+ const book={id,library_id:id,franchise_organization_id:id,franchise_type:"STANDARD",operator_code:"FRANCHISEE",currency:"MAD",opened_under_rule_version_id:id,status:"OPEN"};
+ const fee={id,book_id:id,mode:"UPFRONT",principal_minor:"100000",deposit_minor:"100000",starts_on:"2026-11-03",due_on:"2026-11-03"};
+ it("keeps an older schedule legally uncertified",async()=>{
+  mocks.rpc.mockResolvedValue({data:{...snapshot(),bs:[book],fees:[fee]},error:null});const result=await loadFranchiseDashboard("fr");expect(result.status).toBe("success");
+  if(result.status==="success")expect(result.dashboard.books[0]?.entryFee).toMatchObject({executionMode:null,executionEnvironment:null});
+ });
+ it("carries an explicitly non-contractual development schedule to the interface",async()=>{
+  mocks.rpc.mockResolvedValue({data:{...snapshot(),bs:[book],fees:[{...fee,execution_mode:"NON_CONTRACTUAL_DEMO",execution_environment:"DEVELOPMENT"}]},error:null});const result=await loadFranchiseDashboard("ar");expect(result.status).toBe("success");
+  if(result.status==="success")expect(result.dashboard.books[0]?.entryFee).toMatchObject({executionMode:"NON_CONTRACTUAL_DEMO",executionEnvironment:"DEVELOPMENT"});
+ });
+ it("rejects a non-contractual production debt response",async()=>{
+  mocks.rpc.mockResolvedValue({data:{...snapshot(),bs:[book],fees:[{...fee,execution_mode:"NON_CONTRACTUAL_DEMO",execution_environment:"PRODUCTION"}]},error:null});expect(await loadFranchiseDashboard("fr")).toEqual({status:"error",reason:"INVALID_RESPONSE"});
+ });
+});
