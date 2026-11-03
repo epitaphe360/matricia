@@ -3,6 +3,7 @@ import { collectCatalogPages } from "./paged-query";
 import { classifyAuthReadFailure } from "@/modules/shared/lib/auth/read-failure";
 import { catalogEffectiveStatus } from "./workspace-model";
 import { z } from "zod";
+import { serviceFulfillmentRecordSchema } from "./service-deliverables";
 import { overlayFranchiseLibraryDemo } from "@/modules/franchise/data/library/demo-overlay";
 import {
   type FranchiseCatalogRow,
@@ -83,7 +84,7 @@ const serviceVersionRow = z.object({
   fixed_fulfillment_allowed: z.boolean(),
   base_currency: z.string(),
   sort_order: z.number().int(),
-  fulfillment_config: jsonObject,
+  fulfillment_config: serviceFulfillmentRecordSchema,
   visibility_rules: jsonObject,
   sensitive: z.boolean(),
   slug: z.string(),
