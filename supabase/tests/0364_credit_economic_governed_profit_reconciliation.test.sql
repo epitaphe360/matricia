@@ -272,6 +272,31 @@ select pg_temp.actor275(5);
 select throws_ok($$select public.reconcile_credit_economic_profit_v1((select(v->>'book_id')::uuid from p275 where k='book'),current_date,current_date,'TEST read-only auditor cannot mutate finance','TEST364-auditor-reconcile')$$,'42501','CREDIT_ECONOMIC_COST_REVIEW_DENIED','auditor plus Finance remains read-only');
 reset role;
 
+-- A tax transfer or an unrelated tenant's expense is not zero-cost evidence.
+-- These are additional TEST journal facts, never a production rate or price.
+insert into public.financial_accounts(id,organization_id,code,name,account_type,currency)values
+('e364d000-0000-4000-8000-000000000001','b2750000-0000-4000-8000-000000000004','TEST364_FOREIGN_COST','TEST foreign expense','EXPENSE','EUR'),
+('e364d000-0000-4000-8000-000000000002','b2750000-0000-4000-8000-000000000004','TEST364_FOREIGN_PAYABLE','TEST foreign payable','LIABILITY','EUR');
+set local role authenticated;select pg_temp.actor275(2);
+insert into p275 values('zero-expense-journal',to_jsonb(public.post_financial_journal('b2750000-0000-4000-8000-000000000001','TEST364-zero-expense-journal',null,'CREDIT_PSP_FEE','EUR',clock_timestamp(),'TEST tax-only transfer contains no proven positive PSP expense','[{"account_id":"e364a000-0000-4000-8000-000000000003","direction":"DEBIT","amount_minor":1},{"account_id":"e364a000-0000-4000-8000-000000000004","direction":"CREDIT","amount_minor":1}]')));
+select throws_ok($$select public.propose_credit_economic_cost_v1('PSP_FEE',(select(v#>>'{}')::uuid from p275 where k='funding'),(select(v#>>'{}')::uuid from p275 where k='zero-expense-journal'),'TEST zero expense in unrelated transfer is not an exemption proof','TEST364-zero-not-evidence')$$,'55000','CREDIT_ECONOMIC_PROVEN_NET_EXPENSE_REQUIRED','lack of an expense entry does not prove a real zero cost');
+insert into p275 values('foreign-expense-journal',to_jsonb(public.post_financial_journal('b2750000-0000-4000-8000-000000000004','TEST364-foreign-expense-journal',null,'CREDIT_PSP_FEE','EUR',clock_timestamp(),'TEST foreign tenant cost cannot be charged to this capture','[{"account_id":"e364d000-0000-4000-8000-000000000001","direction":"DEBIT","amount_minor":100},{"account_id":"e364d000-0000-4000-8000-000000000002","direction":"CREDIT","amount_minor":100}]')));
+select throws_ok($$select public.propose_credit_economic_cost_v1('PSP_FEE',(select(v#>>'{}')::uuid from p275 where k='funding'),(select(v#>>'{}')::uuid from p275 where k='foreign-expense-journal'),'TEST foreign expense must not become this funding cost','TEST364-foreign-journal')$$,'55000','CREDIT_ECONOMIC_EXPENSE_JOURNAL_REQUIRED','a posted cost in another tenant cannot be attributed to this capture');
+reset role;
+select is((select count(*)from public.credit_economic_cost_reconciliations_v1),2::bigint,'false zero and foreign journal proposals create no accepted cost evidence');
+
+-- Trusted verified-inbox notification is known before domain dispatch. It
+-- already blocks economic readiness, without inventing or erasing any amount.
+select pg_temp.service275();set local role service_role;
+insert into p275 values('pending-adverse',public.record_verified_payment_inbox_v1('DEMO','DEMO','TEST364-PENDING-DISPUTE','DISPUTE_OPENED','SYNTHETIC-CREDIT275-CAPTURE',jsonb_build_object('provider_payment_id','SYNTHETIC-CREDIT275-CAPTURE','provider_adjustment_id','TEST364-PENDING-NATIVE-DISPUTE','merchant_reference',(select v->>'payment_intent_id'from p275 where k='intent'),'amount_minor','10001','currency','EUR','occurred_at',clock_timestamp()::text),repeat('a',64),repeat('b',64),'e364f000-0000-4000-8000-000000000001'));
+reset role;
+select is((select count(*)from public.credit_pack_payment_adjustments_v1),0::bigint,'the adverse event is deliberately not yet imported into the pack domain');
+set local role authenticated;select pg_temp.actor275(3);
+select is(public.get_credit_economic_profit_context_v1((select(v->>'book_id')::uuid from p275 where k='book'),current_date,current_date)->>'ready','false','a known verified adverse fact blocks readiness before domain adjustment import');
+select throws_ok($$select public.reconcile_credit_economic_profit_v1((select(v->>'book_id')::uuid from p275 where k='book'),current_date,current_date,'TEST pending adverse facts require actual reconciliation','TEST364-reconcile-after-adverse')$$,'55000','CREDIT_ECONOMIC_ADMISSIBLE_ALLOCATION_REQUIRED','a new reconciliation cannot acknowledge held funding');
+reset role;
+select is((select count(*)from public.credit_economic_cost_attributions_v1),2::bigint,'adverse fact creates no duplicate, reversal or overwrite of cost evidence');
+
 -- SEPARATE HISTORICAL INITIAL-STATE TEST FIXTURE, NOT THE CURRENT NATIVE FLOW.
 -- The native current flow above is reconciled but its day has not ended.
 -- This negative fixture tests rejection of unproved old income/closed books,
