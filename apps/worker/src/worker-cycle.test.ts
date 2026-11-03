@@ -47,3 +47,26 @@ it("polls unrelated events while the antivirus health check is still waiting", a
   resolveHealth(); await running;
   expect(buildWorkerReadiness(cycle.getState()).status).toBe("ready");
 });
+
+it("does not report financial readiness before the first two durable billing pages", () => {
+  const healthy = { antivirus: { ok: true, latencyMs: 2 }, outbox: { ok: true, latencyMs: 3 } };
+  expect(buildWorkerReadiness(healthy, { closing: null, reminders: null })).toMatchObject({
+    status: "not_ready", checks: {
+      provider_billing: { status: "down", code: "PROVIDER_BILLING_NOT_STARTED" },
+      provider_billing_reminders: { status: "down", code: "PROVIDER_BILLING_NOT_STARTED" },
+    },
+  });
+});
+
+it.each(["closing", "reminders"] as const)("reports a %s outage despite healthy Outbox and scanner", (failed) => {
+  const healthy = { antivirus: { ok: true, latencyMs: 2 }, outbox: { ok: true, latencyMs: 3 } };
+  const billing = { closing: { ok: true, latencyMs: 4 }, reminders: { ok: true, latencyMs: 5 }, [failed]: { ok: false, latencyMs: 6 } };
+  expect(buildWorkerReadiness(healthy, billing).status).toBe("not_ready");
+});
+
+it("reports ready with both verified billing pages and healthy Outbox/scanner", () => {
+  const healthy = { antivirus: { ok: true, latencyMs: 2 }, outbox: { ok: true, latencyMs: 3 } };
+  expect(buildWorkerReadiness(healthy, { closing: { ok: true, latencyMs: 4 }, reminders: { ok: true, latencyMs: 5 } })).toMatchObject({
+    status: "ready", checks: { provider_billing: { status: "up" }, provider_billing_reminders: { status: "up" } },
+  });
+});

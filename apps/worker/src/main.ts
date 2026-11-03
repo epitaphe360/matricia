@@ -76,7 +76,7 @@ async function start(): Promise<void> {
       return;
     }
     if (request.url === "/readiness") {
-      const report = buildWorkerReadiness(cycle.getState());
+      const report = buildWorkerReadiness(cycle.getState(), runProviderBilling.getState());
       response.statusCode = report.status === "ready" ? 200 : 503;
       response.end(JSON.stringify(report));
       return;
@@ -89,7 +89,8 @@ async function start(): Promise<void> {
   void runFranchiseFollowups().catch(() => log("error", { requestId: randomUUID(), correlationId: randomUUID(), event: "franchise.followup.scheduler", outcome: "failure", actorId: workerId, errorCode: "FRANCHISE_FOLLOWUP_CYCLE_FAILED" }));
   const recordHeartbeat = async () => {
     const state = cycle.getState();
-    const result = await serviceClient.rpc("record_operational_heartbeat_v1", { p_service_code: "MATRICIA_WORKER", p_healthy: Boolean(state.outbox?.ok), p_expires_after_seconds: 60 });
+    const billing = runProviderBilling.getState();
+    const result = await serviceClient.rpc("record_operational_heartbeat_v1", { p_service_code: "MATRICIA_WORKER", p_healthy: Boolean(state.outbox?.ok && billing.closing?.ok && billing.reminders?.ok), p_expires_after_seconds: 60 });
     if (result.error) log("error", { requestId: randomUUID(), correlationId: randomUUID(), event: "worker.heartbeat", outcome: "failure", errorCode: "HEARTBEAT_RECORD_FAILED" });
     await serviceClient.rpc("record_operational_heartbeat_v1", { p_service_code: "CLAMAV", p_healthy: Boolean(state.antivirus?.ok), p_expires_after_seconds: 60 });
     await serviceClient.rpc("record_operational_heartbeat_v1", { p_service_code: "SCANNER_HTTP", p_healthy: Boolean(state.antivirus?.ok) && (process.env.MALWARE_SCANNER_TOKEN?.length ?? 0) >= 32, p_expires_after_seconds: 60 });

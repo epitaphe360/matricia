@@ -1,5 +1,6 @@
 import { buildReadinessReport } from "@matricia/observability";
 import { createNonOverlappingTask } from "./poll-lock";
+import type { ProviderBillingState } from "./provider-billing";
 
 type DependencyCycle = Readonly<{ ok: boolean; latencyMs: number }>;
 
@@ -63,11 +64,19 @@ export function createWorkerCycle(dependencies: Readonly<{
   return Object.freeze({ run, getState: () => state });
 }
 
-export function buildWorkerReadiness(state: WorkerCycleState) {
+export function buildWorkerReadiness(state: WorkerCycleState, billing?: ProviderBillingState) {
   return buildReadinessReport("matricia-worker", {
     outbox: state.outbox?.ok
       ? { status: "up", latencyMs: state.outbox.latencyMs }
       : { status: "down", latencyMs: state.outbox?.latencyMs ?? 0, code: state.outbox ? "OUTBOX_POLL_FAILED" : "WORKER_NOT_STARTED" },
+    ...(billing ? {
+      provider_billing: billing.closing?.ok
+        ? { status: "up" as const, latencyMs: billing.closing.latencyMs }
+        : { status: "down" as const, latencyMs: billing.closing?.latencyMs ?? 0, code: billing.closing ? "PROVIDER_BILLING_SCHEDULER_FAILED" : "PROVIDER_BILLING_NOT_STARTED" },
+      provider_billing_reminders: billing.reminders?.ok
+        ? { status: "up" as const, latencyMs: billing.reminders.latencyMs }
+        : { status: "down" as const, latencyMs: billing.reminders?.latencyMs ?? 0, code: billing.reminders ? "PROVIDER_BILLING_REMINDERS_FAILED" : "PROVIDER_BILLING_NOT_STARTED" },
+    } : {}),
     antivirus: state.antivirus?.ok
       ? { status: "up", latencyMs: state.antivirus.latencyMs }
       : { status: "down", latencyMs: state.antivirus?.latencyMs ?? 0, code: state.antivirus ? "ANTIVIRUS_UNAVAILABLE" : "WORKER_NOT_STARTED" },
