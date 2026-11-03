@@ -54,7 +54,7 @@ set local role service_role;select set_config('request.jwt.claims','{"role":"ser
 insert into signal_observed371 values('run',public.run_franchise_performance_control_v1(25));reset role;
 select is((select(v->>'failed')::integer from signal_observed371 where k='run'),0,'native report and facts collectors complete independently without hidden query errors');
 select is((select count(*)::integer from public.franchise_governance_signal_snapshots_v1 where franchise_id='d3650000-0000-4000-8000-000000000002'),3,'daily monthly and quarterly facts are collected from native sources');
-insert into signal_observed371 values('snapshot',to_jsonb(s))from public.franchise_governance_signal_snapshots_v1 s join public.franchise_control_reports_v1 r on r.id=s.report_id where s.franchise_id='d3650000-0000-4000-8000-000000000002'and r.kind='DAILY';
+insert into signal_observed371(k,v)select 'snapshot',to_jsonb(s)from public.franchise_governance_signal_snapshots_v1 s join public.franchise_control_reports_v1 r on r.id=s.report_id where s.franchise_id='d3650000-0000-4000-8000-000000000002'and r.kind='DAILY';
 select is((select v#>>'{summary,largestProviderShareBps}'from signal_observed371 where k='snapshot'),null::text,'no missions means unknown concentration rather than a reassuring zero');
 select is((select v#>>'{summary,qualificationShortestSeconds}'from signal_observed371 where k='snapshot'),null::text,'no qualification decision means an unmeasured delay');
 select is((select(v#>>'{summary,catalogReviewShortestSeconds}')::numeric from signal_observed371 where k='snapshot'),300::numeric,'native review interval is measured without an invented speed threshold');
@@ -63,7 +63,7 @@ select is((select v#>>'{summary,thresholdConfiguration}'from signal_observed371 
 select ok(not(select v::text like'%PRIVATE-CONFLICT-REASON-TEST%'from signal_observed371 where k='snapshot'),'member summary does not expose the private declaration or reviewer details');
 select is((select count(*)::integer from private.franchise_governance_signal_sources_v1 where snapshot_id=(select(v->>'id')::uuid from signal_observed371 where k='snapshot')and kind='CONFLICT_DISCLOSURE'),1,'the independent collector freezes the actual declared conflict');
 select is((select count(*)::integer from private.franchise_governance_review_requests_v1 where snapshot_id=(select(v->>'id')::uuid from signal_observed371 where k='snapshot')and origin='SYSTEM_FACT'),1,'a declared fact queues one human examination without asserting fault');
-insert into signal_observed371 values('request',jsonb_build_object('id',id))from private.franchise_governance_review_requests_v1 where snapshot_id=(select(v->>'id')::uuid from signal_observed371 where k='snapshot');
+insert into signal_observed371(k,v)select 'request',jsonb_build_object('id',q.id)from private.franchise_governance_review_requests_v1 q where q.snapshot_id=(select(v->>'id')::uuid from signal_observed371 where k='snapshot');
 set constraints all immediate;
 set local role authenticated;select set_config('request.jwt.claims','{"sub":"a3650000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal1"}',true);
 insert into signal_observed371 values('member',public.get_franchise_governance_signals_v1('d3650000-0000-4000-8000-000000000002',(select(v->>'report_id')::uuid from signal_observed371 where k='snapshot')));
