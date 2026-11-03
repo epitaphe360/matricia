@@ -37,3 +37,7 @@ Exécutées sur la même source `df67da4` avec les dépendances du lockfile, san
 | `pnpm test:tooling` | 31 PASS, aucun ignoré ; inclut des contre-tests réels des gardes de release et des marqueurs incomplets | [outillage](evidence/ci/tooling.log) |
 
 Invocation locale de pnpm : `PATH=/workspace/.cache/corepack/bin:$PATH COREPACK_HOME=/workspace/.cache/corepack corepack pnpm …`. Les dépendances locales partagées proviennent du même dépôt et ne constituent pas une nouvelle installation propre sur un runner GitHub. Ces vérifications ne remplacent ni les autres recettes du lot ni la relance distante des trois jobs après régularisation de la facturation.
+
+## Nouveau push de la branche de correction
+
+Le run [41607402990](https://github.com/epitaphe360/matricia/actions/runs/41607402990), après le push de `229a9d98`, reproduit trois annotations de facturation avant démarrage. [Reçu](evidence/ci/latest-branch-billing.json). La correction du produit ne peut lever ce verrouillage du compte ; les vérifications locales et le replay isolé restent tracés séparément.
