@@ -44,3 +44,21 @@ for(const locale of ["fr","ar"] as const)describe(`session verification proxy ${
   expect(response.status).toBe(200);expect(response.headers.get("x-middleware-next")).toBe("1");expect(response.headers.has("location")).toBe(false);
  });
 });
+
+
+for (const locale of ["fr", "ar"]) describe(`post-OTP action ${locale}`, () => {
+  const path = `/${locale}/franchise/services?organizationId=${org}&franchiseId=${franchise}`;
+  it("does not intercept the authenticated Server Action before its role and MFA checks", async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: { id: org } }, error: null });
+    const response = await refreshSupabaseSession(new NextRequest(`https://matricia.example/${locale}/connexion?${new URLSearchParams({ next: path })}`, { method: "POST", headers: { "next-action": "test-post-login-action", "content-type": "text/plain;charset=UTF-8" }, body: "[]" }));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+    expect(response.headers.has("location")).toBe(false);
+  });
+  it.each(["GET", "HEAD"])("retains the existing authenticated %s navigation redirect", async method => {
+    mocks.getUser.mockResolvedValue({ data: { user: { id: org } }, error: null });
+    const response = await refreshSupabaseSession(new NextRequest(`https://matricia.example/${locale}/connexion?${new URLSearchParams({ next: path })}`, { method }));
+    expect(response.status).toBe(307);
+    expect(new URL(response.headers.get("location")!).pathname).toBe(`/${locale}/franchise/services`);
+  });
+});

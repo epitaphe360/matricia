@@ -271,7 +271,8 @@ describe("alignement maquettes constructeurs et espaces (06–20)", () => {
     expect(html).toContain("Conversations");
     expect(html).toContain("/fr/franchise/documents/renouvellements");
     expect(html).toContain("/fr/franchise/notifications");
-    expect(html).toContain("Aucun montant, solde ou donnée financière");
+    expect(html).toContain("Vérification financière indisponible");
+    expect(html).toContain("Aucun solde ni absence de données ne peut être certifié");
     expect(html).toContain("Demander une modification");
     expect(html).toContain("Informatique");
     expect(html).not.toMatch(splitPattern);

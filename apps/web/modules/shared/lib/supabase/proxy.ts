@@ -99,6 +99,8 @@ export async function refreshSupabaseSession(request: NextRequest) {
     login.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search);
     return NextResponse.redirect(login);
   }
-  if (authenticated && isLogin) return NextResponse.redirect(new URL(safeReturnPath(request.nextUrl.searchParams.get("next"),locale) ?? `/${locale}/tableau-de-bord`, request.url));
+  // POST login actions still have to enforce role routing and MFA themselves.
+  // A middleware 307 is not a valid Server Action response after OTP verification.
+  if (authenticated && isLogin && (request.method === "GET" || request.method === "HEAD")) return NextResponse.redirect(new URL(safeReturnPath(request.nextUrl.searchParams.get("next"),locale) ?? `/${locale}/tableau-de-bord`, request.url));
   return withLocaleCookie(response, request, locale);
 }
