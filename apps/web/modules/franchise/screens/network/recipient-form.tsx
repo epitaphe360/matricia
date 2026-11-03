@@ -32,7 +32,7 @@ export function NetworkRecipientForm({ locale, invitationId, token, idempotencyK
   const error = accepted.status === "error" ? accepted : opened.status === "error" ? opened : null;
   return <section className="space-y-5 rounded-xl border bg-card p-5 sm:p-8">
     <h1 className="text-2xl font-semibold">{c.title}</h1><p>{c.lead}</p>
-    {accepted.status === "success" ? <div role="status" className="space-y-4"><p>{c.success}</p><Link className="underline" href={accepted.prospectType === "CLIENT" ? `/${locale}/client/accueil?organizationId=${accepted.organizationId}` : `/${locale}/tableau-de-bord?organizationId=${accepted.organizationId}&workspace=provider`}>{c.dashboard}</Link></div> : <>
+    {accepted.status === "success" ? <div role="status" className="space-y-4"><p>{c.success}</p><Link className="underline" href={`/${locale}/tableau-de-bord?${new URLSearchParams({ organizationId: accepted.organizationId, workspace: accepted.prospectType === "CLIENT" ? "client" : "provider" })}`}>{c.dashboard}</Link></div> : <>
       <form action={open}>{hidden}<Button disabled={pendingOpen} type="submit">{pendingOpen ? c.pending : c.open}</Button></form>
       {opened.status === "opened" ? <>
         {opened.invitation.delivery_mode === "NON_CONTRACTUAL_DEMO" ? <p role="note" className="rounded-md border p-3">{c.demo}</p> : null}

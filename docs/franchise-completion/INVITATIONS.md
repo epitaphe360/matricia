@@ -16,9 +16,9 @@ L’invitation d’adhésion `OrganizationEmailInvitationRequestedV1` n’a pas 
 
 ## Fichiers et vérifications
 
-Migration `20261103453000_franchise_network_invitations.sql` ; test SQL `0363_franchise_network_invitations.test.sql` : 41 assertions prévues, sans désactivation de trigger/RLS, avec identités `example.invalid` et rollback final. **Son exécution est à effectuer dans le rejeu SQL isolé d’intégration ; elle n’est pas déclarée réussie à ce checkpoint.**
+Migrations `20261103453000_franchise_network_invitations.sql` et `20261103453100_franchise_network_delivery_environment_guard.sql` ; test SQL `0363_franchise_network_invitations.test.sql` : 41 assertions prévues, sans désactivation de trigger/RLS, avec identités `example.invalid` et rollback final. **Son exécution est à effectuer dans le rejeu SQL isolé d’intégration ; elle n’est pas déclarée réussie à ce checkpoint.**
 
-Vérifications exécutées sur le code du lot : Web **128 tests PASS** (8 fichiers, dont ancienne route d’outbox), worker dispatcher **21 PASS**, types et lint ciblé réussis, garde des exports serveur **1 847 fichiers PASS**. [Journaux](evidence/invitations/).
+Vérifications exécutées sur le code du lot : Web **128 tests PASS** (8 fichiers, dont ancienne route d’outbox), puis **4 tests d’interface destinataire PASS** (groupe distinct), worker dispatcher **21 PASS**, types et lint ciblé réussis, garde des exports serveur **1 847 fichiers PASS**. [Journaux](evidence/invitations/).
 
 Les tests couvrent notamment le hash seul transmis à la base, les reprises CSV stables, le rejet sans confirmation, la MFA, les erreurs Auth, les résultats discordants, l’email refusé, le rejeu après acceptation externe mais échec de persistance, les modes de simulation, l’accusé de consumer et le refus de faux états vides.
 
