@@ -1,8 +1,8 @@
 # Independent Provider browser acceptance
 
 Status: **native Provider business continuation executed, with financial closure deliberately not certified before its real deadline**. The final optimized local runtime is pinned to
-`706cd89347e39425cadbd8a75beb8a93d3dd3e2a` (app tree
-`c43980c6da4345d8da6260ffb264b5089becf2f2`). Initial harness base was integration commit
+`5b8b0f738137abee19f6552aef538e906d04f24a` (app tree
+`ef4b62c67a4d8ad5a6403e6a4568bd9dc1774c75`). Initial harness base was integration commit
 `b0be5966c67923cdeb36e049e280ad0f08e3573b`. Immutable first-candidate receipts are in
 `docs/provider-completion/evidence/browser/candidate-one/`: 18 native entry steps,
 40 FR/AR responsive pages, 64 axe scans with zero violations but unresolved contrast
@@ -225,3 +225,7 @@ Rendered-glyph checks concern selected visible texts only. Two non-rendered targ
 remain unmeasured; axe color-contrast incompletes outside this subset remain
 unresolved. Zero automated violations is not a full WCAG certification. See the
 final evidence index for exact measured counts, candidates and remaining limits.
+
+The final E19 renderer-only delta on5b8b0f has its own eight-case quote-status
+follow-up. The complete232-page/256-axe matrix, menus, contrast and SPA navigation
+remain attributed to706; none is relabelled as a full replay on the last pin.

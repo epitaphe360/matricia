@@ -6,8 +6,8 @@ Aucune connexion, modification ou disponibilité de Supabase/Vercel/Railway en
 production n'est certifiée ici. Aucun déploiement de production n'a été effectué.
 
 Le dernier runtime optimisé vérifié correspond au commit
-`706cd89347e39425cadbd8a75beb8a93d3dd3e2a`, arbre `apps/web`
-`c43980c6da4345d8da6260ffb264b5089becf2f2`. Les mutations antérieures gardent
+`5b8b0f738137abee19f6552aef538e906d04f24a`, arbre `apps/web`
+`ef4b62c67a4d8ad5a6403e6a4568bd9dc1774c75`. Les mutations antérieures gardent
 leur candidat réel ; la matrice finale relit leurs dossiers, sans prétendre les
 avoir recréés sur ce dernier commit. Le manifeste global associe les fichiers
 publiés à leur taille et leur SHA-256. Les secrets, sessions, clés TOTP, leases de
@@ -29,7 +29,7 @@ scan et sauvegardes restent exclus de Git.
 | Finance courante | [4 étapes et limites](candidate-final/finance-current/summary.json), [fiscalité TEST](candidate-final/finance-current/commission-tax-test-policy.json), [date future et compteurs](candidate-final/finance-current/future-date-and-posting-counters.json) | 5e06 : déclaration réelle du 3 novembre reprise avec la même intention et le même PDF après correction de F13 ; confirmation Client et Finance distincte ; auto-approbation et Finance prématurée refusées. Commission à facturer enregistrée nativement ; date future refusée 22023 et compteurs inchangés. Politique de clôture proposée/approuvée à quatre yeux, scheduler et refus de clôture prématurée réels. Aucun mouvement d'argent exécuté. |
 | Mode Client gouverné | [reproduction](candidate-final/mode-client/summary.json), [4 étapes finales](candidate-final/mode-client-final/summary.json) | Activation après tous les parcours Provider seuls : demande propriétaire et décision indépendante AAL2, même organisation/membership, auto-approbation refusée. Retour effectif à l'espace Provider sur 706, sans nouveau compte ni nouvel octroi dans la recette finale. |
 | Liens, langue et file Admin | [contre-exemple SPA](candidate-final/navigation-before/document-locale-reproduction.json), [3 étapes finales](candidate-final/navigation-final/summary.json) | 706 : vrai clic SPA FR→AR→FR, même `performance.timeOrigin`, `html.lang/dir` corrects et dossier conservé ; marque/accueil restent Provider après double rôle ; file Admin et recherche réelles rétablies tandis que SELECT général organisations = 0. |
-| Build final | [reçu](candidate-final/build.json), [journal](candidate-final/build.log) | 706 : build webpack optimisé complet, TypeScript exécuté, serveur local démarré ; aucun déploiement de production. |
+| Build final | [reçu](candidate-final/build.json), [journal](candidate-final/build.log) | 5b8b0f : build webpack optimisé complet, TypeScript exécuté, serveur local démarré ; aucun déploiement de production. |
 | Garde du harnais | [15 tests](candidate-final/helper-guard-tests.json) | 15 PASS : cibles, source de restauration, ACL, provenance, migrations immuables et refus des environnements non autorisés. |
 
 Les reçus FAILED conservés sont des reproductions antérieures nommées et attribuées,
@@ -63,6 +63,17 @@ Les quatre cas du libellé arabe corrigé passent de 4,1842 avant correction à
 12,5138 après correction (seuil 4,5). Cela ne certifie pas tout le contraste ni
 la conformité WCAG complète. Les captures avant/après sont conservées.
 
+Le dernier delta produit ne change que deux renderers de `workbenches.tsx`.
+La [reprise ciblée E19](candidate-final/quote-status-localized/summary.json) sur
+`5b8b0f738137abee19f6552aef538e906d04f24a` passe **8/8 détails devis**, FR/AR
+aux quatre largeurs : badge et vérification utilisent « Sélectionné » / « مختار »,
+aucun `SELECTED` visible, même devis révisé V2 et même organisation, trois textes
+libres conservés sans traduction, zéro erreur JavaScript ou débordement. Le
+[build706](candidate-final/build706.json), la matrice232/256 et les autres reçus706
+restent attribués à706. La capture706 montrant `SELECTED` est conservée comme
+reproduction ; les huit nouvelles captures montrent la correction. La matrice232
+n'a pas été rejouée sur5b8b0f et aucun parcours métier n'a été recréé pour ce delta.
+
 ## Limites qui empêchent une clôture totale
 
 - La déclaration du 3 novembre appartient au mois de novembre. Le pré-relevé
@@ -80,9 +91,6 @@ la conformité WCAG complète. Les captures avant/après sont conservées.
   SQL/unitaires de l'avenant restent des preuves distinctes.
 - Le mode Client prouve la gouvernance et les liens après double rôle, sans
   refaire ni certifier ici toute la recette Client ou contourner ses prérequis.
-- Une capture finale du détail de devis FR/1440 montre encore le code `SELECTED`
-  dans le badge et la vérification. La matrice responsive ne constitue pas une
-  révision exhaustive de chaque libellé traduit.
 - Les incompletes de contraste axe restent explicitement indéterminés hors des
   textes sélectionnés mesurés. Deux cibles non rendues ne sont pas mesurées.
   Aucun certificat WCAG global n'est revendiqué.

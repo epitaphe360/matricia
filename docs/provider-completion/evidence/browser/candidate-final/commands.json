@@ -1,6 +1,6 @@
 {
   "scope": "ACTUAL_FINAL_BROWSER_COMMANDS_NOT_A_GLOBAL_ROOT_TEST_RECEIPT",
-  "candidate": "706cd89347e39425cadbd8a75beb8a93d3dd3e2a",
+  "candidate": "5b8b0f738137abee19f6552aef538e906d04f24a",
   "commands": [
     {
       "command": "APP_ENV=development node tests/e2e/helpers/provider-browser/run-app.mjs --coordinated --production --candidate=706cd89347e39425cadbd8a75beb8a93d3dd3e2a",
@@ -60,6 +60,27 @@
       "command": "node --check tests/e2e/helpers/provider-browser/qualification-review.mjs",
       "exitCode": 0,
       "result": "PASS"
+    },
+    {
+      "command": "APP_ENV=development node tests/e2e/helpers/provider-browser/upgrade-candidate.mjs --coordinated --candidate=5b8b0f738137abee19f6552aef538e906d04f24a",
+      "exitCode": 0,
+      "result": "0 new migrations;507 preserved; no fresh SQL replay certified"
+    },
+    {
+      "command": "APP_ENV=development node tests/e2e/helpers/provider-browser/run-app.mjs --coordinated --production --candidate=5b8b0f738137abee19f6552aef538e906d04f24a",
+      "result": "COMPLETE_OPTIMIZED_BUILD_AND_TYPESCRIPT_PASSED_LOCAL_SERVER_READY",
+      "productionDeploy": false
+    },
+    {
+      "command": "APP_ENV=development node tests/e2e/helpers/provider-browser/quote-status-localization-browser.mjs --candidate=5b8b0f738137abee19f6552aef538e906d04f24a",
+      "exitCode": 0,
+      "result": "8/8 PASS FR/AR×375/390/768/1440;both labels translated,no SELECTED visible,same V2/tenant,free text preserved,0 JS/overflow"
+    },
+    {
+      "command": "node --check tests/e2e/helpers/provider-browser/quote-status-localization-browser.mjs",
+      "exitCode": 0,
+      "result": "PASS"
     }
-  ]
+  ],
+  "retainedFullMatrixCandidate": "706cd89347e39425cadbd8a75beb8a93d3dd3e2a"
 }
