@@ -14,7 +14,7 @@ try { receipt = JSON.parse(await readFile(file)); } catch (error) { if (error.co
 if (receipt.fixtureToken !== state.token) throw Error('OWNED_FRANCHISE_NATIVE_COHORT_REQUIRED');
 const save = () => persistPrivate(file, receipt);
 const backup = resolve(dir, 'pre-franchise.private.dump');
-try { await access(backup); } catch (error) {
+try { await access(backup); const bytes=await readFile(backup); if(!receipt.backup?.sha256||createHash('sha256').update(bytes).digest('hex')!==receipt.backup.sha256||bytes.subarray(0,5).toString()!=='PGDMP')throw Error('PRESERVE_AND_REVIEW_INCOMPLETE_BACKUP_RECEIPT'); } catch (error) {
   if (error.code !== 'ENOENT') throw error;
   const stream = createWriteStream(backup, { mode: 0o600, flags: 'wx' });
   const env = { ...process.env, DOCKER_HOST: 'unix:///var/run/docker.sock' };
