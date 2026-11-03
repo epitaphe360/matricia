@@ -182,7 +182,9 @@ select pg_temp.actor275(1);
 insert into p275 values('franchise-demo',public.simulate_franchise_invitation_acceptance((select(v->>'invitation_id')::uuid from p275 where k='franchise'),repeat('7',64),1,(select(v->>'mandate_version_id')::uuid from p275 where k='franchise'),public.franchise_invitation_activation_preview((select(v->>'invitation_id')::uuid from p275 where k='franchise'))->>'mandateHash',true,'credit275-franchise-simulation'));
 select is((select v->>'activationMode'from p275 where k='franchise-demo'),'NON_CONTRACTUAL_DEMO','allocation fixture never claims a legally signed real franchise');
 select pg_temp.actor275(2);
-insert into p275 values('book',public.open_franchise_pnl_book('e2750000-0000-4000-8000-000000000001','b2750000-0000-4000-8000-000000000001','STANDARD','FRANCHISEE','EUR',(select id from public.franchise_finance_rule_versions where franchise_type='STANDARD'and status='ACTIVE'order by version desc limit 1),'credit275-book'));
+insert into p275 values('book',public.open_franchise_pnl_book_for_mandate_v1((select(v->>'franchise_id')::uuid from p275 where k='franchise'),(select(v->>'mandate_version_id')::uuid from p275 where k='franchise'),(select content_hash from public.franchise_mandate_versions where id=(select(v->>'mandate_version_id')::uuid from p275 where k='franchise')),'EUR',(select id from public.franchise_finance_rule_versions where franchise_type='STANDARD'and version=1),'credit275-book'));
+select is((select binding.approved_mandate_version_id from public.franchise_pnl_book_bindings_v1 binding where binding.book_id=(select(v->>'book_id')::uuid from p275 where k='book')),(select(v->>'mandate_version_id')::uuid from p275 where k='franchise'),'the actual STANDARD book is bound to the independently approved mandate, never a caller-selected IT label');
+select ok(exists(select 1 from public.franchise_pnl_book_bindings_v1 binding join public.franchise_activation_evidence evidence on evidence.franchise_id=binding.franchise_id and evidence.approved_mandate_version_id=binding.approved_mandate_version_id join public.franchise_invitations invitation on invitation.id=evidence.invitation_id join public.franchise_mandate_versions active on active.id=evidence.active_mandate_version_id where binding.book_id=(select(v->>'book_id')::uuid from p275 where k='book')and evidence.active_mandate_version_id=(select(v->>'active_mandate_version_id')::uuid from p275 where k='franchise-demo')and invitation.status='ACCEPTED'and invitation.accepted_by=evidence.actor_user_id and invitation.accepted_at<=evidence.recorded_at and active.content_hash=evidence.mandate_hash),'native acceptance and its exact active clone remain the source of the bound book');
 insert into p275 values('benefit',public.create_benefit_version('b2750000-0000-4000-8000-000000000001','CREDIT275_BENEFIT','CONSULTATION','MATRICIA_INTERNAL','Consultation SQL uniquement','استشارة اختبار فقط','Prestation synthétique du contrat SQL','خدمة تجريبية لاختبار SQL',1,1000,0,'EUR','e2750000-0000-4000-8000-000000000001',null,null,'{}','{}','SQL275_CANCELLATION',clock_timestamp()-interval'1 minute','credit275-benefit-create'));
 select pg_temp.actor275(3);
 select public.activate_benefit_version('b2750000-0000-4000-8000-000000000001',(select(v->>'benefit_version_id')::uuid from p275 where k='benefit'),'credit275-benefit-activate');
@@ -297,66 +299,16 @@ select throws_ok($$select public.reconcile_credit_economic_profit_v1((select(v->
 reset role;
 select is((select count(*)from public.credit_economic_cost_attributions_v1),2::bigint,'adverse fact creates no duplicate, reversal or overwrite of cost evidence');
 
--- SEPARATE HISTORICAL INITIAL-STATE TEST FIXTURE, NOT THE CURRENT NATIVE FLOW.
--- The native current flow above is reconciled but its day has not ended.
--- This negative fixture tests rejection of unproved old income/closed books,
--- not PSP capture or a successful profit distribution: one old P&L row per
--- book is seeded below from the exact NET REVENUE of its actual posted TEST
--- journal. Neither cash journal nor its entries are inserted by the fixture.
--- Costs use real public RPCs. New closes and payouts MUST be refused.
--- Two pre-existing closure records are seeded below only to test that negative
--- payout boundary; there is no seeded balance, allocation or payment success.
-insert into public.catalog_libraries(id,code,slug,steward_organization_id,created_by)values
-('e364b000-0000-4000-8000-000000000001','TEST364_HIST_IT','test364-hist-it','b2750000-0000-4000-8000-000000000001','a2750000-0000-4000-8000-000000000002'),
-('e364b000-0000-4000-8000-000000000002','TEST364_HIST_STD','test364-hist-std','b2750000-0000-4000-8000-000000000001','a2750000-0000-4000-8000-000000000002');
-insert into public.financial_accounts(id,organization_id,code,name,account_type,currency)values
-('e364c000-0000-4000-8000-000000000001','b2750000-0000-4000-8000-000000000001','TEST364_HIST_CASH','TEST historical cash reference','ASSET','EUR'),
-('e364c000-0000-4000-8000-000000000002','b2750000-0000-4000-8000-000000000001','TEST364_HIST_NET','TEST historical earned revenue excluding tax','REVENUE','EUR'),
-('e364c000-0000-4000-8000-000000000003','b2750000-0000-4000-8000-000000000001','TEST364_HIST_TAX','TEST historical collected tax excluded from profit','LIABILITY','EUR'),
-('e364c000-0000-4000-8000-000000000004','b2750000-0000-4000-8000-000000000001','TEST364_HIST_DIST','TEST historical distribution debt reference','LIABILITY','EUR');
-create temporary table hist364(kind text primary key,book uuid,income_journal uuid,psp_journal uuid,service_journal uuid,income_snapshot jsonb,closure jsonb,payout_journal uuid,payout jsonb);
-grant select,insert,update on hist364 to authenticated;
-set local role authenticated;select pg_temp.actor275(2);
-insert into hist364(kind,book)select kind,(public.open_franchise_pnl_book(library,'b2750000-0000-4000-8000-000000000001',kind,case kind when'IT'then'HATIM_AHMITECH'else'FRANCHISEE'end,'EUR',(select id from public.franchise_finance_rule_versions r where r.franchise_type=kind and r.version=1),'TEST364-hist-book-'||kind)->>'book_id')::uuid
-from(values('IT','e364b000-0000-4000-8000-000000000001'::uuid),('STANDARD','e364b000-0000-4000-8000-000000000002'::uuid))fixture(kind,library);
-update hist364 set income_journal=public.post_financial_journal('b2750000-0000-4000-8000-000000000001','TEST364-hist-income-'||kind,null,'HISTORICAL_TEST_NET_RECEIPT','EUR','2026-10-15T12:00:00Z','TEST HISTORICAL INITIAL STATE ONLY, not a verified external PSP receipt','[{"account_id":"e364c000-0000-4000-8000-000000000001","direction":"DEBIT","amount_minor":1335},{"account_id":"e364c000-0000-4000-8000-000000000002","direction":"CREDIT","amount_minor":1112},{"account_id":"e364c000-0000-4000-8000-000000000003","direction":"CREDIT","amount_minor":223}]');
-update hist364 set psp_journal=public.post_financial_journal('b2750000-0000-4000-8000-000000000001','TEST364-hist-psp-'||kind,null,'HISTORICAL_TEST_PSP_EXPENSE','EUR','2026-10-15T12:01:00Z','TEST historical expense and separately accounted input tax','[{"account_id":"e364a000-0000-4000-8000-000000000001","direction":"DEBIT","amount_minor":111},{"account_id":"e364a000-0000-4000-8000-000000000003","direction":"DEBIT","amount_minor":22},{"account_id":"e364c000-0000-4000-8000-000000000001","direction":"CREDIT","amount_minor":133}]');
-update hist364 set service_journal=public.post_financial_journal('b2750000-0000-4000-8000-000000000001','TEST364-hist-service-'||kind,null,'HISTORICAL_TEST_FULFILLMENT_EXPENSE','EUR','2026-10-15T12:02:00Z','TEST historical expense and separately accounted input tax','[{"account_id":"e364a000-0000-4000-8000-000000000002","direction":"DEBIT","amount_minor":222},{"account_id":"e364a000-0000-4000-8000-000000000003","direction":"DEBIT","amount_minor":44},{"account_id":"e364c000-0000-4000-8000-000000000001","direction":"CREDIT","amount_minor":266}]');
-select pg_temp.actor275(3);
-select throws_ok($$select public.post_franchise_pnl_entry(book,'REVENUE','COLLECTED_NET_REVENUE',1112,income_journal,'FINANCIAL_JOURNAL',income_journal::text,'2026-10-15','TEST fixture setup must not imply runtime income permission',null,'TEST364-no-runtime-history-'||kind)from hist364 where kind='IT'$$,'55000','FRANCHISE_NATIVE_REVENUE_RECONCILIATION_REQUIRED','historical fixture does not weaken the runtime native-revenue requirement');
-reset role;
--- THE ONLY TWO SEEDED FINANCIAL INITIAL-STATE ROWS: historical P&L recognition,
--- each exact amount derived from its immutable journal's NET REVENUE entries.
-insert into public.franchise_pnl_entries(book_id,effect_type,category,amount_minor,currency,financial_journal_id,source_type,source_id,effective_on,reason,correlation_id,created_by)
-select fixture.book,'REVENUE','COLLECTED_NET_REVENUE',sum(case entry.direction when'CREDIT'then entry.amount_minor else-entry.amount_minor end)::bigint,'EUR',fixture.income_journal,'HISTORICAL_TEST_RECOGNITION',fixture.income_journal::text,'2026-10-15','TEST ONLY seeded historical recognition, not a current native credit capture',extensions.gen_random_uuid(),'a2750000-0000-4000-8000-000000000003'
-from hist364 fixture join public.financial_entries entry on entry.journal_id=fixture.income_journal join public.financial_accounts account on account.id=entry.account_id where account.account_type='REVENUE'group by fixture.book,fixture.income_journal;
-update hist364 fixture set income_snapshot=(select to_jsonb(e)from public.franchise_pnl_entries e where e.book_id=fixture.book and e.effect_type='REVENUE');
+-- Native historical boundary: this mandate was really accepted today. Neither
+-- an earlier proposed start nor a generic journal creates prior acquired rights.
+-- No initial historical income, closure, allocation or balance is injected.
 set local role authenticated;select pg_temp.actor275(3);
-select public.post_franchise_pnl_entry(book,'COST','PAYMENT_FEE',111,psp_journal,'FINANCIAL_JOURNAL',psp_journal::text,'2026-10-15','TEST native independent review of historic actual expense',null,'TEST364-hist-psp-pnl-'||kind)from hist364;
-select public.post_franchise_pnl_entry(book,'COST','PROVIDER_FULFILLMENT_COST',222,service_journal,'FINANCIAL_JOURNAL',service_journal::text,'2026-10-15','TEST native independent review of historic fulfillment expense',null,'TEST364-hist-service-pnl-'||kind)from hist364;
--- A posted generic journal still does not prove a canonical earned receipt.
--- Existing historical income remains visible and immutable, but is never an
--- implicit permission to close a new period or release a new distribution.
-select throws_ok($$select public.close_franchise_profit_period(book,'2026-10-01','2026-10-31',(select id from public.franchise_finance_rule_versions r where r.franchise_type=kind and r.version=1),clock_timestamp(),'TEST unproved historical IT income remains pending','TEST364-hist-close-IT')from hist364 where kind='IT'$$,'55000','FRANCHISE_CANONICAL_REVENUE_RECONCILIATION_REQUIRED','old IT income cannot bypass the new canonical source requirement');
-select throws_ok($$select public.close_franchise_profit_period(book,'2026-10-01','2026-10-31',(select id from public.franchise_finance_rule_versions r where r.franchise_type=kind and r.version=1),clock_timestamp(),'TEST unproved historical standard income remains pending','TEST364-hist-close-STD')from hist364 where kind='STANDARD'$$,'55000','FRANCHISE_CANONICAL_REVENUE_RECONCILIATION_REQUIRED','old standard income cannot bypass the new canonical source requirement');
-select ok((select bool_and(public.get_credit_economic_profit_context_v1(book,'2026-10-01','2026-10-31')->>'ready'='false')from hist364),'both books explicitly report missing canonical source proof');
+select throws_ok($$select public.close_franchise_profit_period((select(v->>'book_id')::uuid from p275 where k='book'),'2026-10-01','2026-10-31',(select id from public.franchise_finance_rule_versions where franchise_type='STANDARD'and version=1),clock_timestamp(),'TEST today accepted mandate cannot authorize an invented October closure','TEST364-no-antedated-mandate-close')$$,'55000','FRANCHISE_HISTORICAL_BOOK_BASIS_RECONCILIATION_REQUIRED','a genuine current activation never substitutes for missing historical source evidence');
 reset role;
-select is((select count(*)from public.franchise_profit_closure_versions where book_id in(select book from hist364)),0::bigint,'denied historical closes created no closure or distribution');
--- TEST INITIAL-STATE ONLY: two older closure records with unproved income, no
--- allocation or balance. The payout guard must reject the stale source before
--- it could look up any distributable balance; no fake balance is provided.
-insert into public.franchise_profit_closure_versions(book_id,period_start,period_end,version,rule_version_id,rule_snapshot,formula_snapshot,entry_cutoff_at,gross_revenue_ex_tax_minor,costs_and_refunds_minor,distributable_profit_minor,content_hash,closed_by)
-select fixture.book,'2026-10-01','2026-10-31',1,r.id,to_jsonb(r)-array['id','approved_by'],r.formula_snapshot,clock_timestamp(),1112,333,779,private.canonical_request_hash(jsonb_build_object('scope','TEST_INITIAL_HISTORICAL_UNPROVED_CLOSURE','book',fixture.book,'initial_revenue',fixture.income_snapshot)),'a2750000-0000-4000-8000-000000000003'
-from hist364 fixture join public.franchise_finance_rule_versions r on r.franchise_type=fixture.kind and r.version=1;
-set local role authenticated;select pg_temp.actor275(2);
-update hist364 set payout_journal=public.post_financial_journal('b2750000-0000-4000-8000-000000000001','TEST364-hist-payout-journal-'||kind,null,'FRANCHISE_DISTRIBUTION_PAYOUT','EUR',clock_timestamp(),'TEST ONLY payout guard reference, no external transfer is performed','[{"account_id":"e364c000-0000-4000-8000-000000000004","direction":"DEBIT","amount_minor":389},{"account_id":"e364c000-0000-4000-8000-000000000001","direction":"CREDIT","amount_minor":389}]');
-select pg_temp.actor275(3);
-select throws_ok($$select public.record_franchise_distribution_payout(book,'HATIM_AHMITECH',389,payout_journal,'TEST364-HIST-PAYOUT-IT',repeat('8',64),'TEST364-hist-payout-IT')from hist364 where kind='IT'$$,'55000','FRANCHISE_CANONICAL_REVENUE_RECONCILIATION_REQUIRED','an old IT closure cannot authorize a new payout on unproved income');
-select throws_ok($$select public.record_franchise_distribution_payout(book,'FRANCHISEE',389,payout_journal,'TEST364-HIST-PAYOUT-STD',repeat('8',64),'TEST364-hist-payout-STD')from hist364 where kind='STANDARD'$$,'55000','FRANCHISE_CANONICAL_REVENUE_RECONCILIATION_REQUIRED','an old standard closure cannot authorize a new payout on unproved income');
-reset role;
-select is((select count(*)from public.franchise_distribution_ledger_entries where book_id in(select book from hist364)),0::bigint,'negative historical fixture never manufactures an accrual, balance or successful payout');
-select ok((select bool_and((select to_jsonb(e)from public.franchise_pnl_entries e where e.book_id=fixture.book and e.effect_type='REVENUE')=fixture.income_snapshot)from hist364 fixture),'source denials never rewrite the historical income');
-select ok(not exists(select 1 from public.financial_entries entry join public.financial_journals journal on journal.id=entry.journal_id where journal.organization_id='b2750000-0000-4000-8000-000000000001'group by entry.journal_id having sum(case entry.direction when'DEBIT'then entry.amount_minor else-entry.amount_minor end)<>0),'all native current and historical test journals remain exactly balanced');
+select is((select count(*)from public.franchise_profit_closure_versions where book_id=(select(v->>'book_id')::uuid from p275 where k='book')),0::bigint,'neither an unelapsed current period nor an uncovered historical period creates a closure');
+select is((select count(*)from public.franchise_distribution_ledger_entries where book_id=(select(v->>'book_id')::uuid from p275 where k='book')),0::bigint,'the native fixture invents no accrued profit, balance or payout');
+select ok(not exists(select 1 from public.franchise_pnl_entries where book_id=(select(v->>'book_id')::uuid from p275 where k='book')and source_type<>'CREDIT_ECONOMIC_ALLOCATION_V1'and effect_type='REVENUE'),'all recognized income still has the canonical native allocation source');
+select ok(not exists(select 1 from public.financial_entries entry join public.financial_journals journal on journal.id=entry.journal_id where journal.organization_id='b2750000-0000-4000-8000-000000000001'group by entry.journal_id having sum(case entry.direction when'DEBIT'then entry.amount_minor else-entry.amount_minor end)<>0),'all native TEST journals remain exactly balanced');
 set constraints all immediate;
 select*from finish();
 rollback;
