@@ -74,7 +74,7 @@ receipt.mandates ??= [];
 const label = process.argv.includes('--second-mandate') ? 'SECOND' : 'FIRST';
 let mandate = receipt.mandates.find(value => value.label === label);
 if (!mandate) {
-  mandate = { label, privateToken: randomBytes(36).toString('base64url'), proposalKey: randomUUID(), approvalKey: randomUUID(), activationKey: randomUUID(), correlation: randomUUID(), effectiveFrom: new Date(Date.now()-3600000).toISOString(), effectiveUntil:new Date(Date.now()+86400000*365).toISOString() }; receipt.mandates.push(mandate); await save();
+  mandate = { label, proposalCandidate:pin.commit, privateToken: randomBytes(36).toString('base64url'), proposalKey: randomUUID(), approvalKey: randomUUID(), activationKey: randomUUID(), correlation: randomUUID(), effectiveFrom: new Date(Date.now()-3600000).toISOString(), effectiveUntil:new Date(Date.now()+86400000*365).toISOString() }; receipt.mandates.push(mandate); await save();
 }
 if (!mandate.proposal) {
   const proposed = await author.client.rpc('propose_franchise_governance', { p_library_id: receipt.library.id, p_operator_organization_id: owner.organizationId, p_operator_code:'FRANCHISEE', p_territory_code:label==='FIRST'?'TESTF_A':'TESTF_B', p_territory_name_fr:`Territoire TEST ${label}`, p_territory_name_ar:label==='FIRST'?'نطاق اختبار أول':'نطاق اختبار ثان', p_territory_scope:{regions:['Casablanca-Settat'],origin:'OWNED_NON_CONTRACTUAL_TEST'}, p_effective_from:mandate.effectiveFrom,p_effective_until:mandate.effectiveUntil,p_entry_fee_minor:100000,p_entry_fee_mode:'UPFRONT',p_entry_fee_term_months:0,p_rights:{scope:'TEST_ONLY'},p_obligations:{review:'INDEPENDENT'},p_contract_snapshot:{classification:'NON_CONTRACTUAL_DEMO',test:true},p_invited_email:owner.email,p_invitation_token_hash:createHash('sha256').update(mandate.privateToken).digest('hex'),p_invitation_locale:'fr-MA',p_invitation_terms:{classification:'NON_CONTRACTUAL_DEMO'},p_change_reason:'Recette locale TEST explicitement non contractuelle',p_idempotency_key:mandate.proposalKey,p_correlation_id:mandate.correlation });
@@ -86,6 +86,6 @@ if (!mandate.approved) {
   if (refused.error?.code !== '42501') throw Error('INDEPENDENT_FRANCHISE_APPROVAL_REQUIRED');
   const approved = await reviewer.client.rpc('decide_franchise_governance',{p_approval_request_id:mandate.proposal.approval_request_id,p_decision:'APPROVE',p_reason:'Approbation indépendante de la recette locale TEST',p_expected_row_version:1,p_idempotency_key:mandate.approvalKey});
   if (approved.error) throw Error('NATIVE_FRANCHISE_APPROVAL_FAILED:' + approved.error.code);
-  mandate.approved = approved.data; mandate.selfApprovalDenied = true; await save();
+  mandate.approved = approved.data; mandate.approvalCandidate=pin.commit; mandate.selfApprovalDenied = true; await save();
 }
 console.log(JSON.stringify({ status:'NATIVE_FRANCHISE_PROPOSAL_AND_INDEPENDENT_APPROVAL_READY',source:pin.commit,label,selfApprovalDenied:mandate.selfApprovalDenied,activationPending:true,legalSignatureCertified:false }));

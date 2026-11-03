@@ -19,3 +19,17 @@ Vérification des gardes des outils : `node --test tests/e2e/helpers/franchise-f
 ## Recette finale
 
 La recette du candidat intégré sera ajoutée avec son commit, son arbre applicatif et les migrations exactes. Ce journal de préparation ne certifie ni les intégrations hébergées, ni une signature juridique, ni le parcours complet.
+
+## Candidat intermédiaire optimisé `79a97ad`
+
+Le build complet, avec TypeScript actif, passe sur `79a97ad97220c5e4b61a9b8a3d889b1043ea6dba` (arbre applicatif `8fcc61239df657e3e16110acc09625418e7ed888`). Les 507 migrations historiques ont conservé leurs empreintes ; les 26 nouvelles migrations appliquées par l’intégration donnent 533 migrations. L’outil de recette a adopté le reçu vérifié sans rejouer le DDL. Ce contrôle n’est pas un rejeu vierge ni une recette hébergée.
+
+L’organisation de test a été activée par une demande administrative sensible, deux approbateurs indépendants du demandeur et l’exécution native de la décision. L’auto-approbation est refusée. Cette opération ne certifie pas les identifiants légaux et ne signe aucun contrat.
+
+La première activation de mandat a ensuite réussi dans la vraie interface, en mode **NON_CONTRACTUAL_DEMO** explicitement confirmé. Une tentative contractuelle AAL2 a été refusée pour absence de mandat signé. Le retour au workspace présente cependant un refus réel : le rôle Owner et le mandat Franchisé actifs ne disposent pas encore de la délégation `catalog_library_mandates` pour leur organisation. `franchise_catalog_scope` vaut vrai, mais le reader catalogue exige aussi `CATALOG_VIEW_DRAFT` et renvoie `42501`. Aucune ligne de permission n’a été insérée manuellement pour masquer cette précondition. Le résumé d’activation reste donc partiel, et la matrice principale attend le raccordement gouverné du catalogue.
+
+Les contrôles indépendants de cette précondition passent : **huit pages globales**, Notifications, Organisation, Sécurité et Sessions, en FR/AR à 390 px ; navigation de retour Franchisé, `lang/dir` corrects, aucun débordement et aucune erreur JavaScript. Ces huit contrôles concernent rôle, navigation et disposition, sans mutation des facteurs ou des sessions.
+
+Preuves : [build et empreinte du journal](evidence/browser/core-build/build.json), [schéma adopté](evidence/browser/core-build/schema-adoption.json), [activation partielle](evidence/browser/activation-core/first-summary.json), [cause de refus catalogue reproduite](evidence/browser/catalog-scope-reproduction.json), [huit pages globales](evidence/browser/global-core/summary.json).
+
+Les outils disposent désormais de **quatre tests de garde PASS**, dont un refus d’arrêter le PostgREST possédé sans coordination supplémentaire explicite. Aucun arrêt de service de recette n’a encore été exécuté à cette étape.
