@@ -98,6 +98,12 @@ begin
   or(select count(*)from public.financial_journals where organization_id='${ORG}'and journal_type='CREDIT_PACK_PAYMENT')<>1
   or(select count(*)from public.credit_economic_funding_sources_v1 where organization_id='${ORG}'and financial_journal_id=e.financial_journal_id)<>1
   or funding.id is null or funding.source_id is distinct from'DEMO:DEMO:${CAPTURE}'or funding.gross_minor<>10001 or funding.currency<>'EUR'or funding.source_hash is distinct from private.canonical_request_hash(funding.source_snapshot)
+  or funding.source_kind is distinct from'CREDIT_PACK'or funding.source_version_id is distinct from e.pack_version_id
+  or not exists(select 1 from public.financial_entries line join public.financial_accounts account on account.id=line.account_id
+   where line.journal_id=e.financial_journal_id and line.organization_id='${ORG}'and account.organization_id='${ORG}'and line.currency='EUR'and account.currency='EUR'
+   group by line.journal_id having count(*)=2
+    and sum(case when account.account_type='ASSET'and line.direction='DEBIT'then line.amount_minor else 0 end)=10001
+    and sum(case when account.account_type='LIABILITY'and line.direction='CREDIT'then line.amount_minor else 0 end)=10001)
   or funding.source_snapshot#>>'{first_evidence,payment_event_id}'is distinct from e.id::text
   or private.canonical_request_hash((funding.source_snapshot->'first_evidence')-'payment_event_id')is distinct from e.source_hash
   or not exists(select 1 from public.credit_economic_funding_evidence_v1 proof where proof.funding_source_id=funding.id and proof.evidence_kind='NATIVE_CAPTURE'and proof.evidence_snapshot=funding.source_snapshot->'first_evidence'and proof.evidence_hash=private.canonical_request_hash(proof.evidence_snapshot))
@@ -106,7 +112,7 @@ begin
 end $seed$;
 -- Only after every assertion above is satisfied can this transaction commit.
 commit;
-select jsonb_build_object('scope','${SCOPE}','cohort','${COHORT}','organizationId',e.organization_id,'fundingSourceId',f.id,'fundingSourceHash',f.source_hash,'paymentEventId',e.id,'financialJournalId',e.financial_journal_id,'amountMinor',e.amount_minor::text,'currency',e.currency,'nativeCaptureVerified',true,'externalPspCertified',false,'sqlFixtureIdentitiesOnly',true,'gotrueOrTotpIdentityCertified',false,'clientComplianceLegallyVerified',false,'financeProofOrScanSeeded',false)
+select jsonb_build_object('scope','${SCOPE}','cohort','${COHORT}','organizationId',e.organization_id,'fundingSourceId',f.id,'fundingSourceHash',f.source_hash,'paymentEventId',e.id,'financialJournalId',e.financial_journal_id,'amountMinor',e.amount_minor::text,'currency',e.currency,'accountingBasis','BALANCED_CASH_SUSPENSE_GROSS_PENDING_FISCAL_REVIEW','netRevenueCertified',false,'nativeCaptureVerified',true,'externalPspCertified',false,'sqlFixtureIdentitiesOnly',true,'gotrueOrTotpIdentityCertified',false,'clientComplianceLegallyVerified',false,'financeProofOrScanSeeded',false)
 from public.credit_pack_payment_events_v1 e join public.credit_economic_funding_sources_v1 f on f.financial_journal_id=e.financial_journal_id and f.organization_id=e.organization_id and f.source_kind='CREDIT_PACK'and f.source_id='DEMO:DEMO:${CAPTURE}'
 where e.organization_id='${ORG}'and e.provider_event_id='${EVENT}';`;
 }
@@ -116,7 +122,7 @@ export async function seedFinalFinanceSource() {
   const state = await fixtureState(), pin = await sourceCandidate();
   if (state.token !== COHORT || state.database !== 'matricia_provider_browser_db_b9bd23e482324fbd'
       || state.label !== `matricia.provider-browser-test=${COHORT}` || pin.appTree !== APP_TREE
-      || ![555,556].includes(state.candidate.migrations.length) || ![555,556].includes(pin.migrations.length)
+      || state.candidate.migrations.length !== 558 || pin.migrations.length !== 558
       || JSON.stringify(state.candidate.migrations) !== JSON.stringify(pin.migrations)) throw Error('EXACT_FROZEN_B9BD_FINANCE_COHORT_REQUIRED');
   const raw = sql(state, financeSourceSql());
   const lines = raw.trim().split('\n').filter(line => line.startsWith('{'));
