@@ -94,3 +94,17 @@ it("needs verified independent control plus both finance pages and Outbox for he
   expect(workerHeartbeatHealthy(state, { ...billing, closing: { ok: false, latencyMs: 1 } }, control)).toBe(false);
   expect(workerHeartbeatHealthy({ ...state, outbox: { ok: false, latencyMs: 1 } }, billing, control)).toBe(false);
 });
+
+
+it("does not certify readiness or heartbeat for absent, busy or failed franchise followups", () => {
+  const healthy = { antivirus: { ok: true, latencyMs: 2 }, outbox: { ok: true, latencyMs: 3 } };
+  const billing = { closing: { ok: true, latencyMs: 1 }, reminders: { ok: true, latencyMs: 1 } };
+  const control = { control: { ok: true, latencyMs: 1 } };
+  for (const followups of [null, { ok: false, latencyMs: 1, processed: 0, failed: 0, code: "FRANCHISE_FOLLOWUP_RUNNING" as const }, { ok: false, latencyMs: 1, processed: 1, failed: 1, code: "FRANCHISE_FOLLOWUP_PROCESSING_FAILED" as const }]) {
+    expect(buildWorkerReadiness(healthy, billing, control, { followups }).status).not.toBe("ready");
+    expect(workerHeartbeatHealthy(healthy, billing, control, { followups })).toBe(false);
+  }
+  const followup = { followups: { ok: true, latencyMs: 1, processed: 0, failed: 0 } };
+  expect(buildWorkerReadiness(healthy, billing, control, followup).status).toBe("ready");
+  expect(workerHeartbeatHealthy(healthy, billing, control, followup)).toBe(true);
+});

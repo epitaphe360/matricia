@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
+  financeScan: vi.fn(),
   deliver: vi.fn(),
   issued: vi.fn(),
   social: vi.fn(),
@@ -10,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   networkInvitation: vi.fn(),
 }));
 
+vi.mock("@/modules/shared/lib/finance-cost-proofs/scan-consumer", () => ({ scanOneFinanceCostDocument: mocks.financeScan }));
 vi.mock("@/modules/franchise/data/network/invitation-consumer", () => ({ consumeFranchiseNetworkInvitation: mocks.networkInvitation }));
 vi.mock("@/modules/shared/lib/payment-dispatch/consumer",()=>({consumeVerifiedPaymentInbox:mocks.paymentDispatch}));
 vi.mock("@/modules/client/data/billing/issued-consumer", () => ({ consumeClientCommercialDocumentIssued: mocks.clientIssued }));
@@ -322,3 +324,30 @@ it("acknowledges a verified restriction skip without claiming a marketing conver
 it.each(["DsrErasureScopeConfirmedV1","DsrErasureDraftedV1","DsrErasureSourceConfiguredV1","DsrErasurePlanSubmittedV1","DsrErasurePlanReviewedV1","DsrErasureSourceExecutedV1","DsrErasureReportPreparedV1","DsrErasureReportReviewedV1","DsrErasureReportAcknowledgedV1","DsrErasurePlanRevokedV1"])("observes %s without claiming an additional erasure or logging source records",async eventType=>{process.env.INTERNAL_WEBHOOK_SECRET=secret;vi.clearAllMocks();const write=vi.spyOn(process.stdout,"write").mockImplementation(()=>true);try{const response=await POST(request({...envelope,eventType,payload:{private_source:"NEVER-LOG-ERASED-VALUE",subject_user_id:"NEVER-LOG-ERASURE-SUBJECT",all_data_erased:false}}));expect(response.status).toBe(202);expect(response.headers.get("x-matricia-outbox-consumer")).toBe("TERMINAL_OBSERVABILITY");expect(mocks.rpc).not.toHaveBeenCalled();expect(mocks.deliver).not.toHaveBeenCalled();expect(mocks.issued).not.toHaveBeenCalled();expect(mocks.clientIssued).not.toHaveBeenCalled();expect(mocks.paymentDispatch).not.toHaveBeenCalled();const record=JSON.parse(String(write.mock.calls[0][0]));expect(record.data).toMatchObject({factClass:"PERSISTED_DSR_ERASURE_WORKFLOW"});expect(JSON.stringify(record)).not.toMatch(/NEVER-LOG|all_data_erased/);}finally{write.mockRestore();}});
 it("tracks paid subscription credit jobs only after canonical SQL attestation",async()=>{process.env.INTERNAL_WEBHOOK_SECRET=secret;vi.clearAllMocks();mocks.rpc.mockResolvedValueOnce({data:{outcome:"SUBSCRIPTION_CREDIT_JOBS_TRACKED"},error:null});const response=await POST(request({...envelope,eventType:"SubscriptionPaidV1",payload:{}}));expect(response.status).toBe(202);expect(response.headers.get("x-matricia-outbox-consumer")).toBe("SUBSCRIPTION_CREDIT_FULFILLMENT");expect(mocks.rpc).toHaveBeenCalledWith("track_subscription_paid_credit_jobs_v1",{p_outbox_id:envelope.id,p_subscription_id:envelope.aggregateId});expect(mocks.deliver).not.toHaveBeenCalled();});
 it("does not observe a paid subscription when canonical job tracking failed",async()=>{process.env.INTERNAL_WEBHOOK_SECRET=secret;vi.clearAllMocks();mocks.rpc.mockResolvedValueOnce({data:null,error:{code:"55000"}});const response=await POST(request({...envelope,eventType:"SubscriptionPaidV1",payload:{}}));expect(response.status).toBe(503);expect(response.headers.get("x-matricia-outbox-consumer")).toBeNull();});
+
+
+describe("finance proof authoritative scan dispatch", () => {
+  beforeEach(() => { process.env.INTERNAL_WEBHOOK_SECRET = secret; mocks.financeScan.mockReset(); });
+  const event = { ...envelope, eventType: "FinanceCostDocumentUploadedV1", payload: { upload_id: envelope.aggregateId } };
+  it.each(["CLEAN", "REJECTED"])("acknowledges only a persisted %s verdict", async scanStatus => {
+    mocks.financeScan.mockResolvedValue({ ok: true, code: "FINANCE_COST_DOCUMENT_SCAN_RECORDED", scanStatus });
+    const response = await POST(request(event));
+    expect(response.status).toBe(202);
+    expect(response.headers.get("x-matricia-outbox-consumer")).toBe("FINANCE_COST_SCAN");
+    expect(mocks.financeScan).toHaveBeenCalledWith(expect.objectContaining({ rpc: mocks.rpc }), envelope.aggregateId);
+  });
+  it.each([
+    { ok: false, code: "FINANCE_COST_SCAN_UNAVAILABLE", scanStatus: "ERROR" },
+    { ok: false, code: "FINANCE_COST_SCAN_UNAVAILABLE" },
+    { ok: true, code: "NO_JOB" },
+  ])("retains failed, leased or deferred uploads for retry: %j", async result => {
+    mocks.financeScan.mockResolvedValue(result);
+    const response = await POST(request(event));
+    expect(response.status).toBe(503);
+    expect(response.headers.get("x-matricia-outbox-consumer")).toBeNull();
+  });
+  it("refuses an upload different from the immutable aggregate", async () => {
+    const response = await POST(request({ ...event, aggregateId: "11111111-1111-4111-8111-111111111111" }));
+    expect(response.status).toBe(400); expect(mocks.financeScan).not.toHaveBeenCalled();
+  });
+});

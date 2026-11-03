@@ -13,6 +13,7 @@ export type WorkerDispatcherDependencies = Readonly<{
 }>;
 
 function expectedConsumer(eventType: string): string {
+  if (eventType === "FinanceCostDocumentUploadedV1") return "FINANCE_COST_SCAN";
   if (eventType === "SubscriptionPaidV1") return "SUBSCRIPTION_CREDIT_FULFILLMENT";
   if (eventType === "VerifiedPaymentDispatchRequestedV1") return "VERIFIED_PAYMENT_DISPATCH";
   if (eventType === "ServiceRequestStageChangedV1") return "SERVICE_REQUEST_PROGRESSION";

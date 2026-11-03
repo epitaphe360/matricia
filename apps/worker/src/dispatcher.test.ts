@@ -117,3 +117,13 @@ it.each(["PlatformAccountChangeRequestedV1","PlatformAccountAccessChangedV1","Pl
  const fetcher=vi.fn().mockResolvedValueOnce(new Response(null,{status:202,headers:{"x-matricia-outbox-consumer":"ADMIN_OPERATIONAL_ACTION"}})).mockResolvedValueOnce(new Response(null,{status:202,headers:{"x-matricia-outbox-consumer":"TERMINAL_OBSERVABILITY"}}));const dispatcher=createWorkerDispatcher({documentScanConsumer:{consume:vi.fn().mockResolvedValue(null)},dispatchUrl:new URL("https://internal.example.test/events"),webhookSecret:"test-secret",fetcher});
  const event={...envelope,eventType,aggregateId:envelope.correlationId,payload:{request_id:envelope.correlationId}};await expect(dispatcher.dispatch(event)).rejects.toThrow("OUTBOX_CONSUMER_ACK_INVALID");await expect(dispatcher.dispatch(event)).resolves.toBeUndefined();expect(JSON.parse(String(fetcher.mock.calls[1]?.[1]?.body))).toMatchObject({eventType,aggregateId:envelope.correlationId,correlationId:envelope.correlationId});
 });
+
+
+it("requires finance scanner completion instead of terminal acknowledgement", async () => {
+  const fetcher = vi.fn().mockResolvedValue(new Response(null, { status: 202, headers: { "x-matricia-outbox-consumer": "TERMINAL_OBSERVABILITY" } }));
+  const dispatcher = createWorkerDispatcher({ documentScanConsumer: { consume: vi.fn().mockResolvedValue(null) }, dispatchUrl: new URL("https://internal.example.test/events"), webhookSecret: "test-only", fetcher });
+  const event = { ...envelope, eventType: "FinanceCostDocumentUploadedV1" };
+  await expect(dispatcher.dispatch(event)).rejects.toThrow("OUTBOX_CONSUMER_ACK_INVALID");
+  fetcher.mockResolvedValue(new Response(null, { status: 202, headers: { "x-matricia-outbox-consumer": "FINANCE_COST_SCAN" } }));
+  await expect(dispatcher.dispatch(event)).resolves.toBeUndefined();
+});
