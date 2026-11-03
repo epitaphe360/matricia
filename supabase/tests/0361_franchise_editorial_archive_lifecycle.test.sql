@@ -53,7 +53,10 @@ select is((select label_fr from public.question_versions where id=(select(v->>'v
 insert into editorial_observed values('duplicate',public.duplicate_catalog_question((select(v->>'question_id')::uuid from editorial_observed where k='create'),(select(v->>'version_id')::uuid from editorial_observed where k='save'),'EDITORIAL_COPY','editorial.copy','Duplication native indépendante','editorial361-duplicate'));
 select isnt((select v->>'question_id'from editorial_observed where k='duplicate'),(select v->>'question_id'from editorial_observed where k='create'),'duplicate has its own identity');
 select is((select(v->>'identity_row_version')::integer from editorial_observed where k='duplicate'),1,'duplicate starts at its first revision');
+-- Outbox is intentionally private to application roles; inspect the test receipt as fixture owner.
+reset role;
 select is((select count(*)::integer from public.event_outbox where event_type in('CatalogQuestionCreatedV1','CatalogQuestionArchivedV1','CatalogQuestionRestoredV1','CatalogQuestionDraftSavedV1','CatalogQuestionDuplicatedV1')and organization_id='b3610000-0000-4000-8000-000000000001'),5,'each native mutation emits one event and replay emits none');
+set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"a3610000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);
 select throws_ok($$select public.franchise_catalog_page('d3610000-0000-4000-8000-000000000001','QUESTION')$$,'42501','FRANCHISE_CATALOG_SCOPE_DENIED','another mandate cannot read the edited catalogue');
 select throws_ok(format($q$select public.duplicate_catalog_question(%L,%L,'FOREIGN_COPY','foreign.copy','Attempt across catalogue scope','editorial361-foreign')$q$,(select v->>'question_id'from editorial_observed where k='create'),(select v->>'version_id'from editorial_observed where k='save')),'42501','CATALOG_SCOPE_DENIED','another mandate cannot duplicate a foreign question');
