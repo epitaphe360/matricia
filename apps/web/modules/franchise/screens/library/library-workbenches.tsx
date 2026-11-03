@@ -62,7 +62,7 @@ export function FranchiseServicesWorkbench({
         <ToolLink href={selected ? `/${locale}/franchise/services/${selected.id}/validation${query}` : `/${locale}/franchise/validations${query}`} label={c.submitValidation} />
       </Toolbar>
       <section className="franchise-workbench franchise-workbench-services">
-        <ServicesCatalogPanel serverPage={workspace.serverPage} locale={locale} workspaceName={workspace.mandate.libraryName} categories={workspace.categories} services={workspace.services} selectedId={selected?.id ?? null} libraryId={workspace.mandate.libraryId} organizationId={organizationId} commandIdentity={commandIdentity} />
+        <ServicesCatalogPanel serverPage={workspace.serverPage} locale={locale} workspaceName={workspace.mandate.libraryName} categories={workspace.categories} services={workspace.services} selectedId={selected?.id ?? null} libraryId={workspace.mandate.libraryId} franchiseId={workspace.mandate.franchiseId} organizationId={organizationId} commandIdentity={commandIdentity} />
         <aside className="client-card franchise-service-drawer">
           {createMode || !selected ? (
             <>

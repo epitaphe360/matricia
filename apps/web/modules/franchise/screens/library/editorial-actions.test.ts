@@ -9,13 +9,13 @@ import { saveFranchiseQuestion, duplicateFranchiseQuestion } from "./question-ed
 import { editorialFailureMessage } from "./command-errors";
 const id = "11111111-1111-4111-8111-111111111111", a = "22222222-2222-4222-8222-222222222222", b = "33333333-3333-4333-8333-333333333333";
 function form(data: Record<string,string>) { const form = new FormData(); Object.entries(data).forEach(([key,value]) => form.set(key,value)); return form; }
-const common = { locale: "fr", organizationId: id, libraryId: id, versionId: id, idempotencyKey: id };
+const common = { locale: "fr", organizationId: id, franchiseId: id, libraryId: id, versionId: id, idempotencyKey: id };
 const composition = () => form({ ...common, expectedRowVersion: "1", sections: JSON.stringify([{ key: "GENERAL", labelFr: "Général", labelAr: "عام" }]), questions: "[]", rules: "[]" });
 const rule = (extra: Record<string,unknown> = {}) => form({ ...common, ruleId: "", versionId: "", ruleKey: "REAL_RULE", identityRowVersion: "1", versionRowVersion: "1", changeReason: "Révision de test", payload: JSON.stringify({ condition_ast: { operator: "EQ", question_version_id: a, value: true }, actions: [{ type: "HIDE", target: b }], dependency_graph: { [b]: [a] }, priority: 1, sensitive: false, ...extra }) });
 const question = () => form({ ...common, franchiseId: id, questionId: id, scope: "LIBRARY", identityRowVersion: "1", versionRowVersion: "1", reason: "Révision de test", payload: "{}", operation: "SAVE" });
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.load.mockResolvedValue({ status: "success", workspace: { mandate: { libraryId: id }, questionnaires: [{ draftVersionId: id }], rules: [] } });
+  mocks.load.mockResolvedValue({ status: "success", workspace: { mandate: { libraryId: id, franchiseId: id }, questionnaires: [{ draftVersionId: id }], rules: [] } });
   mocks.rpc.mockResolvedValue({ data: { rule_id: id, version_id: id, identity_row_version: 2, version_row_version: 1 }, error: null });
   const query = { select: vi.fn(), eq: vi.fn(), in: vi.fn(), then: (resolve: (r:unknown)=>void) => Promise.resolve({data:[{id:a},{id:b}],error:null}).then(resolve) };
   query.select.mockReturnValue(query);query.eq.mockReturnValue(query);query.in.mockImplementation((...args)=>{mocks.query(...args);return query;});
@@ -42,6 +42,14 @@ describe("franchise editorial commands keep incidents distinct from authorizatio
     mocks.rpc.mockResolvedValueOnce({data:null,error:{code}});
     expect(await saveFranchiseQuestion({status:"idle"},question())).toEqual({status:"error",reason});
     expect(mocks.rpc).toHaveBeenCalledTimes(1);
+  });
+  it("preserves the explicit selected mandate in composition and rule commands",async()=>{
+    mocks.rpc.mockResolvedValueOnce({data:{row_version:2},error:null});
+    expect(await saveFranchiseCompositionAction({status:"idle"},composition())).toEqual({status:"success",rowVersion:2});
+    expect(mocks.load).toHaveBeenCalledWith(expect.objectContaining({franchiseId:id,libraryId:id}));
+    mocks.load.mockClear();
+    await saveFranchiseRuleAction({status:"idle"},rule());
+    expect(mocks.load).toHaveBeenCalledWith(expect.objectContaining({franchiseId:id,libraryId:id}));
   });
   it("queries dependency and action-only questions under the selected library before saving", async () => {
     expect(await saveFranchiseRuleAction({status:"idle"},rule())).toMatchObject({status:"success",ruleId:id});

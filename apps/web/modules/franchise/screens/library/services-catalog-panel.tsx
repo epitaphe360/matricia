@@ -22,6 +22,7 @@ export function ServicesCatalogPanel({
   services,
   selectedId,
   libraryId,
+  franchiseId,
   organizationId,
   commandIdentity,
   serverPage,
@@ -33,6 +34,7 @@ export function ServicesCatalogPanel({
   services: FranchiseCatalogRow[];
   selectedId: string | null;
   libraryId: string;
+  franchiseId?: string;
   organizationId: string | null;
   commandIdentity: { idempotencyKey: string; correlationId: string };
 }) {
@@ -74,11 +76,11 @@ export function ServicesCatalogPanel({
         )}
         <details className="franchise-builder" open={categories.length === 0}>
           <summary>{c.createCategory}</summary>
-          <FranchiseCategoryCreateForm locale={locale} libraryId={libraryId} organizationId={organizationId} commandIdentity={commandIdentity} />
+          <FranchiseCategoryCreateForm locale={locale} libraryId={libraryId} franchiseId={franchiseId} organizationId={organizationId} commandIdentity={commandIdentity} />
         </details>
         <details className="franchise-builder">
           <summary>{c.createSubcategory}</summary>
-          <FranchiseSubcategoryCreateForm locale={locale} libraryId={libraryId} organizationId={organizationId} commandIdentity={commandIdentity} categories={categories} />
+          <FranchiseSubcategoryCreateForm locale={locale} libraryId={libraryId} franchiseId={franchiseId} organizationId={organizationId} commandIdentity={commandIdentity} categories={categories} />
         </details>
       </article>
       <article className="client-card">

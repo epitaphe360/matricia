@@ -167,7 +167,9 @@ async function loadFranchiseLibraryWorkspaceUnchecked(input: { locale: "fr" | "a
     .flatMap((role) => role.organization_member_franchise_assignments?.length?role.organization_member_franchise_assignments.filter((a)=>a.revoked_at===null).map((a)=>({organizationId:member.organization_id,franchiseId:a.franchise_id})):[{ organizationId: member.organization_id, franchiseId: role.franchise_id }]));
   const allowed = franchises.data.filter((item) => roles.some((role) => role.organizationId === item.operator_organization_id && (role.franchiseId === item.id || (role.franchiseId === null && franchises.data.filter((f)=>f.operator_organization_id===item.operator_organization_id).length===1))));
   if (!allowed.length) return { status: "error", reason: "NO_MANDATE" };
-  const selected = allowed.find((item)=>(!input.organizationId||item.operator_organization_id===input.organizationId)&&(!input.franchiseId||item.id===input.franchiseId)&&(!input.libraryId||item.library_id===input.libraryId));
+  const candidates = allowed.filter((item)=>(!input.organizationId||item.operator_organization_id===input.organizationId)&&(!input.franchiseId||item.id===input.franchiseId)&&(!input.libraryId||item.library_id===input.libraryId));
+  if (candidates.length > 1 && !input.franchiseId) return { status: "error", reason: "MANDATE_REQUIRED", availableMandates: candidates.map(item => ({id:item.id,organizationId:item.operator_organization_id,libraryId:item.library_id,label:item.operator_code})) };
+  const selected = candidates[0];
   if (!selected) return { status: "error", reason: input.organizationId || input.franchiseId || input.libraryId ? "FORBIDDEN" : "NO_MANDATE" };
   const libraryId = selected.library_id;
   const pageResponse=await client.rpc("franchise_catalog_page",catalogPageArguments(selected.id,input.catalog));

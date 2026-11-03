@@ -1,8 +1,9 @@
 import type { FranchiseLibraryLoadResult } from "@/modules/franchise/data/library/workspace-model";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
 
-export type EditorialFailureReason = "VALIDATION" | "UNAUTHENTICATED" | "FORBIDDEN" | "UNAVAILABLE" | "CONFLICT" | "LOCKED";
+export type EditorialFailureReason = "VALIDATION" | "UNAUTHENTICATED" | "FORBIDDEN" | "UNAVAILABLE" | "CONFLICT" | "LOCKED" | "MANDATE_REQUIRED";
 export function editorialWorkspaceFailure(reason: Extract<FranchiseLibraryLoadResult, {status:"error"}>["reason"]): EditorialFailureReason {
+  if (reason === "MANDATE_REQUIRED") return "MANDATE_REQUIRED";
   if (reason === "UNAUTHENTICATED") return "UNAUTHENTICATED";
   return reason === "FORBIDDEN" || reason === "NO_MANDATE" ? "FORBIDDEN" : "UNAVAILABLE";
 }
@@ -16,6 +17,7 @@ export function editorialRpcFailure(error: {code?:string}): EditorialFailureReas
 export function editorialFailureMessage(reason: EditorialFailureReason, locale: Locale): string {
   const messages = {
     fr: {
+      MANDATE_REQUIRED: "Choisissez votre mandat dans l’espace Franchisé avant de réessayer. Vos modifications restent ici.",
       VALIDATION: "Vérifiez les champs, conditions et références de cette version. Vos modifications sont conservées.",
       UNAUTHENTICATED: "Votre session doit être renouvelée. Reconnectez-vous avant de réessayer ; vos modifications restent ici.",
       FORBIDDEN: "Cette action n’est pas autorisée pour votre rôle ou votre mandat. Vérifiez le périmètre avec votre responsable.",
@@ -24,6 +26,7 @@ export function editorialFailureMessage(reason: EditorialFailureReason, locale: 
       LOCKED: "Cette version est figée ou son état ne permet pas cette action. Vérifiez son parcours de validation.",
     },
     ar: {
+      MANDATE_REQUIRED: "اختاروا تفويضكم في فضاء الامتياز قبل إعادة المحاولة. بقيت تعديلاتكم هنا.",
       VALIDATION: "راجعوا الحقول والشروط والمراجع في هذا الإصدار. تم الاحتفاظ بتعديلاتكم.",
       UNAUTHENTICATED: "يجب تجديد الجلسة. سجلوا الدخول قبل إعادة المحاولة؛ بقيت تعديلاتكم هنا.",
       FORBIDDEN: "لا يسمح دوركم أو تفويضكم بهذا الإجراء. راجعوا النطاق مع المسؤول.",

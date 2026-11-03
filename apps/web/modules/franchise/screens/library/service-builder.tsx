@@ -1,4 +1,5 @@
 "use client";
+import { editorialFailureMessage } from "./command-errors";
 
 import { useActionState, useId,useRef,useState,type ChangeEvent } from "react";
 import{useDraftAutosave,DraftAutosaveControl}from"./use-draft-autosave";
@@ -51,7 +52,7 @@ export function FranchiseServiceDraftForm({
   const prefix = useId();
   const subcategories = workspace.categories.flatMap((category) => category.children.map((child) => ({ ...child, category: category.title })));
   const error = state.status === "error"
-    ? state.reason === "VALIDATION" ? (locale === "ar" ? "تحققوا من الحقول الإلزامية بالفرنسية والعربية." : "Complétez les champs obligatoires en FR et AR.")
+    ? state.reason === "MANDATE_REQUIRED" || state.reason === "UNAUTHENTICATED" ? editorialFailureMessage(state.reason,locale) : state.reason === "VALIDATION" ? (locale === "ar" ? "تحققوا من الحقول الإلزامية بالفرنسية والعربية." : "Complétez les champs obligatoires en FR et AR.")
       : state.reason === "FORBIDDEN" ? c.forbidden
         : c.unavailable
     : null;
@@ -60,6 +61,7 @@ export function FranchiseServiceDraftForm({
     <form action={action} className="franchise-props-form" aria-describedby={`${prefix}-status`}>
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="libraryId" value={workspace.mandate.libraryId} />
+      <input type="hidden" name="franchiseId" value={workspace.mandate.franchiseId} />
       {organizationId ? <input type="hidden" name="organizationId" value={organizationId} /> : null}
       <input type="hidden" name="idempotencyKey" defaultValue={commandIdentity.idempotencyKey} />
       <input type="hidden" name="correlationId" defaultValue={commandIdentity.correlationId} />
@@ -107,6 +109,7 @@ export function FranchiseServiceDraftForm({
 function actionMessage(state: FranchiseServiceActionState, locale: Locale, success: string) {
   const c = libraryCopy(locale);
   if (state.status === "error") {
+    if (state.reason === "MANDATE_REQUIRED" || state.reason === "UNAUTHENTICATED") return editorialFailureMessage(state.reason,locale);
     if (state.reason === "VALIDATION") return locale === "ar" ? "تحققوا من الحقول الإلزامية بالفرنسية والعربية." : "Complétez les champs obligatoires en FR et AR.";
     if (state.reason === "FORBIDDEN") return c.forbidden;
     if (state.reason === "CONFLICT") return c.conflict;
@@ -150,6 +153,7 @@ export function FranchiseServiceCommandForms({
     <>
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="libraryId" value={workspace.mandate.libraryId} />
+      <input type="hidden" name="franchiseId" value={workspace.mandate.franchiseId} />
       {organizationId ? <input type="hidden" name="organizationId" value={organizationId} /> : null}
       <input type="hidden" name="serviceId" value={service.id} />
       <input type="hidden" name="draftVersionId" value={revision?.draftVersionId??command.draftVersionId} />

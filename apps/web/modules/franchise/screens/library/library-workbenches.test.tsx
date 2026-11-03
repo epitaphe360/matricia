@@ -36,8 +36,14 @@ describe("franchise library workbenches", () => {
     expect(html).toContain("Catalogue de ma bibliothèque");
     expect(html).toContain("Sauvegarde gérée");
     expect(html).toContain("Nouveau service");
+
     expect(html).toContain("#contenu");
     expect(html).not.toMatch(/exemple illustratif/i);
+  });
+
+  it("keeps the selected mandate in a new service form",()=>{
+    const html=renderToStaticMarkup(<FranchiseServicesWorkbench locale="fr" query="" workspace={workspace} selectedId={null} createMode organizationId={null} commandIdentity={command}/>);
+    expect(html).toContain(`name="franchiseId" value="${workspace.mandate.franchiseId}"`);
   });
 
   it("marks only the actual descriptive fields and presents persisted review feedback",()=>{

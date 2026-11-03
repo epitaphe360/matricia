@@ -1,4 +1,5 @@
 "use client";
+import { editorialFailureMessage } from "./command-errors";
 
 import { useActionState, useId } from "react";
 import { Button } from "@/modules/shared/ui/button";
@@ -26,6 +27,7 @@ const initial: FranchiseServiceActionState = { status: "idle" };
 function actionMessage(state: FranchiseServiceActionState, locale: Locale, success: string) {
   const c = libraryCopy(locale);
   if (state.status === "error") {
+    if (state.reason === "MANDATE_REQUIRED" || state.reason === "UNAUTHENTICATED") return editorialFailureMessage(state.reason,locale);
     if (state.reason === "VALIDATION") return locale === "ar" ? "تحققوا من الحقول الإلزامية." : "Confirmez la soumission pour continuer.";
     if (state.reason === "FORBIDDEN") return c.forbidden;
     if (state.reason === "CONFLICT") return c.conflict;
@@ -66,6 +68,7 @@ export function FranchiseCatalogSubmitForm({
     <form action={formAction} className="franchise-props-form">
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="libraryId" value={workspace.mandate.libraryId} />
+      <input type="hidden" name="franchiseId" value={workspace.mandate.franchiseId} />
       {organizationId ? <input type="hidden" name="organizationId" value={organizationId} /> : null}
       {item.kind === "RULE"
         ? <input type="hidden" name="ruleId" value={item.id} />
@@ -108,6 +111,7 @@ export function FranchisePublishReleaseForm({
     <form action={action} className="franchise-props-form">
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="libraryId" value={workspace.mandate.libraryId} />
+      <input type="hidden" name="franchiseId" value={workspace.mandate.franchiseId} />
       {organizationId ? <input type="hidden" name="organizationId" value={organizationId} /> : null}
       <input type="hidden" name="libraryRowVersion" value={String(workspace.mandate.libraryRowVersion)} />
       <input type="hidden" name="idempotencyKey" defaultValue={commandIdentity.idempotencyKey} />
@@ -144,6 +148,7 @@ function FranchiseQuestionnairePublishForm({
     <form action={formAction} className="franchise-props-form">
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="libraryId" value={workspace.mandate.libraryId} />
+      <input type="hidden" name="franchiseId" value={workspace.mandate.franchiseId} />
       {organizationId ? <input type="hidden" name="organizationId" value={organizationId} /> : null}
       <input type="hidden" name="questionnaireId" value={item.id} />
       <input type="hidden" name="draftVersionId" value={item.draftVersionId ?? ""} />
@@ -183,6 +188,7 @@ export function FranchiseDuplicateServiceForm({
     <form action={action} className="franchise-props-form">
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="libraryId" value={workspace.mandate.libraryId} />
+      <input type="hidden" name="franchiseId" value={workspace.mandate.franchiseId} />
       {organizationId ? <input type="hidden" name="organizationId" value={organizationId} /> : null}
       <input type="hidden" name="serviceId" value={service.id} />
       <input type="hidden" name="draftVersionId" value={service.command.draftVersionId} />
@@ -237,6 +243,7 @@ export function FranchiseArchiveServiceForm({
     <form action={action} className="franchise-props-form">
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="libraryId" value={workspace.mandate.libraryId} />
+      <input type="hidden" name="franchiseId" value={workspace.mandate.franchiseId} />
       {organizationId ? <input type="hidden" name="organizationId" value={organizationId} /> : null}
       <input type="hidden" name="serviceId" value={service.id} />
       <input type="hidden" name="draftVersionId" value={service.command.draftVersionId} />
@@ -282,6 +289,7 @@ export function FranchiseCloneQuestionnaireForm({
     <form action={action} className="franchise-props-form">
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="libraryId" value={workspace.mandate.libraryId} />
+      <input type="hidden" name="franchiseId" value={workspace.mandate.franchiseId} />
       {organizationId ? <input type="hidden" name="organizationId" value={organizationId} /> : null}
       <input type="hidden" name="questionnaireId" value={item.id} />
       <input type="hidden" name="draftVersionId" value={item.draftVersionId} />
@@ -343,10 +351,11 @@ function HierarchyFields({
 }
 
 export function FranchiseCategoryCreateForm({
-  locale, libraryId, organizationId, commandIdentity,
+  locale, libraryId, franchiseId, organizationId, commandIdentity,
 }: {
   locale: Locale;
   libraryId: string;
+  franchiseId?: string;
   organizationId: string | null;
   commandIdentity: { idempotencyKey: string; correlationId: string };
 }) {
@@ -357,6 +366,7 @@ export function FranchiseCategoryCreateForm({
     <form action={action} className="franchise-props-form">
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="libraryId" value={libraryId} />
+      {franchiseId ? <input type="hidden" name="franchiseId" value={franchiseId} /> : null}
       {organizationId ? <input type="hidden" name="organizationId" value={organizationId} /> : null}
       <input type="hidden" name="idempotencyKey" defaultValue={commandIdentity.idempotencyKey} />
       <input type="hidden" name="correlationId" defaultValue={commandIdentity.correlationId} />
@@ -374,10 +384,11 @@ export function FranchiseCategoryCreateForm({
 }
 
 export function FranchiseSubcategoryCreateForm({
-  locale, libraryId, organizationId, commandIdentity, categories,
+  locale, libraryId, franchiseId, organizationId, commandIdentity, categories,
 }: {
   locale: Locale;
   libraryId: string;
+  franchiseId?: string;
   organizationId: string | null;
   commandIdentity: { idempotencyKey: string; correlationId: string };
   categories: FranchiseCategoryNode[];
@@ -390,6 +401,7 @@ export function FranchiseSubcategoryCreateForm({
     <form action={action} className="franchise-props-form">
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="libraryId" value={libraryId} />
+      {franchiseId ? <input type="hidden" name="franchiseId" value={franchiseId} /> : null}
       {organizationId ? <input type="hidden" name="organizationId" value={organizationId} /> : null}
       <input type="hidden" name="idempotencyKey" defaultValue={`${commandIdentity.idempotencyKey.slice(0, 14)}a${commandIdentity.idempotencyKey.slice(15)}`} />
       <input type="hidden" name="correlationId" defaultValue={commandIdentity.correlationId} />
@@ -413,10 +425,11 @@ export function FranchiseSubcategoryCreateForm({
 }
 
 export function FranchiseHierarchySubmitForm({
-  locale, libraryId, organizationId, commandIdentity, objectType, item,
+  locale, libraryId, franchiseId, organizationId, commandIdentity, objectType, item,
 }: {
   locale: Locale;
   libraryId: string;
+  franchiseId?: string;
   organizationId: string | null;
   commandIdentity: { idempotencyKey: string; correlationId: string };
   objectType: "CATEGORY" | "SUBCATEGORY";
@@ -429,6 +442,7 @@ export function FranchiseHierarchySubmitForm({
     <form action={action} className="franchise-props-form">
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="libraryId" value={libraryId} />
+      {franchiseId ? <input type="hidden" name="franchiseId" value={franchiseId} /> : null}
       {organizationId ? <input type="hidden" name="organizationId" value={organizationId} /> : null}
       <input type="hidden" name="objectType" value={objectType} />
       <input type="hidden" name="objectId" value={item.id} />

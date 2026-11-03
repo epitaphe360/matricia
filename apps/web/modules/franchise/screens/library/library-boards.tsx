@@ -347,12 +347,12 @@ export function FranchiseLibraryStructureBoard({
                 ))}
               </ul>
             )}
-            <FranchiseCategoryCreateForm locale={locale} libraryId={workspace.mandate.libraryId} organizationId={organizationId} commandIdentity={commandIdentity} />
-            <FranchiseSubcategoryCreateForm locale={locale} libraryId={workspace.mandate.libraryId} organizationId={organizationId} commandIdentity={commandIdentity} categories={workspace.categories} />
+            <FranchiseCategoryCreateForm locale={locale} libraryId={workspace.mandate.libraryId} franchiseId={workspace.mandate.franchiseId} organizationId={organizationId} commandIdentity={commandIdentity} />
+            <FranchiseSubcategoryCreateForm locale={locale} libraryId={workspace.mandate.libraryId} franchiseId={workspace.mandate.franchiseId} organizationId={organizationId} commandIdentity={commandIdentity} categories={workspace.categories} />
             {workspace.categories.flatMap((category) => [
-              <FranchiseHierarchySubmitForm key={`cat-${category.id}`} locale={locale} libraryId={workspace.mandate.libraryId} organizationId={organizationId} commandIdentity={commandIdentity} objectType="CATEGORY" item={category} />,
+              <FranchiseHierarchySubmitForm key={`cat-${category.id}`} locale={locale} libraryId={workspace.mandate.libraryId} franchiseId={workspace.mandate.franchiseId} organizationId={organizationId} commandIdentity={commandIdentity} objectType="CATEGORY" item={category} />,
               ...category.children.map((child) => (
-                <FranchiseHierarchySubmitForm key={`sub-${child.id}`} locale={locale} libraryId={workspace.mandate.libraryId} organizationId={organizationId} commandIdentity={commandIdentity} objectType="SUBCATEGORY" item={child} />
+                <FranchiseHierarchySubmitForm key={`sub-${child.id}`} locale={locale} libraryId={workspace.mandate.libraryId} franchiseId={workspace.mandate.franchiseId} organizationId={organizationId} commandIdentity={commandIdentity} objectType="SUBCATEGORY" item={child} />
               )),
             ])}
           </article>

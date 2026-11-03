@@ -6,11 +6,11 @@ import { revalidatePath } from "next/cache";
 import { loadFranchiseLibraryWorkspace } from "@/modules/franchise/data/library/workspace";
 import { parseFranchiseRulePayload } from "@/modules/franchise/data/library/rule-payload";
 import { getSupabaseServerClient } from "@/modules/shared/lib/supabase/server";
-const input=z.object({locale:z.enum(["fr","ar"]),organizationId:z.string().uuid().or(z.literal("")),libraryId:z.string().uuid(),ruleId:z.string().uuid().or(z.literal("")),versionId:z.string().uuid().or(z.literal("")),ruleKey:z.string().regex(/^[A-Z][A-Z0-9_.-]{1,119}$/),identityRowVersion:z.coerce.number().int().positive(),versionRowVersion:z.coerce.number().int().positive(),idempotencyKey:z.string().uuid(),payload:z.string().max(262144),changeReason:z.string().trim().min(3).max(500)});
+const input=z.object({locale:z.enum(["fr","ar"]),organizationId:z.string().uuid().or(z.literal("")),franchiseId:z.string().uuid().optional(),libraryId:z.string().uuid(),ruleId:z.string().uuid().or(z.literal("")),versionId:z.string().uuid().or(z.literal("")),ruleKey:z.string().regex(/^[A-Z][A-Z0-9_.-]{1,119}$/),identityRowVersion:z.coerce.number().int().positive(),versionRowVersion:z.coerce.number().int().positive(),idempotencyKey:z.string().uuid(),payload:z.string().max(262144),changeReason:z.string().trim().min(3).max(500)});
 export type RuleEditorState={status:"idle"}|{status:"success";ruleId:string;versionId:string;identityRowVersion:number;versionRowVersion:number}|{status:"error";reason:EditorialFailureReason};
 export async function saveFranchiseRuleAction(_state:RuleEditorState,form:FormData):Promise<RuleEditorState>{
  const parsed=input.safeParse(Object.fromEntries(form));if(!parsed.success)return{status:"error",reason:"VALIDATION"};const v=parsed.data;
- const workspace=await loadFranchiseLibraryWorkspace({locale:v.locale,organizationId:v.organizationId||undefined,libraryId:v.libraryId,catalog:{kind:"RULE",objectId:v.ruleId||undefined}});
+ const workspace=await loadFranchiseLibraryWorkspace({locale:v.locale,organizationId:v.organizationId||undefined,franchiseId:v.franchiseId,libraryId:v.libraryId,catalog:{kind:"RULE",objectId:v.ruleId||undefined}});
  if(workspace.status==="error")return{status:"error",reason:editorialWorkspaceFailure(workspace.reason)};
  if(workspace.workspace.mandate.libraryId!==v.libraryId)return{status:"error",reason:"FORBIDDEN"};
  const rule=v.ruleId?workspace.workspace.rules.find((r)=>r.id===v.ruleId):null;

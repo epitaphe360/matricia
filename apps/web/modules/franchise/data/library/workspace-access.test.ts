@@ -38,6 +38,16 @@ for (const locale of ["fr", "ar"] as const) describe(`Franchise workspace access
     mocks.error = { code: "08006" };
     expect(await loadFranchiseLibraryWorkspace({ locale })).toEqual({ status: "error", reason: "QUERY_FAILED" });
   });
+  it("requires an explicit mandate when two authorized mandates share one organization and library",async()=>{
+    const second="33333333-3333-4333-8333-333333333334";
+    mocks.franchises=[franchiseId,second].map(id=>({id,library_id:libraryId,operator_organization_id:organizationId,franchise_type:"STANDARD",operator_code:"FRANCHISEE",status:"ACTIVE"}));
+    mocks.memberships=[{organization_id:organizationId,organization_member_roles:[{role_code:"FRANCHISE_MANAGER",franchise_id:franchiseId,revoked_at:null,organization_member_franchise_assignments:[{franchise_id:franchiseId,revoked_at:null},{franchise_id:second,revoked_at:null}]}]}];
+    expect(await loadFranchiseLibraryWorkspace({locale,organizationId,libraryId})).toEqual({status:"error",reason:"MANDATE_REQUIRED",availableMandates:expect.arrayContaining([{id:franchiseId,organizationId,libraryId,label:"FRANCHISEE"},{id:second,organizationId,libraryId,label:"FRANCHISEE"}])});
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    mocks.rpc.mockResolvedValue({data:null,error:{code:"42501"}});
+    expect(await loadFranchiseLibraryWorkspace({locale,organizationId,libraryId,franchiseId:second})).toEqual({status:"error",reason:"FORBIDDEN"});
+    expect(mocks.rpc).toHaveBeenCalledWith("franchise_catalog_page",expect.objectContaining({p_franchise_id:second}));
+  });
   it("keeps an authorized-context RPC denial distinct from a server failure", async () => {
     mocks.franchises = [{ id: franchiseId, library_id: libraryId, operator_organization_id: organizationId, franchise_type: "STANDARD", operator_code: "SYNTHETIC", status: "ACTIVE" }];
     mocks.memberships = [{ organization_id: organizationId, organization_member_roles: [{ role_code: "FRANCHISE_OWNER", franchise_id: franchiseId, revoked_at: null }] }];
