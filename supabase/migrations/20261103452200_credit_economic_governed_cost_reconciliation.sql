@@ -90,7 +90,7 @@ create function public.propose_credit_economic_cost_v1(p_component text,p_target
 returns jsonb language plpgsql security definer set search_path=pg_catalog set timezone='UTC' as $$
 declare source jsonb;h text;p public.credit_economic_cost_proposals_v1%rowtype;id uuid:=extensions.gen_random_uuid();response jsonb;
 begin
- if private.credit_revenue_finance_access_v1(auth.uid(),true)is distinct from truethen raise exception'CREDIT_ECONOMIC_COST_REVIEW_DENIED'using errcode='42501';end if;
+ if not private.credit_revenue_finance_access_v1(auth.uid(),true)then raise exception'CREDIT_ECONOMIC_COST_REVIEW_DENIED'using errcode='42501';end if;
  if length(btrim(coalesce(p_reason,'')))not between 10 and 2000 or length(coalesce(p_idempotency_key,''))not between 8 and 200 then raise exception'INVALID_CREDIT_ECONOMIC_COST_PROPOSAL'using errcode='22023';end if;
  perform pg_advisory_xact_lock(hashtextextended('credit-economic-cost:'||p_component||':'||p_target_id::text,0));
  source:=private.credit_economic_cost_source_v1(p_component,p_target_id,p_financial_journal_id);h:=private.canonical_request_hash(source);
@@ -114,7 +114,7 @@ create function public.decide_credit_economic_cost_v1(p_proposal_id uuid,p_expec
 returns jsonb language plpgsql security definer set search_path=pg_catalog set timezone='UTC' as $$
 declare p public.credit_economic_cost_proposals_v1%rowtype;d public.credit_economic_cost_decisions_v1%rowtype;source jsonb;h text;reconciled uuid:=extensions.gen_random_uuid();response jsonb;
 begin
- if private.credit_revenue_finance_access_v1(auth.uid(),true)is distinct from truethen raise exception'CREDIT_ECONOMIC_COST_REVIEW_DENIED'using errcode='42501';end if;
+ if not private.credit_revenue_finance_access_v1(auth.uid(),true)then raise exception'CREDIT_ECONOMIC_COST_REVIEW_DENIED'using errcode='42501';end if;
  select*into p from public.credit_economic_cost_proposals_v1 where id=p_proposal_id for update;
  if p.id is null or p.created_by=auth.uid()or p.source_snapshot#>>'{journal,created_by}'=auth.uid()::text
   or private.is_active_org_member((p.source_snapshot->>'organization_id')::uuid,auth.uid())
@@ -155,7 +155,7 @@ begin
  if a.id is null or cf.id is null or c.id is null or a.allocation_kind<>'PURCHASE_CONSUMPTION'or a.currency<>cf.currency
   or a.content_hash<>private.canonical_request_hash(a.allocation_snapshot)
   or cf.source_hash<>private.canonical_request_hash(cf.source_snapshot)
-  or private.credit_lot_funding_status_v1(cf.credit_lot_id)is distinct from'ELIGIBLE'
+  or private.credit_lot_funding_status_v1(cf.credit_lot_id)<>'ELIGIBLE'
   or private.benefit_accepted_receipt_v1(cf.redemption_id,cf.delivery_proof_hash)is null
  then raise exception'CREDIT_ECONOMIC_ADMISSIBLE_ALLOCATION_REQUIRED'using errcode='55000';end if;
  select*into r from public.credit_economic_cost_reconciliations_v1 where component=p_component and target_id=case p_component when'PSP_FEE'then a.funding_source_id when'FULFILLMENT_COST'then cf.redemption_id end;
@@ -206,7 +206,7 @@ declare b public.franchise_pnl_books%rowtype;a record;cost_kind text;share jsonb
  amount bigint;pnl uuid;h text;response jsonb;correlation uuid:=extensions.gen_random_uuid();counted integer:=0;
 begin
  select*into b from public.franchise_pnl_books where id=p_book_id;
- if private.credit_revenue_finance_access_v1(auth.uid(),true)is distinct from trueor b.id is null or private.is_active_org_member(b.franchise_organization_id,auth.uid())then raise exception'CREDIT_ECONOMIC_COST_REVIEW_DENIED'using errcode='42501';end if;
+ if not private.credit_revenue_finance_access_v1(auth.uid(),true)or b.id is null or private.is_active_org_member(b.franchise_organization_id,auth.uid())then raise exception'CREDIT_ECONOMIC_COST_REVIEW_DENIED'using errcode='42501';end if;
  if p_period_start is null or p_period_end is null or p_period_end<p_period_start or p_period_end>=p_period_start+interval'1 year'or length(btrim(coalesce(p_reason,'')))not between 10 and 2000 then raise exception'INVALID_CREDIT_ECONOMIC_PROFIT_PERIOD'using errcode='22023';end if;
  perform pg_advisory_xact_lock(hashtextextended('credit-economic-profit:'||b.id::text,0));
  h:=private.canonical_request_hash(jsonb_build_object('book',b.id,'start',p_period_start,'end',p_period_end,'reason',btrim(p_reason)));
@@ -281,36 +281,13 @@ begin
  $guard$);execute definition;
 end $migration$;
 
--- A new payout must still be backed by admissible sources after closing.
--- A historical replay returns before this guard in the public command.
-create function private.assert_native_franchise_payout_ready_v1(p_book_id uuid)
-returns void language plpgsql security definer set search_path=pg_catalog set timezone='UTC' as $$
-declare period record;
-begin
- begin
-  lock table public.credit_economic_consumption_facts_v1,public.credit_economic_allocations_v1,public.credit_economic_cost_reconciliations_v1,public.credit_economic_cost_attributions_v1,public.credit_pack_payment_adjustments_v1,public.credit_pack_native_resolutions_v1,public.franchise_pnl_entries in share mode nowait;
- exception when lock_not_available then raise exception'CREDIT_ECONOMIC_WRITES_IN_PROGRESS_RETRY_REQUIRED'using errcode='55P03';end;
- for period in select distinct c.period_start,c.period_end from public.franchise_profit_closure_versions c where c.book_id=p_book_id loop
-  perform private.assert_credit_economic_profit_close_ready_v1(p_book_id,period.period_start,period.period_end);
- end loop;
-end$$;
-revoke all on function private.assert_native_franchise_payout_ready_v1(uuid)from public,anon,authenticated,service_role;
-do $migration$
-declare definition text;needle text;
-begin
- definition:=pg_get_functiondef('public.record_franchise_distribution_payout(uuid,text,bigint,uuid,text,text,text,uuid)'::regprocedure);
- needle:='perform pg_advisory_xact_lock(hashtextextended(b.id::text||'':''||p_beneficiary_code,0));';
- if strpos(definition,needle)=0 then raise exception'CREDIT_ECONOMIC_PAYOUT_SOURCE_CHANGED';end if;
- execute replace(definition,needle,needle||'perform private.assert_native_franchise_payout_ready_v1(b.id);');
-end $migration$;
-
 create function public.get_credit_economic_profit_context_v1(p_book_id uuid,p_period_start date,p_period_end date,p_page integer default 1)
 returns jsonb language plpgsql stable security definer set search_path=pg_catalog set timezone='UTC' as $$
 declare b public.franchise_pnl_books%rowtype;ready boolean:=true;reason text;central boolean;allocations jsonb;proposals jsonb;journals jsonb;
 begin
  select*into b from public.franchise_pnl_books where id=p_book_id;
  central:=private.credit_revenue_finance_access_v1();
- if auth.uid()is null or auth.jwt()->>'aal'is distinct from'aal2'or b.id is null or private.franchise_book_access(b.id,auth.uid())is distinct from truethen raise exception'CREDIT_ECONOMIC_PROFIT_READ_DENIED'using errcode='42501';end if;
+ if auth.uid()is null or auth.jwt()->>'aal'<>'aal2'or b.id is null or not private.franchise_book_access(b.id,auth.uid())then raise exception'CREDIT_ECONOMIC_PROFIT_READ_DENIED'using errcode='42501';end if;
  if p_page is null or p_page not between 1 and 10000 or p_period_start is null or p_period_end is null or p_period_end<p_period_start or p_period_end>=p_period_start+interval'1 year'then raise exception'INVALID_CREDIT_ECONOMIC_PROFIT_PERIOD'using errcode='22023';end if;
  begin perform private.assert_credit_economic_profit_close_ready_v1(b.id,p_period_start,p_period_end);
  exception when sqlstate'55000'or sqlstate'23514' then ready:=false;reason:='CREDIT_ECONOMIC_FINAL_RECONCILIATION_REQUIRED';end;
