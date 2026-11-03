@@ -86,6 +86,7 @@ select is((select v from signal_observed371 where k='approval'),(select v from s
 reset role;
 select is((select count(*)::integer from public.audit_events where action='franchise.governance.sources_inspected'and resource_id=(select v->>'id'from signal_observed371 where k='request')),1,'the private source read has its own purpose audit');
 select is((select status from public.franchises where id='d3650000-0000-4000-8000-000000000002'),'ACTIVE','neither the flag nor the review sanctions or suspends the mandate');
+select is((select count(*)::integer from private.franchise_governance_review_followups_v1 followup join public.admin_work_items work on work.resource_id=followup.request_id::text and work.resource_type='franchise_governance_signal_review'where followup.proposal_id=(select(v->>'proposalId')::uuid from signal_observed371 where k='proposal')and work.status='OPEN'),1,'an approved further examination creates one real successor case and task despite retries');
 select is((select status from public.admin_work_items where resource_type='franchise_governance_signal_review'and resource_id=(select v->>'id'from signal_observed371 where k='request')),'RESOLVED','the real central review task is completed through Admin workflow commands');
 set local role service_role;select set_config('request.jwt.claims','{"role":"service_role"}',true);
 insert into signal_observed371 values('run-replay',public.run_franchise_performance_control_v1(25));reset role;
