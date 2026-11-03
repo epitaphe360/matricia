@@ -336,13 +336,13 @@ export function NetworkBoard({ locale, query, mandateName, view, itemId, search,
             <Link href={`/${locale}/franchise/fournisseurs/${selected.id}${query}`} className="franchise-tool franchise-tool-primary">{c.openProviderFolder}</Link>
           </div>
           <dl className="franchise-props franchise-provider-meta">
-            <div><small>{c.providerType}</small><span>{c.serviceTypeLabel}</span></div>
-            <div><small>{c.relationSince}</small><span dir="ltr">{selected.createdAt ? selected.createdAt.slice(0, 10) : "—"}</span></div>
-            <div><small>{c.globalStatus}</small><span className="client-status-chip" data-tone={selected.tone}>{networkStateLabel(selected.status,locale)}</span></div>
-            <div><small>{c.services}</small><span>{selected.services || "—"}</span></div>
-            <div><small>{c.capacityLevel}</small><span>{dossier?.teamSize??unknown}</span></div>
-            <div><small>{c.zoneIntervention}</small><span>{regions}</span></div>
-            <div><small>{c.availability}</small><span>{availability}</span></div>
+            <div><dt>{c.providerType}</dt><dd>{c.serviceTypeLabel}</dd></div>
+            <div><dt>{c.relationSince}</dt><dd dir="ltr">{selected.createdAt ? selected.createdAt.slice(0, 10) : "—"}</dd></div>
+            <div><dt>{c.globalStatus}</dt><dd className="client-status-chip" data-tone={selected.tone}>{networkStateLabel(selected.status,locale)}</dd></div>
+            <div><dt>{c.services}</dt><dd>{selected.services || "—"}</dd></div>
+            <div><dt>{c.capacityLevel}</dt><dd>{dossier?.teamSize??unknown}</dd></div>
+            <div><dt>{c.zoneIntervention}</dt><dd>{regions}</dd></div>
+            <div><dt>{c.availability}</dt><dd>{availability}</dd></div>
           </dl>
         </article>
         <nav className="franchise-pill-tabs" aria-label={selected.name}>
@@ -1463,11 +1463,11 @@ export function DocumentsBoard({ locale, query, view, search, page, board }: Spa
             <header><h2>{c.documentDetail}</h2></header>
             {selected ? (
               <dl className="franchise-props">
-                <div><small>{c.document}</small><span>{selected.title}</span></div>
-                <div><small>{c.owner}</small><span>{selected.owner}</span></div>
-                <div><small>{c.sensitivity}</small><span className="franchise-sensitivity" data-tone={documentAccess(locale).tone}>{documentAccess(locale).label}</span></div>
-                <div><small>{c.state}</small><span className="client-status-chip" data-tone="mint">{networkStateLabel(selected.status,locale)}</span></div>
-                <div><small>{c.documentKind}</small><span>{selected.kind === "renewal" ? c.renewal : c.evidence}</span></div>
+                <div><dt>{c.document}</dt><dd>{selected.title}</dd></div>
+                <div><dt>{c.owner}</dt><dd>{selected.owner}</dd></div>
+                <div><dt>{c.sensitivity}</dt><dd className="franchise-sensitivity" data-tone={documentAccess(locale).tone}>{documentAccess(locale).label}</dd></div>
+                <div><dt>{c.state}</dt><dd className="client-status-chip" data-tone="mint">{networkStateLabel(selected.status,locale)}</dd></div>
+                <div><dt>{c.documentKind}</dt><dd>{selected.kind === "renewal" ? c.renewal : c.evidence}</dd></div>
               </dl>
             ) : <p>{n.emptyDocumentsLead}</p>}
             <p className="client-access-note">{c.scopeNote}</p>
