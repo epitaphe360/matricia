@@ -3,6 +3,7 @@
 begin;
 set local search_path=public,extensions;
 select no_plan();
+select throws_ok($q$select private.require_franchise_control_admin_queue_v1('TEST_MISSING_CENTRAL_REVIEW_QUEUE_373')$q$,'55000','FRANCHISE_CONTROL_ADMIN_QUEUE_NOT_CONFIGURED','an absent queue fails explicitly without disabling a production immutability guard');
 -- Isolated role fixtures below establish missing/revoked-owner preconditions only;
 -- every assignment/proposal/review/progress action under test uses its public RPC.
 grant usage on schema extensions to authenticated;
