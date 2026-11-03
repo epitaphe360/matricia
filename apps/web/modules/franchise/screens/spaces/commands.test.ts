@@ -123,7 +123,9 @@ describe("franchise remaining command actions", () => {
       qualificationId: id,
       status: "APPROVED",
       questionnaireSessionId: id,
-      scoreBasisPoints: "8000",
+      scorePercent:"80",
+      reviewedManifestHash:"c".repeat(64),
+      evidenceConfirmed:"yes",
       rationale: "Dossier complet et contrôles passés.",
       ruleVersion: "QUAL-FR-001",
       mandatoryPassed: "yes",
@@ -225,4 +227,16 @@ describe("franchise command auth prerequisites", () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { code: "42501", message: "FRANCHISE_SCOPE_DENIED" } });
     expect(await upsertFranchiseAnomalyDefinition(idle, validDefinition())).toEqual({ status: "error", reason: "FORBIDDEN" });
   });
+  it("refuse une approbation franchise sans la preuve de lecture figée",async()=>{
+    const data=form({qualificationId:id,status:"APPROVED",questionnaireSessionId:id,scorePercent:"80",rationale:"TEST revue indépendante",expectedRowVersion:"1",evidenceConfirmed:"yes"});
+    expect(await decideFranchiseProviderQualification(idle,data)).toEqual({status:"error",reason:"VALIDATION"});
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it("transmet le score humain exact et le hash de la projection lue au garde natif",async()=>{
+    const data=form({qualificationId:id,status:"APPROVED",questionnaireSessionId:id,scorePercent:"80,81",reviewedManifestHash:"c".repeat(64),evidenceConfirmed:"yes",rationale:"TEST revue indépendante",expectedRowVersion:"2"});
+    mocks.rpc.mockResolvedValue({data:{outcome:"PROVIDER_QUALIFICATION_DECIDED"},error:null});
+    expect((await decideFranchiseProviderQualification(idle,data)).status).toBe("success");
+    expect(mocks.rpc).toHaveBeenCalledWith("decide_provider_qualification",expect.objectContaining({p_score_basis_points:8081,p_rule_version:"PROVIDER-QUALIFICATION-V1",p_mandatory_checks:expect.arrayContaining([expect.objectContaining({check:"HUMAN_EVIDENCE_REVIEW",review_context_hash:"c".repeat(64)})])}));
+  });
+
 });

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { classifyAuthReadFailure } from "@/modules/shared/lib/auth/read-failure";
+import { humanQualificationScoreBps } from "@/modules/shared/lib/provider-qualification-review/model";
 import { exactUnits } from "@/modules/shared/lib/volume-procurement/model";
 import { uuidSchema } from "@/modules/shared/lib/catalogue-builder/model";
 import { isLocale } from "@/modules/shared/lib/i18n/locale";
@@ -260,11 +261,12 @@ export async function decideFranchiseProviderQualification(_: FranchiseCommandSt
     qualificationId: uuidSchema,
     status,
     questionnaireSessionId: uuidSchema.or(z.literal("")),
-    scoreBasisPoints: z.coerce.number().int().min(0).max(10000).or(z.literal("")),
+    scorePercent:z.string(),
+    reviewedManifestHash:z.string().regex(/^[a-f0-9]{64}$/u).or(z.literal("")),
+    evidenceConfirmed:z.enum(["yes",""]),
     rationale: z.string().trim().min(3).max(2000),
     ruleVersion: z.string().trim().regex(/^[A-Z0-9][A-Z0-9._-]{2,79}$/u),
     blockingCondition: z.string().trim().max(500),
-    mandatoryPassed: z.enum(["yes", "no"]),
     expectedRowVersion: z.coerce.number().int().positive(),
     confirmed: z.literal("yes"),
     idempotencyKey: uuidSchema,
@@ -275,11 +277,12 @@ export async function decideFranchiseProviderQualification(_: FranchiseCommandSt
     qualificationId: text(form, "qualificationId"),
     status: text(form, "status"),
     questionnaireSessionId: text(form, "questionnaireSessionId"),
-    scoreBasisPoints: text(form, "scoreBasisPoints"),
+    scorePercent:text(form,"scorePercent"),
+    reviewedManifestHash:text(form,"reviewedManifestHash"),
+    evidenceConfirmed:text(form,"evidenceConfirmed"),
     rationale: text(form, "rationale"),
-    ruleVersion: text(form, "ruleVersion"),
+    ruleVersion:"PROVIDER-QUALIFICATION-V1",
     blockingCondition: text(form, "blockingCondition"),
-    mandatoryPassed: text(form, "mandatoryPassed"),
     expectedRowVersion: text(form, "expectedRowVersion"),
     confirmed: text(form, "confirmed"),
     idempotencyKey: text(form, "idempotencyKey"),
@@ -287,9 +290,9 @@ export async function decideFranchiseProviderQualification(_: FranchiseCommandSt
   });
   if (!parsed.success) return { status: "error", reason: "VALIDATION" };
   const approved = parsed.data.status === "APPROVED" || parsed.data.status === "CONDITIONAL";
-  const session = parsed.data.questionnaireSessionId || null;
-  const score = parsed.data.scoreBasisPoints === "" ? null : parsed.data.scoreBasisPoints;
-  if (approved && (!session || score == null || parsed.data.mandatoryPassed !== "yes")) {
+  const session = approved?parsed.data.questionnaireSessionId || null:null;
+  const score=approved?humanQualificationScoreBps(parsed.data.scorePercent):null;
+  if (approved && (!session || score == null || parsed.data.evidenceConfirmed !== "yes" || !parsed.data.reviewedManifestHash)) {
     return { status: "error", reason: "VALIDATION" };
   }
   if (parsed.data.status === "CONDITIONAL" && parsed.data.blockingCondition.trim().length < 3) {
@@ -300,7 +303,7 @@ export async function decideFranchiseProviderQualification(_: FranchiseCommandSt
     p_status: parsed.data.status,
     p_questionnaire_session_id: session,
     p_score_basis_points: score,
-    p_mandatory_checks: parsed.data.mandatoryPassed === "yes" ? [{ check: "MANDATORY_EVIDENCE", passed: true }] : [],
+    p_mandatory_checks:approved?[{check:"SUBMITTED_PROVIDER_QUESTIONNAIRE",passed:true},{check:"HUMAN_EVIDENCE_REVIEW",passed:true,review_context_hash:parsed.data.reviewedManifestHash}]:[],
     p_blocking_conditions: parsed.data.blockingCondition.trim() ? [{ condition: parsed.data.blockingCondition.trim() }] : [],
     p_rationale: parsed.data.rationale,
     p_rule_version: parsed.data.ruleVersion,

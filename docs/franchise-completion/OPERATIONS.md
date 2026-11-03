@@ -50,3 +50,9 @@ Preuves complémentaires : six tests de lecteurs (301 prospects, échec de secon
 - Les nouveaux gardes SQL refusent AAL absent/null, les clôtures de périodes chevauchantes et les charges centrales non approuvées. Le verrou de livre est partagé par classement, clôture et versement. Les montants/historiques existants restent immuables.
 
 Avant refactor du lecteur de qualification : 42 tests ciblés réussis dans cinq fichiers ; lint ciblé réussi. SQL `0368` ajouté, recette réelle à lire dans le reçu du parent (aucune preuve d’activation juridique tirée de ses seules fixtures).
+
+## Qualification commune Admin / Franchisé
+
+Le formulaire Franchisé exigeait un UUID saisi manuellement et une attestation générique, alors que le garde natif impose la projection originale lue par le réviseur. Le lecteur partagé charge désormais les dépôts autorisés, présente questions/réponses figées, conserve les textes libres, sélectionne un dépôt, porte son hash et sa version, puis recueille le score humain indépendant et l’attestation. Les anciens imports Admin restent compatibles par délégation.
+
+La projection backend ajoutée au lot Sous-traitant vérifiait seulement les rôles plateforme : elle bloquait aussi les réviseurs Franchisé pourtant autorisés par la commande métier antérieure. `45207` rétablit cette autorité pour le service exact, après résolution du dossier ; MFA/AAL2, interdiction d’auto-revue et absence d’accès général aux sessions privées restent en place. `0368` contient des contre-tests Expert, Viewer, AAL1 et acteur également membre du prestataire. La simple absence de session dans ses fixtures n’est pas présentée comme une preuve de lecture de réponses réelles.

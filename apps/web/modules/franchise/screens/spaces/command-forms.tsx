@@ -1,5 +1,8 @@
 "use client";
 
+import { QualificationQuestionnaireReview } from "@/modules/shared/lib/provider-qualification-review/review";
+import { qualificationDecisionStates } from "@/modules/shared/lib/provider-qualification-review/model";
+import { networkStateLabel } from "@/modules/franchise/data/network/filters";
 import { useActionState, useId, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/modules/shared/ui/button";
@@ -199,34 +202,35 @@ export function FranchiseQualificationDecisionForm({
   const { state, action, pending, keys } = useCommand(decideFranchiseProviderQualification);
   const rows = qualifications.filter((item) => uuidPattern.test(item.id) && item.rowVersion);
   const [selectedId, setSelectedId] = useState(rows[0]?.id ?? "");
+  const[reviewed,setReviewed]=useState<{rowVersion:number;engineScorePercent:string}|null>(null);
+  const[score,setScore]=useState("");
+  const[decision,setDecision]=useState("INFORMATION_REQUIRED");
   if (rows.length === 0) return null;
   const selected = rows.find((item) => item.id === selectedId) ?? rows[0];
+  const states=qualificationDecisionStates(selected?.status??"PENDING");
+  const chosen=states.includes(decision)?decision:states[0]??"";
+  const needsEvidence=chosen==="APPROVED"||chosen==="CONDITIONAL";
   return (
     <form action={action} className="franchise-props-form">
-      <HiddenScope locale={locale} organizationId={organizationId} extra={{ expectedRowVersion: String(selected?.rowVersion ?? 1) }} keys={keys} />
+      <HiddenScope locale={locale} organizationId={organizationId} extra={{ expectedRowVersion: String(reviewed?.rowVersion??selected?.rowVersion??1) }} keys={keys} />
       <div>
         <Label htmlFor={`${prefix}-q`}>{c.stepQual}</Label>
-        <select id={`${prefix}-q`} name="qualificationId" required className={control} value={selected?.id} onChange={(event) => setSelectedId(event.target.value)}>
-          {rows.map((item) => <option key={item.id} value={item.id}>{item.title} · {item.status}</option>)}
+        <select id={`${prefix}-q`} name="qualificationId" required className={control} value={selected?.id} onChange={(event) => {setSelectedId(event.target.value);setReviewed(null);setScore("");setDecision("INFORMATION_REQUIRED");}}>
+          {rows.map((item) => <option key={item.id} value={item.id}>{item.title} · {networkStateLabel(item.status,locale)}</option>)}
         </select>
       </div>
       <div>
         <Label htmlFor={`${prefix}-st`}>{c.state}</Label>
-        <select id={`${prefix}-st`} name="status" required className={control}>
-          <option value="INFORMATION_REQUIRED">INFORMATION_REQUIRED</option>
-          <option value="APPROVED">APPROVED</option>
-          <option value="CONDITIONAL">CONDITIONAL</option>
-          <option value="REJECTED">REJECTED</option>
+        <select id={`${prefix}-st`} name="status" required className={control} value={chosen} onChange={event=>setDecision(event.target.value)}>
+          {states.map(value=><option key={value} value={value}>{networkStateLabel(value,locale)}</option>)}
         </select>
       </div>
-      <div><Label htmlFor={`${prefix}-sess`}>{c.questionnaireSession}</Label><Input id={`${prefix}-sess`} name="questionnaireSessionId" dir="ltr" className="min-h-11 font-mono" /></div>
-      <div><Label htmlFor={`${prefix}-score`}>{c.scoreBps}</Label><Input id={`${prefix}-score`} name="scoreBasisPoints" type="number" min={0} max={10000} /></div>
-      <div><Label htmlFor={`${prefix}-rule`}>{c.ruleVersion}</Label><Input id={`${prefix}-rule`} name="ruleVersion" required defaultValue="QUAL-FR-001" pattern="[A-Z0-9][A-Z0-9._-]{2,79}" dir="ltr" className="min-h-11 font-mono" /></div>
+      <QualificationQuestionnaireReview key={`${selected?.id}:${keys.idempotencyKey}`} qualificationId={selected?.id??""} locale={locale} required={needsEvidence} onReviewed={selection=>{setReviewed(selection);setScore(selection?.engineScorePercent??"");}}/>
+      {needsEvidence?<div><Label htmlFor={`${prefix}-score`}>{locale==="ar"?"التقييم البشري (%)":"Score de revue humaine (%)"}</Label><Input id={`${prefix}-score`} name="scorePercent" type="text" inputMode="decimal" required pattern="(?:[0-9]{1,2}(?:[.,][0-9]{1,2})?|100(?:[.,]0{1,2})?)" value={score} onChange={event=>setScore(event.target.value)}/></div>:null}
       <div><Label htmlFor={`${prefix}-rat`}>{c.rationale}</Label><textarea id={`${prefix}-rat`} name="rationale" required minLength={3} maxLength={2000} className={control} /></div>
       <div><Label htmlFor={`${prefix}-block`}>{c.blockingCondition}</Label><Input id={`${prefix}-block`} name="blockingCondition" maxLength={500} /></div>
-      <div><Label htmlFor={`${prefix}-mand`}>{c.mandatoryPassed}</Label><select id={`${prefix}-mand`} name="mandatoryPassed" className={control}><option value="no">{c.approvalNo}</option><option value="yes">{c.approvalYes}</option></select></div>
       <label className="flex min-h-11 items-start gap-3 rounded-lg border p-3 text-sm"><input className="mt-0.5 size-5" type="checkbox" name="confirmed" value="yes" required /><span>{c.confirmCommand}</span></label>
-      <Button type="submit" disabled={pending} className="min-h-11">{pending ? c.pending : c.decideQualification}</Button>
+      <Button type="submit" disabled={pending||!chosen||(needsEvidence&&!reviewed)} className="min-h-11">{pending ? c.pending : c.decideQualification}</Button>
       <Feedback state={state} locale={locale} success={c.qualificationDecided} />
     </form>
   );
