@@ -192,7 +192,7 @@ begin
  select*into a from public.credit_economic_allocations_v1 where id=cap.allocation_id;
  select*into r from public.credit_economic_cost_reconciliations_v1 where id=cap.reconciliation_id;
  if cap.allocation_id is null or a.id is null or r.id is null or new.book_id<>a.book_id or new.amount_minor<>cap.amount_minor or new.currency<>a.currency or new.effect_type<>'COST'
-  or new.financial_journal_id<>r.financial_journal_id or new.category<>case cap.component when'PSP_FEE'then'PAYMENT_FEE'else'PROVIDER_FULFILLMENT_COST'end
+  or new.financial_journal_id<>r.financial_journal_id or new.category<>(case cap.component when'PSP_FEE'then'PAYMENT_FEE'else'PROVIDER_FULFILLMENT_COST'end)
   or not exists(select 1 from private.credit_economic_pnl_sources_v1 s join public.franchise_pnl_entries e on e.id=s.pnl_entry_id where s.allocation_id=a.id and e.effective_on=new.effective_on)
  then raise exception'CREDIT_ECONOMIC_RESERVED_COST_SOURCE_REQUIRED'using errcode='42501';end if;
  return new;
