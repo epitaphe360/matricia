@@ -1,4 +1,5 @@
 "use client";
+import { namespacedCommandUuid } from "@/modules/shared/lib/catalogue-builder/namespaced-command-uuid";
 import { editorialFailureMessage } from "./command-errors";
 
 import { useActionState, useId,useRef,useState,type ChangeEvent } from "react";
@@ -202,7 +203,7 @@ export function FranchiseServiceCommandForms({
       </form>
       <form action={simAction} className="franchise-props-form">
         {hidden}
-        <input type="hidden" name="idempotencyKey" defaultValue={`${commandIdentity.idempotencyKey.slice(0, 14)}a${commandIdentity.idempotencyKey.slice(15)}`} />
+        <input type="hidden" name="idempotencyKey" value={namespacedCommandUuid(saveKey, "service-impact")} />
         <input type="hidden" name="correlationId" defaultValue={commandIdentity.correlationId} />
         <Button type="submit" disabled={simPending} className="min-h-11" variant="outline">{c.runSimulation}</Button>
         <div role={simState.status === "error" ? "alert" : "status"} aria-live="polite">{actionMessage(simState, locale, c.impactSimulated)}</div>
@@ -210,7 +211,7 @@ export function FranchiseServiceCommandForms({
       {draft ? (
         <form action={submitAction} className="franchise-props-form">
           {hidden}
-          <input type="hidden" name="idempotencyKey" defaultValue={`${commandIdentity.idempotencyKey.slice(0, 14)}b${commandIdentity.idempotencyKey.slice(15)}`} />
+          <input type="hidden" name="idempotencyKey" value={namespacedCommandUuid(saveKey, "service-submit")} />
           <input type="hidden" name="correlationId" defaultValue={commandIdentity.correlationId} />
           <label className="flex min-h-11 items-start gap-3 rounded-lg border p-3 text-sm">
             <input className="mt-0.5 size-5" type="checkbox" name="confirmed" value="yes" required />

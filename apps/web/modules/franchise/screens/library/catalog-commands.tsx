@@ -1,4 +1,5 @@
 "use client";
+import { namespacedCommandUuid } from "@/modules/shared/lib/catalogue-builder/namespaced-command-uuid";
 import { editorialFailureMessage } from "./command-errors";
 
 import { useActionState, useId } from "react";
@@ -153,7 +154,7 @@ function FranchiseQuestionnairePublishForm({
       <input type="hidden" name="questionnaireId" value={item.id} />
       <input type="hidden" name="draftVersionId" value={item.draftVersionId ?? ""} />
       <input type="hidden" name="versionRowVersion" value={String(item.versionRowVersion ?? 1)} />
-      <input type="hidden" name="idempotencyKey" defaultValue={`${commandIdentity.idempotencyKey.slice(0, 14)}c${commandIdentity.idempotencyKey.slice(15)}`} />
+      <input type="hidden" name="idempotencyKey" defaultValue={namespacedCommandUuid(commandIdentity.idempotencyKey, "questionnaire-publish")} />
       <input type="hidden" name="correlationId" defaultValue={commandIdentity.correlationId} />
       <label className="flex min-h-11 items-start gap-3 rounded-lg border p-3 text-sm">
         <input className="mt-0.5 size-5" type="checkbox" name="confirmed" value="yes" required />
@@ -193,7 +194,7 @@ export function FranchiseDuplicateServiceForm({
       <input type="hidden" name="serviceId" value={service.id} />
       <input type="hidden" name="draftVersionId" value={service.command.draftVersionId} />
       <input type="hidden" name="subcategoryId" value={service.subcategoryId ?? ""} />
-      <input type="hidden" name="idempotencyKey" defaultValue={`${commandIdentity.idempotencyKey.slice(0, 14)}d${commandIdentity.idempotencyKey.slice(15)}`} />
+      <input type="hidden" name="idempotencyKey" defaultValue={namespacedCommandUuid(commandIdentity.idempotencyKey, "service-duplicate")} />
       <input type="hidden" name="correlationId" defaultValue={commandIdentity.correlationId} />
       <label className="franchise-field">{c.newCode}
         <input name="code" required defaultValue={`${service.code}_COPY`.slice(0, 80)} dir="ltr" className="min-h-11 w-full rounded-md border border-input bg-background px-3" />
@@ -249,7 +250,7 @@ export function FranchiseArchiveServiceForm({
       <input type="hidden" name="draftVersionId" value={service.command.draftVersionId} />
       <input type="hidden" name="identityRowVersion" value={String(service.command.identityRowVersion)} />
       <input type="hidden" name="versionRowVersion" value={String(service.command.versionRowVersion)} />
-      <input type="hidden" name="idempotencyKey" defaultValue={`${commandIdentity.idempotencyKey.slice(0, 14)}e${commandIdentity.idempotencyKey.slice(15)}`} />
+      <input type="hidden" name="idempotencyKey" defaultValue={namespacedCommandUuid(commandIdentity.idempotencyKey, "service-archive")} />
       <input type="hidden" name="correlationId" defaultValue={commandIdentity.correlationId} />
       <label className="franchise-field">{locale === "ar" ? "سبب التغيير" : "Motif de la version"}
         <input name="changeReason" required minLength={3} maxLength={500} defaultValue={locale === "ar" ? "أرشفة الخدمة" : "Archivage du service"} className="min-h-11 w-full rounded-md border border-input bg-background px-3" />
@@ -294,7 +295,7 @@ export function FranchiseCloneQuestionnaireForm({
       <input type="hidden" name="questionnaireId" value={item.id} />
       <input type="hidden" name="draftVersionId" value={item.draftVersionId} />
       <input type="hidden" name="targetReleaseId" value={release.id} />
-      <input type="hidden" name="idempotencyKey" defaultValue={`${commandIdentity.idempotencyKey.slice(0, 14)}f${commandIdentity.idempotencyKey.slice(15)}`} />
+      <input type="hidden" name="idempotencyKey" defaultValue={namespacedCommandUuid(commandIdentity.idempotencyKey, "questionnaire-clone")} />
       <input type="hidden" name="correlationId" defaultValue={commandIdentity.correlationId} />
       <label className="franchise-field">{c.newCode}
         <input name="code" required defaultValue={`${item.code}_COPY`.slice(0, 80)} dir="ltr" className="min-h-11 w-full rounded-md border border-input bg-background px-3" />
@@ -403,7 +404,7 @@ export function FranchiseSubcategoryCreateForm({
       <input type="hidden" name="libraryId" value={libraryId} />
       {franchiseId ? <input type="hidden" name="franchiseId" value={franchiseId} /> : null}
       {organizationId ? <input type="hidden" name="organizationId" value={organizationId} /> : null}
-      <input type="hidden" name="idempotencyKey" defaultValue={`${commandIdentity.idempotencyKey.slice(0, 14)}a${commandIdentity.idempotencyKey.slice(15)}`} />
+      <input type="hidden" name="idempotencyKey" defaultValue={namespacedCommandUuid(commandIdentity.idempotencyKey, "subcategory-create")} />
       <input type="hidden" name="correlationId" defaultValue={commandIdentity.correlationId} />
       <div>
         <Label htmlFor={`${prefix}-parent`}>{c.category}</Label>
@@ -449,7 +450,7 @@ export function FranchiseHierarchySubmitForm({
       <input type="hidden" name="draftVersionId" value={item.draftVersionId} />
       <input type="hidden" name="identityRowVersion" value={String(item.identityRowVersion)} />
       <input type="hidden" name="versionRowVersion" value={String(item.versionRowVersion)} />
-      <input type="hidden" name="idempotencyKey" defaultValue={`${commandIdentity.idempotencyKey.slice(0, 14)}${objectType === "CATEGORY" ? "c" : "s"}${commandIdentity.idempotencyKey.slice(15)}`} />
+      <input type="hidden" name="idempotencyKey" defaultValue={namespacedCommandUuid(commandIdentity.idempotencyKey, objectType === "CATEGORY" ? "category-submit" : "subcategory-submit")} />
       <input type="hidden" name="correlationId" defaultValue={commandIdentity.correlationId} />
       <p className="client-access-note">{item.title}</p>
       <label className="flex min-h-11 items-start gap-3 rounded-lg border p-3 text-sm">
