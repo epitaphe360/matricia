@@ -41,6 +41,18 @@ insert into public.provider_profiles(provider_organization_id,activity_summary,t
 insert into public.provider_services(id,provider_organization_id,service_id,requested_by)values('a3688000-0000-4000-8000-000000000001','a3681000-0000-4000-8000-000000000002','a3687000-0000-4000-8000-000000000003','a3680000-0000-4000-8000-000000000001');
 insert into public.provider_qualifications(id,provider_service_id,provider_organization_id,service_id)values('a3688000-0000-4000-8000-000000000002','a3688000-0000-4000-8000-000000000001','a3681000-0000-4000-8000-000000000002','a3687000-0000-4000-8000-000000000003');
 insert into public.organization_memberships(id,organization_id,user_id,status)values('a3686000-0000-4000-8000-000000000099','a3681000-0000-4000-8000-000000000002','a3680000-0000-4000-8000-000000000001','ACTIVE');
+-- A family renewed for another library must not revive the older linked version here.
+insert into public.catalog_libraries(id,code,slug,steward_organization_id,created_by)values('a3689000-0000-4000-8000-000000000001','TEST368_OTHER','test368-other','a3681000-0000-4000-8000-000000000001','a3680000-0000-4000-8000-000000000001');
+insert into public.catalog_categories(id,library_id,code,slug,created_by)values('a3689000-0000-4000-8000-000000000002','a3689000-0000-4000-8000-000000000001','TEST368_OTHER_CATEGORY','test368-other-category','a3680000-0000-4000-8000-000000000001');
+insert into public.catalog_subcategories(id,library_id,category_id,code,slug,created_by)values('a3689000-0000-4000-8000-000000000003','a3689000-0000-4000-8000-000000000001','a3689000-0000-4000-8000-000000000002','TEST368_OTHER_SUB','test368-other-sub','a3680000-0000-4000-8000-000000000001');
+insert into public.catalog_services(id,library_id,primary_subcategory_id,code,slug,created_by)values('a3689000-0000-4000-8000-000000000004','a3689000-0000-4000-8000-000000000001','a3689000-0000-4000-8000-000000000003','TEST368_OTHER_SERVICE','test368-other-service','a3680000-0000-4000-8000-000000000001');
+insert into public.provider_services(id,provider_organization_id,service_id,requested_by)values('a3689000-0000-4000-8000-000000000005','a3681000-0000-4000-8000-000000000002','a3689000-0000-4000-8000-000000000004','a3680000-0000-4000-8000-000000000001');
+insert into public.provider_qualifications(id,provider_service_id,provider_organization_id,service_id)values('a3689000-0000-4000-8000-000000000009','a3689000-0000-4000-8000-000000000005','a3681000-0000-4000-8000-000000000002','a3689000-0000-4000-8000-000000000004');
+insert into public.provider_document_families(id,provider_organization_id,document_kind,code,created_by)values('a3689000-0000-4000-8000-000000000006','a3681000-0000-4000-8000-000000000002','INSURANCE','TEST368_INSURANCE','a3680000-0000-4000-8000-000000000001');
+insert into public.provider_document_versions(id,family_id,provider_organization_id,version_number,status,storage_object_path,content_hash,change_reason,submitted_by)values
+('a3689000-0000-4000-8000-000000000007','a3689000-0000-4000-8000-000000000006','a3681000-0000-4000-8000-000000000002',1,'SUBMITTED','TEST368/old-a.pdf',repeat('a',64),'TEST earlier metadata applicable to A','a3680000-0000-4000-8000-000000000001'),
+('a3689000-0000-4000-8000-000000000008','a3689000-0000-4000-8000-000000000006','a3681000-0000-4000-8000-000000000002',2,'SUBMITTED','TEST368/new-b.pdf',repeat('b',64),'TEST current metadata applicable only to B','a3680000-0000-4000-8000-000000000001');
+insert into public.provider_document_service_links(document_version_id,provider_service_id,provider_organization_id)values('a3689000-0000-4000-8000-000000000007','a3688000-0000-4000-8000-000000000001','a3681000-0000-4000-8000-000000000002'),('a3689000-0000-4000-8000-000000000008','a3689000-0000-4000-8000-000000000005','a3681000-0000-4000-8000-000000000002');
 create temporary table scope368(k text primary key,v jsonb);
 grant select,insert on scope368 to authenticated;
 set local role authenticated;
@@ -55,6 +67,10 @@ select set_config('request.jwt.claims','{"sub":"a3680000-0000-4000-8000-00000000
 insert into scope368 values('qualification-review',public.get_provider_qualification_questionnaire_review_v1('a3688000-0000-4000-8000-000000000002'));
 select is((select v->>'qualificationId'from scope368 where k='qualification-review'),'a3688000-0000-4000-8000-000000000002','Expert can use the purpose-bound review for its service without a platform role');
 select is((select v->>'total'from scope368 where k='qualification-review'),'0','no questionnaire is invented when this fixture has no submitted session');
+select throws_ok($$select public.get_provider_qualification_questionnaire_review_v1('a3689000-0000-4000-8000-000000000009')$$,'42501','QUALIFICATION_REVIEW_DENIED','service review remains denied outside every mandate of the Expert');
+insert into scope368 values('dossiers',public.franchise_provider_dossiers('a3683000-0000-4000-8000-000000000001'));
+select is((select jsonb_array_length(provider->'documents')from scope368 cross join lateral jsonb_array_elements(v)provider where k='dossiers'and provider->>'organizationId'='a3681000-0000-4000-8000-000000000002'),0,'old A document is not revived as current when the latest family version targets B only');
+
 select set_config('request.jwt.claims','{"sub":"a3680000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal1"}',true);
 insert into scope368 values('viewer',public.franchise_operation_permissions_v1('a3683000-0000-4000-8000-000000000001'));
 select is((select v->>'canDecideQualifications'from scope368 where k='viewer'),'false','Viewer read access is not a qualification mutation grant');
