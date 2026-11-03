@@ -71,6 +71,22 @@ begin
 end$$;
 revoke all on function private.assert_franchise_book_binding_v1(uuid)from public,anon,authenticated,service_role;
 
+create function private.guard_franchise_book_binding_source_v1()returns trigger
+language plpgsql security definer set search_path=pg_catalog set timezone='UTC' as $$
+declare source jsonb;book public.franchise_pnl_books%rowtype;
+begin
+ source:=private.franchise_book_basis_source_v1(new.franchise_id,new.approved_mandate_version_id,new.finance_rule_version_id);
+ select*into book from public.franchise_pnl_books where id=new.book_id;
+ if book.id is null or new.basis_hash is distinct from private.canonical_request_hash(source)or new.basis_snapshot is distinct from source
+  or book.library_id is distinct from(source->>'library_id')::uuid or book.franchise_organization_id is distinct from(source->>'organization_id')::uuid
+  or book.franchise_type is distinct from source->>'franchise_type'or book.operator_code is distinct from source->>'operator_code'
+  or book.opened_under_rule_version_id is distinct from new.finance_rule_version_id or book.currency is distinct from new.currency
+ then raise exception'FRANCHISE_BOOK_ECONOMIC_BASIS_MISMATCH'using errcode='55000';end if;
+ return new;
+end$$;
+revoke all on function private.guard_franchise_book_binding_source_v1()from public,anon,authenticated,service_role;
+create trigger franchise_book_binding_source_guard before insert on public.franchise_pnl_book_bindings_v1 for each row execute function private.guard_franchise_book_binding_source_v1();
+
 create function public.open_franchise_pnl_book_for_mandate_v1(p_franchise_id uuid,p_approved_mandate_version_id uuid,p_expected_mandate_hash text,p_currency text,p_rule_version_id uuid,p_idempotency_key text,p_correlation_id uuid default extensions.gen_random_uuid())
 returns jsonb language plpgsql security definer set search_path=pg_catalog set timezone='UTC' as $$
 declare actor uuid:=auth.uid();f public.franchises%rowtype;m public.franchise_mandate_versions%rowtype;book public.franchise_pnl_books%rowtype;source jsonb;h text;response jsonb;counted integer;new_book uuid:=extensions.gen_random_uuid();scope text;
