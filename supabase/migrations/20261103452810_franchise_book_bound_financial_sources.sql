@@ -72,6 +72,9 @@ begin
  elsif tg_table_name='franchise_entry_fee_schedules'then
   if new.rule_version_id is distinct from(source#>>'{finance_rule,id}')::uuid or new.mode is distinct from source#>>'{approved_mandate,entry_fee_mode}'
    or new.principal_minor is distinct from(source#>>'{approved_mandate,entry_fee_minor}')::bigint
+   or(new.mode='UPFRONT'and new.due_on is distinct from new.starts_on)
+   or(new.mode='INSTALLMENT'and new.installment_count is distinct from(source#>>'{approved_mandate,entry_fee_term_months}')::integer)
+   or(new.mode in('INSTALLMENT','REVENUE_WITHHOLDING')and new.due_on>(new.starts_on+make_interval(months=>(source#>>'{approved_mandate,entry_fee_term_months}')::integer))::date)
    or(source#>>'{approved_mandate,entry_fee_minor}')::bigint>0 and source->>'currency'is distinct from source#>>'{economic_rule,currency}'
    or exists(select 1 from public.franchise_entry_fee_schedules other join public.franchise_pnl_book_bindings_v1 binding on binding.book_id=other.book_id
     where binding.franchise_id=(source->>'franchise_id')::uuid)

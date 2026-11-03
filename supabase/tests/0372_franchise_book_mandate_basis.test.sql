@@ -23,9 +23,9 @@ end$$;
 -- Proposals and decisions below are actual public governance commands, not a
 -- direct ACTIVE status seed or a claim that a legal signature exists.
 do $$declare item record;proposal jsonb;preview jsonb;begin
- for item in select*from(values('S1','STANDARD','e3720000-0000-4000-8000-000000000001'::uuid,'TEST372_A'),('S2','STANDARD','e3720000-0000-4000-8000-000000000001'::uuid,'TEST372_B'),('LEGACY','STANDARD','e3720000-0000-4000-8000-000000000002'::uuid,'TEST372_C'),('PENDING','STANDARD','e3720000-0000-4000-8000-000000000003'::uuid,'TEST372_D'),('IT','IT',(select id from public.catalog_libraries where code='IT'),'TEST372_IT'))v(k,kind,library,territory)loop
+ for item in select*from(values('S1','STANDARD','e3720000-0000-4000-8000-000000000001'::uuid,'TEST372_A'),('S2','STANDARD','e3720000-0000-4000-8000-000000000001'::uuid,'TEST372_B'),('TERMS','STANDARD','e3720000-0000-4000-8000-000000000001'::uuid,'TEST372_E'),('LEGACY','STANDARD','e3720000-0000-4000-8000-000000000002'::uuid,'TEST372_C'),('PENDING','STANDARD','e3720000-0000-4000-8000-000000000003'::uuid,'TEST372_D'),('IT','IT',(select id from public.catalog_libraries where code='IT'),'TEST372_IT'))v(k,kind,library,territory)loop
   perform pg_temp.actor372(2);
-  proposal:=public.propose_franchise_governance(item.library,'b3720000-0000-4000-8000-000000000001',case item.kind when'IT'then'HATIM_AHMITECH'else'FRANCHISEE'end,item.territory,'Territoire TEST372','نطاق اختبار372','{}',now()-interval'1 day',now()+interval'1 year',case item.kind when'IT'then 0 else 100000 end,case item.kind when'IT'then'EXEMPT'else'UPFRONT'end,0,'{}','{}','{}','book372-1@example.invalid',private.canonical_request_hash(to_jsonb(item.k::text)),'fr-MA','{}','TEST372 approved economic basis proposal','TEST372-propose-'||item.k);
+  proposal:=public.propose_franchise_governance(item.library,'b3720000-0000-4000-8000-000000000001',case item.kind when'IT'then'HATIM_AHMITECH'else'FRANCHISEE'end,item.territory,'Territoire TEST372','نطاق اختبار372','{}',now()-interval'1 day',now()+interval'1 year',case item.kind when'IT'then 0 else 100000 end,case when item.kind='IT'then'EXEMPT'when item.k='TERMS'then'INSTALLMENT'else'UPFRONT'end,case when item.k='TERMS'then 6 else 0 end,'{}','{}','{}','book372-1@example.invalid',private.canonical_request_hash(to_jsonb(item.k::text)),'fr-MA','{}','TEST372 approved economic basis proposal','TEST372-propose-'||item.k);
   if item.k<>'PENDING'then
    perform pg_temp.actor372(3);
    perform public.decide_franchise_governance((proposal->>'approval_request_id')::uuid,'APPROVE','TEST372 independent approved mandate economics',1,'TEST372-approve-'||item.k);
@@ -63,7 +63,11 @@ select throws_ok($$select public.create_franchise_entry_fee_schedule((select(ope
 reset role;
 select is((select count(*)::integer from public.franchise_entry_fee_schedules where book_id=(select(opening->>'book_id')::uuid from basis372 where k='S2')),0,'the production prerequisite failure leaves neither a schedule nor a due entry');
 update private.admin_execution_environment_v1 set environment='DEVELOPMENT',configuration_reference='TEST372_NON_CONTRACTUAL_BOOK_BINDING',configured_at=clock_timestamp()where singleton;
-set local role authenticated;select pg_temp.actor372(2,'aal1');
+set local role authenticated;select pg_temp.actor372(2);
+update basis372 set opening=public.open_franchise_pnl_book_for_mandate_v1(franchise,approved,mandate_hash,'MAD',finance_rule,'TEST372-terms-open')where k='TERMS';
+select throws_ok($$select public.create_franchise_entry_fee_schedule((select(opening->>'book_id')::uuid from basis372 where k='TERMS'),'INSTALLMENT',100000,0,null,3,current_date,(current_date+interval'3 months')::date,'{}','TEST372-wrong-installment-term')$$,'55000','FRANCHISE_ENTRY_FEE_APPROVED_TERMS_REQUIRED','a three-month schedule cannot replace the exact approved six-month payment terms');
+select is(public.create_franchise_entry_fee_schedule((select(opening->>'book_id')::uuid from basis372 where k='TERMS'),'INSTALLMENT',100000,0,null,6,current_date,(current_date+interval'6 months')::date,'{}','TEST372-approved-installment-term')->>'principal_minor','100000','the approved six-month installment schedule is accepted explicitly in non-contractual TEST mode');
+select pg_temp.actor372(2,'aal1');
 select throws_ok($$select public.open_franchise_pnl_book_for_mandate_v1(franchise,approved,mandate_hash,'MAD',finance_rule,'TEST372-open-'||k)from basis372 where k='S1'$$,'42501','FRANCHISE_BOOK_DENIED','even a stored opening receipt requires current AAL2');
 select pg_temp.actor372(2,null);
 select throws_ok($$select public.open_franchise_pnl_book_for_mandate_v1(franchise,approved,mandate_hash,'MAD',finance_rule,'TEST372-null-assurance')from basis372 where k='S1'$$,'42501','FRANCHISE_BOOK_DENIED','JSON-null assurance fails closed at the explicit boundary');
@@ -95,7 +99,7 @@ do $$declare item record;invite uuid;preview jsonb;begin
 end$$;
 select ok((select bool_and((activation->>'active_mandate_version_id')::uuid<>approved)from basis372 where k in('S1','S2','IT')),'the activation clone has a distinct identity');
 select ok((select bool_and(private.franchise_book_active_basis_v1((opening->>'book_id')::uuid)->>'active_mandate_version_id'=activation->>'active_mandate_version_id')from basis372 where k in('S1','S2','IT')),'the registry follows only the verified approved-to-active clone with matching terms');
-select is((select count(*)::integer from public.franchise_pnl_book_bindings_v1 where franchise_id in(select franchise from basis372)),3,'activation does not duplicate or rewrite the opening basis');
+select is((select count(*)::integer from public.franchise_pnl_book_bindings_v1 where franchise_id in(select franchise from basis372 where k in('S1','S2','IT'))),3,'activation does not duplicate or rewrite the opening basis');
 select pg_temp.actor372(2);set local role authenticated;
 select is((public.franchise_governance_dashboard_snapshot((select franchise from basis372 where k='S1'))#>'{bs}')::jsonb->0->>'id',(select opening->>'book_id'from basis372 where k='S1'),'the selected mandate projects its own book, not its sibling territory');
 select is(jsonb_array_length(public.franchise_governance_dashboard_snapshot((select franchise from basis372 where k='S1'))->'bs'),1,'the sibling book is excluded even for a Finance actor authorized to both');
