@@ -236,6 +236,9 @@ select public.decide_benefit_admission_policy_v1((select(v->>'policy_id')::uuid 
 select pg_temp.actor369(1);
 
 insert into p369 values('reserve',public.reserve_benefit_credits('b3690000-0000-4000-8000-000000000001',(select(v->>'wallet_id')::uuid from p369 where k='paid'),(select(v->>'benefit_version_id')::uuid from p369 where k='benefit'),1,clock_timestamp()+interval'1 day','credit369-reserve'));
+-- Fixture owner reaches the admission trigger; runtime actors keep INSERT denied.
+-- The verified TEST actor claims remain CLIENT_OWNER/AAL2 for domain checks.
+reset role;
 select throws_ok($$insert into public.benefit_redemptions(id,organization_id,wallet_id,benefit_version_id,units,credit_cost_snapshot,reserved_credits,status,reservation_expires_at,correlation_id,created_by,created_at,updated_at)
  select 'f369b000-0000-4000-8000-000000000001',organization_id,wallet_id,benefit_version_id,units,credit_cost_snapshot,reserved_credits,'RESERVED',clock_timestamp()+interval'1 day',extensions.gen_random_uuid(),created_by,statement_timestamp()-interval'1 day',statement_timestamp()-interval'1 day'
  from public.benefit_redemptions where id=(select(v->>'redemption_id')::uuid from p369 where k='reserve')$$,
