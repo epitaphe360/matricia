@@ -116,7 +116,8 @@ export async function seedFinalFinanceSource() {
   const state = await fixtureState(), pin = await sourceCandidate();
   if (state.token !== COHORT || state.database !== 'matricia_provider_browser_db_b9bd23e482324fbd'
       || state.label !== `matricia.provider-browser-test=${COHORT}` || pin.appTree !== APP_TREE
-      || ![555,556].includes(state.candidate.migrations.length)) throw Error('EXACT_FROZEN_B9BD_FINANCE_COHORT_REQUIRED');
+      || ![555,556].includes(state.candidate.migrations.length) || ![555,556].includes(pin.migrations.length)
+      || JSON.stringify(state.candidate.migrations) !== JSON.stringify(pin.migrations)) throw Error('EXACT_FROZEN_B9BD_FINANCE_COHORT_REQUIRED');
   const raw = sql(state, financeSourceSql());
   const lines = raw.trim().split('\n').filter(line => line.startsWith('{'));
   if (lines.length !== 1) throw Error('EXACT_SINGLE_FINANCE_SOURCE_RECEIPT_REQUIRED');
