@@ -14,7 +14,7 @@ Les binaires Playwright gérés n’étaient pas installés ; les essais suivant
 
 Preuves : [préparation](evidence/browser/preparation.json), [résumé partiel initial](evidence/browser/baseline/summary.json), [activation non exécutée et garde reproduite](evidence/browser/activation/first-summary.json). Les captures ne contiennent ni code privé d’invitation ni session.
 
-Vérification des gardes des outils : `node --test tests/e2e/helpers/franchise-final-safety.test.mjs` : **3 tests PASS**. Une invocation production, une invocation sans coordination et une source implicite sont refusées.
+Vérification des gardes des outils : `node --test tests/e2e/helpers/franchise-final-safety.test.mjs` : **4 tests PASS**. Une invocation production, une invocation sans coordination et une source implicite sont refusées.
 
 ## Recette finale
 
@@ -33,3 +33,48 @@ Les contrôles indépendants de cette précondition passent : **huit pages globa
 Preuves : [build et empreinte du journal](evidence/browser/core-build/build.json), [schéma adopté](evidence/browser/core-build/schema-adoption.json), [activation partielle](evidence/browser/activation-core/first-summary.json), [cause de refus catalogue reproduite](evidence/browser/catalog-scope-reproduction.json), [huit pages globales](evidence/browser/global-core/summary.json).
 
 Les outils disposent désormais de **quatre tests de garde PASS**, dont un refus d’arrêter le PostgREST possédé sans coordination supplémentaire explicite. Aucun arrêt de service de recette n’a encore été exécuté à cette étape.
+
+
+## Rétablissement catalogue `e57dcc5` et constats intermédiaires
+
+Le frontend optimisé reste exactement celui de `79a97ad` ; le commit `e57dcc50f51c63c66c09ac68670e3e11f1d9d91d` ajoute la réparation de délégation catalogue, avec un reçu de schéma de 533 vers 534 migrations et un arbre applicatif inchangé. La commande gouvernée `reconcile_franchise_catalog_mandate_v1` a accordé le premier périmètre à partir du mandat activé. Son rejeu ne crée aucune délégation ni événement supplémentaire. Le reader natif du propriétaire retrouve ensuite les deux services réels. Le second mandat a été approuvé indépendamment puis activé dans la vraie interface après cette réparation. La recette reste explicitement en mode de démonstration non contractuelle.
+
+Le contrôle initial du retour après la seconde activation attendait insuffisamment la navigation : sa capture et son résumé sont conservés sous `second-*-as-recorded`. Une visite de lecture, sans rejouer l’activation, confirme ensuite la vraie page Gouvernance. L’assertion de navigation attend désormais le chemin cible.
+
+La navigation intermédiaire compte 21 scénarios, dont 19 réussites et deux échecs conservés. Les huit menus FR/AR aux quatre largeurs passent les tests de superposition, de tabulation et de clic tactile. La navigation FR→AR→FR du détail reste dans le même document et conserve organisation, mandat et détail. Un autre locataire ne lit aucune franchise et reçoit `42501` au RPC ; les six pages sensibles testées affichent un refus. Les huit vérifications de navigation globale répètent les huit pages globales déjà recensées ; elles ne représentent pas huit comportements supplémentaires.
+
+Deux options de mandat portent encore le même libellé `FRANCHISEE` : c’est un défaut produit reproduit. L’autre échec cherchait le champ global sur une largeur de 390 px où il est masqué. Une recette ciblée à sa largeur visible de 1440 px prouve ensuite le véritable envoi de recherche : deux résultats autorisés pour `TEST`, puis zéro résultat pour un terme absent, avec conservation du mandat et aucune erreur JavaScript. Cette reprise ne transforme pas l’essai initial en réussite. La découverte de la recherche sur mobile sera vérifiée sur le prochain candidat.
+
+Deux autres défauts natifs bloquent l’édition, sans succès simulé : le payload bilingue des livrables est rejeté par le validateur SQL historique qui n’accepte que des chaînes ; aucune ligne de service n’a été créée. Plusieurs clés d’idempotence dérivées écrasent aussi la version UUID avec un caractère refusé par le validateur. Le même brouillon de test sera repris après correction du contrat et du générateur, sans supprimer les livrables bilingues ni contourner le schéma.
+
+La connexion OTP réelle prouve un défaut de proxy : GoTrue vérifie le code avec HTTP 200, puis le POST Server Action vers la page Connexion est intercepté par une redirection HTTP 307 vers le lien profond, avant le contrôle MFA natif. Le navigateur reste sur la connexion en erreur. Le diagnostic transport retourne HTTP 200 aussi bien depuis Node que depuis Chromium ; aucune désactivation CSP ou TLS n’a été utilisée. La reprise OTP→TOTP→lien profond reste en échec sur ce candidat et attend le correctif GET/HEAD du proxy. Cette vérification utilise un code généré par le GoTrue local pour un acteur `@example.invalid` ; elle ne certifie pas l’acheminement d’e-mail.
+
+Preuves : [raccordement catalogue et rejeu](evidence/browser/catalog-recovery/summary.json), [schéma 534](evidence/browser/schema-upgrades/e57dcc50f51c/schema-adoption.json), [seconde activation et retour relu](evidence/browser/activation-core/second-summary.json), [navigation intermédiaire](evidence/browser/navigation/summary.json), [recherche ciblée](evidence/browser/navigation-search-core-e57dcc5/summary.json), [contrats éditoriaux rejetés](evidence/browser/editorial/contract-mismatch.json), [OTP vérifié et POST intercepté](evidence/browser/otp-core/summary.json).
+
+## Commandes réellement exécutées pour ce lot
+
+Les commandes suivantes utilisent uniquement la cohorte locale possédée, avec ses secrets conservés sous `work/` et hors Git. Le candidat est toujours explicite ; aucune variable externe de production n’est chargée.
+
+```sh
+node --test tests/e2e/helpers/franchise-final-safety.test.mjs
+APP_ENV=development node tests/e2e/helpers/franchise-final-runtime.mjs --coordinated --production --candidate=79a97ad97220c5e4b61a9b8a3d889b1043ea6dba
+APP_ENV=development node tests/e2e/helpers/franchise-final-adopt-schema.mjs --coordinated --candidate=e57dcc50f51c63c66c09ac68670e3e11f1d9d91d --receipt=docs/franchise-completion/evidence/sql/catalog-bridge-schema-534.json
+APP_ENV=development node tests/e2e/helpers/franchise-final-reconcile-catalog.mjs --coordinated --candidate=e57dcc50f51c63c66c09ac68670e3e11f1d9d91d
+APP_ENV=development node tests/e2e/helpers/franchise-final-matrix.mjs --coordinated --smoke --candidate=e57dcc50f51c63c66c09ac68670e3e11f1d9d91d
+APP_ENV=development node tests/e2e/helpers/franchise-final-matrix.mjs --coordinated --phase=core --candidate=e57dcc50f51c63c66c09ac68670e3e11f1d9d91d
+APP_ENV=development node tests/e2e/helpers/franchise-final-navigation.mjs --coordinated --candidate=e57dcc50f51c63c66c09ac68670e3e11f1d9d91d
+APP_ENV=development node tests/e2e/helpers/franchise-final-navigation.mjs --coordinated --only=search --candidate=e57dcc50f51c63c66c09ac68670e3e11f1d9d91d
+APP_ENV=development node tests/e2e/helpers/franchise-final-otp-core.mjs --coordinated --candidate=e57dcc50f51c63c66c09ac68670e3e11f1d9d91d
+```
+
+Le résultat du build typé est PASS ; les quatre gardes d’outillage sont PASS. Les tentatives navigateur et commandes rejetées gardent leur résultat d’origine. La matrice complète et la recette ciblée du candidat suivant sont consignées séparément ; aucun contrôle hébergé, scanner antivirus réel, signature contractuelle, restauration ou clôture du mois courant n’est déclaré réussi par ces essais intermédiaires.
+
+
+L’inspection visuelle des captures ajoute deux constats que le seul contrôle de débordement ne pouvait détecter : le contexte de l’en-tête recouvre les actions à 375 px en arabe ; le tableau Services compresse ses colonnes en lettres verticales à 390 px. Les actions du menu de compte restent elles-mêmes au-dessus du contenu. Ces défauts de lisibilité sont transmis pour le prochain candidat et ne sont pas présentés comme une recette visuelle réussie. Voir [constats et captures exactes](evidence/browser/visual-findings-core.json).
+
+
+## Matrice complète du candidat intermédiaire
+
+Les **192 visites prévues ont toutes été exécutées** : 24 routes × FR/AR × 375, 390, 768 et 1440 px. Résultat : **176 PASS, 16 FAIL**. Les échecs concernent les huit visites Bibliothèque (`definition-list`) et les huit visites Services (`definition-list` et `aria-prohibited-attr`). Aucun HTTP non 200, refus de workspace inattendu, débordement horizontal du document ou erreur JavaScript n’est relevé dans cette matrice. Les deux défauts visuels de lisibilité restent néanmoins présents et sont documentés séparément.
+
+Axe n’a aucune règle exclue ; les résultats incomplets sont conservés, et une absence de violation automatisée ne constitue pas une certification intégrale d’accessibilité. Les 192 captures ne sont pas produites : les captures sont ciblées sur 390 px, l’accueil aux autres largeurs et les vrais échecs. Voir [totaux](evidence/browser/matrix-core-e57dcc5/totals.json) et [détails complets](evidence/browser/matrix-core-e57dcc5/summary.json).
