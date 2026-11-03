@@ -15,12 +15,12 @@
   },
   "finalWebTypecheck": "passed",
   "finalWebLint": "passed",
-  "browserFinal": "pending",
+  "browserFinal": "partial_stopped_for_user_time_constraint",
   "sqlFreshFinal": {
     "status": "passed",
-    "migrations": 558,
-    "files": 73,
-    "assertions": 2813,
+    "migrations": 559,
+    "files": 74,
+    "assertions": 2833,
     "publicTables": 664,
     "tablesWithoutRls": 0,
     "apiPgtapExecutable": false,
@@ -47,5 +47,14 @@
     "assistantApiAttempt": "FORBIDDEN",
     "mergeCommit": "a362abc17c332ad3a8894b55915e3bac35fcabb5",
     "followupBranch": "codex/franchise-publication-validation-20261103"
+  },
+  "lastFocusDelta": {
+    "candidate": "8ad97dd2",
+    "appTree": "865af1bcf3bd0904b9c941c90a024c5f988492b7",
+    "tests": 117,
+    "files": 13,
+    "lint": "passed",
+    "fullOptimizedBuildReplayed": false,
+    "browserReplayed": false
   }
 }
