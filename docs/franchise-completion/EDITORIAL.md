@@ -1,6 +1,6 @@
 # Franchisé : catalogue, questions et édition gouvernée
 
-Base explicite : `df67da4`, après fusion des lots Client et Sous-traitant. Travail isolé sur `codex/franchise-editorial-20261103`. Les protections serveur, RLS, mandat actif et MFA sont conservées.
+Base explicite : `df67da4`, après fusion des lots Client et Sous-traitant. Travail isolé sur `codex/franchise-editorial-20261103`. Les protections serveur, RLS, mandat actif et MFA sont conservées. La migration de projection conserve le lecteur borné final de `20261031240950`, ses gardes de mandat/permission/MFA et le contrôle d’audience par version de questionnaire.
 
 ## Constats reproduits et corrections
 
