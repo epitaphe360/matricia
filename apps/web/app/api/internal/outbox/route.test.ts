@@ -7,8 +7,10 @@ const mocks = vi.hoisted(() => ({
   social: vi.fn(),
   clientIssued: vi.fn(),
   paymentDispatch:vi.fn(),
+  networkInvitation: vi.fn(),
 }));
 
+vi.mock("@/modules/franchise/data/network/invitation-consumer", () => ({ consumeFranchiseNetworkInvitation: mocks.networkInvitation }));
 vi.mock("@/modules/shared/lib/payment-dispatch/consumer",()=>({consumeVerifiedPaymentInbox:mocks.paymentDispatch}));
 vi.mock("@/modules/client/data/billing/issued-consumer", () => ({ consumeClientCommercialDocumentIssued: mocks.clientIssued }));
 vi.mock("@/modules/shared/lib/marketing-autopilot/native-verification-consumer", () => ({ consumeSocialNativeVerification: mocks.social }));
@@ -62,6 +64,17 @@ describe("internal outbox receiver", () => {
     mocks.deliver.mockReset();
   });
   afterEach(() => write.mockRestore());
+
+  it("routes network acquisition invitations without organization member grants", async () => {
+    mocks.networkInvitation.mockReset().mockResolvedValue({ ok: true, code: "FRANCHISE_NETWORK_INVITATION_SENT" });
+    const event = { ...envelope, eventType: "FranchiseNetworkInvitationRequestedV1", payload: { invitation_id: envelope.aggregateId } };
+    const response = await POST(request(event));
+    expect(response.status).toBe(202); expect(response.headers.get("x-matricia-outbox-consumer")).toBe("FRANCHISE_NETWORK_INVITATION");
+    expect(mocks.networkInvitation).toHaveBeenCalledWith("42", envelope.aggregateId);
+    mocks.networkInvitation.mockResolvedValue({ ok: false, code: "EMAIL_PROVIDER_503" });
+    const failed = await POST(request(event)); expect(failed.status).toBe(503); expect(failed.headers.get("x-matricia-outbox-consumer")).toBeNull();
+    const mismatch = await POST(request({ ...event, aggregateId: "11111111-1111-4111-8111-111111111111" })); expect(mismatch.status).toBe(400);
+  });
 
   it("rejects unauthorized dispatches", async () => {
     expect((await POST(request(envelope, "bad"))).status).toBe(401);

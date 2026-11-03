@@ -21,6 +21,7 @@ function expectedConsumer(eventType: string): string {
   if (eventType === "SignatureSimulationStepRequestedV1") return "SIGNATURE_SIMULATION";
   if (eventType === "ClientCommercialDocumentIssuedV1") return "CLIENT_BILLING_DOCUMENTS";
   if (eventType === "SocialNativeVerificationRequestedV1") return "SOCIAL_NATIVE_VERIFICATION";
+  if (eventType === "FranchiseNetworkInvitationRequestedV1") return "FRANCHISE_NETWORK_INVITATION";
   if (eventType === "OrganizationEmailInvitationRequestedV1") return "ORGANIZATION_EMAIL_INVITATION";
   if (eventType === "AdminActionAuthorizedV1") return "ADMIN_OPERATIONAL_ACTION";
   if (eventType === "SubscriptionRefundReconciliationAuthorizedV1") return "SUBSCRIPTION_REFUND_RECONCILIATION";

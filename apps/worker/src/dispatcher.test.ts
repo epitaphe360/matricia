@@ -11,6 +11,15 @@ const envelope: OutboxEnvelope = {
   payload: {},
 };
 
+it("requires the acquisition invitation consumer acknowledgement instead of a terminal observation", async () => {
+  const fetcher = vi.fn().mockResolvedValue(new Response(null, { status: 202, headers: { "x-matricia-outbox-consumer": "TERMINAL_OBSERVABILITY" } }));
+  const dispatcher = createWorkerDispatcher({ documentScanConsumer: { consume: vi.fn().mockResolvedValue(null) }, dispatchUrl: new URL("https://internal.example.test/events"), webhookSecret: "local-test-secret", fetcher });
+  const event = { ...envelope, eventType: "FranchiseNetworkInvitationRequestedV1" };
+  await expect(dispatcher.dispatch(event)).rejects.toThrow();
+  fetcher.mockResolvedValue(new Response(null, { status: 202, headers: { "x-matricia-outbox-consumer": "FRANCHISE_NETWORK_INVITATION" } }));
+  await expect(dispatcher.dispatch(event)).resolves.toBeUndefined();
+});
+
 describe("worker dispatcher", () => {
   it("handles document uploads locally without exposing them to the webhook", async () => {
     const consume = vi.fn().mockResolvedValue({ outcome: "DOCUMENT_SCAN_RECORDED" });
