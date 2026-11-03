@@ -9,5 +9,5 @@ describe("namespaced native command UUID",()=>{
   for(const key of keys){expect(z.string().uuid().safeParse(key).success).toBe(true);expect(key[14]).toBe(seed[14]);expect(key[19]).toBe(seed[19]);}
  });
  it("is deterministic across hydration, retries and differently cased seed",()=>{const seed="8D037500-0000-4000-8000-000000000001";for(const name of names)expect(namespacedCommandUuid(seed,name)).toBe(namespacedCommandUuid(seed.toLowerCase(),name));});
- it("rejects malformed source identities without weakening form validation",()=>{expect(()=>namespacedCommandUuid("8d037500-0000-a000-8000-000000000001","service-submit")).toThrow();});
+ it.each(["8d037500-0000-a000-8000-000000000001","00000000-0000-0000-0000-000000000000","ffffffff-ffff-ffff-ffff-ffffffffffff"])("rejects a non-random command seed %s without returning an invalid derived UUID",seed=>{expect(()=>namespacedCommandUuid(seed,"service-submit")).toThrow();});
 });

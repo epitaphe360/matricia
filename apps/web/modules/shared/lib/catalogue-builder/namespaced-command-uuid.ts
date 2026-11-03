@@ -14,7 +14,7 @@ export type CommandUuidNamespace = keyof typeof namespaces;
 export function namespacedCommandUuid(seed: string, namespace: CommandUuidNamespace): string {
   const parsed = z.string().uuid().parse(seed).toLowerCase();
   const mask = namespaces[namespace];
-  if (!mask) throw new Error("INVALID_COMMAND_UUID_NAMESPACE");
+  if (typeof mask !== "number") throw new Error("INVALID_COMMAND_UUID_NAMESPACE");
   const suffix = ((Number.parseInt(parsed.slice(28), 16) ^ mask) >>> 0).toString(16).padStart(8, "0");
-  return parsed.slice(0, 28) + suffix;
+  return z.string().uuid().parse(parsed.slice(0, 28) + suffix);
 }
