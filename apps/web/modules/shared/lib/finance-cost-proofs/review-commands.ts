@@ -67,9 +67,9 @@ export async function downloadFinanceCostEvidence(evidence: FinanceCostEvidence,
   } catch { return { ok: false, code: "UNAVAILABLE" }; }
 }
 
-export type FinanceCostProofDocument = FinanceCostEvidence & { status: "RESERVED" | "UPLOADED"; scanStatus: "PENDING" | "CLEAN" | "REJECTED" | "ERROR"; revoked: boolean };
+export type FinanceCostProofDocument = FinanceCostEvidence & { status: "RESERVED" | "UPLOADED"; scanStatus: "PENDING" | "CLEAN" | "REJECTED" | "ERROR"; revoked: boolean; canRetry: boolean };
 export type FinanceCostProofPage = { page: number; hasMore: boolean; documents: FinanceCostProofDocument[]; proposals: FinanceCostReviewProposal[] };
-const documentDto = z.object({ upload_id: z.string().uuid(), file_name: z.string().min(1).max(180), sha256: z.string().regex(/^[a-f0-9]{64}$/), mime_type: z.enum(["application/pdf", "image/jpeg", "image/png"]), size_bytes: z.number().int().positive().max(10485760), status: z.enum(["RESERVED", "UPLOADED"]), scan_status: z.enum(["PENDING", "CLEAN", "REJECTED", "ERROR"]), revoked: z.boolean() });
+const documentDto = z.object({ upload_id: z.string().uuid(), file_name: z.string().min(1).max(180), sha256: z.string().regex(/^[a-f0-9]{64}$/), mime_type: z.enum(["application/pdf", "image/jpeg", "image/png"]), size_bytes: z.number().int().positive().max(10485760), status: z.enum(["RESERVED", "UPLOADED"]), scan_status: z.enum(["PENDING", "CLEAN", "REJECTED", "ERROR"]), revoked: z.boolean(), can_retry: z.boolean().optional() });
 const proposalDto = z.object({ id: z.string().uuid(), component: financeCostComponentSchema, target_id: z.string().uuid(), source_hash: z.string().regex(/^[a-f0-9]{64}$/), currency: z.string().regex(/^[A-Z]{3}$/), status: z.enum(["PENDING", "APPROVED", "REJECTED"]), can_decide: z.boolean(), proof: documentDto.pick({ upload_id: true, file_name: true, sha256: true, mime_type: true, size_bytes: true }) });
 const pageDto = z.object({ page: z.number().int().min(1).max(10000), page_size: z.literal(20), has_more: z.boolean(), documents: z.array(documentDto).max(20), proposals: z.array(proposalDto).max(20) });
 export async function readFinanceCostProofPage(client: SupabaseClient, target: FinanceCostTarget, page: number): Promise<{ok:true;value:FinanceCostProofPage}|{ok:false;code:FinanceCostReviewFailure}> {
@@ -81,7 +81,7 @@ export async function readFinanceCostProofPage(client: SupabaseClient, target: F
     if (!parsed.success || parsed.data.page !== page || parsed.data.proposals.some(proposal => proposal.component !== target.component || proposal.target_id !== target.id)) return { ok: false, code: "INVALID_RESPONSE" };
     const evidence = (proof: z.infer<typeof proposalDto>["proof"]): FinanceCostEvidence => ({ uploadId: proof.upload_id, fileName: proof.file_name, sha256: proof.sha256, mimeType: proof.mime_type, sizeBytes: proof.size_bytes });
     return { ok: true, value: { page, hasMore: parsed.data.has_more,
-      documents: parsed.data.documents.map(document => ({ ...evidence(document), status: document.status, scanStatus: document.scan_status, revoked: document.revoked })),
+      documents: parsed.data.documents.map(document => ({ ...evidence(document), status: document.status, scanStatus: document.scan_status, revoked: document.revoked, canRetry: document.can_retry === true })),
       proposals: parsed.data.proposals.map(proposal => ({ id: proposal.id, component: proposal.component, targetId: proposal.target_id, targetLabel: target.label, sourceHash: proposal.source_hash, currency: proposal.currency, status: proposal.status, canDecide: proposal.can_decide, proof: evidence(proposal.proof) })),
     } };
   } catch { return { ok: false, code: "UNAVAILABLE" }; }

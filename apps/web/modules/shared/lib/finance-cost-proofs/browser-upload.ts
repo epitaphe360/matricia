@@ -16,7 +16,7 @@ export const financeCostUploadContextSchema = z.object({
   mime_type: z.enum(["application/pdf", "image/jpeg", "image/png"]),
 });
 export type FinanceCostUploadContext = z.infer<typeof financeCostUploadContextSchema>;
-export type FinanceCostProofFailure = "INVALID_FILE" | "UNAUTHENTICATED" | "MFA_REQUIRED" | "FORBIDDEN" | "CONFLICT" | "INVALID_RESPONSE" | "RESERVATION_FAILED" | "UPLOAD_FAILED" | "UPLOAD_UNCONFIRMED" | "CONNECTION_INTERRUPTED" | "READ_FAILED";
+export type FinanceCostProofFailure = "VALIDATION" | "INVALID_FILE" | "UNAUTHENTICATED" | "MFA_REQUIRED" | "FORBIDDEN" | "CONFLICT" | "INVALID_RESPONSE" | "RESERVATION_FAILED" | "UPLOAD_FAILED" | "UPLOAD_UNCONFIRMED" | "CONNECTION_INTERRUPTED" | "READ_FAILED";
 export type FinanceCostUploadResult = { ok: true; upload: FinanceCostUploadContext } | { ok: false; code: FinanceCostProofFailure; uploadId?: string };
 export type FinanceCostFileMetadata = { sha256: string; sizeBytes: number; mimeType: "application/pdf" | "image/jpeg" | "image/png"; fileName: string };
 export type FinanceCostUploadPhase = "HASHING" | "RESERVING" | "UPLOADING" | "VERIFYING";
@@ -103,4 +103,24 @@ export async function uploadFinanceCostProof(client: SupabaseClient, input: {
     if (!receipt.success || receipt.data.upload_id !== uploadId) return { ok: false, code: "INVALID_RESPONSE", uploadId };
     return { ok: true, upload: { ...parsed.data, status: "UPLOADED", scan_status: receipt.data.scan_status } };
   } catch { return { ok: false, code: "CONNECTION_INTERRUPTED", ...(uploadId ? { uploadId } : {}) }; }
+}
+
+export type FinanceCostScanRetryResult = {ok:true;uploadId:string;scanStatus:FinanceCostScanStatus;retryScheduled:true}|{ok:false;code:FinanceCostProofFailure;uploadId:string;retryScheduled:boolean};
+
+/** Retry changes operational scheduling only; earlier scan results remain server-owned history. */
+export async function retryFinanceCostScan(client:SupabaseClient,uploadId:string,reason:string,request:typeof fetch=fetch):Promise<FinanceCostScanRetryResult> {
+  if(!z.string().uuid().safeParse(uploadId).success)return{ok:false,code:"INVALID_RESPONSE",uploadId,retryScheduled:false};
+  if(reason.trim().length<10||reason.trim().length>2000)return{ok:false,code:"VALIDATION",uploadId,retryScheduled:false};
+  let retryScheduled=false;
+  try {
+    const retried=await client.rpc("retry_finance_cost_document_scan_v1",{p_upload_id:uploadId,p_reason:reason.trim()});
+    if(retried.error)return{ok:false,code:retried.error.code==="55P03"||retried.error.code==="55000"?"CONFLICT":rpcFailure(retried.error,"RESERVATION_FAILED"),uploadId,retryScheduled};
+    const receipt=z.object({outcome:z.literal("FINANCE_COST_DOCUMENT_RETRY_SCHEDULED"),upload_id:z.string().uuid(),scan_status:z.literal("PENDING")}).safeParse(retried.data);
+    if(!receipt.success||receipt.data.upload_id!==uploadId)return{ok:false,code:"INVALID_RESPONSE",uploadId,retryScheduled};
+    retryScheduled=true;
+    const response=await request(`/api/finance/cost-proofs/uploads/${uploadId}`,{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:"{}"});
+    if(!response.ok)return{ok:false,code:await financeCostHttpPrerequisite(response)??(response.status===409?"CONFLICT":"UPLOAD_UNCONFIRMED"),uploadId,retryScheduled};
+    const committed=z.object({outcome:z.literal("FINANCE_COST_DOCUMENT_UPLOADED"),upload_id:z.string().uuid(),scan_status:financeCostScanSchema}).safeParse(await response.json());
+    return committed.success&&committed.data.upload_id===uploadId?{ok:true,uploadId,scanStatus:committed.data.scan_status,retryScheduled}:{ok:false,code:"INVALID_RESPONSE",uploadId,retryScheduled};
+  }catch{return{ok:false,code:"CONNECTION_INTERRUPTED",uploadId,retryScheduled};}
 }

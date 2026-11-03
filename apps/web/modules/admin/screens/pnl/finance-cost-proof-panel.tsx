@@ -13,7 +13,7 @@ import { safeReturnPath } from "@/modules/shared/lib/auth/return-path";
 import { classifyAuthReadFailure } from "@/modules/shared/lib/auth/read-failure";
 import { getSupabaseBrowserClient } from "@/modules/shared/lib/supabase/client";
 import type { Locale } from "@/modules/shared/lib/i18n/locale";
-import { readFinanceCostUpload, uploadFinanceCostProof, type FinanceCostProofFailure, type FinanceCostUploadContext, type FinanceCostUploadPhase } from "@/modules/shared/lib/finance-cost-proofs/browser-upload";
+import { readFinanceCostUpload, retryFinanceCostScan, uploadFinanceCostProof, type FinanceCostScanRetryResult, type FinanceCostProofFailure, type FinanceCostUploadContext, type FinanceCostUploadPhase } from "@/modules/shared/lib/finance-cost-proofs/browser-upload";
 import { createLatestFinanceCostProofPageReader, decideFinanceZeroCost, downloadFinanceCostEvidence, proposeFinanceZeroCost, readFinanceCostProofPage, type FinanceCostCommandResult, type FinanceCostEvidence, type FinanceCostProofDocument, type FinanceCostProofPage, type FinanceCostProofWorkspace, type FinanceCostReviewFailure, type FinanceCostReviewProposal, type FinanceCostTarget } from "@/modules/shared/lib/finance-cost-proofs/review-commands";
 import { financeCostProofCopy } from "./finance-cost-proof-copy";
 
@@ -70,11 +70,27 @@ function ProposalReview({proposal,locale,returnPath,onChanged}:{proposal:Finance
   </article>;
 }
 
-function EvidenceDocument({document:proof,locale,returnPath}:{document:FinanceCostProofDocument;locale:Locale;returnPath:string}) {
+function ScanRetry({locale,uploadId,returnPath,onChanged}:{locale:Locale;uploadId:string;returnPath:string;onChanged:()=>void}) {
+  const c=financeCostProofCopy[locale],id=useId(),[reason,setReason]=useState(""),[busy,setBusy]=useState(false),[result,setResult]=useState<FinanceCostScanRetryResult|null>(null);
+  async function retry() {
+    if(busy)return;setBusy(true);setResult(null);
+    try{const response=await retryFinanceCostScan(getSupabaseBrowserClient(),uploadId,reason);setResult(response);if(response.retryScheduled)onChanged();}
+    catch{setResult({ok:false,code:"CONNECTION_INTERRUPTED",uploadId,retryScheduled:false});}finally{setBusy(false);}
+  }
+  return <form className="space-y-3 rounded-lg border p-3" onSubmit={event=>{event.preventDefault();void retry();}}>
+    <Label htmlFor={`${id}-retry-reason`}>{c.retryReason}</Label><Textarea id={`${id}-retry-reason`} value={reason} onChange={event=>setReason(event.target.value)} minLength={10} maxLength={2000} required disabled={busy} dir="auto"/>
+    <Button type="submit" variant="outline" disabled={busy||reason.trim().length<10}>{busy?c.processing:c.retryScan}</Button>
+    {result?.retryScheduled?<p role="status">{c.retryScheduled}</p>:null}
+    {result&&!result.ok?<FailureMessage code={result.code} locale={locale} returnPath={returnPath}/>:null}
+  </form>;
+}
+
+function EvidenceDocument({document:proof,locale,returnPath,onChanged,canRetry}:{document:FinanceCostProofDocument;locale:Locale;returnPath:string;onChanged:()=>void;canRetry:boolean}) {
   const c=financeCostProofCopy[locale];
   return <li className="rounded-lg border p-3 space-y-2">
     <p>{proof.revoked?c.revoked:c.scan[proof.scanStatus]}</p>
     {proof.scanStatus==="CLEAN"&&!proof.revoked?<EvidenceDownload evidence={proof} locale={locale} returnPath={returnPath}/>:<p className="break-words text-sm"><bdi>{proof.fileName}</bdi></p>}
+    {canRetry&&proof.canRetry&&!proof.revoked&&(proof.scanStatus==="ERROR"||proof.scanStatus==="PENDING")?<ScanRetry locale={locale} uploadId={proof.uploadId} returnPath={returnPath} onChanged={onChanged}/>:null}
   </li>;
 }
 
@@ -171,6 +187,7 @@ function FinanceCostProofWorkspacePanel({locale,workspace,returnPath}:{locale:Lo
       {upload&&upload.targetKey===selected?<div className="space-y-3 rounded-xl border p-4">
         <p role="status">{c.scan[upload.value.scan_status]}</p>
         <Button type="button" variant="outline" disabled={readingUpload||busy} onClick={()=>void refreshUpload(upload)}>{readingUpload?c.processing:c.refresh}</Button>
+        {workspace.canUpload&&upload.value.status==="UPLOADED"&&upload.value.scan_status==="ERROR"?<ScanRetry locale={locale} uploadId={upload.value.upload_id} returnPath={returnPath} onChanged={()=>{void refreshUpload(upload);if(selectedTarget)void loadRows(selectedTarget);}}/>:null}
         {canPropose&&!proposal?.ok?<form onSubmit={event=>{event.preventDefault();void propose();}} className="space-y-3"><Label htmlFor={`${id}-reason`}>{c.reason}</Label><Textarea id={`${id}-reason`} value={reason} onChange={event=>setReason(event.target.value)} required minLength={10} maxLength={2000} disabled={proposing} dir="auto"/><Button type="submit" disabled={proposing||reason.trim().length<10}>{proposing?c.processing:c.propose}</Button></form>:null}
         {proposal?(proposal.ok?<p role="status">{c.proposed}</p>:<FailureMessage code={proposal.code} locale={locale} returnPath={returnPath}/>):null}
       </div>:null}
@@ -178,8 +195,8 @@ function FinanceCostProofWorkspacePanel({locale,workspace,returnPath}:{locale:Lo
         <h3 className="text-lg font-semibold">{c.reviews}</h3>
         {loading?<p role="status">{c.loading}</p>:null}
         {listFailure?<FailureMessage code={listFailure} locale={locale} returnPath={returnPath}/>:rows?<>
-          {!rows.proposals.length?<p>{c.noReviews}</p>:rows.proposals.map(item=><ProposalReview key={item.id} proposal={item} locale={locale} returnPath={returnPath} onChanged={()=>{void loadRows(selectedTarget);router.refresh();}}/>)}
-          {rows.documents.length?<div className="space-y-3"><h3 className="font-semibold">{c.documents}</h3><ul className="space-y-3">{rows.documents.map(document=><EvidenceDocument key={document.uploadId} document={document} locale={locale} returnPath={returnPath}/>)}</ul></div>:null}
+          {!rows.proposals.length?<p>{c.noReviews}</p>:rows.proposals.map(item=><ProposalReview key={item.id} proposal={{...item,canDecide:workspace.canUpload&&item.canDecide}} locale={locale} returnPath={returnPath} onChanged={()=>{void loadRows(selectedTarget);router.refresh();}}/>)}
+          {rows.documents.length?<div className="space-y-3"><h3 className="font-semibold">{c.documents}</h3><ul className="space-y-3">{rows.documents.map(document=><EvidenceDocument key={document.uploadId} document={document} canRetry={workspace.canUpload} locale={locale} returnPath={returnPath} onChanged={()=>{void loadRows(selectedTarget);}}/>)}</ul></div>:null}
           {rows.hasMore?<Button type="button" variant="outline" disabled={loading} onClick={()=>void loadRows(selectedTarget,rows.page+1)}>{c.more}</Button>:null}
         </>:null}
         {listFailure?<Button type="button" variant="outline" disabled={loading} onClick={()=>void loadRows(selectedTarget)}>{c.retry}</Button>:null}

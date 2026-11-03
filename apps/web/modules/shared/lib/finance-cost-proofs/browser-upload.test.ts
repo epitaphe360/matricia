@@ -72,3 +72,24 @@ describe("a protected Finance upload response",()=>{
   expect(await uploadFinanceCostProof(client,input(),request)).toEqual({ok:false,code:"FORBIDDEN",uploadId});
  });
 });
+
+describe("real scanner retry",()=>{
+ it("reschedules the same uploaded document, preserves the audit reason and asks the server to recheck its bytes",async()=>{
+  const {retryFinanceCostScan}=await import("./browser-upload");rpc.mockResolvedValue({data:{outcome:"FINANCE_COST_DOCUMENT_RETRY_SCHEDULED",upload_id:uploadId,scan_status:"PENDING"},error:null});
+  expect(await retryFinanceCostScan(client,uploadId,"Reprise après indisponibilité du contrôle",request)).toEqual({ok:true,uploadId,scanStatus:"PENDING",retryScheduled:true});
+  expect(rpc).toHaveBeenCalledWith("retry_finance_cost_document_scan_v1",{p_upload_id:uploadId,p_reason:"Reprise après indisponibilité du contrôle"});expect(store).not.toHaveBeenCalled();expect(request).toHaveBeenCalledWith(`/api/finance/cost-proofs/uploads/${uploadId}`,expect.objectContaining({method:"POST",body:"{}"}));
+ });
+ it("does not certify a scan when scheduling succeeded but its immediate server check failed",async()=>{
+  const {retryFinanceCostScan}=await import("./browser-upload");rpc.mockResolvedValue({data:{outcome:"FINANCE_COST_DOCUMENT_RETRY_SCHEDULED",upload_id:uploadId,scan_status:"PENDING"},error:null});request.mockResolvedValue(new Response(null,{status:503}));
+  expect(await retryFinanceCostScan(client,uploadId,"Reprise après incident du scanner",request)).toEqual({ok:false,code:"UPLOAD_UNCONFIRMED",uploadId,retryScheduled:true});
+ });
+ it("does not recheck bytes after a foreign owner or busy lease refusal",async()=>{
+  const {retryFinanceCostScan}=await import("./browser-upload");
+  for(const code of ["42501","55P03"]){rpc.mockResolvedValue({data:null,error:{code}});const response=await retryFinanceCostScan(client,uploadId,"Reprise document en attente",request);expect(response).toMatchObject({ok:false,retryScheduled:false});}
+  expect(request).not.toHaveBeenCalled();
+ });
+ it("validates the reason and never trusts a receipt for a different document",async()=>{
+  const {retryFinanceCostScan}=await import("./browser-upload");expect(await retryFinanceCostScan(client,uploadId,"court",request)).toMatchObject({ok:false,code:"VALIDATION",retryScheduled:false});expect(rpc).not.toHaveBeenCalled();
+  rpc.mockResolvedValue({data:{outcome:"FINANCE_COST_DOCUMENT_RETRY_SCHEDULED",upload_id:target,scan_status:"PENDING"},error:null});expect(await retryFinanceCostScan(client,uploadId,"Reprise document en attente",request)).toMatchObject({ok:false,code:"INVALID_RESPONSE",retryScheduled:false});expect(request).not.toHaveBeenCalled();
+ });
+});
