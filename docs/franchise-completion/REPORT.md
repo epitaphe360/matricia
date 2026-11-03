@@ -1,6 +1,6 @@
 # Clôture financière et Franchisé — rapport de réalisation
 
-État : **recette finale en cours**. Source conservée après les fusions utilisateur : `df67da4`, branche principale `codex/bootstrap-foundation`. Travail : `codex/franchise-finance-completion-20261103`. Aucun merge ni déploiement de production.
+État : **recette finale en cours**. La PR[#12](https://github.com/epitaphe360/matricia/pull/12) a été fusionnée par l’utilisateur en `a362abc1`. La régularisation PRIMARY découverte après cette fusion est isolée dans `codex/franchise-publication-validation-20261103`, créée depuis cette version fusionnée, sans réappliquer les corrections précédentes. Source conservée après les fusions utilisateur : `df67da4`, branche principale `codex/bootstrap-foundation`. Travail : `codex/franchise-finance-completion-20261103`. Aucun merge ni déploiement de production.
 
 Le candidat applicatif courant est `b433394c`, arbre `apps/web` `c318ec4094656f3937f7754c488954f10bbce56a`. Il ajoute uniquement les derniers couples descriptifs `dt/dd` au candidat `834202b6`, déjà compilé avec TypeScript strict. Le nouveau build et sa recette visuelle sont en cours ;117 tests ciblés du delta ont réussi. Les migrations correctives ultérieures ne modifient pas ces arbres. Chaque recette conserve son véritable candidat ; les premiers échecs ne sont pas renommés en succès final.
 
@@ -36,3 +36,7 @@ Les preuves locales ne certifient pas Supabase hébergé, Vercel, Railway, le sc
 La société/identité légale complète et les formalités approuvées, le fournisseur/niveau de signature contractuelle, les seuils de gouvernance validés et les références de staging restent à fournir ou valider selon les registres du projet. La marque Matricia n’est pas assimilée à une identité légale complète. Les prix et conditions manquants ne sont pas inventés.
 
 Une signature SIMPLE DEV-mock, des identités ou métadonnées SQL TEST et un callback de paiement DEMO sont explicitement distingués d’une signature juridique, d’un parcours Auth natif ou d’une capture PSP réelle. Les tests ne modifient aucune horloge et ne désactivent ni MFA, ni RLS, ni triggers financiers.
+
+## Régularisation native après fusion de la PR12
+
+Les anciens services TEST importés possédaient un parent, mais aucun lien PRIMARY. La sauvegarde native créait un brouillon en renvoyant un succès sans rétablir cette relation lorsque le parent restait identique. Le correctif455380 réutilise le writer DRAFT et ses gardes ; sa trace précise la réparation, sans approuver ni publier. [Preuve RED/GREEN](evidence/sql/primary-link-red-green/after-summary.json) :20 assertions réussies, anciens contenus publiés inchangés, rejeu et absence de doublon. Le replay559/74fichiers et la publication navigateur sont en cours. [Revue indépendante](PUBLICATION-INDEPENDENT-REVIEW.md).
