@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildWorkerReadiness, createWorkerCycle } from "./worker-cycle";
+import { buildWorkerReadiness, createWorkerCycle, workerHeartbeatHealthy } from "./worker-cycle";
 
 describe("worker dependency cycle", () => {
   it("continues independent Outbox work while reporting antivirus unavailable", async () => {
@@ -69,4 +69,28 @@ it("reports ready with both verified billing pages and healthy Outbox/scanner", 
   expect(buildWorkerReadiness(healthy, { closing: { ok: true, latencyMs: 4 }, reminders: { ok: true, latencyMs: 5 } })).toMatchObject({
     status: "ready", checks: { provider_billing: { status: "up" }, provider_billing_reminders: { status: "up" } },
   });
+});
+
+
+it("reports control readiness down before its first verified run", () => {
+  const state = { antivirus: { ok: true, latencyMs: 1 }, outbox: { ok: true, latencyMs: 2 } };
+  const billing = { closing: { ok: true, latencyMs: 3 }, reminders: { ok: true, latencyMs: 4 } };
+  expect(buildWorkerReadiness(state, billing, { control: null })).toMatchObject({ status: "not_ready", checks: { franchise_control: { status: "down", code: "FRANCHISE_CONTROL_NOT_STARTED" } } });
+  expect(workerHeartbeatHealthy(state, billing, { control: null })).toBe(false);
+});
+it.each(["FRANCHISE_CONTROL_RUNNING", "FRANCHISE_CONTROL_BUSY", "FRANCHISE_CONTROL_SCHEDULER_FAILED"] as const)("never turns %s into a healthy heartbeat", code => {
+  const state = { antivirus: { ok: true, latencyMs: 1 }, outbox: { ok: true, latencyMs: 2 } };
+  const billing = { closing: { ok: true, latencyMs: 3 }, reminders: { ok: true, latencyMs: 4 } };
+  const control = { control: { ok: false, latencyMs: 5, code } };
+  expect(buildWorkerReadiness(state, billing, control).status).toBe("not_ready");
+  expect(workerHeartbeatHealthy(state, billing, control)).toBe(false);
+});
+it("needs verified independent control plus both finance pages and Outbox for heartbeat", () => {
+  const state = { antivirus: { ok: true, latencyMs: 1 }, outbox: { ok: true, latencyMs: 2 } };
+  const billing = { closing: { ok: true, latencyMs: 3 }, reminders: { ok: true, latencyMs: 4 } };
+  const control = { control: { ok: true, latencyMs: 5 } };
+  expect(buildWorkerReadiness(state, billing, control).status).toBe("ready");
+  expect(workerHeartbeatHealthy(state, billing, control)).toBe(true);
+  expect(workerHeartbeatHealthy(state, { ...billing, closing: { ok: false, latencyMs: 1 } }, control)).toBe(false);
+  expect(workerHeartbeatHealthy({ ...state, outbox: { ok: false, latencyMs: 1 } }, billing, control)).toBe(false);
 });

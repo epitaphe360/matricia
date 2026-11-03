@@ -23,7 +23,7 @@ export async function loadNativeFranchiseControl(franchiseId: string, cursor?: {
   if (!z.string().uuid().safeParse(franchiseId).success) return { status: "error", reason: "VALIDATION" };
   const parsedCursor = cursor && (cursor.before || cursor.id) ? cursorSchema.safeParse(cursor) : null;
   if (parsedCursor && !parsedCursor.success) return { status: "error", reason: "VALIDATION" };
-  const eventsCursor = cursor && (cursor.eventPlanId || cursor.afterEventId) ? z.object({ eventPlanId: z.string().uuid(), afterEventId: z.string().regex(/^\d{1,19}$/).refine(value => BigInt(value) <= 9223372036854775807n) }).safeParse(cursor) : null;
+  const eventsCursor = cursor && (cursor.eventPlanId || cursor.afterEventId) ? z.object({ eventPlanId: z.string().uuid(), afterEventId: z.string().regex(/^\d{1,19}$/).refine(value => BigInt(value) <= BigInt("9223372036854775807")) }).safeParse(cursor) : null;
   if (eventsCursor && !eventsCursor.success) return { status: "error", reason: "VALIDATION" };
   try {
     const client = await getSupabaseServerClient();

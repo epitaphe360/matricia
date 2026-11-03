@@ -21,7 +21,7 @@ Une observation absente donne `null`, jamais zéro. Le score global n’existe q
 
 Les événements sont limités à l’intervalle du rapport ; les indicateurs d’inventaire décrivent explicitement l’état à leur collecte. Le grain métier est celui de la bibliothèque mandatée et du réseau propre à la franchise, pas une attribution personnelle des revenus ni une reconstitution rétroactive de l’inventaire. La comparaison anonyme ne publie une médiane qu’à partir de cinq autres franchises comparables complètes. Le rapport conserve son modèle, ses scores, ses compteurs, sa méthode, son lien précédent et l’empreinte du manifeste source ; l’export JSON reste privé et soumis à la même RLS.
 
-Les seuils produisent des alertes figées et une proposition corrective avec objectifs, responsable proposé et échéance. Commentaires et avancement sont append-only et bornés au mandat. Approbation/refus/achèvement exigent Admin AAL2 ; l’achèvement exige une nouvelle mesure native atteignant les objectifs. Ces opérations ne changent jamais automatiquement le statut contractuel d’une franchise.
+Les seuils produisent des alertes figées et une proposition corrective (dédupliquée lorsqu’un plan du même modèle couvre déjà les objectifs et reste ouvert dans son délai) avec objectifs, responsable proposé et échéance. Commentaires et avancement sont append-only et bornés au mandat. Approbation/refus/achèvement exigent un Admin AAL2 indépendant de l’organisation opératrice, y compris lorsqu’il cumule plusieurs rôles ; l’achèvement exige une nouvelle mesure native atteignant les objectifs. Ces opérations ne changent jamais automatiquement le statut contractuel d’une franchise.
 
 ## Intégration attendue dans la branche principale de travail
 
@@ -32,7 +32,9 @@ Les seuils produisent des alertes figées et une proposition corrective avec obj
 ## Vérifications réellement exécutées dans ce lot
 
 - Web : 30 tests PASS sur DAL, rendu FR/AR, capacités, états manquants, plans, export privé et actions/messages existants.
-- Worker : 10 tests PASS (borne, reçu partiel, panne, reprise, non-chevauchement).
+- Worker : suite intégrée complète de 134 tests PASS (118 Finance et dépendances existantes, 11 contrôles natifs, cinq contrôles supplémentaires de readiness/heartbeat). Le groupe initial de dix tests de contrôle est inclus et ne s’additionne pas à ce total.
 - Types Web et worker PASS ; ESLint ciblé PASS.
-- `0365_franchise_native_performance_control.test.sql` fournit une recette native rollback-only à deux mandats TEST, sans désactivation de protection. Son exécution SQL est confiée au rejeu isolé d’intégration ; elle n’est pas déclarée réussie avant ce résultat.
-- La recette navigateur, l’intégration effective au worker et la revue indépendante restent à prouver sur le candidat intégré.
+- `0365_franchise_native_performance_control.test.sql` fournit une recette native rollback-only à deux mandats TEST, sans désactivation de protection. Son exécution SQL est confiée au rejeu isolé d’intégration ; elle n’est pas déclarée réussie avant ce résultat. Les corrections après revue sont additives (`454100` pour la pagination, `454200` pour les envois en attente et l’indépendance des décisions). Le contenu appliqué `454000`, hash `0713578e`, reste inchangé.
+- La recette navigateur, l’recette du worker branché et la revue indépendante complète restent à prouver sur le candidat intégré. Le hook runtime est maintenant fourni : cadence indépendante de 30 secondes, readiness et heartbeat refusés avant un passage effectif, pendant un passage, en cas de verrou occupé ou d’échec.
+
+Une vérification TypeScript a détecté un littéral BigInt incompatible avec la cible Web : la borne de curseur utilise désormais `BigInt("9223372036854775807")`. Le journal d’échec est conservé, suivi du typecheck réussi ; la cible TypeScript n’a pas été abaissée ou modifiée.

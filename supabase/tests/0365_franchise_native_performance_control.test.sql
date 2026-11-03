@@ -38,6 +38,10 @@ insert into public.catalog_services(id,library_id,primary_subcategory_id,code,sl
 insert into public.platform_user_roles(user_id,role_code)values
 ('a3650000-0000-4000-8000-000000000001','MATRICIA_ADMIN'),
 ('a3650000-0000-4000-8000-000000000003','MATRICIA_ADMIN');
+insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)values('a3650000-0000-4000-8000-000000000004','00000000-0000-0000-0000-000000000000','authenticated','authenticated','composite-review-365@example.invalid','',now(),'{}','{}',now(),now());
+insert into public.organization_memberships(id,organization_id,user_id,status)values('c3650000-0000-4000-8000-000000000004','b3650000-0000-4000-8000-000000000002','a3650000-0000-4000-8000-000000000004','ACTIVE');
+insert into public.organization_member_roles(membership_id,role_code,franchise_id)values('c3650000-0000-4000-8000-000000000004','FRANCHISE_OWNER','d3650000-0000-4000-8000-000000000002');
+insert into public.platform_user_roles(user_id,role_code)values('a3650000-0000-4000-8000-000000000004','MATRICIA_ADMIN');
 create temporary table control_observed365(k text primary key,v jsonb);
 grant all on control_observed365 to authenticated,service_role;
 select is(private.franchise_control_ratio_v1(0,0),null::integer,'absence of observations is not a zero score');
@@ -71,7 +75,7 @@ select is((select(v->>'processed')::integer from control_observed365 where k='ru
 select is((select count(*)::integer from public.franchise_control_reports_v1 where global_score_bps is not null and franchise_id='d3650000-0000-4000-8000-000000000001'),0,'unobserved axes cannot certify a global score');
 select is((select axis_scores->'LIBRARY_QUALITY'from public.franchise_control_reports_v1 where franchise_id='d3650000-0000-4000-8000-000000000001'and kind='DAILY'),'null'::jsonb,'an empty catalogue is unmeasured rather than zero');
 select is((select axis_scores->>'LIBRARY_QUALITY'from public.franchise_control_reports_v1 where franchise_id='d3650000-0000-4000-8000-000000000002'and kind='DAILY'),'0','an actually incomplete draft inventory retains an observed zero');
-select is((select count(*)::integer from public.franchise_control_plan_proposals_v1 where franchise_id='d3650000-0000-4000-8000-000000000002'),3,'measured critical axes generate proposed plans for each report');
+select is((select count(*)::integer from public.franchise_control_plan_proposals_v1 where franchise_id='d3650000-0000-4000-8000-000000000002'),1,'an open thirty-day proposal covers the same objectives without duplicate daily monthly quarterly plans');
 select is((select metrics->>'contractualMandate'from public.franchise_control_reports_v1 where franchise_id='d3650000-0000-4000-8000-000000000001'and kind='DAILY'),'false','TEST demo mandate cannot stand in for contractual compliance');
 select is((select methodology->>'manualSnapshotsConsumed'from public.franchise_control_reports_v1 where franchise_id='d3650000-0000-4000-8000-000000000001'and kind='DAILY'),'false','automatic source projection ignores administrator measurements');
 select is((select comparison->>'status'from public.franchise_control_reports_v1 where franchise_id='d3650000-0000-4000-8000-000000000001'and kind='QUARTERLY'),'INSUFFICIENT_COHORT','small cohorts reveal no comparison identifiers');
@@ -86,10 +90,33 @@ select is((select v from control_observed365 where k='progress'),(select v from 
 select is((select comment from public.franchise_control_plan_events_v1 limit 1),'Texte français saisi librement et conservé','free text remains unchanged');
 select throws_ok(format($q$select public.record_franchise_control_plan_event_v1(%L,'APPROVED','A member cannot approve this plan',null,'control365-forbidden')$q$,(select id from public.franchise_control_plan_proposals_v1 where franchise_id='d3650000-0000-4000-8000-000000000002'order by id limit 1)),'42501','FRANCHISE_CONTROL_ADMIN_AAL2_REQUIRED','manager cannot activate their own corrective plan');
 
+
+do $$declare selected_plan uuid;i integer;begin
+ select id into selected_plan from public.franchise_control_plan_proposals_v1 where franchise_id='d3650000-0000-4000-8000-000000000002'order by id limit 1;
+ for i in 1..51 loop perform public.record_franchise_control_plan_event_v1(selected_plan,'COMMENT','Commentaire de recette numéro '||i,null,'control365-history-'||i);end loop;
+end$$;
+insert into control_observed365 values('first-history-page',public.list_franchise_native_control_v1('d3650000-0000-4000-8000-000000000002'));
+select is(jsonb_array_length((select v#>'{plans,0,events}'from control_observed365 where k='first-history-page')),50,'plan history is bounded to fifty genuine events');
+select is((select(v#>>'{plans,0,eventCount}')::integer from control_observed365 where k='first-history-page'),52,'the complete history count is retained without silent truncation');
+insert into control_observed365 values('next-history-page',public.list_franchise_native_control_v1('d3650000-0000-4000-8000-000000000002',p_event_plan_id:=(select(v#>>'{plans,0,id}')::uuid from control_observed365 where k='first-history-page'),p_after_event_id:=(select(v#>>'{plans,0,nextEventAfter}')::bigint from control_observed365 where k='first-history-page')));
+select is(jsonb_array_length((select v#>'{plans,0,events}'from control_observed365 where k='next-history-page')),2,'continuation reaches the remaining events without replaying the first page');
 select throws_ok($$select public.list_franchise_native_control_v1('d3650000-0000-4000-8000-000000000001')$$,'42501','FRANCHISE_CONTROL_READ_DENIED','another mandate is denied at the bounded read API');
 select is((select count(*)::integer from public.franchise_control_reports_v1 where franchise_id='d3650000-0000-4000-8000-000000000001'),0,'underlying RLS hides the other mandate reports');
 reset role;
 select is((select count(*)::integer from public.event_outbox where event_type='FranchiseControlReportGeneratedV1'and aggregate_id in('d3650000-0000-4000-8000-000000000001','d3650000-0000-4000-8000-000000000002')),6,'automatic reports emit one event each and replay emits none');
 select is((select count(*)::integer from public.audit_events where action='franchise.control.report_generated'and organization_id in('b3650000-0000-4000-8000-000000000001','b3650000-0000-4000-8000-000000000002')),6,'each immutable report has an audit trail');
 select is((select status from public.franchises where id='d3650000-0000-4000-8000-000000000001'),'ACTIVE','control engine never sanctions or terminates a franchise automatically');
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"a3650000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal2"}',true);
+select throws_ok(format($q$select public.record_franchise_control_plan_event_v1(%L,'APPROVED','Cannot approve the operator own plan',null,'control365-composite')$q$,(select id from public.franchise_control_plan_proposals_v1 where franchise_id='d3650000-0000-4000-8000-000000000002'limit 1)),'42501','FRANCHISE_CONTROL_PLAN_INDEPENDENT_REVIEW_REQUIRED','composite Admin and franchise member cannot approve the operator plan');
+reset role;
+
+
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"a3650000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);
+insert into control_observed365 values('queued-invitation',public.queue_franchise_network_invitations_v1('d3650000-0000-4000-8000-000000000002','e3650000-0000-4000-8000-000000000002','CLIENT','a3650000-0000-4000-8000-000000000002','[{"invitation_id":"a3654000-0000-4000-8000-000000000001","contact_email":"queue-metric-365@example.invalid","display_name":"TEST Pending invitation","locale":"fr","token_hash":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","source_code":"TEST"}]',true,'control365-queue'));
+reset role;
+select is((select(v->>'created')::integer from control_observed365 where k='queued-invitation'),1,'an actual native acquisition invitation is queued without delivery');
+select is(private.collect_franchise_control_metrics_v1('d3650000-0000-4000-8000-000000000002',(statement_timestamp()at time zone 'Africa/Casablanca')::date,(statement_timestamp()at time zone 'Africa/Casablanca')::date)#>>'{networkInvitations,queued}','1','unsent invitation with null delivery mode remains a real pending count');
+select is(private.collect_franchise_control_metrics_v1('d3650000-0000-4000-8000-000000000002',(statement_timestamp()at time zone 'Africa/Casablanca')::date,(statement_timestamp()at time zone 'Africa/Casablanca')::date)#>>'{networkInvitations,sent}','0','queued invitation is never counted as external delivery');
 select *from finish();rollback;

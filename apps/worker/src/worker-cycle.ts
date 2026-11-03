@@ -1,5 +1,6 @@
 import { buildReadinessReport } from "@matricia/observability";
 import { createNonOverlappingTask } from "./poll-lock";
+import type { FranchisePerformanceState } from "./franchise-performance";
 import type { ProviderBillingState } from "./provider-billing";
 
 type DependencyCycle = Readonly<{ ok: boolean; latencyMs: number }>;
@@ -64,7 +65,7 @@ export function createWorkerCycle(dependencies: Readonly<{
   return Object.freeze({ run, getState: () => state });
 }
 
-export function buildWorkerReadiness(state: WorkerCycleState, billing?: ProviderBillingState) {
+export function buildWorkerReadiness(state: WorkerCycleState, billing?: ProviderBillingState, performanceControl?: FranchisePerformanceState) {
   return buildReadinessReport("matricia-worker", {
     outbox: state.outbox?.ok
       ? { status: "up", latencyMs: state.outbox.latencyMs }
@@ -77,8 +78,19 @@ export function buildWorkerReadiness(state: WorkerCycleState, billing?: Provider
         ? { status: "up" as const, latencyMs: billing.reminders.latencyMs }
         : { status: "down" as const, latencyMs: billing.reminders?.latencyMs ?? 0, code: billing.reminders ? "PROVIDER_BILLING_REMINDERS_FAILED" : "PROVIDER_BILLING_NOT_STARTED" },
     } : {}),
+    ...(performanceControl ? {
+      franchise_control: performanceControl.control?.ok
+        ? { status: "up" as const, latencyMs: performanceControl.control.latencyMs }
+        : { status: "down" as const, latencyMs: performanceControl.control?.latencyMs ?? 0, code: performanceControl.control?.code ?? "FRANCHISE_CONTROL_NOT_STARTED" },
+    } : {}),
     antivirus: state.antivirus?.ok
       ? { status: "up", latencyMs: state.antivirus.latencyMs }
       : { status: "down", latencyMs: state.antivirus?.latencyMs ?? 0, code: state.antivirus ? "ANTIVIRUS_UNAVAILABLE" : "WORKER_NOT_STARTED" },
   });
+}
+
+
+/** A running, busy, absent or failed control page never certifies a healthy worker. */
+export function workerHeartbeatHealthy(state: WorkerCycleState, billing: ProviderBillingState, performanceControl: FranchisePerformanceState): boolean {
+  return Boolean(state.outbox?.ok && billing.closing?.ok && billing.reminders?.ok && performanceControl.control?.ok);
 }
