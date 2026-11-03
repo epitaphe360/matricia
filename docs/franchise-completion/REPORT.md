@@ -1,6 +1,6 @@
 # Clôture financière et Franchisé — rapport de réalisation
 
-État : **code livré, recette finale partielle — périmètre figé à la demande de l’utilisateur**. La PR[#12](https://github.com/epitaphe360/matricia/pull/12) a été fusionnée par l’utilisateur en `a362abc1`. La régularisation PRIMARY découverte après cette fusion est isolée dans `codex/franchise-publication-validation-20261103`, créée depuis cette version fusionnée, sans réappliquer les corrections précédentes. Source conservée après les fusions utilisateur : `df67da4`, branche principale `codex/bootstrap-foundation`. Travail : `codex/franchise-finance-completion-20261103`. Aucun merge ni déploiement de production.
+État : **trois blocages de reprise finalisés en recette locale ciblée**. La PR[#12](https://github.com/epitaphe360/matricia/pull/12) a été fusionnée par l’utilisateur en `a362abc1`. La régularisation PRIMARY découverte après cette fusion est isolée dans `codex/franchise-publication-validation-20261103`, créée depuis cette version fusionnée, sans réappliquer les corrections précédentes. Source conservée après les fusions utilisateur : `df67da4`, branche principale `codex/bootstrap-foundation`. Travail : `codex/franchise-finance-completion-20261103`. Aucun merge ni déploiement de production.
 
 Le code applicatif courant est `8ad97dd2`, arbre `apps/web` `865af1bcf3bd0904b9c941c90a024c5f988492b7`. Le dernier build optimisé avec TypeScript strict porte sur `b433394c`, arbre `c318ec4094656f3937f7754c488954f10bbce56a`. Le delta suivant ajoute seulement `tabIndex=0` aux13 conteneurs défilants partagés :117 tests et lint ciblé réussis, sans nouveau build optimisé ni recette navigateur sur ce delta. Les migrations SQL ne modifient pas ces arbres. Chaque recette conserve son véritable candidat ; les premiers échecs ne sont pas renommés en succès final.
 
@@ -50,3 +50,16 @@ Les anciens services TEST importés possédaient un parent, mais aucun lien PRIM
 - Les essais de panne non achevés ne sont pas déclarés réussis. La recette de bout en bout, les interfaces finales et les intégrations hébergées ne sont pas closes à100%.
 
 La PR12 a été fusionnée par l’utilisateur ; le [run après fusion](https://github.com/epitaphe360/matricia/actions/runs/41615991197) rapporte encore trois tâches non démarrées pour facturation. Cette observation est distincte du succès de fusion. L’API GitHub de cet environnement refuse la création de PR avec `Forbidden` ; la branche complémentaire et sa description restent prêtes pour une ouverture manuelle.
+
+
+## Finalisation des trois blocages — reprise demandée par l’utilisateur
+
+Les trois points de la recette ciblée sont désormais vérifiés en environnement local de test :
+
+- Publication : ancienne fenêtre non courante régularisée par demande FR et décision AR de deux administrateurs GoTrue/AAL2 distincts, auto-approbation refusée. Publication Owner réelle puis claim/complete natifs sous bail ; état PUBLISHED, rejeu exact sans doublon, textes FR/AR et hashes des anciennes versions conservés. Aucun ancien snapshot ni engagement supprimé.
+- Dépôt financier : origine de runtime corrigée sans relâcher la validation Origin. Même dépôt idempotent repris, état UPLOADED,816octetsPDF etSHA vérifiés dansStorageprivé,1seul dépôt et0rapprochement créé. ScannerERROR faute de moteur réel : coût nul refusé55000, aucune approbation ou analyseCLEAN inventée.
+- Visuel :12cas ciblés FR/AR375/390 PASS enDEV sur les tableaux corrigés, défilement clavier réel,0violationaxe et0erreurJS. Les interruptions initiales de compilation sont conservées. Il ne s’agit pas d’un nouveau certificat optimisé192pages.
+
+Le calendrier Admin est accessible depuis Catalogue avec contexte bibliothèque ; demande/revue FR/AR, MFA et indépendance obligatoires. La variation de timezone Node/Chromium est corrigée par libellés sérialisés au serveur, sans changer les timestamps métier. Tests :56Web calendrier PASS,28SQL gouvernance PASS et revue indépendante favorable. Base560 appliquée de façon contrôlée après le replay neuf559/74fichiers/2833assertions.
+
+Cette finalisation remplace les blocages décrits dans le bilan précédent, conservé comme historique. Restent externes : moteur antivirus réel, intégrations/staging hébergés et contrôles CI du compte ; aucune fusion ni production par l’assistant.

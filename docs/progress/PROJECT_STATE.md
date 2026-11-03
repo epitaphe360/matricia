@@ -1266,3 +1266,11 @@ compte externe empêche la preuve CI tant qu'elle n'est pas levée; elle ne vaut
 - Matrice finale arrêtée à la demande de clôture rapide :43visites,37PASS/6FAIL et2interrompues. Les6échecs concernent le focus des tableaux ; correctif commun8ad97dd2 et117tests+lint PASS. Ce dernier delta n’a pas eu de nouvelle recette navigateur/build optimisé. La couverture finale192 n’est pas certifiée.
 - Dernier arbreapp865af1bcf3bd0904b9c941c90a024c5f988492b7 ; build strictb433/appTreec318 et état final distincts, sans réétiquetage des preuves. Voir docs/franchise-completion/REPORT.md, TRACEABILITY.md et evidence/browser/CLOSURE.json.
 - Limites : CI du compte GitHub encore bloquée par facturation après fusion, APIcréationPR Forbidden ; scanner physique, intégrations/staging hébergés, signature juridique, données légales/conditions validées, seuils de gouvernance et distribution historique positive non certifiés. Aucun100%global V1 ni procès-verbal client revendiqué. Aucun contrôle supplémentaire en cours.
+
+
+## 2026-11-03 — Reprise ciblée : publication, dépôt financier et visuel finalisés
+
+- Publication réelle PUBLISHED après régularisation560 à deux administrateurs natifsAAL2 ; auto-approbation refusée, claim/complete sous bail et rejeu sans doublon, anciennes versions/hashes conservés.
+- Même PDF privé repris après alignement Origin du runtime : UPLOADED,816octets/hash vérifiés,1upload,0rapprochement ; scannerERROR et refus55000 de coût nul maintiennent la sécurité faute de moteur réel.
+- Focus12cas FR/AR375/390 PASS enDEV, clavier réel et0axe/0JS. Pas de nouvelle campagne optimisée192 ni de déploiementprod.
+- AdminCalendrier560 exploitable FR/AR ; dates sérialisées serveur contre divergenceTZdata ;56testsWeb et28SQL PASS, revue indépendante favorable. Reçus finaux dans docs/franchise-completion/evidence/browser.

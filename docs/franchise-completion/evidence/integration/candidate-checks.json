@@ -56,5 +56,21 @@
     "lint": "passed",
     "fullOptimizedBuildReplayed": false,
     "browserReplayed": false
+  },
+  "threeBlockersResume": {
+    "status": "passed_local_targeted",
+    "schemaMigrations": 560,
+    "publication": "PUBLISHED_NATIVE_LEASE_REPLAY",
+    "calendarGovernance": "TWO_DISTINCT_AAL2_ACTORS_FR_AR",
+    "financialFile": "UPLOADED_PRIVATE_BYTES_HASH_VERIFIED",
+    "scanner": "ERROR_REAL_ENGINE_UNAVAILABLE",
+    "unscannedZeroCost": "REFUSED_55000",
+    "visualCases": 12,
+    "visualMode": "DEVELOPMENT",
+    "axeViolations": 0,
+    "jsErrors": 0,
+    "fullOptimized192Replayed": false,
+    "newCalendarWebTests": 56,
+    "calendarSqlAssertions": 28
   }
 }
