@@ -42,6 +42,7 @@ begin
   or f.franchise_type is distinct from e.franchise_type or f.franchise_type is distinct from r.franchise_type
   or f.operator_code is distinct from r.operator_code
   or r.effective_from>(m.effective_from at time zone'Africa/Casablanca')::date
+  or(r.effective_to is not null and r.effective_to<(m.effective_from at time zone'Africa/Casablanca')::date)
   or m.distribution_basis is distinct from'DISTRIBUTABLE_PROFIT'or e.distribution_basis is distinct from m.distribution_basis or r.distribution_basis is distinct from m.distribution_basis
   or (m.franchisee_share_bps,m.neoxa_share_bps,m.matricia_share_bps)is distinct from(e.franchisee_share_bps,e.neoxa_share_bps,e.matricia_share_bps)
   or (m.franchisee_share_bps,m.neoxa_share_bps,m.matricia_share_bps)is distinct from(r.franchisee_share_bps,r.neoxa_share_bps,r.asma_matricia_share_bps)

@@ -18,6 +18,7 @@ begin
   join public.franchise_finance_rule_versions r on r.franchise_type=f.franchise_type and r.operator_code=f.operator_code
    and r.franchisee_share_bps=m.franchisee_share_bps and r.neoxa_share_bps=m.neoxa_share_bps and r.asma_matricia_share_bps=m.matricia_share_bps
    and r.effective_from<=(m.effective_from at time zone'Africa/Casablanca')::date
+   and(r.effective_to is null or r.effective_to>=(m.effective_from at time zone'Africa/Casablanca')::date)
   join public.catalog_libraries lib on lib.id=f.library_id join public.organizations org on org.id=f.operator_organization_id
   where(p_franchise_id is null or f.id=p_franchise_id)
   order by lib.code,f.territory_code,m.version desc,r.version desc,f.id limit 129
