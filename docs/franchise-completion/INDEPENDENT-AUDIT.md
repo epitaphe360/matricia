@@ -245,3 +245,15 @@ corepack pnpm --filter @matricia/web exec vitest run \
 ```
 
 **17 tests / trois fichiers réussis**, [journal](evidence/independent-governance-signals.log). Aucun nouveau P1 concret de permission ou d'écriture financière n'a été trouvé dans ce lot par cette lecture. Les contre-tests SQL0371 et la recette de saisie native de conflit/missions restent à attester séparément.
+
+## Revue ciblée de la reprise financière455310
+
+Source : commit de domaine `a42a92e2` dans `/workspace/franchise-history`. Lecture seule des 149 lignes de `20261103455310_credit_zero_to_expense_governed_recovery.sql` et du scénario0376 ; aucune exécution de ces migrations/tests par l'auditeur.
+
+- **FA16 corrigé en source** : `private.credit_economic_cost_decider_allowed_v1` devient la règle partagée pour les deux décisions de coût et `can_decide`. Elle conserve les conflits auteurs document/journal/proposition, opérateur/réception et membres des organisations allouées. Le contre-test0376 utilise précisément un Finance membre de l'opérateur distinct du client du document.
+- **FA17 corrigé en source pour une période encore ouverte** : la reprise exige le dernier zéro réellement admis, sa révocation indépendante et l'égalité des hashes/décisions ; proposition et approbation figent le prédécesseur exact et ajoutent une version. Le journal EXPENSE positif reste soumis aux contrôles préexistants de provenance, organisation, devise, net HT, journal non réutilisé et revue indépendante. Le jour comptable correspond à la capture ou consommation canonique ; aucun déplacement automatique entre périodes n'est admis.
+- Les livres concernés sont verrouillés dans un ordre déterministe avant de rechercher des clôtures existantes. Toute allocation dont le jour est déjà couvert par une clôture produit `CREDIT_ECONOMIC_CLOSED_PERIOD_REVIEW_REQUIRED`. Le verrou de journal reste cohérent avec l'ordre livre→journal du classificateur P&L452120/452230. Une attribution nulle antérieure reçoit un successeur analytique ; elle n'est ni modifiée ni effacée. Une dépense positive admise ne devient pas une nouvelle preuve de zéro.
+
+Aucun nouveau défaut concret de permission, provenance ou version n'a été trouvé dans cette lecture. Le test0376 prévoit la reprise positive réelle, les conflits d'acteurs, le mauvais jour, le rejeu, l'immuabilité et l'absence de clôture anticipée du jour courant. **Il ne reproduit pas encore le cas d'une allocation déjà couverte par une clôture historique.** Cette garde est présente en source ; son scénario natif reste à attester avec une fixture historique appropriée, sans fabriquer d'anciens revenus, soldes ou signatures. La reprise d'une période déjà close reste volontairement une revue requise, pas une correction comptable automatique certifiée.
+
+Les statuts « corrigé en source » ci-dessus ne remplacent pas les reçus SQL frais0376. Aucun des 82 tests Web du coffre ne prouve à lui seul l'admission SQL de cette reprise.
