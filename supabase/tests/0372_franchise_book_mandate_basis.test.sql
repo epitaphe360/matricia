@@ -140,6 +140,18 @@ select throws_ok($$select public.franchise_book_opening_context_v1()$$,'42501','
 select pg_temp.actor372(4);
 select throws_ok($$select public.franchise_book_opening_context_v1()$$,'42501','FRANCHISE_BOOK_DENIED','the selector is not an unprotected cross-organization discovery endpoint');
 reset role;
+-- Public read APIs are narrow boolean boundaries, not a definer dashboard or
+-- private-schema grant. Exercise both central and assigned franchise readers.
+select ok(not(select prosecdef from pg_proc where oid='public.franchise_governance_dashboard_snapshot(uuid)'::regprocedure),'the corrected dashboard remains SECURITY INVOKER');
+select ok(not has_schema_privilege('authenticated','private','USAGE'),'dashboard repair adds no private-schema USAGE');
+select pg_temp.actor372(1);set local role authenticated;
+select is(public.franchise_finance_book_binding_review_v1((select(opening->>'book_id')::uuid from basis372 where k='S1')),false,'a real assigned franchise owner reads their own exact book binding');
+select is(public.franchise_finance_book_matches_scope_v1((select(opening->>'book_id')::uuid from basis372 where k='S2'),(select franchise from basis372 where k='S1')),false,'a scoped reader cannot substitute a sibling territory even when assigned to both');
+select pg_temp.actor372(4);
+select throws_ok($$select public.franchise_finance_book_binding_review_v1((select(opening->>'book_id')::uuid from basis372 where k='S1'))$$,'42501','FRANCHISE_BOOK_SCOPE_DENIED','the public boolean boundary does not expose another organization binding state');
+select pg_temp.actor372(2,'aal1');
+select throws_ok($$select public.franchise_finance_book_binding_review_v1((select(opening->>'book_id')::uuid from basis372 where k='S1'))$$,'42501','FRANCHISE_FINANCE_MFA_REQUIRED','a central financial reader retains their actual MFA prerequisite');
+reset role;
 -- Deliberately invalid initial metadata: a second evidence row is not another
 -- source to choose silently. The failed check never inserts financial money.
 insert into public.franchise_invitations(id,franchise_id,invited_email,status,expires_at)select'f372d000-0000-4000-8000-000000000001',franchise,'book372-1@example.invalid','SENT',clock_timestamp()+interval'1 day'from basis372 where k='S1';
