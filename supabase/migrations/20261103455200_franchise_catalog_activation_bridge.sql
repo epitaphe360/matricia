@@ -119,11 +119,11 @@ revoke all on function private.franchise_catalog_acl_source_allows_v1(uuid,text,
 do $$declare definition text;anchor text:='and x.status=''ACTIVE''and statement_timestamp()>=x.valid_from';begin
  select pg_get_functiondef('private.has_library_permission(uuid,text,uuid)'::regprocedure)into definition;
  if(length(definition)-length(replace(definition,anchor,'')))/length(anchor)<>1 then raise exception'FRANCHISE_CATALOG_PERMISSION_PATCH_TARGET_MISMATCH';end if;
- execute replace(definition,anchor,'and private.franchise_catalog_acl_source_allows_v1(x.id,r.role_code,p_actor_id) '+anchor);
+ execute replace(definition,anchor,'and private.franchise_catalog_acl_source_allows_v1(x.id,r.role_code,p_actor_id) '||anchor);
  select pg_get_functiondef('private.accept_franchise_activation_v1(uuid,text,integer,uuid,text,text,boolean,text,uuid)'::regprocedure)into definition;
  anchor:='perform private.finish_contract_command(org,''franchise.invitation.activation.''||invite.id::text,p_idempotency_key,result);return result;';
  if(length(definition)-length(replace(definition,anchor,'')))/length(anchor)<>1 then raise exception'FRANCHISE_CATALOG_ACTIVATION_PATCH_TARGET_MISMATCH';end if;
- execute replace(definition,anchor,'perform private.ensure_franchise_catalog_mandate_v1(franchise.id,p_correlation_id);'+anchor);
+ execute replace(definition,anchor,'perform private.ensure_franchise_catalog_mandate_v1(franchise.id,p_correlation_id);'||anchor);
 end$$;
 
 -- Scoped repair for native activations committed before this migration. It does
